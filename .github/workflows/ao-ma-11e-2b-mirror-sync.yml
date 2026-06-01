@@ -55,8 +55,13 @@ jobs:
       - name: Install
         run: pip install -e ".[mcp]"
       - name: Run dry-run sync
+        # CI-fix: prefer operator-managed PAT (classic, `project` scope) when
+        # available; falls back to default GITHUB_TOKEN. Projects v2 is a
+        # user-level resource; default GITHUB_TOKEN lacks Projects v2 scope and
+        # the engine degrades gracefully (project_v2_fetch_degraded marker in
+        # report.reason) when only the default token is present.
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_GH_PAT_PROJECTS_RW || secrets.GITHUB_TOKEN }}
         run: |
           python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
             --projection-manifest .claude/plans/v5_issue_projection.v1.json \
@@ -93,7 +98,7 @@ jobs:
         # number of rules. A single required_reviewers rule with 0 reviewers
         # would otherwise pass the gate.
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_GH_PAT_PROJECTS_RW || secrets.GITHUB_TOKEN }}
         run: |
           ENV_NAME="ao-ma-mirror-sync"
           ENV_DATA=$(gh api "/repos/${{ github.repository }}/environments/$ENV_NAME" 2>&1) || {
@@ -121,7 +126,7 @@ jobs:
         # the operator-provided digest matches THIS run's report. This binds
         # the digest to the apply run's own observed state.
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_GH_PAT_PROJECTS_RW || secrets.GITHUB_TOKEN }}
         run: |
           python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
             --projection-manifest .claude/plans/v5_issue_projection.v1.json \
@@ -150,7 +155,7 @@ jobs:
           echo "Canonical plan digest match confirmed: $FRESH_DIGEST"
       - name: Run apply sync
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_GH_PAT_PROJECTS_RW || secrets.GITHUB_TOKEN }}
           AO_MA_11E_2B_APPLY_ACK: "1"
         run: |
           python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
@@ -168,7 +173,7 @@ jobs:
           retention-days: 365
       - name: Post-drift verification
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_GH_PAT_PROJECTS_RW || secrets.GITHUB_TOKEN }}
         run: |
           python3 scripts/ao_ma11e2_v5_mirror_drift.py \
             --projection-manifest .claude/plans/v5_issue_projection.v1.json \

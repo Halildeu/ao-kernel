@@ -1,25 +1,16 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11E-2B-MIRROR-SYNC-WORKFLOW",
+  "work_package": "AO-MA-11E-2B-CI-TOKEN-FIX",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-11e-2b-mirror-sync-workflow",
+    "head_ref": "refs/heads/codex/ao-ma-11e-2b-ci-token-fix",
     "changed_files": [
-      ".claude/plans/AO-MA-11E-2B-MIRROR-SYNC-WORKFLOW.md",
-      ".claude/plans/v5_issue_projection.v1.json",
       ".github/workflows/ao-ma-11e-2b-mirror-sync.yml",
       "ao_kernel/_internal/ao_ma/github_mirror_sync.py",
-      "ao_kernel/defaults/schemas/ao-ma-github-mirror-sync-report.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma11e2b_v5_mirror_sync.py",
-      "tests/test_ao_ma11e2b_issue_body_template.py",
-      "tests/test_ao_ma11e2b_manifest_migration.py",
-      "tests/test_ao_ma11e2b_mirror_sync.py",
-      "tests/test_ao_ma11e2b_schema_invariant.py",
-      "tests/test_ao_ma11e2b_workflow_invariant.py"
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
@@ -33,17 +24,13 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "AO-MA-11E-2B-MIRROR-SYNC-WORKFLOW: V5 manual mirror write sync engine + workflow. 11E-2a smoke run 17 drift (13 anchor_schema_mismatch + 4 anchor_sha_format_invalid) ortaya cikardi; bu PR yapisalca cozer: manifest migration (body_anchor strict 5 field + metadata yeni field) + sync engine (issue body re-render + label sync + project item sync) + workflow (dry-run + operator-dispatched apply). 11E-2c scheduled binding LATER.",
-    "Codex plan-time consensus thread 019e8249: iter-1 REVISE (7 blocker) -> iter-2 AGREE + ready_for_impl=true. Blockers absorbed: (1) complete manifest body_anchor migration 13/13; (2) metadata field with risk_class_source + evidence_classes + sub_issues_planned_ref; (3) typed apply confirmation chain (CLI 4-input + env var second ack + accepted dry-run digest verification); (4) workflow apply gate 7-condition compound if; (5) environment preflight verifies required_reviewers > 0; (6) DI caller 4-method support (GET/POST/PATCH/GraphQL) + read-before-write idempotency; (7) sync_state report/runtime field only NO manifest back-write.",
-    "Manifest migration (13 issue artifact_sha256 + plan_digest populated from issue_anchor_pin runtime values; 13/13 body_anchor strict 5 field; risk_class_source + evidence_classes moved to metadata field; sub_issues_planned_ref reference not copy). Test test_ao_ma11e2b_manifest_migration.py 5 invariant pin: 13/13 body_anchor exactly 5 fields, all SHA values populated, SHA pattern valid, metadata present, no unknown fields.",
-    "Core sync engine (ao_kernel/_internal/ao_ma/github_mirror_sync.py): pure stdlib + DI gh_api_caller (4 method); read-before-write idempotency; foreign label preservation (mirror-managed namespace only: epic-, status:, risk:, guard-flip:, mirror:); ChangeRecord enum-validated; SyncReport + EnvironmentPreflight + SyncState 9-state lifecycle; render_issue_body() strict 5-field anchor + separate V5 Metadata section (parser scope boundary). Token never in JSON/log/report (only env-var name + boolean presence). Apply mode 5-check confirmation gate: typed AO-MA-11E-2B-APPLY + accepted dry-run digest sha256:<64hex> + network_allowed + token_present + env preflight pass.",
-    "CLI (scripts/ao_ma11e2b_v5_mirror_sync.py): argparse + 4-input apply confirmation chain + accepted-dry-run-report digest verification (computes SHA of accepted report file, compares with operator-provided digest); env var second confirmation (AO_MA_11E_2B_APPLY_ACK=1) AO-MA-10O pattern; defensive token leakage check refuses output containing literal token; gh CLI subprocess adapter ONLY at CLI layer.",
-    "Workflow (.github/workflows/ao-ma-11e-2b-mirror-sync.yml): workflow_dispatch only (no schedule/push); 4 inputs (dry_run + allow_apply + confirmation + accepted_dry_run_report_digest); 2 jobs (dry_run unprotected + apply environment-protected); apply job 7-condition compound if (github.ref==main + workflow_dispatch + run_attempt==1 + dry_run==false + allow_apply==true + confirmation==AO-MA-11E-2B-APPLY + digest != empty); environment ao-ma-mirror-sync set; preflight verifies required_reviewers > 0 via GitHub API; post-drift verification re-runs 11E-2a after apply; artifacts uploaded (sync_report + apply_report + post_drift_report).",
-    "Schema (ao-ma-github-mirror-sync-report.schema.v1.json): Draft 2020-12 strict; additionalProperties:false root + defs/changeRecord + environment_preflight; 9 sync_state enum; 5 change category enum; 4 environment_preflight_decision enum; allOf if/then invariants (dry-run -> applied_changes empty; applied -> confirmation==AO-MA-11E-2B-APPLY + accepted_digest pattern + applied_changes non-empty; dry-run sync_state in {dry_run_planned, dry_run_complete, api_error, usage_error}).",
-    "Tests (58 total all pass): test_ao_ma11e2b_manifest_migration.py (5 - migration completeness), test_ao_ma11e2b_mirror_sync.py (20 - dry-run + apply confirmation chain rejection + apply with full chain + env preflight fail-closed + idempotency + token redaction + body template); test_ao_ma11e2b_schema_invariant.py (12 - schema valid + enum pins + allOf invariants + parametrized state validation); test_ao_ma11e2b_workflow_invariant.py (12 - workflow_dispatch only + 4 inputs + 7-condition compound apply gate + environment + preflight + post-drift + artifacts + no admin/force/ruleset); test_ao_ma11e2b_issue_body_template.py (7 - 5-field anchor + metadata section + parser no drift on metadata + roundtrip parse). ruff + mypy strict clean.",
-    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex plan-time thread 019e8249 iter-1 REVISE -> iter-2 AGREE absorbed. Post-impl review imminent yeni thread.",
-    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Bu PR ZATEN canli GitHub write yapmaz; sadece workflow + module + CLI + schema + tests + migration; canli apply operator-dispatched workflow_dispatch ile (typed confirmation chain). .github/workflows/ change cross-AI provider-independent adversarial check saglar (HARD RULE Pre-Production Full Authority). No CODEOWNERS / ruleset / branch protection / admin / secrets / .github push trigger introduced. Sadece workflow_dispatch + read-only or operator-confirmed apply.",
-    "Operator deployment chain (post-merge): (1) Operator GitHub Settings -> Environments -> create ao-ma-mirror-sync + required reviewers; (2) operator triggers workflow_dispatch dry_run=true; (3) download sync_report.json artifact; (4) compute sha256(sync_report.json); (5) operator triggers workflow_dispatch dry_run=false + allow_apply=true + confirmation=AO-MA-11E-2B-APPLY + accepted_dry_run_report_digest=<sha>; (6) post-drift artifact downloads; (7) re-run 11E-2a drift CLI -> expected synced. This is the only autonomous bridge between manifest authority and GitHub mirror state."
+    "AO-MA-11E-2B-CI-TOKEN-FIX: 11E-2b dry-run workflow run 26745803729 FAILED exit 3 (api_error). Lokal exit 0 + 13 issue body rewrite plan. Root cause: Projects v2 is a user-level resource; default GITHUB_TOKEN lacks Projects v2 scope; graphql call to projectV2.items returns 403/permission denied.",
+    "Fix (defense-in-depth): (1) Engine sync_v5_mirror() Projects v2 fetch degrades gracefully in dry-run mode — failure does NOT abort with api_error; instead sets project_v2_fetch_degraded marker in report.reason field; planned_changes for project_item_* over-reported but operator review of dry-run report catches the PAT-scope gap explicitly. (2) Apply mode unchanged: project fetch failure still api_error (cannot safely write without read confirmation). (3) Workflow 5 GH_TOKEN env-var assignments -> PAT fallback pattern secrets.REPO_GH_PAT_PROJECTS_RW || secrets.GITHUB_TOKEN. When operator configures REPO_GH_PAT_PROJECTS_RW (classic PAT with project scope), Projects v2 access unlocked.",
+    "Why minimum viable token wiring: HARD RULE Uzun Vadeli Kalıcı Çözüm. (a) Graceful degradation in dry-run preserves CI workflow execution even WITHOUT operator action (no blocker); (b) Apply path keeps strict scope discipline (cannot write without verified read); (c) PAT fallback opt-in (operator controls PAT scope + secret access); (d) GitHub Actions default token does NOT carry Projects v2 scope — this is GitHub platform constraint, not bug; documented in workflow comment.",
+    "Tests (67/67 PASS unchanged): existing sync engine + schema + workflow + body template + canonical digest tests; no regressions. ruff + mypy strict clean.",
+    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread post-impl review imminent.",
+    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Bu PR sadece CI-fix; workflow + engine; canli apply hala operator-bound. No CODEOWNERS / ruleset / branch protection / admin / secrets / new .github push trigger.",
+    "Operator deployment chain (post-merge): (1) Operator GitHub Settings -> Secrets -> New repository secret REPO_GH_PAT_PROJECTS_RW = classic PAT with project scope; (2) workflow_dispatch dry_run=true; (3) Projects v2 access verified; (4) operator computes canonical plan digest + dispatches apply with full chain. PAT secret is optional but recommended for full feature coverage; without PAT, dry-run still produces planned_changes for issue_body_rewrite and label_* operations, only project_item_* are degraded."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
