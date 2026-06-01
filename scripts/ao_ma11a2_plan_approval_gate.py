@@ -106,7 +106,11 @@ class GateReport:
         }
 
     def to_exit_code(self) -> int:
-        return 0 if self.final_decision == "approved" else 1
+        # Codex iter-2 post-impl absorb: pre_flight_passed (validate-only) also
+        # exits 0 — preflight checks all passed; approval stages skipped.
+        if self.final_decision in ("approved", "pre_flight_passed"):
+            return 0
+        return 1
 
 
 # --- Path containment (stage 1) ----------------------------------------------
@@ -380,19 +384,15 @@ def run_gate(
         report.compute_bypass()
         return report
 
-    # Codex iter-1 post-impl §A absorb: validate_only mode stops here
-    # (path + SHA + binding + consensus + env preflight all done). Approve
-    # job re-runs everything PLUS API fetch + approval construction +
-    # validate_approval FINAL. validate job NEVER passes the approval gate.
+    # Codex iter-2 post-impl absorb: validate_only mode emits separate
+    # `pre_flight_passed` final_decision (NOT "approved"). Avoids schema
+    # invariant collision with full approved (which requires
+    # approval_validator_pass=true + approval_api_state=approved).
     if validate_only:
-        report.final_decision = "approved"
+        report.final_decision = "pre_flight_passed"
         report.stage_fail_reason = None
-        # Mark bypass detection neutrally for validate-only (skipped fields
-        # cannot prove or disprove bypass; record as not_evaluated semantics
-        # via report fields left at defaults but final_decision still flips
-        # to approved to signal "pre-flight checks passed").
-        report.no_bypass_state_observed = True  # no API evidence either way
-        report.self_review_rejected = True  # not evaluated; default safe
+        # API stages NOT evaluated → leave at defaults (approving_login/at None;
+        # approval_api_state "empty"; approval_validator_pass False)
         report.compute_bypass()
         return report
 

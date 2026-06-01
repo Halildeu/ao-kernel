@@ -397,6 +397,51 @@ def test_gate_report_compute_bypass_all_3_false():
     assert r.bypass_detected  # default: all 3 false → bypass
 
 
+def test_validate_only_mode_emits_pre_flight_passed(tmp_path):
+    """Codex iter-2 post-impl absorb: validate_only emits pre_flight_passed
+    final_decision (NOT approved); API stages skipped (approving_login/at None,
+    approval_validator_pass False, approval_api_state empty).
+    """
+    plan_path, plan_digest = _write_plan(tmp_path, "x")
+    bundle, bundle_path, bundle_sha = _write_bundle(tmp_path, plan_digest=plan_digest)
+    request_path, request_sha = _write_request(tmp_path, consensus_id=bundle["consensus_id"], plan_digest=plan_digest)
+
+    def env_only_caller(method, path):
+        if "environments/ao-ma-plan-approval" in path:
+            return {
+                "name": "ao-ma-plan-approval",
+                "protection_rules": [{"type": "required_reviewers", "reviewers": [{"id": 1}]}],
+            }
+        # validate_only MUST NOT call API beyond env preflight
+        raise AssertionError(f"validate_only should not fetch: {path}")
+
+    report = run_gate(
+        plan_path=plan_path.name,
+        consensus_bundle_path=bundle_path.name,
+        approval_request_path=request_path.name,
+        plan_digest=plan_digest,
+        consensus_bundle_sha256=bundle_sha,
+        approval_request_sha256=request_sha,
+        github_run_id=_GH_RUN_ID,
+        github_repository=_GH_REPO,
+        github_sha=_BASE_SHA,
+        gh_api_caller=env_only_caller,
+        repo_root=tmp_path,
+        validate_only=True,
+    )
+    assert report.final_decision == "pre_flight_passed"
+    assert report.path_containment_pass
+    assert report.sha_recompute_pass
+    assert report.plan_binding_pass
+    assert report.consensus_validator_pass
+    assert not report.approval_validator_pass
+    assert report.approval_api_state == "empty"
+    assert report.approving_login is None
+    assert report.approving_at is None
+    assert report.stage_fail_reason is None
+    assert report.to_exit_code() == 0
+
+
 def test_gate_report_compute_bypass_all_3_true_no_bypass():
     r = GateReport(
         no_bypass_state_observed=True,

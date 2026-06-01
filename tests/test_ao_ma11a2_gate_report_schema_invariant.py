@@ -39,11 +39,13 @@ def test_schema_pins_environment_name_const():
     assert en["const"] == "ao-ma-plan-approval"
 
 
-def test_schema_pins_9_final_decision_enum():
+def test_schema_pins_10_final_decision_enum():
+    """Codex iter-2 post-impl absorb: +pre_flight_passed (validate-only mode)."""
     schema = _load()
     enum = set(schema["properties"]["final_decision"]["enum"])
     expected = {
         "approved",
+        "pre_flight_passed",
         "rejected_path",
         "rejected_sha",
         "rejected_binding",
@@ -54,6 +56,26 @@ def test_schema_pins_9_final_decision_enum():
         "usage_error",
     }
     assert enum == expected
+
+
+def test_schema_enforces_pre_flight_passed_semantics():
+    """Codex iter-2: pre_flight_passed requires path/SHA/binding/consensus pass
+    + approval_validator_pass=false + approval_api_state=empty + null login/at + null fail_reason.
+    """
+    schema = _load()
+    validator = jsonschema.Draft202012Validator(schema)
+    bad = _make_base()
+    bad["final_decision"] = "pre_flight_passed"
+    # All required preflight checks set + approval-stage NOT evaluated
+    bad["path_containment_pass"] = True
+    bad["sha_recompute_pass"] = True
+    bad["plan_binding_pass"] = True
+    bad["consensus_validator_pass"] = True
+    bad["approval_validator_pass"] = True  # contradicts pre_flight_passed
+    bad["approval_api_state"] = "empty"
+    bad["stage_fail_reason"] = None
+    errors = list(validator.iter_errors(bad))
+    assert errors, "schema MUST reject pre_flight_passed + approval_validator_pass=true"
 
 
 def test_schema_pins_approval_api_state_enum():

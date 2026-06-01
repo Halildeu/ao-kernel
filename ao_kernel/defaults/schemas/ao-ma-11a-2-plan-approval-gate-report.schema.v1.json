@@ -37,6 +37,7 @@
       "type": "string",
       "enum": [
         "approved",
+        "pre_flight_passed",
         "rejected_path",
         "rejected_sha",
         "rejected_binding",
@@ -103,9 +104,29 @@
       }
     },
     {
-      "description": "Non-approved decision MUST set stage_fail_reason.",
+      "description": "Pre-flight passed (validate job, --validate-only mode): path/SHA/binding/consensus + env preflight pass; approval stages NOT evaluated. Codex iter-2 post-impl absorb.",
+      "if": { "properties": { "final_decision": { "const": "pre_flight_passed" } } },
+      "then": {
+        "properties": {
+          "path_containment_pass": { "const": true },
+          "sha_recompute_pass": { "const": true },
+          "plan_binding_pass": { "const": true },
+          "consensus_validator_pass": { "const": true },
+          "approval_validator_pass": { "const": false },
+          "approval_api_state": { "const": "empty" },
+          "approving_login": { "type": "null" },
+          "approving_at": { "type": "null" },
+          "stage_fail_reason": { "type": "null" }
+        }
+      }
+    },
+    {
+      "description": "Failed (not approved + not pre_flight_passed) MUST set stage_fail_reason.",
       "if": {
-        "not": { "properties": { "final_decision": { "const": "approved" } } }
+        "allOf": [
+          { "not": { "properties": { "final_decision": { "const": "approved" } } } },
+          { "not": { "properties": { "final_decision": { "const": "pre_flight_passed" } } } }
+        ]
       },
       "then": {
         "properties": {
