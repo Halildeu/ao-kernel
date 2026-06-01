@@ -1,0 +1,319 @@
+{
+  "schema_version": "v5-issue-projection.v1",
+  "milestone": {
+    "title": "v5.0.0 — Full Production Promotion",
+    "description": "Roadmap target 2026-12-31; exit criteria are authoritative. GitHub project is a visibility mirror; repo artifacts remain authority. See .claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md.",
+    "due_on": "2026-12-31T23:59:59Z",
+    "state": "open"
+  },
+  "project_board": {
+    "title": "Roadmap v5.0.0",
+    "layout": ["Kanban", "Roadmap"],
+    "kanban_columns": ["Todo", "In Progress", "Review", "Blocked", "Done"],
+    "custom_fields": [
+      {"name": "Epic", "type": "single_select", "options": ["P0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]},
+      {"name": "Risk", "type": "single_select", "options": ["critical", "high", "normal", "low"]},
+      {"name": "Guard", "type": "single_select", "options": ["live_adapter", "support_widening", "production_platform_claim", "none"]},
+      {"name": "Dependency", "type": "text"},
+      {"name": "Estimate", "type": "number"},
+      {"name": "Consensus", "type": "single_select", "options": ["agreed", "pending", "not_started"]},
+      {"name": "Evidence", "type": "url"},
+      {"name": "Mirror digest", "type": "text"},
+      {"name": "Release impact", "type": "single_select", "options": ["minor", "patch", "major"]}
+    ]
+  },
+  "labels": [
+    "epic-p0", "epic-1", "epic-2", "epic-3", "epic-4", "epic-5", "epic-6", "epic-7", "epic-8", "epic-9",
+    "status:planned", "status:in_progress", "status:review", "status:blocked", "status:done",
+    "risk:critical", "risk:high", "risk:normal", "risk:low",
+    "guard-flip:live_adapter", "guard-flip:support_widening", "guard-flip:production_platform_claim",
+    "mirror:authority"
+  ],
+  "first_wave_issues": [
+    {
+      "id": "E-P0",
+      "title": "[Epic P0] Promotion governance + visibility source manifest",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-P0",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "artifact_sha256": "{computed_at_PR-X2_runtime}",
+        "plan_digest": "{computed_at_PR-X2_runtime}",
+        "slice_id": "V5-EPIC-P0",
+        "risk_class_source": "computed_low",
+        "evidence_classes": ["plan_doc", "projection_manifest", "acceptance_matrix"]
+      },
+      "labels": ["epic-p0", "status:in_progress", "risk:normal", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-P0-1 v5 roadmap plan doc (PR-X0)",
+        "E-P0-2 Master plan amend (PR-X0)",
+        "E-P0-3 GitHub mirror sync (PR-X2, post-11E-2)",
+        "E-P0-4 README badge + roadmap link",
+        "E-P0-5 Issue forms (YAML) zorunlu anchor fields"
+      ]
+    },
+    {
+      "id": "E-1",
+      "title": "[Epic 1] AO-MA-SPM follow-up — system mode full activation",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-1",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-1",
+        "risk_class_source": "computed_normal",
+        "evidence_classes": ["follow_up_slices", "consensus_bundles", "ci_green_trail"]
+      },
+      "labels": ["epic-1", "status:planned", "risk:normal", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-1-1 AO-MA-11A-2 GH Environment ao-ma-plan-approval required-reviewer wiring",
+        "E-1-2 AO-MA-11E-2 GH Projects/Milestone/Issue one-way sync + drift checker",
+        "E-1-3 AO-MA-11G-2c CI workflow changelog enforcement check",
+        "E-1-4 AO-MA-11G-2d Pre-commit hook for changelog",
+        "E-1-5 AO-MA-4.6-2 native-import operator dogfooding",
+        "E-1-6 Retro ADR cross-AI revalidation (ADR-0001..0004)",
+        "E-1-7 PR #764 CI shadow-skip permanent fix (operator gate)"
+      ]
+    },
+    {
+      "id": "E-2",
+      "title": "[Epic 2] Live adapter execution (live_adapter_execution=true enablement)",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-2",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-2",
+        "risk_class_source": "computed_critical",
+        "evidence_classes": ["operator_bound_supersession", "live_provider_smoke", "cost_circuit_breaker_evidence", "production_telemetry"]
+      },
+      "labels": ["epic-2", "status:planned", "risk:critical", "guard-flip:live_adapter", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-2-1 Operator-bound GPP supersession PR (live_adapter_execution flip authority)",
+        "E-2-2 Production runbook live adapter envelope + cost guardrails + circuit breaker",
+        "E-2-3 4.5 stub -> 4.6 native-import -> real LLM worker production envelope (Anthropic+OpenAI+Mavis)",
+        "E-2-4 Live adapter test suite (real provider calls; SLA budget; cost tracking)",
+        "E-2-5 Production telemetry OTEL trace + usage/cost metrics"
+      ]
+    },
+    {
+      "id": "E-3",
+      "title": "[Epic 3] Support widening (support_widening=true enablement)",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-3",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-3",
+        "risk_class_source": "computed_critical",
+        "evidence_classes": ["operator_bound_supersession", "multi_arch_ci_matrix", "provider_widening_capability_profile", "windows_smoke"]
+      },
+      "labels": ["epic-3", "status:planned", "risk:critical", "guard-flip:support_widening", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-3-1 Operator-bound GPP supersession PR (support_widening flip authority)",
+        "E-3-2 Windows desktop support (POSIX -> + Windows + macOS Apple Silicon + Linux ARM64)",
+        "E-3-3 Python 3.10 backward compat decision",
+        "E-3-4 Provider widening matrix Mistral/Cohere/Llama (HuggingFace adapter)",
+        "E-3-5 ARM64/Apple Silicon Docker images (CI multi-arch build)"
+      ]
+    },
+    {
+      "id": "E-4",
+      "title": "[Epic 4] Deployment, operations, tenancy (multi-tenant production)",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-4",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-4",
+        "risk_class_source": "computed_high",
+        "evidence_classes": ["k8s_helm_chart", "deploy_runbook", "tenancy_isolation_test", "per_tenant_cost_quota"]
+      },
+      "labels": ["epic-4", "status:planned", "risk:high", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-4-1 k8s Helm chart (governance microservice)",
+        "E-4-2 Production deploy runbook (k8s + standalone + Docker Compose)",
+        "E-4-3 Multi-tenant production config recipe (RBAC + secret + quota + audit)",
+        "E-4-4 Tenancy isolation test suite (cross-tenant leak prevention)",
+        "E-4-5 Per-tenant cost tracking + rate limit (cost_tracking.available flip)",
+        "E-4-6 Operator incident response runbook (rollback + tag revert + pause)"
+      ]
+    },
+    {
+      "id": "E-5",
+      "title": "[Epic 5] Observability + production telemetry",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-5",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-5",
+        "risk_class_source": "computed_normal",
+        "evidence_classes": ["otel_prod_tracing", "prometheus_dashboards", "sli_slo_definitions", "alertmanager_rules"]
+      },
+      "labels": ["epic-5", "status:planned", "risk:normal", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-5-1 OTEL production tracing (lazy-loadable -> prod tunables)",
+        "E-5-2 Prometheus dashboard templates (Grafana JSON)",
+        "E-5-3 Distributed tracing (multi-session correlation)",
+        "E-5-4 SLI/SLO definitions (uptime + latency + cost burn-rate)",
+        "E-5-5 Alertmanager rule templates (escalation policy)"
+      ]
+    },
+    {
+      "id": "E-6",
+      "title": "[Epic 6] Security + compliance",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-6",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-6",
+        "risk_class_source": "computed_high",
+        "evidence_classes": ["sbom_release_artifact", "vuln_scan_clean", "soc2_iso27001_doc_pack", "license_audit", "codeql_workflow"]
+      },
+      "labels": ["epic-6", "status:planned", "risk:high", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-6-1 SBOM generation (cyclonedx-py release artifact)",
+        "E-6-2 Vulnerability scanning (Dependabot + Trivy + Snyk)",
+        "E-6-3 SOC2/ISO 27001 documentation paket (audit-ready; NOT certification)",
+        "E-6-4 3rd party license compliance audit (MIT dependency matrix)",
+        "E-6-5 CodeQL workflow (GitHub Advanced Security)",
+        "E-6-6 Security incident response playbook"
+      ]
+    },
+    {
+      "id": "E-7",
+      "title": "[Epic 7] Performance + scalability",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-7",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-7",
+        "risk_class_source": "computed_normal",
+        "evidence_classes": ["benchmark_regression", "stress_test_24h", "memory_profile", "rate_limit_tuning", "pgvector_backend"]
+      },
+      "labels": ["epic-7", "status:planned", "risk:normal", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-7-1 Production benchmark suite (cross-PR regression detection)",
+        "E-7-2 Long-running session stress test (24h+ continuous)",
+        "E-7-3 Memory profiling (mprof; production resource budgets)",
+        "E-7-4 Provider rate limit production tuning per-tenant",
+        "E-7-5 pgvector backend implementation"
+      ]
+    },
+    {
+      "id": "E-8",
+      "title": "[Epic 8] Documentation + onboarding",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-8",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-8",
+        "risk_class_source": "computed_low",
+        "evidence_classes": ["deploy_guide", "tenant_config_recipe", "operator_runbook", "api_reference", "tutorial", "migration_guide"]
+      },
+      "labels": ["epic-8", "status:planned", "risk:low", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-8-1 Production deployment guide (k8s + standalone)",
+        "E-8-2 Multi-tenant production config recipe (Epic 4-3 ile uyumlu)",
+        "E-8-3 Operator runbook (incident response; Epic 4-6 ile)",
+        "E-8-4 API reference auto-generated (Sphinx + autodoc)",
+        "E-8-5 Tutorial: 'Build your own AO-MA-SPM program with AI'",
+        "E-8-6 Migration guide (v4.x -> v5.0.0)"
+      ]
+    },
+    {
+      "id": "E-9",
+      "title": "[Epic 9] Final promotion decision (operator-bound supersession PR-Xfinal)",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-EPIC-9",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-9",
+        "risk_class_source": "computed_critical",
+        "evidence_classes": ["9_dim_evidence_matrix_complete", "operator_authorization_explicit", "v5_0_0_release", "all_epic_refs_bound"]
+      },
+      "labels": ["epic-9", "status:planned", "risk:critical", "guard-flip:live_adapter", "guard-flip:support_widening", "guard-flip:production_platform_claim", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "sub_issues_planned": [
+        "E-9-1 9-dimensional production-ready evidence matrix complete check",
+        "E-9-2 Operator-bound supersession PR (3 guard flag flip + v4.x -> v5.0.0 version bump)",
+        "E-9-3 CHANGELOG.md [5.0.0] - {date} release entry (production-ready public claim)",
+        "E-9-4 README badge production-ready (final claim language)",
+        "E-9-5 v5.0.0 tag push -> PyPI trusted publishing",
+        "E-9-6 v5.0.0 release notes + social media plan"
+      ]
+    },
+    {
+      "id": "P0-GATE-1",
+      "title": "[P0 Gate] v4.1.0 PyPI publish workflow fix (.github/workflows/publish.yml high-risk)",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-P0-GATE-1",
+        "ao_authority_artifact": ".github/workflows/publish.yml",
+        "slice_id": "AO-MA-11G-2c-PUBLISH-FIX",
+        "risk_class_source": "computed_high",
+        "evidence_classes": ["pr_b_merge_done", "tag_push_done", "publish_workflow_fix_needed", "high_risk_dot_github_operator_gate"]
+      },
+      "labels": ["epic-1", "status:blocked", "risk:high", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "current_state": "PR-B #770 MERGED main 4d0aa6d; tag v4.1.0 pushed; publish.yml twine check fail (dist/ JSON evidence files matched by twine glob); .github/workflows/publish.yml fix touches _high_risk_paths (.github/) requiring operator CODEOWNER review"
+    },
+    {
+      "id": "P0-GATE-3",
+      "title": "[P0 Gate] V5 GitHub mirror sync (PR-X2; post-11E-2)",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-P0-GATE-3",
+        "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        "slice_id": "V5-EPIC-P0-3",
+        "risk_class_source": "computed_normal",
+        "evidence_classes": ["mirror_sync_workflow_evidence", "created_gh_ids_back_to_repo", "digest_binding_recorded"]
+      },
+      "labels": ["epic-p0", "status:planned", "risk:normal", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "current_state": "Blocked on 11E-2 (GH Projects/Milestone/Issue one-way sync mechanism)"
+    },
+    {
+      "id": "P0-GATE-2",
+      "title": "[P0 Gate] PR #764 CI shadow-skip permanent fix (Epic 1 dependency)",
+      "body_anchor": {
+        "spm_anchor": "AO-MA-SPM-V5-P0-GATE-2",
+        "ao_authority_artifact": ".github/workflows/test.yml",
+        "slice_id": "AO-MA-CI-FIX",
+        "risk_class_source": "computed_high",
+        "evidence_classes": ["operator_codeowner_review", "ci_workflow_fix_merged"]
+      },
+      "labels": ["epic-1", "status:blocked", "risk:high", "mirror:authority"],
+      "milestone": "v5.0.0 — Full Production Promotion",
+      "current_state": "PR #764 operator CODEOWNER review pending (designed gate, .github high-risk)"
+    }
+  ],
+  "issue_form_template": {
+    "name": "v5 Epic / Sub-issue",
+    "description": "AO-MA-SPM v5 production promotion roadmap issue (mirror, NOT authority)",
+    "title": "[Epic N | E-N-M] <imperative title>",
+    "body_fields": [
+      {"id": "spm_anchor", "type": "input", "required": true, "label": "SPM anchor ID (e.g. AO-MA-SPM-V5-EPIC-2-3)"},
+      {"id": "ao_authority_artifact", "type": "input", "required": true, "label": "Authority artifact path (e.g. .claude/plans/V5-...md)"},
+      {"id": "artifact_sha256", "type": "input", "required": true, "label": "Artifact SHA256 (computed; sha256:[64 hex])"},
+      {"id": "plan_digest", "type": "input", "required": true, "label": "Plan digest at issue creation"},
+      {"id": "slice_id", "type": "input", "required": true, "label": "Slice ID (E-N-M or AO-MA-X-Y)"},
+      {"id": "risk_class_source", "type": "dropdown", "required": true, "options": ["computed_critical", "computed_high", "computed_normal", "computed_low"], "label": "Risk class (computed by classifier; NOT manually downgraded)"},
+      {"id": "evidence_classes", "type": "checkboxes", "required": true, "label": "Evidence classes (multi-select)"},
+      {"id": "consensus_state", "type": "dropdown", "required": true, "options": ["not_started", "pending", "agreed"], "label": "Consensus state"}
+    ]
+  },
+  "acceptance_matrix": {
+    "epic_p0": {"complete": false, "evidence_refs": [], "exit_criteria": ["plan_doc_merged", "projection_manifest_merged", "master_plan_amend_merged", "github_mirror_sync_merged"]},
+    "epic_1": {"complete": false, "evidence_refs": [], "exit_criteria": ["all_7_sub_issues_merged"]},
+    "epic_2": {"complete": false, "evidence_refs": [], "exit_criteria": ["operator_bound_supersession_merged", "live_provider_smoke_green", "cost_circuit_breaker_evidence_complete"]},
+    "epic_3": {"complete": false, "evidence_refs": [], "exit_criteria": ["operator_bound_supersession_merged", "multi_arch_ci_matrix_green", "provider_widening_capability_profile_complete"]},
+    "epic_4": {"complete": false, "evidence_refs": [], "exit_criteria": ["k8s_helm_chart_published", "tenancy_isolation_test_green", "deploy_runbook_merged"]},
+    "epic_5": {"complete": false, "evidence_refs": [], "exit_criteria": ["otel_prod_tracing_deployed", "prometheus_dashboards_published", "sli_slo_pinned"]},
+    "epic_6": {"complete": false, "evidence_refs": [], "exit_criteria": ["sbom_release_artifact", "vuln_scan_clean", "soc2_doc_pack_complete", "license_audit_clean", "codeql_clean"]},
+    "epic_7": {"complete": false, "evidence_refs": [], "exit_criteria": ["benchmark_regression_baseline", "stress_test_24h_green", "memory_profile_complete", "pgvector_backend_implemented"]},
+    "epic_8": {"complete": false, "evidence_refs": [], "exit_criteria": ["deploy_guide_published", "operator_runbook_published", "api_reference_published", "tutorial_published", "migration_guide_published"]},
+    "epic_9": {"complete": false, "evidence_refs": [], "exit_criteria": ["9_dim_evidence_matrix_complete", "operator_authorization_explicit", "v5_0_0_published_on_pypi", "production_ready_public_claim"]}
+  },
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "register_authority": "evidence_record_only",
+  "github_write_authorized": false,
+  "visibility_mode": "one_way_mirror_repo_authority_wins"
+}
