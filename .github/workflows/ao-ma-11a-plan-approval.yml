@@ -1,0 +1,152 @@
+name: AO-MA-11A-2 Plan Approval Gate
+
+# AO-MA-11A-2: GitHub Environment plan approval gate wiring.
+#
+# Two jobs: `validate` (unprotected; fail-fast) + `approve` (environment-protected
+# with 10-condition compound gate). Live approval is operator-bound via the
+# `ao-ma-plan-approval` Environment required reviewer (Halildeu).
+#
+# Dispatch model: agent triggers workflow_dispatch with 7 inputs; Halildeu
+# reviews the Environment in GitHub Actions UI. UI-side operator dispatch is
+# NOT supported (self-review guard breaks single-actor flow).
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Typed confirmation; must equal "AO-MA-11A-2-APPROVE"'
+        required: true
+      plan_path:
+        description: "Repo-relative path to plan file (raw bytes hashed for plan_digest binding)"
+        required: true
+      consensus_bundle_path:
+        description: "Repo-relative path to consensus bundle JSON"
+        required: true
+      approval_request_path:
+        description: "Repo-relative path to approval request JSON"
+        required: true
+      plan_digest:
+        description: "sha256:<hex> of plan_path; matches bundle.plan_digest"
+        required: true
+      consensus_bundle_sha256:
+        description: "sha256:<hex> of consensus_bundle_path raw bytes"
+        required: true
+      approval_request_sha256:
+        description: "sha256:<hex> of approval_request_path raw bytes"
+        required: true
+
+# Minimum permissions: contents:read + actions:read + deployments:read.
+# NO contents:write (Codex iter-2 Binding 3 absorb — artifact-only emission).
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+
+jobs:
+  validate:
+    # Unprotected fail-fast: path containment + raw SHA + plan binding + consensus
+    # AGREE + environment exists preflight. Output is NOT trust source for approve.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -e ".[mcp]"
+      - name: Run gate CLI in validate-only mode
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ao_ma11a2_plan_approval_gate.py \
+            --plan-path "${{ inputs.plan_path }}" \
+            --consensus-bundle-path "${{ inputs.consensus_bundle_path }}" \
+            --approval-request-path "${{ inputs.approval_request_path }}" \
+            --plan-digest "${{ inputs.plan_digest }}" \
+            --consensus-bundle-sha256 "${{ inputs.consensus_bundle_sha256 }}" \
+            --approval-request-sha256 "${{ inputs.approval_request_sha256 }}" \
+            --github-run-id "${{ github.run_id }}" \
+            --github-repository "${{ github.repository }}" \
+            --github-sha "${{ github.sha }}" \
+            --allow-network \
+            --output validate_report.json || true
+      - name: Upload validate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validate_report
+          path: validate_report.json
+          retention-days: 90
+
+  approve:
+    needs: validate
+    # AO-MA-11A-2 10-condition compound apply gate (Codex iter-2 Blocker 1 + 2 absorb).
+    # All conditions must be true for the gate to proceed.
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.run_attempt == 1 &&
+      inputs.confirmation == 'AO-MA-11A-2-APPROVE' &&
+      inputs.plan_path != '' &&
+      inputs.consensus_bundle_path != '' &&
+      inputs.approval_request_path != '' &&
+      inputs.plan_digest != '' &&
+      inputs.consensus_bundle_sha256 != '' &&
+      inputs.approval_request_sha256 != ''
+    runs-on: ubuntu-latest
+    # Environment protection gate (operator-managed required reviewer = Halildeu).
+    environment: ao-ma-plan-approval
+    steps:
+      - uses: actions/checkout@v6
+      - name: Environment preflight verify
+        # Codex iter-2 Blocker 5 absorb: required_reviewers > 0 enforce; rule
+        # count alone is insufficient — actual reviewer set must be non-empty.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ENV_NAME="ao-ma-plan-approval"
+          ENV_DATA=$(gh api "/repos/${{ github.repository }}/environments/$ENV_NAME" 2>&1) || {
+            echo "::error::Environment $ENV_NAME does not exist or is not accessible"
+            exit 1
+          }
+          REVIEWER_COUNT=$(echo "$ENV_DATA" | jq '[.protection_rules[] | select(.type == "required_reviewers") | .reviewers[]?] | length')
+          if [ "$REVIEWER_COUNT" -lt 1 ]; then
+            echo "::error::Environment $ENV_NAME has 0 actual required reviewers"
+            exit 1
+          fi
+          echo "Environment preflight passed: $REVIEWER_COUNT required reviewers"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -e ".[mcp]"
+      - name: Run gate CLI in full mode
+        # Codex iter-3 implementation pin: bounded retry for eventual consistency
+        # in approval API response; empty after retries → rejected_identity.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ao_ma11a2_plan_approval_gate.py \
+            --plan-path "${{ inputs.plan_path }}" \
+            --consensus-bundle-path "${{ inputs.consensus_bundle_path }}" \
+            --approval-request-path "${{ inputs.approval_request_path }}" \
+            --plan-digest "${{ inputs.plan_digest }}" \
+            --consensus-bundle-sha256 "${{ inputs.consensus_bundle_sha256 }}" \
+            --approval-request-sha256 "${{ inputs.approval_request_sha256 }}" \
+            --github-run-id "${{ github.run_id }}" \
+            --github-repository "${{ github.repository }}" \
+            --github-sha "${{ github.sha }}" \
+            --allow-network \
+            --output gate_report.json
+      - name: Upload gate report + bound inputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan_approval_gate
+          path: |
+            gate_report.json
+            ${{ inputs.plan_path }}
+            ${{ inputs.consensus_bundle_path }}
+            ${{ inputs.approval_request_path }}
+          retention-days: 365
