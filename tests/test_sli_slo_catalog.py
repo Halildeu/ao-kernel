@@ -77,6 +77,79 @@ def test_schema_root_has_additional_properties_false() -> None:
     assert schema.get("additionalProperties") is False
 
 
+def test_schema_root_requires_uptime_status() -> None:
+    """Codex 019e8394 iter-2 absorb — ``uptime_status`` must be in
+    the root ``required`` list so a schema-only consumer cannot
+    accept a catalog that silently drops the uptime out-of-scope
+    guard."""
+    schema = _schema()
+    assert "uptime_status" in schema.get("required", []), (
+        "uptime_status must be required at the schema root (public-claim discipline guard)"
+    )
+
+
+def test_schema_rejects_catalog_missing_uptime_status() -> None:
+    """Negative pin — a catalog without ``uptime_status`` MUST be
+    rejected by the schema."""
+    schema = _schema()
+    catalog = _catalog()
+    bad = {k: v for k, v in catalog.items() if k != "uptime_status"}
+    errors = list(Draft202012Validator(schema).iter_errors(bad))
+    assert errors, "schema must reject catalog missing uptime_status"
+
+
+def test_schema_rejects_budget_objective_with_slo_target() -> None:
+    """Negative pin — budget_objective MUST NOT carry slo_target."""
+    schema = _schema()
+    catalog = _catalog()
+    indicators = list(catalog["indicators"])
+    # Find the budget objective and add an illegal slo_target
+    for i, ind in enumerate(indicators):
+        if ind["objective_kind"] == "budget_objective":
+            bad_ind = dict(ind)
+            bad_ind["slo_target"] = 0.5
+            indicators[i] = bad_ind
+            break
+    bad_catalog = dict(catalog)
+    bad_catalog["indicators"] = indicators
+    errors = list(Draft202012Validator(schema).iter_errors(bad_catalog))
+    assert errors, "schema must reject budget_objective indicator carrying slo_target"
+
+
+def test_schema_rejects_advisory_with_hard_slo_true() -> None:
+    """Negative pin — advisory_sli MUST declare hard_slo=false."""
+    schema = _schema()
+    catalog = _catalog()
+    indicators = list(catalog["indicators"])
+    for i, ind in enumerate(indicators):
+        if ind["objective_kind"] == "advisory_sli":
+            bad_ind = dict(ind)
+            bad_ind["hard_slo"] = True
+            indicators[i] = bad_ind
+            break
+    bad_catalog = dict(catalog)
+    bad_catalog["indicators"] = indicators
+    errors = list(Draft202012Validator(schema).iter_errors(bad_catalog))
+    assert errors, "schema must reject advisory_sli indicator with hard_slo=true"
+
+
+def test_schema_rejects_ratio_slo_missing_target() -> None:
+    """Negative pin — ratio_slo MUST carry slo_target + window +
+    error_budget_alerts."""
+    schema = _schema()
+    catalog = _catalog()
+    indicators = list(catalog["indicators"])
+    for i, ind in enumerate(indicators):
+        if ind["objective_kind"] == "ratio_slo":
+            bad_ind = {k: v for k, v in ind.items() if k != "slo_target"}
+            indicators[i] = bad_ind
+            break
+    bad_catalog = dict(catalog)
+    bad_catalog["indicators"] = indicators
+    errors = list(Draft202012Validator(schema).iter_errors(bad_catalog))
+    assert errors, "schema must reject ratio_slo indicator missing slo_target"
+
+
 def test_schema_defs_all_use_additional_properties_false() -> None:
     """Every nested object schema must close additionalProperties."""
     schema = _schema()
@@ -245,16 +318,69 @@ def test_promql_expressions_reference_only_known_metric_families() -> None:
 
 
 def test_no_indicator_uses_forbidden_outcome_error_label() -> None:
-    """Codex 019e8394 absorb — outcome enum is {allow, deny} in v1.
-    Any indicator referencing ``outcome="error"`` would be silently
-    broken in the runtime."""
+    """Codex 019e8394 absorb (iter-2 widened) — outcome enum is
+    {allow, deny} in v1. ANY occurrence of ``outcome="error"`` (or
+    any other non-whitelisted value) in ANY PromQL expression must
+    be rejected. Use ``re.findall`` to scan EVERY label reference
+    in the expression, not just the first match.
+    """
     for ind in _catalog()["indicators"]:
         expr = ind["sli_expr"]
-        match = re.search(r'outcome="([^"]+)"', expr)
-        if match:
-            assert match.group(1) in _ALLOWED_POLICY_OUTCOMES, (
-                f"{ind['name']}: outcome={match.group(1)!r} not in {_ALLOWED_POLICY_OUTCOMES}"
+        outcome_matches = re.findall(r'outcome="([^"]+)"', expr)
+        for value in outcome_matches:
+            assert value in _ALLOWED_POLICY_OUTCOMES, (
+                f"{ind['name']}: outcome={value!r} not in {_ALLOWED_POLICY_OUTCOMES} (v1 enum is allow|deny only)"
             )
+
+
+def test_llm_usage_completeness_uses_bounded_denominator() -> None:
+    """Codex 019e8394 iter-2 HIGH absorb — denominator must include
+    BOTH the accounted call count AND the usage-missing counter so
+    the ratio is bounded in [0, 1]. The earlier denominator
+    ``duration_count`` alone produced unbounded / negative values
+    when usage_missing exceeded accounted calls."""
+    indicators = {ind["name"]: ind for ind in _catalog()["indicators"]}
+    expr = indicators["llm_usage_accounting_completeness"]["sli_expr"]
+    # Both metric families MUST appear in the denominator combination.
+    assert "ao_llm_call_duration_seconds_count" in expr
+    assert "ao_llm_usage_missing_total" in expr
+    # The denominator must SUM both rates, not divide one by the other.
+    # Look for the canonical bounded form: A / clamp_min(A + B, ...) or
+    # 1 - B / clamp_min(A + B, ...).
+    bounded_pattern = re.search(
+        r"clamp_min\(\s*sum\(rate\(ao_llm_call_duration_seconds_count\[5m\]\)\)\s*\+\s*sum\(rate\(ao_llm_usage_missing_total\[5m\]\)\)",
+        expr,
+    )
+    assert bounded_pattern is not None, (
+        "denominator must sum (duration_count + usage_missing_total) so ratio stays in [0, 1]"
+    )
+
+
+def test_mwmbr_alert_pair_pinned_to_workbook_pattern() -> None:
+    """Codex 019e8394 iter-2 absorb — pin the exact Google SRE
+    Workbook MWMBR pair (critical 14.4×/1h/5m + warning 6×/6h/30m)
+    on every ratio SLO. Previous test only checked severities + a
+    window enum; this asserts the canonical numeric pair.
+    """
+    expected_critical = {
+        "severity": "critical",
+        "burn_rate": 14.4,
+        "long_window": "1h",
+        "short_window": "5m",
+    }
+    expected_warning = {
+        "severity": "warning",
+        "burn_rate": 6,
+        "long_window": "6h",
+        "short_window": "30m",
+    }
+    for ind in _catalog()["indicators"]:
+        if ind["objective_kind"] != "ratio_slo":
+            continue
+        alerts = ind["error_budget_alerts"]
+        by_sev = {a["severity"]: a for a in alerts}
+        assert by_sev.get("critical") == expected_critical, f"{ind['name']}: critical MWMBR pair drift"
+        assert by_sev.get("warning") == expected_warning, f"{ind['name']}: warning MWMBR pair drift"
 
 
 # ── Indicator name uniqueness ───────────────────────────────────────

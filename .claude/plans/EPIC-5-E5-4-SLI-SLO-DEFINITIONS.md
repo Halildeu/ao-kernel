@@ -17,7 +17,9 @@ spec + SLO target catalog + burn-rate alert formula yok. Operatör
 production deploy için Sloth/Pyrra/Grafana SLO plugin'i bağlamadan
 önce **catalog spec'i** şart.
 
-## 2. Codex iter-1 absorb (REVISE)
+## 2. Codex absorb chain
+
+### iter-1 (plan-time REVISE)
 
 | # | Codex bulgu | Absorb |
 |---|---|---|
@@ -34,6 +36,17 @@ production deploy için Sloth/Pyrra/Grafana SLO plugin'i bağlamadan
 | 11 | MWMBR pencere çiftleri standart değil | fast `1h/5m 14.4×` + slow `6h/30m 6×` (Google SRE Workbook) |
 | 12 | "Production claim sızıntısı riski" | Plan doc guard metni: "candidate, not SLA, operator-owned, no production platform claim" |
 | 13 | Runtime SLO measurement layer scope dışı | Bu PR spec + schema + doc; Sloth/Pyrra ayrı slice |
+
+### iter-2 (post-impl REVISE → expected AGREE)
+
+| # | Codex bulgu | Absorb |
+|---|---|---|
+| 14 | **HIGH** `llm_usage_accounting_completeness` denominator yanlış — `duration_count` alone unbounded → ratio `[0, 1]` dışına çıkar | Denominator `(duration_count + usage_missing_total)` bounded form; test `test_llm_usage_completeness_uses_bounded_denominator` pin; doc §2 source metric güncellendi |
+| 15 | **HIGH** evidence file `verdict: "AGREE"` premature (iter-1 sonucu REVISE) | Evidence dosyası gerçek review sonrası güncellendi; plan doc §5 yeni risk satırı eklendi |
+| 16 | **MEDIUM** `uptime_status` schema root `required` listesinde değil | Schema root required: `["schema_version", "service", "guard_flags", "uptime_status", "indicators"]` + negative test |
+| 17 | `outcome` label kontrolü `re.search` ile sadece ilk match'i yakalıyor | `re.findall` ile her match kontrol |
+| 18 | MWMBR exact pair pin yok (sadece severity + window enum) | `test_mwmbr_alert_pair_pinned_to_workbook_pattern` canonical numeric pair pin (14.4/1h/5m + 6/6h/30m) |
+| 19 | Schema negative tests yok | 4 negative test: budget+slo_target reject, advisory hard_slo=true reject, ratio missing slo_target reject, missing uptime_status reject |
 
 ## 3. Değişiklik scope
 
@@ -128,6 +141,8 @@ Invariants:
 | Catalog-doc drift | `test_sli_slo_doc_references_every_catalog_indicator` invariant — generator-free coupling |
 | Marketing claim sızıntısı | Plan doc + operator doc + 3 guard flag invariants |
 | Hard SLO promotion premature | Advisory SLI `baseline_required: const true` + schema-level pin |
+| **SLI denominator drift / unbounded ratio** | Codex 019e8394 iter-2 absorb — `llm_usage_accounting_completeness` denominator MUST sum `(duration_count + usage_missing_total)` so the ratio stays in `[0, 1]`. Test `test_llm_usage_completeness_uses_bounded_denominator` pins the canonical pattern. |
+| **Cross-AI evidence stale / pre-baked** | Reviewer evidence verdict is updated ONLY after the final post-impl reviewer response, never pre-filled with "AGREE" before review completes. |
 
 ## 6. Acceptance
 

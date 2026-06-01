@@ -13,9 +13,9 @@
   "indicators": [
     {
       "name": "llm_usage_accounting_completeness",
-      "description": "Fraction of LLM transport calls for which usage (tokens/cost) was successfully accounted. NOT a 'call success rate' — measures usage attribution completeness, not transport success.",
+      "description": "Fraction of LLM transport calls for which usage (tokens/cost) was successfully accounted. NOT a 'call success rate' — measures usage attribution completeness, not transport success. Codex 019e8394 iter-2 absorb: bounded denominator = duration_count + usage_missing_total (NOT just duration_count, which only counts accounted calls).",
       "objective_kind": "ratio_slo",
-      "sli_expr": "1 - clamp_min(sum(rate(ao_llm_usage_missing_total[5m])), 0) / clamp_min(sum(rate(ao_llm_call_duration_seconds_count[5m])), 1e-9)",
+      "sli_expr": "sum(rate(ao_llm_call_duration_seconds_count[5m])) / clamp_min(sum(rate(ao_llm_call_duration_seconds_count[5m])) + sum(rate(ao_llm_usage_missing_total[5m])), 1e-9)",
       "operator_owned": true,
       "is_contractual_sla": false,
       "target_status": "proposed_initial_default",

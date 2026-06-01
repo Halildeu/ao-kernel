@@ -31,7 +31,7 @@ Each indicator declares one of three `objective_kind` values:
 
 | SLI | Kind | Target | Window | Source metric family |
 |---|---|---|---|---|
-| `llm_usage_accounting_completeness` | ratio_slo | **99.0 %** | 30 d | `ao_llm_usage_missing_total` / `ao_llm_call_duration_seconds_count` |
+| `llm_usage_accounting_completeness` | ratio_slo | **99.0 %** | 30 d | `ao_llm_call_duration_seconds_count` / (`ao_llm_call_duration_seconds_count` + `ao_llm_usage_missing_total`) — accounted / total |
 | `llm_latency_under_30s_ratio` | ratio_slo | **95.0 %** | 30 d | `ao_llm_call_duration_seconds_bucket{le="30"}` / `_count` |
 | `workflow_terminal_success_rate` | ratio_slo | **99.5 %** | 30 d | `ao_workflow_duration_seconds_count{final_state="completed"}` / `_count` |
 | `policy_deny_rate` | advisory_sli | spike-detect | — | `ao_policy_check_total{outcome="deny"}` / total |

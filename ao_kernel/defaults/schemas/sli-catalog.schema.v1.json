@@ -5,7 +5,7 @@
   "description": "Machine-readable Service Level Indicator + Objective catalog. Codex 019e8394 absorb: three objective_kind variants (ratio_slo, budget_objective, advisory_sli); PromQL whitelist on the 8 ao_* metric families; explicit non-SLA / non-production-claim guard; uptime is OUT (no health/up metric in v1 metric surface).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "service", "guard_flags", "indicators"],
+  "required": ["schema_version", "service", "guard_flags", "uptime_status", "indicators"],
   "properties": {
     "schema_version": {
       "type": "string",
