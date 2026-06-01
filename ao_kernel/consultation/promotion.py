@@ -30,11 +30,16 @@ from typing import Any, Mapping
 
 from ao_kernel.consultation.integrity import verify_consultation_manifest
 from ao_kernel.consultation.normalize import record_digest
+from ao_kernel.consultation.trace_context import (
+    read_sidecar_trace_links,
+)
 from ao_kernel.context.canonical_store import (
     load_store,
     promote_decision,
     query as canonical_query,
 )
+from ao_kernel.telemetry import span as _ao_span
+from ao_kernel.tracing import get_session_baggage
 
 
 logger = logging.getLogger(__name__)
@@ -385,39 +390,65 @@ def query_promoted_consultations(
         ``promoted_at`` descending (newest first). Empty tuple when
         the store is empty or has no consultation entries.
     """
-    # Filter by category only — do NOT constrain key_pattern.
-    # Codex post-impl SUGGEST #1 absorb: `key_pattern="consultation.*"`
-    # re-introduces the namespaced-key assumption the facade was
-    # supposed to abstract away. Category is the sole authoritative
-    # filter; a row with `category="consultation"` but some other key
-    # must still hydrate.
-    raw = canonical_query(
-        workspace_root,
-        category="consultation",
-        include_expired=include_expired,
-    )
+    # V5 Epic 5 E-5-3b: bounded pre-scan of CNS evidence sidecars to seed
+    # cross-trace links on the active query span. Codex F4 absorb:
+    # MAX_CONSULTATION_TRACE_LINKS bounds the span link payload. Invalid /
+    # tampered / schema-invalid sidecars are silently skipped (matches the
+    # mature "malformed store content skip" consultation tolerance).
+    _trace_links: list[Any] = []
+    _evidence_root = workspace_root / ".ao" / "evidence" / "consultations"
+    if _evidence_root.is_dir():
+        try:
+            _cns_dirs = sorted(d for d in _evidence_root.iterdir() if d.is_dir() and not d.name.startswith("."))
+            _trace_links = read_sidecar_trace_links(_cns_dirs)
+        except OSError:
+            _trace_links = []
 
-    by_id: dict[str, PromotedConsultation] = {}
-    for row in raw:
-        hydrated = _hydrate_consultation(row)
-        if hydrated is None:
-            continue
-        if verdict is not None and hydrated.final_verdict != verdict:
-            continue
-        if topic is not None:
-            haystack = (hydrated.topic or "").lower()
-            if topic.lower() not in haystack:
+    _query_session = get_session_baggage()
+    _query_attrs: dict[str, Any] = {
+        "ao.consultation.link_candidate_count": len(_trace_links),
+    }
+    if _query_session:
+        _query_attrs["ao.session.id"] = _query_session
+
+    with _ao_span(
+        "ao.consultation.query_promoted",
+        _query_attrs,
+        links=_trace_links or None,
+    ):
+        # Filter by category only — do NOT constrain key_pattern.
+        # Codex post-impl SUGGEST #1 absorb: `key_pattern="consultation.*"`
+        # re-introduces the namespaced-key assumption the facade was
+        # supposed to abstract away. Category is the sole authoritative
+        # filter; a row with `category="consultation"` but some other key
+        # must still hydrate.
+        raw = canonical_query(
+            workspace_root,
+            category="consultation",
+            include_expired=include_expired,
+        )
+
+        by_id: dict[str, PromotedConsultation] = {}
+        for row in raw:
+            hydrated = _hydrate_consultation(row)
+            if hydrated is None:
                 continue
-        existing = by_id.get(hydrated.cns_id)
-        if existing is None or hydrated.promoted_at > existing.promoted_at:
-            by_id[hydrated.cns_id] = hydrated
+            if verdict is not None and hydrated.final_verdict != verdict:
+                continue
+            if topic is not None:
+                haystack = (hydrated.topic or "").lower()
+                if topic.lower() not in haystack:
+                    continue
+            existing = by_id.get(hydrated.cns_id)
+            if existing is None or hydrated.promoted_at > existing.promoted_at:
+                by_id[hydrated.cns_id] = hydrated
 
-    sorted_records = sorted(
-        by_id.values(),
-        key=lambda rec: rec.promoted_at,
-        reverse=True,
-    )
-    return tuple(sorted_records)
+        sorted_records = sorted(
+            by_id.values(),
+            key=lambda rec: rec.promoted_at,
+            reverse=True,
+        )
+        return tuple(sorted_records)
 
 
 __all__ = [

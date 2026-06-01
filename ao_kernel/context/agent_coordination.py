@@ -40,6 +40,8 @@ from pathlib import Path
 from typing import Any
 
 from ao_kernel.context.canonical_store import load_store
+from ao_kernel.telemetry import span as _ao_span
+from ao_kernel.tracing import get_session_baggage
 
 
 def get_revision(workspace_root: Path) -> str:
@@ -237,15 +239,26 @@ def compile_context_sdk(
     consultation_cap = max(0, profile_config.max_consultations)
     consultation_records: tuple[PromotedConsultation, ...] = ()
     if consultation_cap:
-        try:
-            all_consultations = query_promoted_consultations(workspace_root)
-        except Exception:  # noqa: BLE001 — consumer-side query must not raise
-            all_consultations = ()
-        # Prefer AGREE first, PARTIAL second; each already sorted by
-        # promoted_at desc inside the facade.
-        agree = tuple(r for r in all_consultations if r.final_verdict == "AGREE")
-        partial = tuple(r for r in all_consultations if r.final_verdict == "PARTIAL")
-        consultation_records = (agree + partial)[:consultation_cap]
+        # V5 Epic 5 E-5-3b: consumer wrapper span. Distinct from the producer
+        # span emitted inside query_promoted_consultations(). The consumer
+        # surface records the consultation_cap actually applied here, plus
+        # the post-hydration record count handed to the compiler.
+        _consumer_session = get_session_baggage()
+        _consumer_attrs: dict[str, Any] = {
+            "ao.consultation.cap": consultation_cap,
+        }
+        if _consumer_session:
+            _consumer_attrs["ao.session.id"] = _consumer_session
+        with _ao_span("ao.consultation.query_consumer", _consumer_attrs):
+            try:
+                all_consultations = query_promoted_consultations(workspace_root)
+            except Exception:  # noqa: BLE001 — consumer-side query must not raise
+                all_consultations = ()
+            # Prefer AGREE first, PARTIAL second; each already sorted by
+            # promoted_at desc inside the facade.
+            agree = tuple(r for r in all_consultations if r.final_verdict == "AGREE")
+            partial = tuple(r for r in all_consultations if r.final_verdict == "PARTIAL")
+            consultation_records = (agree + partial)[:consultation_cap]
 
     result = compile_context(
         session_context or {"ephemeral_decisions": []},

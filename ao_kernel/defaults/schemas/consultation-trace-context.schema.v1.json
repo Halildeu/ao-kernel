@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:consultation-trace-context:v1",
+  "title": "ao-kernel Consultation Trace Context Sidecar (V5 Epic 5 E-5-3b)",
+  "description": "Non-authoritative correlation metadata sidecar. Records W3C trace context captured at consultation archive time so cross-session traces can be linked at query time. NOT part of consultation integrity manifest; tampered sidecars are silently ignored by the query path. Codex 019e83ee cross-AI plan-time AGREE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "cns_id",
+    "captured_at_archive_time",
+    "trace_id",
+    "span_id",
+    "traceparent",
+    "tracestate",
+    "session_id_baggage"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "consultation-trace-context.v1"
+    },
+    "cns_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 80
+    },
+    "captured_at_archive_time": {
+      "const": true
+    },
+    "trace_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "not": { "const": "00000000000000000000000000000000" }
+    },
+    "span_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$",
+      "not": { "const": "0000000000000000" }
+    },
+    "traceparent": {
+      "type": "string",
+      "pattern": "^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$"
+    },
+    "tracestate": {
+      "type": ["string", "null"]
+    },
+    "session_id_baggage": {
+      "type": ["string", "null"],
+      "minLength": 0
+    }
+  }
+}
