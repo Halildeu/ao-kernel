@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:severity-matrix:v1",
+  "title": "ao-kernel Incident Severity Matrix (V5 Epic 6 E-6-6)",
+  "description": "Schema for typed bridge from Alertmanager severity + E-5-4 SLI/SLO indicator → incident response tier. Codex 019e83c3 absorb F2: typed enums prevent free-text drift. Codex F3 absorb: guard discipline pinned at root level (not just prose).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "guard_flags",
+    "operator_owned",
+    "is_contractual_sla",
+    "tiers"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "severity-matrix.v1"
+    },
+    "service": {
+      "type": "string",
+      "const": "ao-kernel"
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    },
+    "operator_owned": { "const": true },
+    "is_contractual_sla": { "const": false },
+    "tiers": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/tier" }
+    }
+  },
+  "$defs": {
+    "tier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "alertmanager_severity",
+        "applicable_indicator_objective_kinds",
+        "applicable_indicator_names",
+        "mttr_target_minutes",
+        "ack_timeout_minutes",
+        "escalation_cadence_minutes",
+        "comms_policy"
+      ],
+      "properties": {
+        "id": {
+          "enum": ["SEV-1", "SEV-2", "SEV-3"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 16
+        },
+        "alertmanager_severity": {
+          "enum": ["critical", "warning", "advisory"]
+        },
+        "applicable_indicator_objective_kinds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": ["ratio_slo", "budget_objective", "advisory_sli"]
+          },
+          "uniqueItems": true
+        },
+        "applicable_indicator_names": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]+$",
+            "minLength": 3,
+            "maxLength": 80
+          },
+          "uniqueItems": true
+        },
+        "mttr_target_minutes": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "ack_timeout_minutes": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "escalation_cadence_minutes": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "comms_policy": {
+          "enum": ["owner_immediate", "owner_business_hours", "operator_only"]
+        }
+      }
+    }
+  }
+}

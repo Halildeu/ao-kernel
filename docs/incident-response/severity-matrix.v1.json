@@ -1,0 +1,58 @@
+{
+  "schema_version": "severity-matrix.v1",
+  "service": "ao-kernel",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "operator_owned": true,
+  "is_contractual_sla": false,
+  "tiers": [
+    {
+      "id": "SEV-1",
+      "description": "Production-critical: end-user-impacting outage or LLM transport accounting collapse. Ratio SLO error budget burn at 14.4x rate (Alertmanager severity=critical).",
+      "alertmanager_severity": "critical",
+      "applicable_indicator_objective_kinds": ["ratio_slo"],
+      "applicable_indicator_names": [
+        "llm_usage_accounting_completeness",
+        "llm_latency_under_30s_ratio",
+        "workflow_terminal_success_rate"
+      ],
+      "mttr_target_minutes": 60,
+      "ack_timeout_minutes": 15,
+      "escalation_cadence_minutes": 15,
+      "comms_policy": "owner_immediate"
+    },
+    {
+      "id": "SEV-2",
+      "description": "Degraded service or budget/cost trend warning. Ratio SLO error budget burn at 6x rate (Alertmanager severity=warning); also catches budget objective threshold proximity.",
+      "alertmanager_severity": "warning",
+      "applicable_indicator_objective_kinds": ["ratio_slo", "budget_objective"],
+      "applicable_indicator_names": [
+        "llm_usage_accounting_completeness",
+        "llm_latency_under_30s_ratio",
+        "workflow_terminal_success_rate",
+        "monthly_cost_burn_projection_usd"
+      ],
+      "mttr_target_minutes": 240,
+      "ack_timeout_minutes": 30,
+      "escalation_cadence_minutes": 60,
+      "comms_policy": "owner_business_hours"
+    },
+    {
+      "id": "SEV-3",
+      "description": "Advisory observability spike on baseline-required SLIs. Baseline NOT yet measured; no hard SLO promotion until 30 days production-equivalent traffic plus operator decision.",
+      "alertmanager_severity": "advisory",
+      "applicable_indicator_objective_kinds": ["advisory_sli"],
+      "applicable_indicator_names": [
+        "policy_deny_rate",
+        "coordination_takeover_rate"
+      ],
+      "mttr_target_minutes": null,
+      "ack_timeout_minutes": null,
+      "escalation_cadence_minutes": null,
+      "comms_policy": "operator_only"
+    }
+  ]
+}
