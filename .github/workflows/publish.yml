@@ -27,7 +27,10 @@ jobs:
         run: python scripts/packaging_smoke.py
 
       - name: Check
-        run: twine check dist/*
+        # P0-GATE-1 fix (V5-PR #783): twine check glob MUST be distribution-specific.
+        # `dist/*` matched packaging_smoke.py-emitted JSON evidence (ri7-packaging-smoke-evidence.v1.json)
+        # → InvalidDistribution "Unknown distribution format". Explicit globs for wheel + sdist only.
+        run: twine check dist/*.whl dist/*.tar.gz
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

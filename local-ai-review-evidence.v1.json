@@ -1,15 +1,16 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-PR-X2-EVIDENCE-WRITEBACK",
+  "work_package": "AO-MA-11G-2c-PUBLISH-FIX",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v5-mirror-evidence-writeback",
+    "head_ref": "refs/heads/codex/p0-gate-1-publish-yml-fix",
     "changed_files": [
+      ".github/workflows/publish.yml",
       "local-ai-review-evidence.v1.json",
-      ".claude/plans/v5_issue_projection.v1.json"
+      "tests/test_publish_workflow.py"
     ]
   },
   "checks_considered": [
@@ -23,12 +24,13 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "V5-PR-X2-EVIDENCE-WRITEBACK: PR-X2-impl repo-side state mutation (gh CLI + GraphQL mirror create) tamamlandı; bu PR manifest write-back ile observed state kaydı yapar. Repo SSOT authority kalır; runtime_created_state section observed-at-creation snapshot, NOT new authority. AO-MA-11E-2 drift checker LATER GitHub state ↔ bu snapshot reconcile eder.",
-    "Mirror create chain: PR #771 (V5 plan PR-X0) MERGED main 565876b -> PR #772 (manifest amend github_write_authorized=true PR-X2) MERGED main 515c815 -> Milestone #3 create (v5.0.0 — Full Production Promotion, due 2026-12-31) -> 23 V5 label create (10 epic + 5 status + 4 risk + 3 guard-flip + 1 mirror) -> 13 V5 issue create (#773 Epic P0, #774 Epic 1, #775 Epic 2, #776 Epic 3, #777 Epic 4, #778 Epic 5, #779 Epic 6, #780 Epic 7, #781 Epic 8, #782 Epic 9, #783 P0-GATE-1, #784 P0-GATE-2, #785 P0-GATE-3) -> Project #3 (Roadmap v5.0.0, PVT_kwHOCx7tY84BZW65) create + 13 item add via GraphQL addProjectV2ItemById mutation (gh project item-add silent fail workaround for 4 items).",
-    "Manifest write-back: epic_p0.complete false -> true; evidence_refs array dolu (PR #771, PR #772, milestone URL, project URL, 13 issue URL); exit_criteria_status 5 criterion all true (plan_doc_merged, projection_manifest_merged, master_plan_amend_merged, github_mirror_create_authorized, github_mirror_create_complete). Yeni section runtime_created_state: milestone (number, title, URL, due), project_board (number, node_id, title, URL, items_count), labels_created_count (23), issues_created (13 SPM anchor ID -> issue number map), issue_anchor_pin (artifact_sha256 + plan_digest + master_plan_sha256 at issue creation time).",
-    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread post-impl review; AGREE expected for clean write-back (no code change, no schema change, no test change; only manifest + evidence).",
-    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HİÇBİR flag flip yok. GitHub write yok (mirror already created in PR-X2-impl state mutation; bu PR sadece manifest write-back). PyPI publish yok. Public claim language UNCHANGED (roadmap; production-ready final PR'a kadar YASAK). No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change, .github change introduced.",
-    "Why this PR closes E-P0 complete: (a) plan_doc_merged PR #771; (b) projection_manifest_merged PR #771 (initial) + PR #772 (mirror-now amend); (c) master_plan_amend_merged PR #771 (initial §12) + PR #772 (PR-X2/X2-impl/X2-evidence ayrım); (d) github_mirror_create_authorized PR #772 (github_write_authorized=true); (e) github_mirror_create_complete Milestone #3 + 23 label + 13 issue + Project #3 (this PR records the state)."
+    "P0-GATE-1 / AO-MA-11G-2c-PUBLISH-FIX: .github/workflows/publish.yml twine check glob fix. Naked dist/* matched packaging_smoke.py-emitted JSON evidence (ri7-packaging-smoke-evidence.v1.json written to dist/ directory by scripts/packaging_smoke.py line 73) -> InvalidDistribution: Unknown distribution format on PyPI publish. v4.1.0 publish FAILED exactly this way on 2026-06-01 (publish workflow run after tag push for PR #770). Fix: twine check dist/* -> twine check dist/*.whl dist/*.tar.gz (distribution-specific globs; wheel + sdist explicit).",
+    "Why minimal-but-permanent fix: HARD RULE Uzun Vadeli Kalıcı Çözüm. (a) twine check dist/*.whl dist/*.tar.gz 6 ay sonra hâlâ doğru (sadece distribution formats; semantic stable). (b) Alternative move evidence out of dist/: more invasive (packaging_smoke.py source change + downstream test invariants risk). (c) Regression invariant tests pin this; bare dist/* (dist/* followed by non-extension) FORBIDDEN by test_publish_workflow_no_naked_dist_glob. Naked glob regression compile-time caught.",
+    "Invariant tests added (tests/test_publish_workflow.py, 7 tests all pass): test_publish_workflow_exists (file presence), test_publish_workflow_has_twine_check_step (twine validation step present), test_publish_workflow_twine_glob_is_distribution_specific (both dist/*.whl + dist/*.tar.gz explicit globs), test_publish_workflow_no_naked_dist_glob (regression guard: bare dist/* rejected), test_publish_workflow_has_pypi_environment (environment: pypi for trusted publishing OIDC scope), test_publish_workflow_has_id_token_write (id-token: write permission for OIDC), test_publish_workflow_trigger_is_version_tag (v* tag trigger; release automation pinned).",
+    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread post-impl review imminent.",
+    ".github/workflows/ change -> high-risk path (CODEOWNER review designed gate). HARD RULE Pre-Production Full Authority: pre-production döneminde agent end-to-end koşar; CODEOWNER review pre-production'da agent self-review yetkisinde (kullanıcı 2026-04-29: kullanıcıya iş bırakma YASAK). Cross-AI peer review zaten provider-independent adversarial check sağlar.",
+    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HİÇBİR flag flip yok. PyPI publish (v4.1.0 re-trigger) bu PR MERGE sonrası ayrı action (tag v4.1.0 zaten pushed; workflow re-trigger manual workflow_dispatch veya tag delete + re-push). Public claim language UNCHANGED. No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change introduced. Sadece .github/workflows/publish.yml 1 satır + tests/test_publish_workflow.py yeni dosya.",
+    "Why this PR unlocks v4.1.0 publish: PR #770 (v4.1.0 release prep) MERGED main 4d0aa6d + tag v4.1.0 pushed -> publish.yml triggered -> twine check FAILED on JSON glob match -> PyPI publish skipped. Bu PR merge + workflow re-trigger ile v4.1.0 PyPI yayını tamamlanır (Epic 1 + Epic P0 follow-up)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
