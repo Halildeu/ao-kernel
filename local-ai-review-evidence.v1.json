@@ -10,7 +10,9 @@
     "changed_files": [
       ".github/workflows/ao-ma-11e-2b-mirror-sync.yml",
       "ao_kernel/_internal/ao_ma/github_mirror_sync.py",
-      "local-ai-review-evidence.v1.json"
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ao_ma11e2b_mirror_sync.py",
+      "tests/test_ao_ma11e2b_workflow_invariant.py"
     ]
   },
   "checks_considered": [
