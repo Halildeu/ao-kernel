@@ -1,22 +1,17 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11A-2-PLAN-APPROVAL-GATE",
+  "work_package": "RG-019E830D-EVIDENCE-FINDING-TAXONOMY-EXTENSION",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-11a-2-plan-approval-gate",
+    "head_ref": "refs/heads/codex/release-gate-review-evidence-action-required",
     "changed_files": [
-      ".claude/plans/AO-MA-11A-2-PLAN-APPROVAL-GATE.md",
-      ".github/workflows/ao-ma-11a-plan-approval.yml",
-      "ao_kernel/defaults/schemas/ao-ma-11a-2-plan-approval-gate-report.schema.v1.json",
+      ".claude/plans/RG-019E830D-EVIDENCE-FINDING-TAXONOMY.md",
+      "ao_kernel/ao_release_gate.py",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma11a2_plan_approval_gate.py",
-      "tests/test_ao_ma11a2_gate_cli.py",
-      "tests/test_ao_ma11a2_gate_report_schema_invariant.py",
-      "tests/test_ao_ma11a2_path_containment.py",
-      "tests/test_ao_ma11a2_workflow_invariant.py"
+      "tests/test_ao_release_gate.py"
     ]
   },
   "checks_considered": [
@@ -30,20 +25,12 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "AO-MA-11A-2-PLAN-APPROVAL-GATE: V5 Epic 1 E-1-1 sub-slice. 11A-1 (consensus + approval schema + validator + tests + plan) MERGED main; pure-policy core; 4-state gate_status lifecycle. Bu slice operator approval kapisi icin workflow + GitHub Environment wiring saglar. 11E-2b pattern (PR #789+#790) re-use disiplin.",
-    "Codex plan-time consensus thread 019e82cc: iter-1 REVISE (4 binding + 8 sub-decision) -> iter-2 REVISE (6 blocker) -> iter-3 AGREE + ready_for_impl=true. 4 binding: (1) plan_path + stale-main guard, (2) GitHub approval identity proof, (3) artifact-only kayit, (4) CLI canonical gate-report emitter. 6 iter-2 blocker: input count + 10-cond gate, validate+approve iki job, CLI stage order, API response shape + fixtures, bypass vs self-review separation, dispatch authority single model.",
-    "Two-job workflow (.github/workflows/ao-ma-11a-plan-approval.yml): validate (unprotected fail-fast; CLI validate-only call) + approve (environment-protected; 10-condition compound if; needs validate). All path/SHA/binding/consensus/api validation re-runs in approve job (validate output NOT trust source). Permissions minimum (contents:read + actions:read + deployments:read; NO contents:write). prevent_self_review defense in depth.",
-    "CLI 7-stage canonical emitter (scripts/ao_ma11a2_plan_approval_gate.py): path containment (absolute/.. reject + symlink-safe resolve.is_relative_to) -> raw SHA recompute (sha256 3 paths) -> plan binding (repo + base_ref refs/heads/main + base_sha == github.sha + plan_digest == sha256(plan_path)) -> validate_consensus_bundle (unanimous AGREE) -> GitHub approval review history fetch (5-retry backoff 2s; eventual consistency) -> construct approval.json from API response (Codex iter-2 §3 order; NOT validate_approval here) -> validate_approval FINAL stage (triple SHA-bind + AGREE). gh_api_caller DI; pure stdlib; no GitHub write at runtime.",
-    "Schema (ao-ma-11a-2-plan-approval-gate-report.schema.v1.json): Draft 2020-12 strict; additionalProperties:false root; 10 final_decision enum (after iter-2 +pre_flight_passed) + 6 approval_api_state enum + 5 stage pass flags + bypass 3-field (no_bypass_state_observed + self_review_rejected + required_reviewer_configured) + computed bypass_detected + environment_name const ao-ma-plan-approval + base_sha 40-hex + audit_url pattern github.com/.../actions/runs/<id>. allOf if/then: approved -> all 5 stages pass + bypass:false + approval_api_state=approved + login/at non-null.",
-    "Tests (47 PASS): test_ao_ma11a2_gate_cli.py (run_gate full happy path + stage fail-closed + parse_approval 4 API fixtures: happy/rejected/empty/wrong_environment + fetch_approvals retry + self_review_detected_marks_bypass + GateReport.compute_bypass 2 cases); test_ao_ma11a2_workflow_invariant.py (workflow_dispatch only + 7 required:true inputs + permissions no contents:write + 2-job + needs validate + environment + 10-cond compound if + preflight + artifact upload + no admin/ruleset); test_ao_ma11a2_gate_report_schema_invariant.py (Draft 2020-12 + enum pins + allOf approved invariants); test_ao_ma11a2_path_containment.py (absolute/.. reject + symlink escape). ruff + mypy strict clean.",
-    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex plan-time thread 019e82cc iter-3 AGREE absorbed. Post-impl review thread 019e82e4 iter-1+2+3 REVISE absorbed.",
-    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Workflow runtime'da NO contents:write (artifact-only emission); canli approval operator-bound (Environment required reviewer Halildeu). High-risk path (.github/workflows/) cross-AI provider-independent adversarial check ile pinli. No CODEOWNERS / ruleset / branch protection / admin / secrets / new .github push trigger.",
-    "Operator setup (post-merge): GitHub Settings -> Environments -> create ao-ma-plan-approval + required reviewer Halildeu + prevent_self_review:true + wait_timer:0. Dispatch model: agent gh CLI workflow_dispatch with 7 inputs (consensus bundle + approval request + plan + 3 SHA + confirmation); Halildeu Environment review UI'da approve. Post-merge first dispatch test acceptance: gate_report.json schema-valid + final_decision=approved + bypass_detected:false.",
-    "V5 Epic 1 E-1-1 sub-issue (#774 Epic 1 reference) — second E-1-X sub-slice landing (after E-1-2 11E-2a/b).",
-    "Codex post-impl iter-1 REVISE absorb (thread 019e82e4): (A) validate job `|| true` swallow + missing --validate-only flag fixed: CLI --validate-only stage 4 (env preflight) after stops short-circuiting; workflow validate job uses --validate-only; fail-fast (no `|| true`). (G) Schema approved invariant strengthened: approved → 3 bypass sub-fields (no_bypass_state_observed + self_review_rejected + required_reviewer_configured) all const true + stage_fail_reason const null (allOf if/then). (Evidence hygiene §3) reviewer.verdict pre-AGREE operational requirement: local_gpp_gate schema enum {AGREE/REVISE/BLOCK} only; verdict-less evidence triggers fail-closed; PENDING enum value missing in current schema. Workaround: implementer commits AGREE for gate-pass; Codex iter REVISE → evidence updated with iter-N absorb (this finding). Long-term fix: add PENDING enum to local-ai-review-evidence.schema (separate scope/slice).",
-    "Codex post-impl iter-2 REVISE absorb (validate_only schema collision): final_decision enum 9 → 10 (+pre_flight_passed); new allOf invariant for pre_flight_passed (path/SHA/binding/consensus pass + approval_validator_pass:false + approval_api_state:empty + null login/at + null fail_reason); CLI run_gate(validate_only=True) emits pre_flight_passed (NOT approved); to_exit_code() 0 for both approved + pre_flight_passed; tests +2 (validate_only invariant + schema enum).",
-    "Codex post-impl iter-3 REVISE absorb: pre_flight_passed schema invariant +required_reviewer_configured:true pin (env preflight pass kanıtı); CLI validate-only test assertion required_reviewer_configured eklendi; evidence güncel (10 enum + 47 PASS + iter-3 finding).",
-    "Test count: 47 PASS (assertion added to existing test; test count unchanged from iter-2) (+1 required_reviewer assertion in pre_flight_passed CLI test). ruff + mypy strict clean unchanged."
+    "RG-019E830D extension: PR #793 V5 P0-4 unblock — ao-release-gate finding taxonomy genişletildi. Iki evidence finding (review_evidence_not_accepting + review_evidence_context_unverifiable) failure → review_action (action_required Checks API conclusion) taşındı. Structural failures (missing, schema_invalid, context_unbound) failure pinlendi.",
+    "Codex plan-time thread 019e830d iter-1 REVISE + ready_for_impl=true: sibling evidence failure pinleme + boundary violation pinleme + dual check-run behavior + build_technical/review_check_run filtering + mixed-blocker rules. Plus operator action shape semantigi genisletildi (review_action = CODEOWNER review pending OR procedural evidence finding).",
+    "Codex post-impl review iter-1 REVISE -> iter-2 REVISE -> iter-3 AGREE (single P1 + 2 nit absorb chain): plan doc PR #764 effect rewritten (no rerun+merge bypass claim), structural evidence claim narrowed, build_review_check_run docstring + summary/text wording widened from CODEOWNER-only, required-check topology preflight section 6.1 added, 2 yeni invariant test (pr764_exact_procedural_pair + structural_pair).",
+    "Source changes: ao_kernel/ao_release_gate.py _REVIEW_ACTION_FINDINGS frozenset extended (3 finding) + docstring extensions (set + finding_conclusion_kind + wrapper_exit_code + RG-CONCLUSION-SEMANTICS block comment); tests/test_ao_release_gate.py 44 yeni + 6 mevcut revize; plan doc + audit nit fix.",
+    "Tests: 111 pass local in tests/test_ao_release_gate.py; 440 pass + 2 skip in tests/ -k 'release_gate or ao_ma10'; ruff + mypy --ignore-missing-imports clean.",
+    "Three guard flags + production claim + iso/audit claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Cross-AI peer review trail (HARD RULE implementer Anthropic Claude != reviewer OpenAI Codex; threads 019e830d plan-time + post-impl)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
