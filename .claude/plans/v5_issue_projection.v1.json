@@ -297,7 +297,7 @@
     ]
   },
   "acceptance_matrix": {
-    "epic_p0": {"complete": false, "evidence_refs": [], "exit_criteria": ["plan_doc_merged", "projection_manifest_merged", "master_plan_amend_merged", "github_mirror_create_authorized", "github_mirror_create_complete"]},
+    "epic_p0": {"complete": true, "evidence_refs": ["https://github.com/Halildeu/ao-kernel/pull/771", "https://github.com/Halildeu/ao-kernel/pull/772", "https://github.com/Halildeu/ao-kernel/milestone/3", "https://github.com/users/Halildeu/projects/3", "https://github.com/Halildeu/ao-kernel/issues/773", "https://github.com/Halildeu/ao-kernel/issues/774", "https://github.com/Halildeu/ao-kernel/issues/775", "https://github.com/Halildeu/ao-kernel/issues/776", "https://github.com/Halildeu/ao-kernel/issues/777", "https://github.com/Halildeu/ao-kernel/issues/778", "https://github.com/Halildeu/ao-kernel/issues/779", "https://github.com/Halildeu/ao-kernel/issues/780", "https://github.com/Halildeu/ao-kernel/issues/781", "https://github.com/Halildeu/ao-kernel/issues/782", "https://github.com/Halildeu/ao-kernel/issues/783", "https://github.com/Halildeu/ao-kernel/issues/784", "https://github.com/Halildeu/ao-kernel/issues/785"], "exit_criteria": ["plan_doc_merged", "projection_manifest_merged", "master_plan_amend_merged", "github_mirror_create_authorized", "github_mirror_create_complete"], "exit_criteria_status": {"plan_doc_merged": true, "projection_manifest_merged": true, "master_plan_amend_merged": true, "github_mirror_create_authorized": true, "github_mirror_create_complete": true}},
     "epic_1": {"complete": false, "evidence_refs": [], "exit_criteria": ["all_7_sub_issues_merged"]},
     "epic_2": {"complete": false, "evidence_refs": [], "exit_criteria": ["operator_bound_supersession_merged", "live_provider_smoke_green", "cost_circuit_breaker_evidence_complete"]},
     "epic_3": {"complete": false, "evidence_refs": [], "exit_criteria": ["operator_bound_supersession_merged", "multi_arch_ci_matrix_green", "provider_widening_capability_profile_complete"]},
@@ -318,5 +318,45 @@
   "mirror_creation_path": "manual_now_with_manifest_driven_binding",
   "drift_checker_binding_deferred_to": "AO-MA-11E-2",
   "visibility_mode": "one_way_mirror_repo_authority_wins",
-  "rationale_mirror_now": "User explicit visibility complaint (2026-06-01): GitHub Projects/Milestone/Issue surface MUST exist alongside repo SSOT; deferral until AO-MA-11E-2 mechanism conflicts with HARD RULE Yarın YASAK + HARD RULE Pre-Production Full Authority. Manifest remains the authority (issue body anchor fields bind each issue to slice_id + spm_anchor + ao_authority_artifact); AO-MA-11E-2 drift checker is a follow-up adapter that binds GitHub state ↔ this manifest after-the-fact, not a precondition for mirror creation."
+  "rationale_mirror_now": "User explicit visibility complaint (2026-06-01): GitHub Projects/Milestone/Issue surface MUST exist alongside repo SSOT; deferral until AO-MA-11E-2 mechanism conflicts with HARD RULE Yarın YASAK + HARD RULE Pre-Production Full Authority. Manifest remains the authority (issue body anchor fields bind each issue to slice_id + spm_anchor + ao_authority_artifact); AO-MA-11E-2 drift checker is a follow-up adapter that binds GitHub state ↔ this manifest after-the-fact, not a precondition for mirror creation.",
+  "runtime_created_state": {
+    "_description": "Created by PR-X2-impl repo-side state mutation (gh CLI + GraphQL); manifest write-back recorded by PR-X2-evidence (THIS PR). Authority remains repo SSOT; this section is observed state at creation time, NOT a new authority. AO-MA-11E-2 drift checker LATER reconciles GitHub state ↔ this snapshot.",
+    "created_by_pr": 772,
+    "created_in_main_commit": "515c815",
+    "milestone": {
+      "number": 3,
+      "title": "v5.0.0 — Full Production Promotion",
+      "url": "https://github.com/Halildeu/ao-kernel/milestone/3",
+      "due_on": "2026-12-31T00:00:00Z"
+    },
+    "project_board": {
+      "number": 3,
+      "node_id": "PVT_kwHOCx7tY84BZW65",
+      "title": "Roadmap v5.0.0",
+      "url": "https://github.com/users/Halildeu/projects/3",
+      "items_count": 13
+    },
+    "labels_created_count": 23,
+    "issues_created": {
+      "E-P0": 773,
+      "E-1": 774,
+      "E-2": 775,
+      "E-3": 776,
+      "E-4": 777,
+      "E-5": 778,
+      "E-6": 779,
+      "E-7": 780,
+      "E-8": 781,
+      "E-9": 782,
+      "P0-GATE-1": 783,
+      "P0-GATE-2": 784,
+      "P0-GATE-3": 785
+    },
+    "issues_count": 13,
+    "issue_anchor_pin": {
+      "artifact_sha256_at_issue_creation": "sha256:0643c2bbf8874577d8ce964f71e4c71bd865c9b238fd44cd2b31fdf011327398",
+      "plan_digest_at_issue_creation": "sha256:b5d5609f2eafe8885589442a89d48fb70f14dd3e568a6aaef704bb388f2b3c79",
+      "master_plan_sha256_at_issue_creation": "sha256:a769f3183d0b753bef5ba79a37d302fc664a63db119baa46b1fc72084acd2fb9"
+    }
+  }
 }
