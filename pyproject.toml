@@ -64,6 +64,9 @@ pgvector = [
 metrics = [
     "prometheus-client>=0.20.0",
 ]
+sbom = [
+    "cyclonedx-bom>=4.0.0",
+]
 policy-service = [
     "gunicorn>=22.0.0",
     "PyJWT[crypto]>=2.8.0",
