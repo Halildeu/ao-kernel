@@ -45,8 +45,48 @@ from ao_kernel._internal.ao_ma.github_mirror_sync import (  # noqa: E402
 )
 
 
+def _resolve_issue_node_id_from_url(url: str) -> str:
+    """Extract issue number from URL and resolve its GitHub node_id."""
+    # url e.g. https://github.com/Halildeu/ao-kernel/issues/774
+    parts = url.rstrip("/").split("/")
+    if len(parts) < 7 or parts[-2] != "issues":
+        raise RuntimeError(f"unparseable issue URL: {url}")
+    owner = parts[-4]
+    repo = parts[-3]
+    num = parts[-1]
+    proc = subprocess.run(
+        ["gh", "api", f"/repos/{owner}/{repo}/issues/{num}", "--jq", ".node_id"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"failed to resolve node_id for {url}: {proc.stderr.strip()}")
+    return proc.stdout.strip()
+
+
+def _gh_graphql(query: str, variables: dict) -> dict:
+    """Run a GraphQL query via gh CLI; raise RuntimeError on non-zero."""
+    args = ["gh", "api", "graphql", "-f", f"query={query}"]
+    for k, v in variables.items():
+        args += ["-F", f"{k}={v}"]
+    proc = subprocess.run(
+        args, capture_output=True, text=True, check=False, timeout=30
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"gh GraphQL failed: {proc.stderr.strip()}")
+    return json.loads(proc.stdout)
+
+
 def _gh_api_caller(method: str, path: str, body: dict | None = None):
-    """gh CLI subprocess wrapper supporting GET/POST/PATCH/DELETE + GraphQL."""
+    """gh CLI subprocess wrapper supporting GET/POST/PATCH/DELETE + GraphQL.
+
+    GraphQL conventions (path prefix):
+    - graphql:project_items:<node_id> — list project items
+    - graphql:add_project_item:<node_id>:<issue_url> — add issue to project
+    - graphql:remove_project_item:<node_id>:<issue_url> — remove item from project
+    """
     if path.startswith("graphql:project_items:"):
         node_id = path.split(":", 2)[2]
         query = (
@@ -54,26 +94,40 @@ def _gh_api_caller(method: str, path: str, body: dict | None = None):
             "items(first:100){ totalCount nodes{ id content{ ... on Issue { number url } } } } "
             "} } }"
         )
-        proc = subprocess.run(
-            [
-                "gh",
-                "api",
-                "graphql",
-                "-f",
-                f"query={query}",
-                "-F",
-                f"id={node_id}",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=30,
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(f"gh GraphQL failed: {proc.stderr.strip()}")
-        data = json.loads(proc.stdout)
+        data = _gh_graphql(query, {"id": node_id})
         items_node = data.get("data", {}).get("node", {}).get("items", {})
         return {"items": items_node.get("nodes", [])}
+    if path.startswith("graphql:add_project_item:"):
+        _, _, node_id, url = path.split(":", 3)
+        # First, resolve the issue's node_id from URL
+        issue_node = _resolve_issue_node_id_from_url(url)
+        query = (
+            "mutation($p:ID!,$c:ID!){"
+            "addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}"
+            "}"
+        )
+        return _gh_graphql(query, {"p": node_id, "c": issue_node})
+    if path.startswith("graphql:remove_project_item:"):
+        _, _, node_id, url = path.split(":", 3)
+        # Project v2 deletion requires the item's node_id (not content id),
+        # which is found by scanning items.
+        items_resp = _gh_api_caller(
+            "POST", f"graphql:project_items:{node_id}", None
+        )
+        target_item_id = None
+        for item in items_resp.get("items", []):
+            content = item.get("content") or {}
+            if content.get("url") == url:
+                target_item_id = item.get("id")
+                break
+        if target_item_id is None:
+            return None  # idempotent: already absent
+        query = (
+            "mutation($p:ID!,$i:ID!){"
+            "deleteProjectV2Item(input:{projectId:$p,itemId:$i}){deletedItemId}"
+            "}"
+        )
+        return _gh_graphql(query, {"p": node_id, "i": target_item_id})
 
     args = ["gh", "api", "-X", method, path]
     if body is not None:

@@ -97,15 +97,44 @@ def test_workflow_apply_job_uses_environment() -> None:
 def test_workflow_apply_has_environment_preflight_step() -> None:
     """Codex iter-1 §5 absorb: env preflight verifies required_reviewers > 0."""
     content = _read()
-    # Look for preflight step in apply job
     has_preflight = re.search(
         r"Environment preflight verify",
         content,
     )
     assert has_preflight, "apply job MUST have environment preflight verify step"
-    # Preflight must check required_reviewers count
     assert "required_reviewers" in content
     assert "REVIEWER_COUNT" in content
+
+
+def test_workflow_preflight_counts_actual_reviewers_not_rules() -> None:
+    """Codex iter-2 §G/iter-1 §3 absorb: counter MUST count reviewers inside the
+    rule (`.reviewers[]?`), not the number of rules.
+    """
+    content = _read()
+    # The jq expression must dereference into .reviewers[?] within a
+    # required_reviewers rule selection.
+    assert re.search(
+        r"\.reviewers\[\?\]",
+        content,
+    ) or re.search(
+        r"select\(\.type ==.*required_reviewers.*\) *\| *\.reviewers",
+        content,
+    ), "preflight MUST count actual reviewers inside required_reviewers rule, not the number of rules"
+
+
+def test_workflow_apply_generates_fresh_dry_run_inside_same_run() -> None:
+    """Codex iter-1 §1 absorb: apply job MUST NOT depend on cross-run artifact.
+    Apply runs a fresh dry-run, then digest-verifies operator input against it.
+    """
+    content = _read()
+    assert re.search(
+        r"Generate fresh dry-run inside apply job",
+        content,
+    ), "apply job MUST run a fresh dry-run inside the same workflow run"
+    assert re.search(
+        r"Verify operator digest matches fresh dry-run",
+        content,
+    ), "apply job MUST verify operator digest against the fresh dry-run report"
 
 
 def test_workflow_apply_runs_post_drift_verification() -> None:

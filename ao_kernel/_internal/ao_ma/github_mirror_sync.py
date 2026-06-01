@@ -622,19 +622,42 @@ def _apply_change(
             )
             return None if err else True
         if change.category == "label_remove":
+            # Codex iter-1 §2 absorb: DELETE method (not PATCH) for label remove.
             num, label = change.object_id.split(":", 1)
             _, err = _safe_call(
                 gh_api_caller,
-                "DELETE" if False else "PATCH",
+                "DELETE",
                 f"/repos/{repo_owner}/{repo_name}/issues/{num}/labels/{label}",
                 None,
             )
             return None if err else True
         if change.category == "project_item_add":
-            # GraphQL mutation: addProjectV2ItemById requires issue node_id
-            return True  # Simplified; CLI layer handles graphql mutation specifics
+            # Codex iter-1 §2 absorb: real GraphQL mutation, not stubbed True.
+            # change.object_id is the issue URL; need the issue node_id which
+            # the CLI adapter resolves via a custom "graphql:add_project_item"
+            # path convention. project_node_id required.
+            if not project_node_id:
+                return None
+            url = change.object_id
+            _, err = _safe_call(
+                gh_api_caller,
+                "POST",
+                f"graphql:add_project_item:{project_node_id}:{url}",
+                None,
+            )
+            return None if err else True
         if change.category == "project_item_remove":
-            return True  # Simplified
+            # Codex iter-1 §2 absorb: real GraphQL mutation.
+            if not project_node_id:
+                return None
+            url = change.object_id
+            _, err = _safe_call(
+                gh_api_caller,
+                "POST",
+                f"graphql:remove_project_item:{project_node_id}:{url}",
+                None,
+            )
+            return None if err else True
     except Exception:
         return None
     return False

@@ -89,32 +89,56 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Environment preflight verify
+        # Codex iter-1 §3 absorb: count actual reviewers in the rule, not the
+        # number of rules. A single required_reviewers rule with 0 reviewers
+        # would otherwise pass the gate.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Verify environment exists + has required reviewers
           ENV_NAME="ao-ma-mirror-sync"
           ENV_DATA=$(gh api "/repos/${{ github.repository }}/environments/$ENV_NAME" 2>&1) || {
             echo "::error::Environment $ENV_NAME does not exist or is not accessible"
             exit 1
           }
-          REVIEWER_COUNT=$(echo "$ENV_DATA" | jq '[.protection_rules[] | select(.type == "required_reviewers")] | length')
-          if [ "$REVIEWER_COUNT" -eq "0" ]; then
-            echo "::error::Environment $ENV_NAME has no required reviewers configured"
+          # Sum reviewers across all required_reviewers rules (defensive against
+          # multiple rules; protection_rules format may evolve).
+          REVIEWER_COUNT=$(echo "$ENV_DATA" | jq '[.protection_rules[] | select(.type == "required_reviewers") | .reviewers[]?] | length')
+          if [ "$REVIEWER_COUNT" -lt 1 ]; then
+            echo "::error::Environment $ENV_NAME has 0 actual required reviewers"
             exit 1
           fi
-          echo "Environment preflight passed: $REVIEWER_COUNT required reviewer rules"
+          echo "Environment preflight passed: $REVIEWER_COUNT required reviewers"
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install
         run: pip install -e ".[mcp]"
-      - name: Download accepted dry-run report
-        uses: actions/download-artifact@v4
-        with:
-          name: sync_report
-          path: ./accepted_report
+      - name: Generate fresh dry-run inside apply job
+        # Codex iter-1 §1 absorb: apply job MUST NOT depend on cross-run artifact.
+        # dry_run job is skipped when dry_run=false; downloading its sync_report
+        # then is unreliable. Instead, run a fresh in-job dry-run and verify
+        # the operator-provided digest matches THIS run's report. This binds
+        # the digest to the apply run's own observed state.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
+            --projection-manifest .claude/plans/v5_issue_projection.v1.json \
+            --github-token-env GH_TOKEN \
+            --allow-network \
+            --output fresh_dry_run_report.json
+      - name: Verify operator digest matches fresh dry-run
+        run: |
+          FRESH_DIGEST="sha256:$(sha256sum fresh_dry_run_report.json | awk '{print $1}')"
+          OPERATOR_DIGEST="${{ inputs.accepted_dry_run_report_digest }}"
+          if [ "$FRESH_DIGEST" != "$OPERATOR_DIGEST" ]; then
+            echo "::error::Digest mismatch — operator must re-dispatch with new digest"
+            echo "  fresh:    $FRESH_DIGEST"
+            echo "  operator: $OPERATOR_DIGEST"
+            exit 1
+          fi
+          echo "Digest match confirmed: $FRESH_DIGEST"
       - name: Run apply sync
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -124,7 +148,7 @@ jobs:
             --apply \
             --allow-network \
             --confirmation "${{ inputs.confirmation }}" \
-            --accepted-dry-run-report ./accepted_report/sync_report.json \
+            --accepted-dry-run-report ./fresh_dry_run_report.json \
             --accepted-dry-run-report-digest "${{ inputs.accepted_dry_run_report_digest }}" \
             --output apply_report.json
       - name: Upload apply report
