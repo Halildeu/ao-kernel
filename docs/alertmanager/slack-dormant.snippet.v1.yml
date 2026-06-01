@@ -1,0 +1,38 @@
+# DORMANT SLACK SNIPPET — asset-preserved for other tenants per HARD RULE
+# Workspace Tooling (2026-05-27). NOT applied by ao-kernel; Teams is the active
+# primary route. This snippet exists ONLY to preserve the Slack reactivation
+# chain for downstream/multi-tenant deployments that have an existing Slack
+# workspace.
+#
+# Reactivation chain (operator action; NOT autonomous):
+# 1. Operator provisions Slack workspace + incoming-webhook URL.
+# 2. Operator seeds Vault key `SLACK_WEBHOOK_URL` via stdin-pipe (D43 pattern):
+#    printf '%s' "$WEBHOOK" | vault kv patch kv/ao-kernel SLACK_WEBHOOK_URL=-
+# 3. Operator creates Secret `ao-kernel-slack-webhook` from Vault via ESO.
+# 4. Operator copies snippet contents into AlertmanagerConfig CRD spec.receivers,
+#    adds severity route per channel preference.
+# 5. Operator applies — only after explicit tenant demand-driven trigger.
+#
+# Codex 019e83af absorb: Slack is dormant-only; v1 active routes never include
+# Slack receivers. See docs/alertmanager/README.md §7 for the full chain.
+---
+receivers:
+  # Slack receiver template — NOT applied by ao-kernel v1.
+  - name: ao-kernel-slack-critical-template
+    slackConfigs:
+      - apiURL:
+          name: ao-kernel-slack-webhook
+          key: url
+        channel: "#ao-kernel-alerts-critical"
+        sendResolved: true
+        title: "{{ .GroupLabels.ao_slo }} — {{ .GroupLabels.severity }}"
+        text: "{{ .CommonAnnotations.description }}"
+  - name: ao-kernel-slack-warning-template
+    slackConfigs:
+      - apiURL:
+          name: ao-kernel-slack-webhook
+          key: url
+        channel: "#ao-kernel-alerts-warning"
+        sendResolved: false
+        title: "{{ .GroupLabels.ao_slo }} — {{ .GroupLabels.severity }}"
+        text: "{{ .CommonAnnotations.description }}"

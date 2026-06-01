@@ -1,0 +1,42 @@
+# DORMANT EXAMPLE — Raw Alertmanager YAML fallback for deployments that do NOT
+# use Prometheus Operator CRDs. This file is intentionally `.example` and is
+# NOT applied or referenced by the active AlertmanagerConfig CRD.
+#
+# Operator MUST:
+# - Provision the webhook URL out-of-band (Vault, Helm value, ConfigMap, etc.).
+# - Replace `__TEAMS_WEBHOOK_URL__` placeholder in deployment tooling — NEVER
+#   commit the URL itself.
+# - Apply this only if not using AlertmanagerConfig CRD.
+#
+# Codex 019e83af absorb: operator inject placeholder, no live URL committed.
+---
+route:
+  receiver: ao-kernel-teams-default
+  group_by: [ao_slo, severity]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - receiver: ao-kernel-teams-critical
+      matchers:
+        - severity = "critical"
+      continue: false
+    - receiver: ao-kernel-teams-warning
+      matchers:
+        - severity = "warning"
+      continue: false
+receivers:
+  - name: ao-kernel-teams-default
+    webhook_configs:
+      # Operator: substitute __TEAMS_WEBHOOK_URL__ via deployment tooling.
+      # Do NOT commit the actual URL.
+      - url: __TEAMS_WEBHOOK_URL__
+        send_resolved: true
+  - name: ao-kernel-teams-critical
+    webhook_configs:
+      - url: __TEAMS_WEBHOOK_URL__
+        send_resolved: true
+  - name: ao-kernel-teams-warning
+    webhook_configs:
+      - url: __TEAMS_WEBHOOK_URL__
+        send_resolved: false
