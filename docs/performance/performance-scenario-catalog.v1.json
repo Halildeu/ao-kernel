@@ -1,0 +1,41 @@
+{
+  "schema_version": "performance-scenario-catalog.v1",
+  "service": "ao-kernel",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "scenarios": [
+    {
+      "id": "governed_review",
+      "test_module": "tests/benchmarks/test_governed_review.py",
+      "workflow_id": "review_ai_flow",
+      "source_scorecard_scenario": "governed_review",
+      "primary_metric": "duration_ms",
+      "mode": "fast",
+      "may_skip_on_prereq_miss": false,
+      "enforcement": "policy_threshold"
+    },
+    {
+      "id": "governed_bugfix",
+      "test_module": "tests/benchmarks/test_governed_bugfix.py",
+      "workflow_id": "governed_bugfix_bench",
+      "source_scorecard_scenario": "governed_bugfix",
+      "primary_metric": "duration_ms",
+      "mode": "fast",
+      "may_skip_on_prereq_miss": false,
+      "enforcement": "policy_threshold"
+    },
+    {
+      "id": "full_mode_smoke",
+      "test_module": "tests/benchmarks/test_full_mode_smoke.py",
+      "workflow_id": "review_ai_flow",
+      "source_scorecard_scenario": "governed_review",
+      "primary_metric": "duration_ms",
+      "mode": "full",
+      "may_skip_on_prereq_miss": true,
+      "enforcement": "advisory_only"
+    }
+  ]
+}

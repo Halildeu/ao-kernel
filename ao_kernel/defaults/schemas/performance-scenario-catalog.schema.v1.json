@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:performance-scenario-catalog:v1",
+  "title": "ao-kernel Performance Scenario Catalog (V5 Epic 7)",
+  "description": "Source-of-truth catalog for benchmark scenarios, their test modules, workflow IDs, and enforcement modes. promote_baseline.py joins benchmark scorecard rows to catalog entries by source_scorecard_scenario; baseline is included only when mode matches and enforcement=='policy_threshold'. Codex 019e8410 cross-AI plan-time AGREE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "service", "guard_flags", "scenarios"],
+  "properties": {
+    "schema_version": { "const": "performance-scenario-catalog.v1" },
+    "service": { "const": "ao-kernel" },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scenario" }
+    }
+  },
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "test_module",
+        "workflow_id",
+        "source_scorecard_scenario",
+        "primary_metric",
+        "mode",
+        "may_skip_on_prereq_miss",
+        "enforcement"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]+$", "minLength": 3, "maxLength": 64 },
+        "test_module": { "type": "string", "pattern": "^tests/" },
+        "workflow_id": { "type": "string", "minLength": 4 },
+        "source_scorecard_scenario": { "type": "string", "minLength": 3 },
+        "primary_metric": { "const": "duration_ms" },
+        "mode": { "enum": ["fast", "full"] },
+        "may_skip_on_prereq_miss": { "type": "boolean" },
+        "enforcement": { "enum": ["policy_threshold", "advisory_only"] }
+      }
+    }
+  }
+}

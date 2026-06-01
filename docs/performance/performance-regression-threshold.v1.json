@@ -1,0 +1,51 @@
+{
+  "schema_version": "performance-regression-threshold.v1",
+  "service": "ao-kernel",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "policy_disclaimer": {
+    "not_sla": true,
+    "operator_tunable": true,
+    "single_run_candidate_baseline": true
+  },
+  "enforcement_mode": "advisory",
+  "baseline_ref": "docs/performance/baseline.v1.json",
+  "global_defaults": {
+    "metric_kind": "wall_clock",
+    "unit": "ms",
+    "comparison": "higher_is_worse",
+    "min_sample_count": 1,
+    "variance_disclaimer": "single_ci_run; flake risk acknowledged",
+    "warn_threshold_pct": 20.0,
+    "hard_fail_threshold_pct": 30.0,
+    "applies_to_modes": ["fast"],
+    "action_on_missing_baseline": "skip_check",
+    "action_on_missing_head_scenario": "warn"
+  },
+  "scenarios": [
+    {
+      "id": "governed_review",
+      "warn_threshold_pct": 20.0,
+      "hard_fail_threshold_pct": 30.0,
+      "applies_to_modes": ["fast"],
+      "enforcement_override": null
+    },
+    {
+      "id": "governed_bugfix",
+      "warn_threshold_pct": 20.0,
+      "hard_fail_threshold_pct": 30.0,
+      "applies_to_modes": ["fast"],
+      "enforcement_override": null
+    },
+    {
+      "id": "full_mode_smoke",
+      "warn_threshold_pct": null,
+      "hard_fail_threshold_pct": null,
+      "applies_to_modes": ["full"],
+      "enforcement_override": "advisory_only"
+    }
+  ]
+}

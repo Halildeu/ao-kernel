@@ -1,0 +1,61 @@
+{
+  "schema_version": "performance-baseline.v1",
+  "service": "ao-kernel",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "generated_from": {
+    "scorecard_schema_version": "v1",
+    "source_git_sha": "fd8241c",
+    "source_git_ref": "refs/heads/main",
+    "benchmark_mode": "fast",
+    "python_version": "3.13",
+    "runner_os": "ubuntu-latest",
+    "generated_at": "2026-06-01T20:00:00Z"
+  },
+  "candidate_baseline": true,
+  "sample_count": 1,
+  "variance_profile": "single_ci_run",
+  "scenarios": [
+    {
+      "id": "governed_bugfix",
+      "source_scorecard_scenario": "governed_bugfix",
+      "workflow_id": "governed_bugfix_bench",
+      "benchmark_mode": "fast",
+      "metric": {
+        "name": "duration_ms",
+        "unit": "ms",
+        "value": 120.0,
+        "statistic": "single_run"
+      },
+      "status": "pass",
+      "workflow_completed": true,
+      "cost_source": "mock_shim",
+      "review_score_expected": null,
+      "candidate_baseline": true,
+      "sample_count": 1,
+      "variance_profile": "single_ci_run"
+    },
+    {
+      "id": "governed_review",
+      "source_scorecard_scenario": "governed_review",
+      "workflow_id": "review_ai_flow",
+      "benchmark_mode": "fast",
+      "metric": {
+        "name": "duration_ms",
+        "unit": "ms",
+        "value": 200.0,
+        "statistic": "single_run"
+      },
+      "status": "pass",
+      "workflow_completed": true,
+      "cost_source": "mock_shim",
+      "review_score_expected": null,
+      "candidate_baseline": true,
+      "sample_count": 1,
+      "variance_profile": "single_ci_run"
+    }
+  ]
+}
