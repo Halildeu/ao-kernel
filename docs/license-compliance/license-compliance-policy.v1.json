@@ -1,0 +1,56 @@
+{
+  "schema_version": "license-compliance-policy.v1",
+  "service": "ao-kernel",
+  "operator_owned": true,
+  "is_contractual_sla": false,
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "policy_disclaimer": {
+    "not_legal_counsel": true,
+    "not_legal_advice": true,
+    "operator_responsibility": true
+  },
+  "ao_kernel_license": "MIT",
+  "spdx_license_list_version": "3.24",
+  "spdx_expression_handling": "simple_identifier_only",
+  "composite_expression_handling": "review_required",
+  "license_exception_handling": "review_required",
+  "license_ref_handling": "review_required",
+  "deprecated_identifier_handling": "review_required",
+  "unknown_handling": "review",
+  "tiers": {
+    "allow": [
+      "0BSD",
+      "Apache-2.0",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "ISC",
+      "MIT",
+      "Unlicense",
+      "Zlib"
+    ],
+    "review": [
+      "CDDL-1.0",
+      "EPL-1.0",
+      "EPL-2.0",
+      "LGPL-2.1-only",
+      "LGPL-2.1-or-later",
+      "LGPL-3.0-only",
+      "LGPL-3.0-or-later",
+      "MPL-2.0",
+      "PSF-2.0"
+    ],
+    "deny": [
+      "AGPL-3.0-only",
+      "AGPL-3.0-or-later",
+      "GPL-2.0-only",
+      "GPL-2.0-or-later",
+      "GPL-3.0-only",
+      "GPL-3.0-or-later",
+      "SSPL-1.0"
+    ]
+  }
+}
