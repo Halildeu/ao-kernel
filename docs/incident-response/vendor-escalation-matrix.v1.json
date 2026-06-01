@@ -1,0 +1,215 @@
+{
+  "schema_version": "vendor-escalation-matrix.v1",
+  "service": "ao-kernel",
+  "artifact_kind": "vendor-escalation-matrix",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "matrix_disclaimer": {
+    "operator_owned_external_handoff": true,
+    "no_vendor_sla_promise": true,
+    "no_customer_notification_authority": true,
+    "no_pii_in_repo": true,
+    "operator_legal_counsel_required": true
+  },
+  "vendors": [
+    {
+      "id": "anthropic-claude",
+      "name": "Anthropic (Claude)",
+      "category": "llm_provider",
+      "status_page_url": "https://status.anthropic.com",
+      "support_portal_url": "https://support.anthropic.com",
+      "account_manager_contact": "operator_provisioned",
+      "incident_classifications": [
+        "api_outage",
+        "model_degradation",
+        "rate_limit_spike",
+        "account_lockout"
+      ],
+      "applicable_severity": ["SEV-1", "SEV-2"],
+      "operator_workflow_steps": [
+        "verify outage via status page",
+        "capture last known good request id",
+        "open support ticket via portal",
+        "log case id in incident timeline",
+        "escalate to account manager if SEV-1 unack 15 minutes"
+      ],
+      "verification_required": [
+        "status page shows degraded indicator",
+        "request id is reproducible from OTEL trace"
+      ],
+      "no_pii_committed": true
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "category": "llm_provider",
+      "status_page_url": "https://status.openai.com",
+      "support_portal_url": "https://help.openai.com/en",
+      "account_manager_contact": "operator_provisioned",
+      "incident_classifications": [
+        "api_outage",
+        "model_degradation",
+        "rate_limit_spike",
+        "account_lockout",
+        "billing_dispute"
+      ],
+      "applicable_severity": ["SEV-1", "SEV-2"],
+      "operator_workflow_steps": [
+        "verify outage via status page",
+        "capture failing endpoint and request id",
+        "open ticket via help center",
+        "log case id in incident timeline",
+        "escalate to account manager if SEV-1 unack 15 minutes"
+      ],
+      "verification_required": [
+        "status page reflects current incident",
+        "OTEL latency burn matches outage window"
+      ],
+      "no_pii_committed": true
+    },
+    {
+      "id": "google-gemini",
+      "name": "Google Gemini",
+      "category": "llm_provider",
+      "status_page_url": "https://status.cloud.google.com",
+      "support_portal_url": "https://support.google.com/cloud",
+      "account_manager_contact": "operator_provisioned",
+      "incident_classifications": [
+        "api_outage",
+        "model_degradation",
+        "rate_limit_spike"
+      ],
+      "applicable_severity": ["SEV-1", "SEV-2"],
+      "operator_workflow_steps": [
+        "verify outage via cloud status page",
+        "capture failing region or endpoint",
+        "open ticket via cloud support",
+        "log case id in incident timeline"
+      ],
+      "verification_required": [
+        "cloud status page incident is open",
+        "outage region matches adapter routing"
+      ],
+      "no_pii_committed": true
+    },
+    {
+      "id": "xai-grok",
+      "name": "xAI (Grok)",
+      "category": "llm_provider",
+      "status_page_url": "https://status.x.ai",
+      "support_portal_url": "https://help.x.ai",
+      "account_manager_contact": "operator_provisioned",
+      "incident_classifications": [
+        "api_outage",
+        "model_degradation",
+        "rate_limit_spike"
+      ],
+      "applicable_severity": ["SEV-1", "SEV-2"],
+      "operator_workflow_steps": [
+        "verify outage via status page",
+        "capture failing endpoint",
+        "open ticket via help portal",
+        "log case id in incident timeline"
+      ],
+      "verification_required": [
+        "status page reflects current incident"
+      ],
+      "no_pii_committed": true
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "category": "llm_provider",
+      "status_page_url": "https://status.deepseek.com",
+      "support_portal_url": "https://platform.deepseek.com/support",
+      "account_manager_contact": "operator_provisioned",
+      "incident_classifications": [
+        "api_outage",
+        "model_degradation",
+        "rate_limit_spike"
+      ],
+      "applicable_severity": ["SEV-1", "SEV-2"],
+      "operator_workflow_steps": [
+        "verify outage via status page",
+        "capture failing endpoint",
+        "open ticket via support portal",
+        "log case id in incident timeline"
+      ],
+      "verification_required": [
+        "status page reflects current incident"
+      ],
+      "no_pii_committed": true
+    },
+    {
+      "id": "qwen",
+      "name": "Qwen (Alibaba)",
+      "category": "llm_provider",
+      "status_page_url": "https://status.aliyun.com",
+      "support_portal_url": "https://www.alibabacloud.com/support",
+      "account_manager_contact": "operator_provisioned",
+      "incident_classifications": [
+        "api_outage",
+        "model_degradation",
+        "rate_limit_spike"
+      ],
+      "applicable_severity": ["SEV-1", "SEV-2"],
+      "operator_workflow_steps": [
+        "verify outage via cloud status page",
+        "capture failing region or endpoint",
+        "open ticket via cloud support",
+        "log case id in incident timeline"
+      ],
+      "verification_required": [
+        "cloud status page incident is open"
+      ],
+      "no_pii_committed": true
+    },
+    {
+      "id": "ghcr-container-registry",
+      "name": "GHCR (GitHub Container Registry)",
+      "category": "container_registry",
+      "status_page_url": "https://www.githubstatus.com",
+      "support_portal_url": "https://support.github.com",
+      "account_manager_contact": "operator_provisioned",
+      "incident_classifications": [
+        "registry_outage",
+        "publish_failure"
+      ],
+      "applicable_severity": ["SEV-1", "SEV-2"],
+      "operator_workflow_steps": [
+        "verify outage via github status page",
+        "open ticket via github support",
+        "log case id in incident timeline"
+      ],
+      "verification_required": [
+        "githubstatus shows containers incident"
+      ],
+      "no_pii_committed": true
+    },
+    {
+      "id": "pypi",
+      "name": "PyPI",
+      "category": "package_index",
+      "status_page_url": "https://status.python.org",
+      "support_portal_url": "https://pypi.org/help",
+      "account_manager_contact": "operator_provisioned",
+      "incident_classifications": [
+        "registry_outage",
+        "publish_failure"
+      ],
+      "applicable_severity": ["SEV-1", "SEV-2"],
+      "operator_workflow_steps": [
+        "verify outage via python status page",
+        "open issue via pypa support",
+        "log case id in incident timeline"
+      ],
+      "verification_required": [
+        "python status page shows pypi incident"
+      ],
+      "no_pii_committed": true
+    }
+  ]
+}
