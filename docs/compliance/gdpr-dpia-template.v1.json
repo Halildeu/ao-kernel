@@ -1,0 +1,195 @@
+{
+  "schema_version": "gdpr-dpia-template.v1",
+  "artifact_kind": "gdpr-dpia-operator-template",
+  "framework_version": "GDPR-2018-applied",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false,
+    "regulatory_filing_claim_allowed": false,
+    "legal_advice_claim_allowed": false,
+    "contract_template_allowed": false
+  },
+  "dpia_disclaimer": {
+    "not_gdpr_certification": true,
+    "not_regulatory_approval": true,
+    "not_actual_dpia_filing": true,
+    "not_legal_advice": true,
+    "documentation_only": true,
+    "operator_legal_counsel_required": true
+  },
+  "personal_data_disclosure": {
+    "ao_kernel_processes_personal_data": false,
+    "no_personal_data_in_repo": true,
+    "not_data_controller": true,
+    "not_data_processor_in_v1": true,
+    "operator_dpia_decision": true
+  },
+  "prohibited_claims": [
+    "GDPR-compliant",
+    "GDPR compliant",
+    "GDPR-certified",
+    "GDPR certified",
+    "GDPR-ready",
+    "GDPR ready",
+    "fully GDPR",
+    "we comply with GDPR",
+    "Article 35 ready",
+    "Article 35 compliant",
+    "DPIA-approved",
+    "DPIA approved",
+    "DPIA-ready",
+    "DPIA ready",
+    "DPIA compliant",
+    "DPA-approved",
+    "DPO approved",
+    "ICO approved",
+    "CNIL approved",
+    "supervisory authority approved",
+    "privacy compliant",
+    "data subject rights guaranteed",
+    "privacy rights guaranteed",
+    "lawful basis established",
+    "lawful processing confirmed",
+    "consent obtained"
+  ],
+  "sections": [
+    {
+      "id": "section_0_metadata",
+      "title": "Section 0 — Metadata",
+      "fields": {
+        "controller_name": "<operator-controller-name>",
+        "dpo_contact": "<operator-dpo-contact>",
+        "dpa_reference": "<operator-supervisory-authority>",
+        "version": "v1-baseline",
+        "supervisory_authority": "<operator-supervisory-authority>"
+      },
+      "dpia_trigger_assessment": {
+        "repo_baseline_triggered": false,
+        "operator_must_assess_art35_3": true,
+        "operator_must_check_supervisory_authority_lists": true,
+        "special_categories_or_art10_data_in_repo": false,
+        "art35_3_a_systematic_profiling_in_repo": false,
+        "art35_3_b_large_scale_special_categories_in_repo": false,
+        "art35_3_c_systematic_monitoring_public_area_in_repo": false,
+        "art36_residual_high_risk_prior_consultation_reminder": "Operator must determine with counsel/DPO whether residual high risk remains; if so, Article 36 prior consultation with supervisory authority may be required."
+      }
+    },
+    {
+      "id": "section_a_systematic_description",
+      "title": "Section A — Systematic Description of Processing",
+      "fields": {
+        "processing_operations": "<operator-to-describe-processing-operations>",
+        "purposes": "<operator-to-describe-purposes>",
+        "data_subjects": "<no-personal-data-in-repo-baseline>",
+        "personal_data_categories": "<no-personal-data-in-repo-baseline>",
+        "recipients": "<no-personal-data-in-repo-baseline>",
+        "transfers": "<no-personal-data-in-repo-baseline>",
+        "retention": "<no-personal-data-in-repo-baseline>",
+        "systems": "<operator-to-describe-systems>",
+        "processors_subprocessors": "<no-personal-data-in-repo-baseline>",
+        "data_flow_summary": "<no-personal-data-in-repo-baseline>"
+      }
+    },
+    {
+      "id": "section_b_necessity_proportionality",
+      "title": "Section B — Necessity and Proportionality Assessment",
+      "fields": {
+        "necessity_assessment": "<operator-to-assess-necessity>",
+        "proportionality_assessment": "<operator-to-assess-proportionality>",
+        "data_minimization_statement": "<operator-to-state-data-minimization>",
+        "lawful_basis_consideration_operator_owned": "<operator-and-counsel-determine-lawful-basis>"
+      }
+    },
+    {
+      "id": "section_c_risks",
+      "title": "Section C — Risks to Rights and Freedoms",
+      "risks": [
+        {
+          "risk_id": "C1",
+          "risk_name": "Unauthorized access or disclosure of personal data",
+          "risk_status": "not_applicable",
+          "likelihood": null,
+          "severity": null,
+          "risk_score": null,
+          "mitigation": null
+        },
+        {
+          "risk_id": "C2",
+          "risk_name": "Loss or destruction of personal data",
+          "risk_status": "not_applicable",
+          "likelihood": null,
+          "severity": null,
+          "risk_score": null,
+          "mitigation": null
+        },
+        {
+          "risk_id": "C3",
+          "risk_name": "Identification or re-identification of data subjects",
+          "risk_status": "not_applicable",
+          "likelihood": null,
+          "severity": null,
+          "risk_score": null,
+          "mitigation": null
+        },
+        {
+          "risk_id": "C4",
+          "risk_name": "Profiling or automated decision-making impact",
+          "risk_status": "not_applicable",
+          "likelihood": null,
+          "severity": null,
+          "risk_score": null,
+          "mitigation": null
+        },
+        {
+          "risk_id": "C5",
+          "risk_name": "Discriminatory effects on data subjects",
+          "risk_status": "not_applicable",
+          "likelihood": null,
+          "severity": null,
+          "risk_score": null,
+          "mitigation": null
+        },
+        {
+          "risk_id": "C6",
+          "risk_name": "Cross-border transfer without adequate safeguards",
+          "risk_status": "not_applicable",
+          "likelihood": null,
+          "severity": null,
+          "risk_score": null,
+          "mitigation": null
+        }
+      ]
+    },
+    {
+      "id": "section_d_mitigation",
+      "title": "Section D — Mitigation Measures",
+      "fields": {
+        "technical_measures": "<operator-owned-technical-measures>",
+        "organizational_measures": "<operator-owned-organizational-measures>",
+        "residual_risk_summary": "<operator-to-summarize-residual-risk>",
+        "operator_owned_measures": "Operator owns deployment configuration, access controls, encryption, key management, retention enforcement, and incident response."
+      }
+    },
+    {
+      "id": "section_e_consultation",
+      "title": "Section E — Consultation Evidence",
+      "fields": {
+        "dpo_advice_status": "not_applicable_repo_baseline",
+        "data_subject_views_status": "not_applicable_repo_baseline",
+        "supervisory_authority_prior_consultation_status": "not_applicable_repo_baseline",
+        "consultation_evidence_reference": "<operator-to-record-consultation-evidence-reference>"
+      }
+    },
+    {
+      "id": "section_f_decision_approval",
+      "title": "Section F — Decision and Approval",
+      "fields": {
+        "operator_decision_record": "<operator-to-record-decision>",
+        "operator_decision_date": "<operator-to-record-date>",
+        "operator_approver_role": "<operator-approver-role>",
+        "operator_review_cadence": "<operator-to-define-review-cadence>"
+      }
+    }
+  ]
+}

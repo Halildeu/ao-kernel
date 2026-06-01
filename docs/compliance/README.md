@@ -90,6 +90,29 @@ operator and auditor responsibility.
 See full per-control detail in
 [`soc2-trust-services-criteria-mapping.v1.md`](soc2-trust-services-criteria-mapping.v1.md).
 
+### 3.6 GDPR DPIA Operator Template Reference (E-6-3c extension)
+
+A separate GDPR DPIA operator template lives at
+[`gdpr-dpia-template.v1.json`](gdpr-dpia-template.v1.json) (rendered as
+[`gdpr-dpia-template.v1.md`](gdpr-dpia-template.v1.md)), with the
+operator runbook in
+[`gdpr-dpia-operator-runbook.v1.md`](gdpr-dpia-operator-runbook.v1.md).
+
+The template enumerates 7 sections (Metadata + trigger assessment;
+Systematic Description; Necessity and Proportionality; Risks;
+Mitigation; Consultation; Decision and Approval). ao-kernel does NOT
+process personal data, is NOT a data controller, and is NOT a data
+processor in v1; the repo baseline ships all Section A fields as
+`<no-personal-data-in-repo-baseline>` and all Section C risks as
+`risk_status: "not_applicable"`.
+
+The template ships its own schema and prohibited-claims scanner; it
+is **not** an extension of the SOC2/ISO catalog and does NOT modify
+any E-6-3 contract. This template does NOT determine lawful basis,
+controller/processor role, transfer mechanism, DPA filing need, or
+data subject notice content; Article 36 prior consultation
+determination remains operator + DPO/counsel responsibility.
+
 ## 4. ISO 27001 Annex A Coverage Summary (14 areas)
 
 | Annex A area | Status |
