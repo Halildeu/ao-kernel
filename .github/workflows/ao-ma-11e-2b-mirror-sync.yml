@@ -1,0 +1,150 @@
+name: AO-MA-11E-2b V5 Mirror Sync
+
+# AO-MA-11E-2b: V5 GitHub mirror write sync workflow.
+#
+# Dry-run path: runs without protected environment; produces sync_report.json.
+# Apply path: REQUIRES 7-condition compound gate (typed confirmation + accepted
+# digest + main branch + workflow_dispatch + run_attempt==1 + env protection).
+#
+# Operator dispatches via GitHub Actions UI (workflow_dispatch). Agent never
+# invokes apply autonomously; apply is operator-bound.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry-run mode (true = preview only; false = live apply)"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      allow_apply:
+        description: "Allow live apply (must be true if dry_run=false)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      confirmation:
+        description: 'Typed confirmation; must equal "AO-MA-11E-2B-APPLY" for apply'
+        required: false
+        default: ""
+      accepted_dry_run_report_digest:
+        description: "SHA256 of accepted dry-run report (sha256:<64 hex>); required for apply"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  dry_run:
+    if: inputs.dry_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -e ".[mcp]"
+      - name: Run dry-run sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
+            --projection-manifest .claude/plans/v5_issue_projection.v1.json \
+            --github-token-env GH_TOKEN \
+            --allow-network \
+            --output sync_report.json
+      - name: Upload dry-run report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync_report
+          path: sync_report.json
+          retention-days: 90
+
+  apply:
+    # AO-MA-11E-2b 7-condition compound apply gate (Codex iter-1 §4 absorb).
+    # All conditions must be true for live GitHub write.
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.run_attempt == 1 &&
+      inputs.dry_run == 'false' &&
+      inputs.allow_apply == 'true' &&
+      inputs.confirmation == 'AO-MA-11E-2B-APPLY' &&
+      inputs.accepted_dry_run_report_digest != ''
+    runs-on: ubuntu-latest
+    # Environment protection gate (Codex iter-1 §5 absorb).
+    # Environment MUST be configured with required reviewers BEFORE this job runs;
+    # workflow's preflight step verifies and fail-closes if not.
+    environment: ao-ma-mirror-sync
+    steps:
+      - uses: actions/checkout@v6
+      - name: Environment preflight verify
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Verify environment exists + has required reviewers
+          ENV_NAME="ao-ma-mirror-sync"
+          ENV_DATA=$(gh api "/repos/${{ github.repository }}/environments/$ENV_NAME" 2>&1) || {
+            echo "::error::Environment $ENV_NAME does not exist or is not accessible"
+            exit 1
+          }
+          REVIEWER_COUNT=$(echo "$ENV_DATA" | jq '[.protection_rules[] | select(.type == "required_reviewers")] | length')
+          if [ "$REVIEWER_COUNT" -eq "0" ]; then
+            echo "::error::Environment $ENV_NAME has no required reviewers configured"
+            exit 1
+          fi
+          echo "Environment preflight passed: $REVIEWER_COUNT required reviewer rules"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -e ".[mcp]"
+      - name: Download accepted dry-run report
+        uses: actions/download-artifact@v4
+        with:
+          name: sync_report
+          path: ./accepted_report
+      - name: Run apply sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AO_MA_11E_2B_APPLY_ACK: "1"
+        run: |
+          python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
+            --apply \
+            --allow-network \
+            --confirmation "${{ inputs.confirmation }}" \
+            --accepted-dry-run-report ./accepted_report/sync_report.json \
+            --accepted-dry-run-report-digest "${{ inputs.accepted_dry_run_report_digest }}" \
+            --output apply_report.json
+      - name: Upload apply report
+        uses: actions/upload-artifact@v4
+        with:
+          name: apply_report
+          path: apply_report.json
+          retention-days: 365
+      - name: Post-drift verification
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ao_ma11e2_v5_mirror_drift.py \
+            --projection-manifest .claude/plans/v5_issue_projection.v1.json \
+            --github-token-env GH_TOKEN \
+            --allow-network \
+            --output post_drift_report.json
+      - name: Upload post-drift report
+        uses: actions/upload-artifact@v4
+        with:
+          name: post_drift_report
+          path: post_drift_report.json
+          retention-days: 365
