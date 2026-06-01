@@ -42,11 +42,21 @@ def _make_manifest(tmp_path: Path) -> Path:
                 "id": "E-1",
                 "title": "[Epic 1] AO-MA-SPM follow-up",
                 "labels": ["epic-1", "mirror:authority"],
+                "body_anchor": {
+                    "spm_anchor": "AO-MA-SPM-V5-EPIC-1",
+                    "slice_id": "V5-EPIC-1",
+                    "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+                },
             },
             {
                 "id": "E-2",
                 "title": "[Epic 2] Live adapter execution",
                 "labels": ["epic-2", "mirror:authority"],
+                "body_anchor": {
+                    "spm_anchor": "AO-MA-SPM-V5-EPIC-2",
+                    "slice_id": "V5-EPIC-2",
+                    "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+                },
             },
         ],
         "runtime_created_state": {
@@ -60,6 +70,11 @@ def _make_manifest(tmp_path: Path) -> Path:
                 "number": 3,
                 "node_id": "PVT_xxx",
                 "items_count": 2,
+            },
+            "issue_anchor_pin": {
+                "artifact_sha256_at_issue_creation": _VALID_ARTIFACT_SHA,
+                "plan_digest_at_issue_creation": _VALID_PLAN_DIGEST,
+                "master_plan_sha256_at_issue_creation": "sha256:" + "a" * 64,
             },
         },
     }
@@ -225,6 +240,105 @@ def test_extra_issue(tmp_path):
         now_iso=_now(),
     )
     assert any(d.category == "extra_issue" and d.object_id == "999" for d in report.drift)
+
+
+def test_anchor_value_mismatch(tmp_path):
+    """Codex iter-1 §1 absorb: anchor format-valid but value WRONG must drift."""
+    manifest = _make_manifest(tmp_path)
+    responses = _make_synced_responses()
+    # Issue 774 body has format-valid anchor but wrong spm_anchor value
+    wrong_body = (
+        "## V5 Anchor\n"
+        "- **spm_anchor:** `WRONG-ANCHOR-VALUE`\n"
+        "- **slice_id:** `V5-EPIC-1`\n"
+        "- **ao_authority_artifact:** `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`\n"
+        f"- **artifact_sha256:** `{_VALID_ARTIFACT_SHA}`\n"
+        f"- **plan_digest:** `{_VALID_PLAN_DIGEST}`\n"
+    )
+    responses["/repos/Halildeu/ao-kernel/issues?milestone=3&state=all&per_page=100"][0]["body"] = wrong_body
+    caller = _make_caller(responses)
+    report = check_github_mirror_drift(
+        projection_manifest_path=manifest,
+        gh_api_caller=caller,
+        network_allowed=True,
+        now_iso=_now(),
+    )
+    # Anchor format passes but value comparison drifts
+    drift_categories = [d.category for d in report.drift]
+    assert "anchor_mismatch" in drift_categories
+    assert report.exit_decision.value == "mirror_drift_detected"
+
+
+def test_anchor_sha_value_mismatch(tmp_path):
+    """Codex iter-1 §1: artifact_sha256 must match issue_anchor_pin runtime value."""
+    manifest = _make_manifest(tmp_path)
+    responses = _make_synced_responses()
+    wrong_sha = "sha256:" + "9" * 64  # format-valid but wrong value
+    wrong_body = (
+        "## V5 Anchor\n"
+        "- **spm_anchor:** `AO-MA-SPM-V5-EPIC-1`\n"
+        "- **slice_id:** `V5-EPIC-1`\n"
+        "- **ao_authority_artifact:** `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`\n"
+        f"- **artifact_sha256:** `{wrong_sha}`\n"
+        f"- **plan_digest:** `{_VALID_PLAN_DIGEST}`\n"
+    )
+    responses["/repos/Halildeu/ao-kernel/issues?milestone=3&state=all&per_page=100"][0]["body"] = wrong_body
+    caller = _make_caller(responses)
+    report = check_github_mirror_drift(
+        projection_manifest_path=manifest,
+        gh_api_caller=caller,
+        network_allowed=True,
+        now_iso=_now(),
+    )
+    assert any(d.category == "anchor_mismatch" for d in report.drift)
+
+
+def test_project_item_url_mismatch_same_count(tmp_path):
+    """Codex iter-1 §2 absorb: same item count but wrong URLs MUST drift."""
+    manifest = _make_manifest(tmp_path)
+    responses = _make_synced_responses()
+    # Replace expected item URLs with wrong ones (same count = 2)
+    responses["graphql:project_items:PVT_xxx"] = {
+        "items": [
+            {"id": "i1", "content": {"number": 999, "url": "https://github.com/Halildeu/ao-kernel/issues/999"}},
+            {"id": "i2", "content": {"number": 998, "url": "https://github.com/Halildeu/ao-kernel/issues/998"}},
+        ]
+    }
+    caller = _make_caller(responses)
+    report = check_github_mirror_drift(
+        projection_manifest_path=manifest,
+        gh_api_caller=caller,
+        network_allowed=True,
+        now_iso=_now(),
+    )
+    assert any(d.category == "project_item_url_mismatch" for d in report.drift)
+    assert report.exit_decision.value == "mirror_drift_detected"
+
+
+def test_pagination_cap_exceeds_returns_usage_error(tmp_path):
+    """Codex iter-1 §F absorb: expected_issue_count > 100 must fail-closed."""
+    manifest_dict = {
+        "schema_version": "v5-issue-projection.v1",
+        "labels": [],
+        "first_wave_issues": [],
+        "runtime_created_state": {
+            "milestone": {"number": 3, "title": "x"},
+            "issues_created": {f"E-{i}": 1000 + i for i in range(101)},  # 101 > 100
+            "project_board": {"number": 3, "node_id": "PVT_x", "items_count": 101},
+            "issue_anchor_pin": {},
+        },
+    }
+    path = tmp_path / "big.json"
+    path.write_text(json.dumps(manifest_dict), encoding="utf-8")
+    caller = _make_caller({})
+    report = check_github_mirror_drift(
+        projection_manifest_path=path,
+        gh_api_caller=caller,
+        network_allowed=True,
+        now_iso=_now(),
+    )
+    assert report.exit_decision.value == "usage_error"
+    assert report.to_exit_code() == 2
 
 
 def test_label_mismatch(tmp_path):

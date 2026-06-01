@@ -320,6 +320,15 @@ def check_github_mirror_drift(
 
     runtime_state = manifest.get("runtime_created_state", {})
 
+    # Codex iter-1 §F absorb: pagination hard cap pre-flight (before any API call).
+    # 11E-2c LATER will add multi-page handler; for now, refuse to proceed when
+    # the expected mirror set exceeds the single-page bound.
+    _PAGE_SIZE = 100
+    expected_issues_pre = runtime_state.get("issues_created", {})
+    if len(set(expected_issues_pre.values())) > _PAGE_SIZE:
+        report.exit_decision = ExitDecision.USAGE_ERROR
+        return report
+
     # 1. Milestone presence + metadata
     expected_ms = runtime_state.get("milestone", {})
     expected_ms_number = expected_ms.get("number")
@@ -378,7 +387,7 @@ def check_github_mirror_drift(
         issues_resp, err = _safe_call(
             gh_api_caller,
             "GET",
-            f"/repos/{repo_owner}/{repo_name}/issues?milestone={expected_ms_number}&state=all&per_page=100",
+            f"/repos/{repo_owner}/{repo_name}/issues?milestone={expected_ms_number}&state=all&per_page={_PAGE_SIZE}",
         )
         if err is not None:
             report.exit_decision = ExitDecision.API_ERROR
@@ -489,6 +498,43 @@ def check_github_mirror_drift(
                     )
                 )
 
+            # Codex iter-1 §1 absorb: anchor VALUE comparison (not just shape).
+            # Each parsed field must match the manifest's body_anchor (per-issue)
+            # AND artifact_sha256 / plan_digest must match runtime_state.issue_anchor_pin.
+            expected_body_anchor = expected_meta.get("body_anchor", {})
+            anchor_pin = runtime_state.get("issue_anchor_pin", {})
+            expected_value_map = {
+                "spm_anchor": expected_body_anchor.get("spm_anchor"),
+                "slice_id": expected_body_anchor.get("slice_id"),
+                "ao_authority_artifact": expected_body_anchor.get("ao_authority_artifact"),
+                "artifact_sha256": anchor_pin.get("artifact_sha256_at_issue_creation"),
+                "plan_digest": anchor_pin.get("plan_digest_at_issue_creation"),
+            }
+            value_mismatches: dict[str, dict[str, Any]] = {}
+            for field_name, expected_value in expected_value_map.items():
+                if expected_value is None:
+                    continue
+                actual_value = anchor.fields.get(field_name)
+                if actual_value is None:
+                    # missing already handled above; skip duplicate report
+                    continue
+                if actual_value != expected_value:
+                    value_mismatches[field_name] = {
+                        "expected": expected_value,
+                        "actual": actual_value,
+                    }
+            if value_mismatches:
+                report.drift.append(
+                    DriftFinding(
+                        category="anchor_mismatch",
+                        severity="blocker",
+                        object_type="anchor",
+                        object_id=str(num),
+                        expected={"values": expected_value_map},
+                        actual={"value_mismatches": value_mismatches},
+                    )
+                )
+
     # 5. Project presence + items
     expected_project = runtime_state.get("project_board", {})
     expected_project_node_id = expected_project.get("node_id")
@@ -516,7 +562,8 @@ def check_github_mirror_drift(
                 )
             )
         else:
-            actual_item_count = len(items_resp.get("items", []))
+            actual_items = items_resp.get("items", [])
+            actual_item_count = len(actual_items)
             if actual_item_count != expected_item_count:
                 report.drift.append(
                     DriftFinding(
@@ -526,6 +573,37 @@ def check_github_mirror_drift(
                         object_id=expected_project_node_id,
                         expected=expected_item_count,
                         actual=actual_item_count,
+                    )
+                )
+            # Codex iter-1 §2 absorb: URL set comparison (same-count-wrong-items
+            # detection). Expected URLs derived from issues_created mapping;
+            # actual URLs from project item content. Set-difference identifies
+            # any item whose URL is not in the expected V5 mirror set.
+            expected_urls = {f"https://github.com/{repo_owner}/{repo_name}/issues/{n}" for n in expected_issue_numbers}
+            actual_urls = set()
+            for item in actual_items:
+                content = item.get("content") or {}
+                url = content.get("url")
+                if not url:
+                    num = content.get("number")
+                    if num is not None:
+                        url = f"https://github.com/{repo_owner}/{repo_name}/issues/{num}"
+                if url:
+                    actual_urls.add(url)
+            missing_urls = expected_urls - actual_urls
+            extra_urls = actual_urls - expected_urls
+            if missing_urls or extra_urls:
+                report.drift.append(
+                    DriftFinding(
+                        category="project_item_url_mismatch",
+                        severity="blocker",
+                        object_type="project",
+                        object_id=expected_project_node_id,
+                        expected=sorted(expected_urls),
+                        actual={
+                            "missing": sorted(missing_urls),
+                            "extra": sorted(extra_urls),
+                        },
                     )
                 )
 
