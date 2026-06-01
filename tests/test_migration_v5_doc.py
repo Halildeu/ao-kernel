@@ -180,6 +180,40 @@ def test_migration_v5_policy_sim_command_is_valid_shape() -> None:
     assert "ao-kernel policy-sim run" in text, "Migration guide must use ``ao-kernel policy-sim run`` subcommand form"
 
 
+def test_migration_v5_policy_sim_directory_wording_is_explicit() -> None:
+    """Codex iter-2 absorb (E-8-6) — ``--proposed-policies`` takes a
+    DIRECTORY containing one or more ``<policy_name>.v1.json`` files,
+    not a single JSON file. Pin the directory wording so future edits
+    don't drift back to the misleading single-file form.
+
+    Source truth: ``ao_kernel/_internal/policy_sim/cli_handlers.py``
+    calls ``load_policies_from_dir(Path(args.proposed_policies))``;
+    ``ao_kernel/policy_sim/report.py`` globs ``directory.glob("*.json")``.
+    """
+    text = _doc_text()
+    assert "proposed-policies-dir" in text or "DIRECTORY containing" in text, (
+        "Migration guide must label ``--proposed-policies`` as a directory (not a single JSON file)"
+    )
+    # Empty / non-existent directory silently exits 0 — operator must
+    # be warned not to treat exit code alone as a load smoke.
+    assert "exits 0" in text or "exit code" in text, (
+        "Migration guide must warn about empty-dir silent exit 0 (otherwise operator misreads exit code as load smoke)"
+    )
+
+
+def test_migration_v5_otel_wording_avoids_production_grade_marketing() -> None:
+    """Codex iter-2 absorb (E-8-6, non-blocking nit absorbed) — §4
+    wording should describe Epic 5 E-5-1 as ``operator-facing OTEL
+    production tunables`` rather than ``production-grade``, which
+    leans toward marketing claim while v5.0.0 is still pre-promotion.
+    """
+    text = _doc_text()
+    assert "production-grade OTEL" not in text, "§4 must NOT use ``production-grade OTEL`` marketing wording"
+    assert "operator-facing OTEL production tunables" in text, (
+        "§4 must use the precise ``operator-facing OTEL production tunables`` framing"
+    )
+
+
 def test_migration_v5_doctor_claim_is_accurate() -> None:
     """Codex iter-1 absorb (E-8-6) — the doctor claim must reflect
     current ``ao_kernel/doctor_cmd.py`` behavior (9 checks; surface

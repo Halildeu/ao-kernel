@@ -168,15 +168,19 @@ pip install -U ao-kernel
 ao-kernel version          # → 5.0.0
 ao-kernel doctor           # 9 health checks; expect 0 FAIL (known WARN'leri
                            # ayrıca değerlendir, deployment-spesifik olabilir)
-ao-kernel policy-sim run --proposed-policies /path/to/proposed-policy.json
-                           # Replace with your proposed policy JSON. Omit
-                           # --proposed-patches if you only want a load smoke.
+ao-kernel policy-sim run --proposed-policies /path/to/proposed-policies-dir
+                           # Path is a DIRECTORY containing one or more
+                           # ``<policy_name>.v1.json`` files (NOT a single
+                           # file). Omit ``--proposed-patches`` if you
+                           # only want a policy-load smoke.
 ```
 
 > The `policy-sim` subcommand requires `run` + at least one of
-> `--proposed-policies` / `--proposed-patches`. There is no
-> `--dry-run` flag; the simulator is dry-run by design (no live
-> apply).
+> `--proposed-policies` (directory) or `--proposed-patches` (file).
+> There is no `--dry-run` flag; the simulator is dry-run by design
+> (no live apply). An empty / non-existent directory silently
+> evaluates to zero proposed policies and exits 0, so verify the
+> path resolves before treating the exit code as a load smoke.
 
 ### 3.4 Optional production telemetry adoption (Epic 5)
 
@@ -228,7 +232,7 @@ cp -a backup/<timestamp>/.ao/ ./
 ## 4. OTEL production tunables quick start
 
 Adopt the [Epic 5 E-5-1](https://github.com/Halildeu/ao-kernel/pull/791)
-production-grade OTEL tunables via env vars:
+operator-facing OTEL production tunables via env vars:
 
 ```bash
 export AO_KERNEL_OTEL_ENABLED=true
