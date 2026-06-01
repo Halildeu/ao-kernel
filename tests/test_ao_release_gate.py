@@ -1248,19 +1248,56 @@ class TestFindingConclusionKind:
     def test_review_missing_is_review_action(self) -> None:
         assert finding_conclusion_kind("ao_release_gate_high_risk_human_review_missing") == "review_action"
 
+    def test_review_evidence_not_accepting_is_review_action(self) -> None:
+        # 019e830d extension: evidence not-accepting is procedural (operator
+        # CODEOWNER review can resolve it), not a code defect.
+        assert finding_conclusion_kind("ao_release_gate_review_evidence_not_accepting") == "review_action"
+
+    def test_review_evidence_context_unverifiable_is_review_action(self) -> None:
+        # 019e830d extension: context unverifiable means evaluation-time
+        # binding could not be verified (network / eventual consistency);
+        # procedurally fixable via re-run or CODEOWNER review.
+        assert finding_conclusion_kind("ao_release_gate_review_evidence_context_unverifiable") == "review_action"
+
     def test_branch_stale_is_stale(self) -> None:
         assert finding_conclusion_kind("ao_release_gate_branch_not_up_to_date") == "stale"
 
     def test_real_violation_is_failure(self) -> None:
         for code in (
-            "ao_release_gate_review_evidence_not_accepting",
-            "ao_release_gate_review_evidence_context_unverifiable",
             "ao_release_gate_wrong_repository",
             "ao_release_gate_untrusted_fork",
             "ao_release_gate_pull_request_target_context",
             "ao_release_gate_diff_scope_missing",
             "ao_release_gate_required_checks_not_green",
             "ao_release_gate_payload_not_object",
+        ):
+            assert finding_conclusion_kind(code) == "failure", code
+
+    def test_structural_evidence_defects_remain_failure(self) -> None:
+        # 019e830d extension invariant — sibling evidence findings are
+        # NOT review_action. These remain ``failure`` because they
+        # indicate a real artifact defect, not a procedural blocker:
+        #   - missing: no evidence file at all (operator did not supply)
+        #   - schema_invalid: artifact present but broken / malformed
+        #   - context_unbound: forged / mismatched binding (head SHA drift)
+        for code in (
+            "ao_release_gate_review_evidence_missing",
+            "ao_release_gate_review_evidence_schema_invalid",
+            "ao_release_gate_review_evidence_context_unbound",
+        ):
+            assert finding_conclusion_kind(code) == "failure", code
+
+    def test_boundary_violations_remain_failure(self) -> None:
+        # 019e830d extension pin — security / governance boundary
+        # violations must NEVER classify as review_action. These signal
+        # an active intent to bypass policy and are always real failures.
+        for code in (
+            "ao_release_gate_admin_bypass_requested",
+            "ao_release_gate_forbidden_secret_context",
+            "ao_release_gate_live_adapter_execution_requested",
+            "ao_release_gate_gpp_boundary_open",
+            "ao_release_gate_pat_backed_bot_actor",
+            "ao_release_gate_agent_release_authority",
         ):
             assert finding_conclusion_kind(code) == "failure", code
 
@@ -1285,7 +1322,49 @@ class TestConclusionForFindings:
         assert conclusion_for_findings(["ao_release_gate_branch_not_up_to_date"]) == "stale"
 
     def test_any_failure_wins(self) -> None:
-        # Real violation outranks pending action signals.
+        # Real violation outranks pending action signals. Uses a true
+        # boundary-violation failure code so the invariant survives the
+        # 019e830d extension (which moved two evidence findings out of
+        # failure). Picking ``forbidden_secret_context`` because it can
+        # never legitimately become review_action.
+        assert (
+            conclusion_for_findings(
+                [
+                    "ao_release_gate_high_risk_human_review_missing",
+                    "ao_release_gate_forbidden_secret_context",
+                ]
+            )
+            == "failure"
+        )
+
+    def test_structural_evidence_failure_wins_over_procedural(self) -> None:
+        # Pin 019e830d: structural evidence defect (``missing``) still
+        # outranks procedural evidence finding (``not_accepting``).
+        # Keeps the failure axis sharp — the gate does not soften when
+        # the artifact is fundamentally broken.
+        assert (
+            conclusion_for_findings(
+                [
+                    "ao_release_gate_review_evidence_not_accepting",
+                    "ao_release_gate_review_evidence_missing",
+                ]
+            )
+            == "failure"
+        )
+
+    def test_evidence_procedural_findings_are_action_required(self) -> None:
+        # 019e830d extension — the two procedural evidence findings, on
+        # their own, surface as action_required (operator/reviewer can
+        # resolve without code change).
+        for code in (
+            "ao_release_gate_review_evidence_not_accepting",
+            "ao_release_gate_review_evidence_context_unverifiable",
+        ):
+            assert conclusion_for_findings([code]) == "action_required", code
+
+    def test_evidence_procedural_mixed_with_human_review_is_action_required(self) -> None:
+        # Two review_action findings of different sub-shapes still map
+        # to action_required — review_action is monoidally closed.
         assert (
             conclusion_for_findings(
                 [
@@ -1293,7 +1372,7 @@ class TestConclusionForFindings:
                     "ao_release_gate_review_evidence_not_accepting",
                 ]
             )
-            == "failure"
+            == "action_required"
         )
 
     def test_review_plus_stale_no_failure_is_action_required(self) -> None:
@@ -1329,17 +1408,73 @@ class TestWrapperExitCode:
         )
 
     def test_real_violation_returns_one(self) -> None:
+        # Uses a true boundary-violation code so the invariant survives
+        # the 019e830d extension. ``forbidden_secret_context`` is a hard
+        # policy boundary — it can never become review_action.
+        assert (
+            wrapper_exit_code(
+                DENY_POLICY_VIOLATION_DECISION,
+                ["ao_release_gate_forbidden_secret_context"],
+            )
+            == 1
+        )
+
+    def test_structural_evidence_missing_returns_one(self) -> None:
+        # Pin 019e830d: missing evidence artifact is a real defect, not
+        # procedural. Wrapper still fails closed.
+        assert (
+            wrapper_exit_code(
+                DENY_MISSING_EVIDENCE_DECISION,
+                ["ao_release_gate_review_evidence_missing"],
+            )
+            == 1
+        )
+
+    def test_structural_evidence_schema_invalid_returns_one(self) -> None:
+        # Pin 019e830d: malformed evidence artifact is a real defect.
+        assert (
+            wrapper_exit_code(
+                DENY_MISSING_EVIDENCE_DECISION,
+                ["ao_release_gate_review_evidence_schema_invalid"],
+            )
+            == 1
+        )
+
+    def test_structural_evidence_context_unbound_returns_one(self) -> None:
+        # Pin 019e830d: forged / mismatched binding is a real defect
+        # (head SHA drift, evidence does not bind to current PR head).
+        assert (
+            wrapper_exit_code(
+                DENY_MISSING_EVIDENCE_DECISION,
+                ["ao_release_gate_review_evidence_context_unbound"],
+            )
+            == 1
+        )
+
+    def test_procedural_evidence_not_accepting_returns_zero(self) -> None:
+        # 019e830d extension — procedural evidence finding alone is
+        # softened by the wrapper (operator/reviewer can resolve).
         assert (
             wrapper_exit_code(
                 DENY_MISSING_EVIDENCE_DECISION,
                 ["ao_release_gate_review_evidence_not_accepting"],
             )
-            == 1
+            == 0
         )
 
-    def test_review_plus_violation_returns_one(self) -> None:
-        # Wrapper softens ONLY the lone review-action case. Mixed blocker
-        # set with any real violation still fails closed.
+    def test_procedural_evidence_context_unverifiable_returns_zero(self) -> None:
+        # 019e830d extension — context unverifiable is procedural.
+        assert (
+            wrapper_exit_code(
+                DENY_MISSING_EVIDENCE_DECISION,
+                ["ao_release_gate_review_evidence_context_unverifiable"],
+            )
+            == 0
+        )
+
+    def test_review_plus_procedural_evidence_returns_zero(self) -> None:
+        # 019e830d extension — two review_action findings of different
+        # sub-shapes still soften (wrapper relaxes all-review-action set).
         assert (
             wrapper_exit_code(
                 DENY_POLICY_VIOLATION_DECISION,
@@ -1348,8 +1483,69 @@ class TestWrapperExitCode:
                     "ao_release_gate_review_evidence_not_accepting",
                 ],
             )
+            == 0
+        )
+
+    def test_procedural_evidence_plus_violation_returns_one(self) -> None:
+        # Critical pin — wrapper relaxes ONLY when EVERY blocker is
+        # review_action. A procedural evidence finding mixed with a
+        # real boundary violation still returns 1.
+        assert (
+            wrapper_exit_code(
+                DENY_POLICY_VIOLATION_DECISION,
+                [
+                    "ao_release_gate_review_evidence_not_accepting",
+                    "ao_release_gate_forbidden_secret_context",
+                ],
+            )
             == 1
         )
+
+    def test_procedural_evidence_plus_structural_evidence_returns_one(self) -> None:
+        # Pin — procedural evidence (review_action) mixed with structural
+        # evidence defect (failure) still returns 1. Wrapper never softens
+        # when ANY blocker is a real defect.
+        assert (
+            wrapper_exit_code(
+                DENY_MISSING_EVIDENCE_DECISION,
+                [
+                    "ao_release_gate_review_evidence_not_accepting",
+                    "ao_release_gate_review_evidence_missing",
+                ],
+            )
+            == 1
+        )
+
+    def test_admin_bypass_violation_returns_one(self) -> None:
+        # Pin — admin bypass request is always failure, never softened.
+        assert (
+            wrapper_exit_code(
+                DENY_POLICY_VIOLATION_DECISION,
+                ["ao_release_gate_admin_bypass_requested"],
+            )
+            == 1
+        )
+
+    def test_pr764_exact_procedural_pair_wrapper_zero(self) -> None:
+        # Codex 019e830d iter-2 absorb: PR #764's *exact* finding pair
+        # (not_accepting + context_unverifiable). Pins the regression
+        # signal at the wrapper boundary.
+        findings = [
+            "ao_release_gate_review_evidence_not_accepting",
+            "ao_release_gate_review_evidence_context_unverifiable",
+        ]
+        assert wrapper_exit_code(DENY_MISSING_EVIDENCE_DECISION, findings) == 0
+
+    def test_structural_pair_wrapper_one(self) -> None:
+        # Codex 019e830d iter-2 absorb: real decision-core often emits
+        # both structural and procedural findings in the same set
+        # (artifact missing AND context unverifiable). Wrapper must
+        # still fail closed when ANY blocker is structural failure.
+        findings = [
+            "ao_release_gate_review_evidence_missing",
+            "ao_release_gate_review_evidence_context_unverifiable",
+        ]
+        assert wrapper_exit_code(DENY_MISSING_EVIDENCE_DECISION, findings) == 1
 
     def test_stale_branch_returns_one(self) -> None:
         # Stale branch is not a review-action blocker; wrapper does not relax.
@@ -1397,12 +1593,36 @@ class TestBuildTechnicalCheckRun:
         assert cr["conclusion"] == "success"
 
     def test_real_violation_is_failure_in_enforce(self) -> None:
+        # Uses boundary-violation code so the invariant survives 019e830d.
         cr = build_technical_check_run(
-            DENY_MISSING_EVIDENCE_DECISION,
-            ["ao_release_gate_review_evidence_not_accepting"],
+            DENY_POLICY_VIOLATION_DECISION,
+            ["ao_release_gate_forbidden_secret_context"],
             conclusion_mode="enforce",
         )
         assert cr["conclusion"] == "failure"
+
+    def test_structural_evidence_missing_is_failure_in_enforce(self) -> None:
+        # Pin 019e830d — missing artifact is a real defect, not procedural.
+        cr = build_technical_check_run(
+            DENY_MISSING_EVIDENCE_DECISION,
+            ["ao_release_gate_review_evidence_missing"],
+            conclusion_mode="enforce",
+        )
+        assert cr["conclusion"] == "failure"
+
+    def test_procedural_evidence_alone_is_success_in_enforce(self) -> None:
+        # 019e830d extension — technical check ignores procedural
+        # evidence findings (they surface on the review check-run).
+        for code in (
+            "ao_release_gate_review_evidence_not_accepting",
+            "ao_release_gate_review_evidence_context_unverifiable",
+        ):
+            cr = build_technical_check_run(
+                DENY_MISSING_EVIDENCE_DECISION,
+                [code],
+                conclusion_mode="enforce",
+            )
+            assert cr["conclusion"] == "success", code
 
     def test_stale_only_is_stale_in_enforce(self) -> None:
         cr = build_technical_check_run(
@@ -1419,16 +1639,30 @@ class TestBuildTechnicalCheckRun:
             DENY_POLICY_VIOLATION_DECISION,
             [
                 "ao_release_gate_high_risk_human_review_missing",
+                "ao_release_gate_forbidden_secret_context",
+            ],
+            conclusion_mode="enforce",
+        )
+        assert cr["conclusion"] == "failure"
+
+    def test_procedural_plus_structural_evidence_is_failure_in_enforce(self) -> None:
+        # Pin 019e830d — procedural evidence (review_action, filtered)
+        # mixed with structural defect (failure) still surfaces failure.
+        cr = build_technical_check_run(
+            DENY_MISSING_EVIDENCE_DECISION,
+            [
                 "ao_release_gate_review_evidence_not_accepting",
+                "ao_release_gate_review_evidence_missing",
             ],
             conclusion_mode="enforce",
         )
         assert cr["conclusion"] == "failure"
 
     def test_shadow_mode_neutral_for_blocker(self) -> None:
+        # Shadow mode always neutralizes blockers, regardless of kind.
         cr = build_technical_check_run(
             DENY_MISSING_EVIDENCE_DECISION,
-            ["ao_release_gate_review_evidence_not_accepting"],
+            ["ao_release_gate_review_evidence_missing"],
             conclusion_mode="shadow",
         )
         assert cr["conclusion"] == "neutral"
@@ -1465,11 +1699,45 @@ class TestBuildReviewCheckRun:
         # Review check focuses only on review_action; a pure violation
         # set leaves it green (the technical check reports the failure).
         cr = build_review_check_run(
-            DENY_MISSING_EVIDENCE_DECISION,
-            ["ao_release_gate_review_evidence_not_accepting"],
+            DENY_POLICY_VIOLATION_DECISION,
+            ["ao_release_gate_forbidden_secret_context"],
             conclusion_mode="enforce",
         )
         assert cr["conclusion"] == "success"
+
+    def test_structural_evidence_missing_ignored_in_review_check(self) -> None:
+        # Pin 019e830d — structural evidence defect (failure) does not
+        # surface on the review check-run (technical check reports it).
+        cr = build_review_check_run(
+            DENY_MISSING_EVIDENCE_DECISION,
+            ["ao_release_gate_review_evidence_missing"],
+            conclusion_mode="enforce",
+        )
+        assert cr["conclusion"] == "success"
+
+    def test_procedural_evidence_is_action_required_in_review_check(self) -> None:
+        # 019e830d extension — procedural evidence findings surface on
+        # the review check-run as action_required (operator/reviewer
+        # action signal).
+        for code in (
+            "ao_release_gate_review_evidence_not_accepting",
+            "ao_release_gate_review_evidence_context_unverifiable",
+        ):
+            cr = build_review_check_run(
+                DENY_MISSING_EVIDENCE_DECISION,
+                [code],
+                conclusion_mode="enforce",
+            )
+            assert cr["conclusion"] == "action_required", code
+
+    def test_procedural_evidence_is_neutral_in_review_check_shadow(self) -> None:
+        # Pin — shadow mode neutralizes procedural findings too.
+        cr = build_review_check_run(
+            DENY_MISSING_EVIDENCE_DECISION,
+            ["ao_release_gate_review_evidence_not_accepting"],
+            conclusion_mode="shadow",
+        )
+        assert cr["conclusion"] == "neutral"
 
     def test_stale_branch_ignored_in_review_check(self) -> None:
         cr = build_review_check_run(
