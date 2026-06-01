@@ -1,0 +1,78 @@
+# ao-kernel Incident Escalation Policy (V5 Epic 6 E-6-6).
+#
+# Operator-owned, NOT a contractual SLA. This file declares the structure of
+# the on-call ladder + acknowledgement timeouts + communication boundary;
+# concrete person/contact assignment is operator responsibility (NOT shipped
+# in this repo).
+#
+# Severity-specific cadence per Codex 019e83c3 absorb. Microsoft Teams is the
+# primary notification channel (HARD RULE Workspace Tooling 2026-05-27 +
+# ADR-0029); Slack remains dormant-only.
+#
+# Not SLA. Not a production platform claim.
+---
+schema_version: escalation-policy.v1
+service: ao-kernel
+operator_owned: true
+is_contractual_sla: false
+guard_flags:
+  support_widening_allowed: false
+  production_platform_claim_allowed: false
+  live_adapter_execution_allowed: false
+
+# 3-stage ladder (operator-tunable). Concrete person/team assignment is the
+# operator's responsibility; this file structures the policy contract.
+stages:
+  - stage: primary_on_call
+    description: "First-line on-call responder; receives Alertmanager → Teams notification first."
+    role: "operator-defined (NOT a real name committed to repo)"
+    notification_channels:
+      - microsoft_teams_primary
+    secondary_channel: operator_email_smtp_fallback
+  - stage: secondary_on_call
+    description: "Escalation target if primary fails to acknowledge within tier cadence."
+    role: "operator-defined"
+    notification_channels:
+      - microsoft_teams_primary
+    secondary_channel: operator_email_smtp_fallback
+  - stage: engineering_manager
+    description: "Final escalation stage for SEV-1 unack chain."
+    role: "operator-defined"
+    notification_channels:
+      - microsoft_teams_primary
+    secondary_channel: operator_email_smtp_fallback
+
+# Severity-specific cadence (Codex 019e83c3 hardening absorb).
+# References docs/incident-response/severity-matrix.v1.json tier ids.
+severity_cadence:
+  SEV-1:
+    ack_timeout_minutes: 15
+    escalation_cadence_minutes: 15
+    mttr_target_minutes: 60
+  SEV-2:
+    ack_timeout_minutes: 30
+    escalation_cadence_minutes: 60
+    mttr_target_minutes: 240
+  SEV-3:
+    ack_timeout_minutes: null  # operator-defined (advisory; no hard cadence in v1)
+    escalation_cadence_minutes: null
+    mttr_target_minutes: null
+
+# Communication boundary per HARD RULE Workspace Tooling 2026-05-27 + ADR-0029.
+comms_boundary:
+  primary_channel: microsoft_teams
+  slack_status: dormant_asset_preserved
+  external_disclosure: out_of_scope_v1
+  customer_communications: out_of_scope_v1
+  regulatory_disclosure: operator_legal_counsel_required
+  vendor_escalation: operator_owned_external_handoff
+  pii_handling: redact_or_omit_from_incident_artifacts
+
+# Out-of-scope (E-6-6 follow-up slices) — operator dispatches.
+out_of_scope:
+  - pagerduty_opsgenie_integration  # E-6-6c
+  - chatops_bot_triage  # E-6-6d
+  - public_post_mortem_template  # E-6-6e
+  - regulatory_disclosure_template  # E-6-6f
+  - customer_comms_template  # E-6-6g
+  - vendor_escalation_matrix_concrete  # E-6-6b (prioritized first)
