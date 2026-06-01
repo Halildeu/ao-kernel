@@ -1,0 +1,30 @@
+name: ao-kernel CodeQL config
+
+# V5 Epic 6 E-6-5 — single source-of-truth for CodeQL queries and
+# scoped paths. Codex 019e8350 absorb: workflow itself declares only
+# ``config-file`` so the queries list lives here and cannot drift.
+
+# Keep default-queries enabled so the security-extended pack
+# additively layers on top (not replacement).
+disable-default-queries: false
+
+queries:
+  # Baseline only — additive security-extended pack. The broader
+  # security-and-quality pack is deferred to a follow-up slice once
+  # the initial alert baseline is triaged (Codex 019e8350 absorb).
+  - uses: security-extended
+
+paths:
+  - ao_kernel
+  - scripts
+
+# Codex 019e8350 absorb: ``paths-ignore`` uses glob form for nested
+# match safety. Tests are excluded so reviewer false-positive load
+# stays controllable; packaged defaults under ``ao_kernel/defaults``
+# are excluded because the scanner would flag data-only JSON/text
+# files (no executable code paths).
+paths-ignore:
+  - "tests/**"
+  - "ao_kernel/defaults/**"
+  - "**/__pycache__/**"
+  - "**/*.pyc"
