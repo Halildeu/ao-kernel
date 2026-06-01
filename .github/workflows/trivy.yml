@@ -1,0 +1,62 @@
+name: Trivy Vulnerability Scan
+
+# V5 Epic 6 E-6-2 — Trivy filesystem vulnerability scan (advisory
+# baseline). Codex 019e8385 absorb:
+#
+# - exit-code: "0" (advisory; do not block CI until baseline triaged)
+# - severity: CRITICAL,HIGH baseline (MEDIUM noise deferred)
+# - scanners: vuln (config/secret scanning out — separate concern)
+# - fs scan only; container image scans (deploy/*/Dockerfile)
+#   are an explicit follow-up slice (see plan doc §4)
+# - aquasecurity/trivy-action pinned to exact semver (not floating
+#   @v0 major)
+# - Permissions minimum: contents:read + security-events:write only
+# - Snyk OUT (operator-bound; SNYK_TOKEN secret + tier decision)
+#
+# Workflow runs alongside CodeQL (PR #796) but uses a distinct SARIF
+# category (trivy-fs) so the two analyses do not collide on the
+# GHAS Security tab.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Mon 04:23 UTC — off-peak, after Dependabot 04:00 window so PR
+    # surfaces are produced before the schedule scan asks for them.
+    - cron: "23 4 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run Trivy scanner (filesystem)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          scanners: vuln
+          ignore-unfixed: true
+          exit-code: "0"
+
+      - name: Upload SARIF to GHAS
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs

@@ -1,0 +1,57 @@
+version: 2
+
+# V5 Epic 6 E-6-2 — Dependabot dependency update baseline.
+# Codex 019e8385 absorb: weekly schedule + runtime/dev groups +
+# Mon 04:00 UTC (low-traffic) + conservative open-PR limits.
+
+updates:
+  # Python deps — runtime vs dev separation reduces reviewer noise.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: UTC
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - security
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    groups:
+      python-runtime:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "pytest*"
+          - "ruff"
+          - "mypy"
+          - "mutmut"
+          - "build"
+          - "twine"
+      python-dev:
+        patterns:
+          - "pytest*"
+          - "ruff"
+          - "mypy"
+          - "mutmut"
+          - "build"
+          - "twine"
+
+  # GitHub Actions — keeps action versions current (CodeQL, Trivy,
+  # checkout, setup-python, etc.).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: UTC
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "chore(actions)"
