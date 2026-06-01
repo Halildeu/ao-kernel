@@ -570,9 +570,18 @@ def sync_v5_mirror(
         for iss in issues_resp or []:
             actual_issues[iss["number"]] = iss
 
-    # Fetch project items
+    # Fetch project items.
+    #
+    # CI-fix (PR-post-789): Project v2 is user-level; the default GitHub Actions
+    # GITHUB_TOKEN lacks Projects v2 scope. In dry-run mode we degrade
+    # gracefully: log the failure into the report's `reason` field and continue
+    # with an empty actual_project_urls (planned project_item_* changes will be
+    # over-reported, but operator review of the dry-run report catches the
+    # PAT-scope gap explicitly). In apply mode, project fetch failure is still
+    # api_error (cannot safely write without read confirmation).
     project_node_id = runtime_state.get("project_board", {}).get("node_id")
     actual_project_urls: set[str] = set()
+    project_fetch_degraded = False
     if project_node_id:
         items_resp, err = _safe_call(
             gh_api_caller,
@@ -581,16 +590,21 @@ def sync_v5_mirror(
             None,
         )
         if err is not None:
-            report.sync_state = SyncState.API_ERROR
-            report.reason = f"failed to fetch project items: {err}"
-            return report
-        for item in (items_resp or {}).get("items", []):
-            content = item.get("content") or {}
-            url = content.get("url")
-            if not url and content.get("number") is not None:
-                url = f"https://github.com/{repo_owner}/{repo_name}/issues/{content['number']}"
-            if url:
-                actual_project_urls.add(url)
+            if apply_mode:
+                report.sync_state = SyncState.API_ERROR
+                report.reason = f"failed to fetch project items: {err}"
+                return report
+            # Dry-run: degrade gracefully (Codex pattern: report the gap, don't fail).
+            project_fetch_degraded = True
+            actual_project_urls = set()
+        else:
+            for item in (items_resp or {}).get("items", []):
+                content = item.get("content") or {}
+                url = content.get("url")
+                if not url and content.get("number") is not None:
+                    url = f"https://github.com/{repo_owner}/{repo_name}/issues/{content['number']}"
+                if url:
+                    actual_project_urls.add(url)
 
     # Compute planned changes
     body_changes = _plan_issue_body_changes(
@@ -612,6 +626,14 @@ def sync_v5_mirror(
 
     report.planned_changes = body_changes + label_changes + project_changes
     report.sync_state = SyncState.DRY_RUN_PLANNED
+
+    if project_fetch_degraded:
+        # Document the PAT-scope gap in the dry-run report so the operator
+        # is aware before computing the digest + dispatching apply.
+        existing = report.reason or ""
+        report.reason = (
+            existing + "; " if existing else ""
+        ) + "project_v2_fetch_degraded: default token lacks Projects v2 scope; apply requires PAT"
 
     if not apply_mode:
         report.sync_state = SyncState.DRY_RUN_COMPLETE
