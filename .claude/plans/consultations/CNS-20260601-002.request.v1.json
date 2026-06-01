@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260601-002",
+  "status": "RESOLVED",
+  "iteration": 2,
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "transport": "mcp",
+  "topic": "ao_ma_11g_spm_quality_profile_hardening",
+  "mode": "adversarial_plan_review",
+  "question": {
+    "title": "AO-MA-11G-1 slice plan: SPM Quality Profile Hardening (ADR + ISO 25010 profile + Keep-a-Changelog discipline + retro ADR back-populate + AO-MA tracking drift fix)",
+    "body": "AO-MA-SPM Faz 7 (master plan SON faz): ADR + ISO/IEC 25010 quality profile + CHANGELOG discipline. Pure core slice 11G-1 (schemas + module + CLI + bundled assets + 5 retro ADR + AO-MA tracking drift kapatma); CI enforcement + operator dogfooding + retro ADR cross-AI revalidation = 11G-2 (later).",
+    "context_refs": [
+      ".claude/plans/AO-MA-SPM-MASTER-PLAN.md",
+      "CHANGELOG.md",
+      ".claude/plans/ao_ma_status.v1.json",
+      "ao_kernel/orchestration/native_worker_import.py",
+      "ao_kernel/orchestration/notifier.py",
+      "ao_kernel/orchestration/slice_evidence_registers.py"
+    ]
+  },
+  "created_at": "2026-06-01T03:00:00+03:00",
+  "branch": "codex/ao-ma-11g-1-quality-profile",
+  "head_sha": "62a56fc",
+  "mcp_thread_id": "019e8050-fe36-76d1-b599-77882d3d5772",
+  "plan_verdict": "Codex iter-1 REVISE (3 kritik fail-open + 12+ invariant: CHANGELOG check diff-aware (mevcut imza `changelog_text` zaten Unreleased dolu → fail-open), retro ADR status semantik (retrospective/review_status alanlari + back_populated_pending_cross_ai_revalidation), AO-MA tracking drift (11H/11F/4.6 status pending/in_progress gosteriyor ama git'te merged) -- 11G-1 PR'i kapatir; iter-2 AGREE (ready_for_impl=true) ek 10 mekanik daraltma absorbe: status vocabulary slice='merged'/phase='done', date format YYYY-MM-DD vs RFC3339 back_populated_at, ADR-0005 retro DEGIL (current, enforcement karari), top-level CLI 'ao-kernel quality' ayri parser, template.md validate kapsam disi, YAML AST allowlist sadece safe_load+YAMLError, supersession cycle check supersedes graph yonlu, CHANGELOG parser bullet-line odakli, JSON Schema default applye edilmez (parse layer materialize), ISO exact-set iki katman (schema+module), index deterministic id-asc.",
+  "status_note": "11G-1 pure core slice; .github'a dokunmaz -> otonom merge beklenir. Tracking drift kapatma + retro 5 ADR + ISO profile + changelog dogfooding bu PR'da. CI enforcement + 4.6 native-import dogfooding + retro ADR cross-AI revalidation = 11G-2.",
+  "resolution": "Codex thread 019e8050 (2 tur REVISE -> AGREE ready_for_impl=true). Plan Consensus Autonomy -> direkt impl. Master plan SON faz; 11G-1 merge sonrasi 7/7 fazlar tamamlanir."
+}

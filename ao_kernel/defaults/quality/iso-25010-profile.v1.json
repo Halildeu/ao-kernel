@@ -1,0 +1,209 @@
+{
+  "schema_version": "ao-ma-iso-25010-profile.v1",
+  "profile_id": "ao-kernel-default",
+  "profile_version": "1.0.0",
+  "issued_at": "2026-06-01T03:00:00Z",
+  "iso_25010_certified": false,
+  "certification_target": false,
+  "external_audit_claim": false,
+  "characteristics": {
+    "functional_suitability": {
+      "functional_completeness": {
+        "applicable": true,
+        "rationale": "Public facade surface is contracted via schemas (ao-ma-* artifact families); completeness is gated by CI tests.",
+        "measure_method": "ci_test"
+      },
+      "functional_correctness": {
+        "applicable": true,
+        "rationale": "Fail-closed governance pipelines enforce correctness; the test suite pins behavior across 5000+ tests.",
+        "measure_method": "ci_test"
+      },
+      "functional_appropriateness": {
+        "applicable": true,
+        "rationale": "Each AO-MA slice is reviewed by an independent provider (Codex) before merge to confirm the scope fits the stated goal.",
+        "measure_method": "code_review"
+      }
+    },
+    "performance_efficiency": {
+      "time_behaviour": {
+        "applicable": true,
+        "rationale": "Streaming + circuit breaker + rate limiter bound LLM call latency; benchmark-fast job tracks regressions per PR.",
+        "measure_method": "ci_test"
+      },
+      "resource_utilization": {
+        "applicable": true,
+        "rationale": "Run governor enforces explicit budget caps (slices, retries, tokens, wall_clock); breaches halt the run.",
+        "measure_method": "code_review"
+      },
+      "capacity": {
+        "applicable": false,
+        "rationale": "ao-kernel is an embedded SDK/CLI; no service-tier capacity model. Operator-defined budget envelopes own scaling.",
+        "measure_method": "not_measured"
+      }
+    },
+    "compatibility": {
+      "co_existence": {
+        "applicable": false,
+        "rationale": "Pure-Python library with no daemon, exclusive resource, or stateful host install. Cohabitation is the default.",
+        "measure_method": "not_measured"
+      },
+      "interoperability": {
+        "applicable": true,
+        "rationale": "MCP server + JSONL evidence + schema-bound artifacts are the canonical interop surface; tests pin the wire shapes.",
+        "measure_method": "schema_validation"
+      }
+    },
+    "interaction_capability": {
+      "appropriateness_recognizability": {
+        "applicable": true,
+        "rationale": "Public CLI subcommands carry self-describing --help; SDK signatures are typed and documented.",
+        "measure_method": "manual_review"
+      },
+      "learnability": {
+        "applicable": true,
+        "rationale": "CLAUDE.md + .claude/plans/ master plan + per-slice plan docs constitute the learning surface for new contributors.",
+        "measure_method": "manual_review"
+      },
+      "operability": {
+        "applicable": true,
+        "rationale": "ao-kernel doctor + ao-kernel evidence subcommands let operators inspect workspace state without code reading.",
+        "measure_method": "manual_review"
+      },
+      "user_error_protection": {
+        "applicable": true,
+        "rationale": "Fail-closed schema validation rejects malformed inputs before any side effect; CLI flags use argparse choices.",
+        "measure_method": "ci_test"
+      },
+      "user_engagement": {
+        "applicable": false,
+        "rationale": "Developer-tool surface; no end-user-facing engagement loops within scope.",
+        "measure_method": "not_measured"
+      },
+      "inclusivity": {
+        "applicable": false,
+        "rationale": "Text-only CLI/SDK with no UI; accessibility concerns live in any downstream UI built on top.",
+        "measure_method": "not_measured"
+      },
+      "user_assistance": {
+        "applicable": true,
+        "rationale": "Error messages are gate-authored, secret-redacted, and include the failing path + invariant name; --help text is canonical.",
+        "measure_method": "manual_review"
+      },
+      "self_descriptiveness": {
+        "applicable": true,
+        "rationale": "Public facade modules carry docstrings explaining the contract; bundled schemas describe every artifact field.",
+        "measure_method": "manual_review"
+      }
+    },
+    "reliability": {
+      "faultlessness": {
+        "applicable": true,
+        "rationale": "AST import-allowlist + fail-closed gates + 85%+ branch coverage on hot paths reduce defect leakage.",
+        "measure_method": "coverage_gate"
+      },
+      "availability": {
+        "applicable": false,
+        "rationale": "Embedded SDK/CLI with no long-running service in the shipped boundary; availability is the host's concern.",
+        "measure_method": "not_measured"
+      },
+      "fault_tolerance": {
+        "applicable": true,
+        "rationale": "Circuit breaker per provider + retry only before streaming + atomic file writes (tmp+fsync+rename) keep partial failures contained.",
+        "measure_method": "ci_test"
+      },
+      "recoverability": {
+        "applicable": true,
+        "rationale": "Checkpoint + resume + canonical decision store let workflows recover from corruption without data loss; tests pin the round trip.",
+        "measure_method": "ci_test"
+      }
+    },
+    "security": {
+      "confidentiality": {
+        "applicable": true,
+        "rationale": "Notifier-grade secret redaction (10+ leak patterns) is applied to every free-text field before it enters an artifact.",
+        "measure_method": "ci_test"
+      },
+      "integrity": {
+        "applicable": true,
+        "rationale": "SHA-bound evidence chains + recompute-not-trust verify on every artifact-receiving boundary prevent tamper.",
+        "measure_method": "ci_test"
+      },
+      "non_repudiation": {
+        "applicable": true,
+        "rationale": "JSONL append-only evidence trail with fsync per record gives a per-event audit log that cannot be silently rewritten.",
+        "measure_method": "manual_review"
+      },
+      "accountability": {
+        "applicable": true,
+        "rationale": "Every cross-AI review records implementer/reviewer provider + thread id + verdict; audit trail in PR squash messages.",
+        "measure_method": "code_review"
+      },
+      "authenticity": {
+        "applicable": true,
+        "rationale": "Cross-AI HARD RULE pins implementer provider != reviewer provider; same-provider review cannot fake independence.",
+        "measure_method": "code_review"
+      },
+      "resistance": {
+        "applicable": true,
+        "rationale": "AST import-allowlist + 3 guard flags const false at the schema boundary + ao-release-gate diff scope filter reject scope-widening payloads.",
+        "measure_method": "ci_test"
+      }
+    },
+    "maintainability": {
+      "modularity": {
+        "applicable": true,
+        "rationale": "Public facade + _internal split (D1) + < 800-line file budget enforce module boundaries.",
+        "measure_method": "code_review"
+      },
+      "reusability": {
+        "applicable": true,
+        "rationale": "Pure-core modules (notifier, run_governor, slice_evidence_registers, native_worker_import, quality_profile) take data in, return data out — reusable in any host.",
+        "measure_method": "code_review"
+      },
+      "analysability": {
+        "applicable": true,
+        "rationale": "Structured error codes + path-only secret-safe messages + JSONL evidence let any failure be diagnosed without re-running the code.",
+        "measure_method": "manual_review"
+      },
+      "modifiability": {
+        "applicable": true,
+        "rationale": "Schemas + ADRs + plan docs capture every architectural commitment; the test suite catches regression on every change.",
+        "measure_method": "code_review"
+      },
+      "testability": {
+        "applicable": true,
+        "rationale": "Pure cores are direct call-and-assert testable; 85%+ branch coverage gate per module; AST import-allowlist tests pin structural purity.",
+        "measure_method": "coverage_gate"
+      }
+    },
+    "flexibility": {
+      "adaptability": {
+        "applicable": true,
+        "rationale": "Workspace mode vs library mode + opt-in extras (llm, mcp, otel) let the same kernel run in different governance envelopes.",
+        "measure_method": "code_review"
+      },
+      "scalability": {
+        "applicable": false,
+        "rationale": "Single-process kernel; horizontal scaling lives in the calling host. No autoscaling claim within the shipped boundary.",
+        "measure_method": "not_measured"
+      },
+      "installability": {
+        "applicable": true,
+        "rationale": "pip install ao-kernel — single PyPI artifact; CI extras-install job pins that every advertised extra installs cleanly.",
+        "measure_method": "ci_test"
+      },
+      "replaceability": {
+        "applicable": false,
+        "rationale": "No legacy in-place upgrade contract; downstream callers pin a version and adopt new ones explicitly.",
+        "measure_method": "not_measured"
+      }
+    }
+  },
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "register_authority": "evidence_record_only",
+  "github_write_authorized": false
+}

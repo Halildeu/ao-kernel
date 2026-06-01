@@ -1,120 +1,182 @@
 {
-  "schema_version": "ao-ma-status.v1",
+  "ai_output_release_authority": false,
   "artifact_kind": "ao_ma_status",
-  "status_role": "machine_readable_derived_tracking_index",
   "authority_model": "derived_from_master_plan_and_merged_ao_ma_artifacts",
-  "program_id": "ao-ma-spm",
-  "program_title": "Governed Autonomous Multi-AI Software Production System",
   "authority_ref": "origin/main",
-  "repository_full_name": "Halildeu/ao-kernel",
-  "master_plan_ref": {
-    "path": ".claude/plans/AO-MA-SPM-MASTER-PLAN.md",
-    "sha256": "sha256:a80f0a498dc9e5e269c69c60cbd5cf5c44cc361da2109c1bfa5357197b22ec9d",
-    "commit_sha": "38d2a48fd5150fd37cc82fcc0727823c344c8339",
-    "section_refs": [
-      "## 5. Roadmap — 7 Faz",
-      "## 6. Bootstrap / Self-Hosting Mekanizması"
-    ]
+  "blocked_slices": [],
+  "created_at": "2026-05-30T04:00:00Z",
+  "current_phase": "AO-MA-11G",
+  "current_slice": "AO-MA-11G-1",
+  "drift_policy": {
+    "comparator": "pure_local_digest_and_inventory",
+    "on_status_or_mirror_drift": "halt_autonomy_and_escalate"
+  },
+  "forbidden_actions": [
+    "treat ao_ma_status.v1.json as a governance authority (it is derived only)",
+    "downgrade a computed risk_class via this file, an AI claim, a GitHub mirror field, or a manual edit",
+    "import governance state from GitHub into ao-kernel (mirror is one-way ao-kernel->github)",
+    "set support_widening_allowed / production_platform_claim_allowed / live_adapter_execution_allowed to true without an operator-bound supersession PR",
+    "merge with a red ao-release-gate or with --admin / bypass actors",
+    "write to GitHub (issues/milestones/projects) from 11E-1 (that is 11E-2 scope)"
+  ],
+  "github_mirror": {
+    "authority": false,
+    "direction": "ao-kernel-to-github",
+    "manual_edit_override_allowed": false,
+    "sync_state": "not_wired"
   },
   "human_status_file": ".claude/plans/AO-MA-ROADMAP-STATUS.md",
-  "current_phase": "AO-MA-11H",
-  "current_slice": "AO-MA-11H-1",
+  "live_adapter_execution_allowed": false,
+  "master_plan_ref": {
+    "commit_sha": "38d2a48fd5150fd37cc82fcc0727823c344c8339",
+    "path": ".claude/plans/AO-MA-SPM-MASTER-PLAN.md",
+    "section_refs": [
+      "## 5. Roadmap \u2014 7 Faz",
+      "## 6. Bootstrap / Self-Hosting Mekanizmas\u0131"
+    ],
+    "sha256": "sha256:a80f0a498dc9e5e269c69c60cbd5cf5c44cc361da2109c1bfa5357197b22ec9d"
+  },
+  "next_allowed_actions": [
+    "complete AO-MA-11G-1 (current slice): land the SPM quality profile hardening core (3 schemas + quality_profile.py pure module + 4 retrospective ADRs (ADR-0001..0004) + 1 current ADR (ADR-0005 Keep-a-Changelog per-PR discipline) + ISO 25010 bundled profile + CHANGELOG discipline check + AO-MA tracking drift fix) and merge its PR \u2014 SON FAZ"
+  ],
   "phases": [
     {
-      "phase_id": "AO-MA-11A",
-      "title": "Plan Consensus + Single Operator Approval Gate",
-      "status": "in_progress",
+      "closed_at": null,
       "milestone_ref": null,
+      "phase_id": "AO-MA-11A",
       "slice_ids": [
         "AO-MA-11A-1",
         "AO-MA-11A-2"
       ],
-      "closed_at": null
+      "status": "in_progress",
+      "title": "Plan Consensus + Single Operator Approval Gate"
     },
     {
-      "phase_id": "AO-MA-11E",
-      "title": "GitHub-Native Operator Tracking Mirror",
-      "status": "in_progress",
+      "closed_at": null,
       "milestone_ref": null,
+      "phase_id": "AO-MA-11E",
       "slice_ids": [
         "AO-MA-11E-1",
         "AO-MA-11E-2"
       ],
-      "closed_at": null
+      "status": "in_progress",
+      "title": "GitHub-Native Operator Tracking Mirror"
     },
     {
-      "phase_id": "AO-MA-11I",
-      "title": "Autonomous Run Governor",
-      "status": "done",
+      "closed_at": null,
       "milestone_ref": null,
+      "phase_id": "AO-MA-11I",
       "slice_ids": [
         "AO-MA-11I-1"
       ],
-      "closed_at": null
+      "status": "done",
+      "title": "Autonomous Run Governor"
     },
     {
-      "phase_id": "AO-MA-11H",
-      "title": "Notification & Escalation",
-      "status": "in_progress",
+      "closed_at": null,
       "milestone_ref": null,
+      "phase_id": "AO-MA-11H",
       "slice_ids": [
         "AO-MA-11H-1"
       ],
-      "closed_at": null
+      "status": "done",
+      "title": "Notification & Escalation"
     },
     {
-      "phase_id": "AO-MA-11F",
-      "title": "Test / Suggestion / Update Evidence Registers",
-      "status": "pending",
+      "closed_at": null,
       "milestone_ref": null,
+      "phase_id": "AO-MA-11F",
       "slice_ids": [
         "AO-MA-11F-1"
       ],
-      "closed_at": null
+      "status": "done",
+      "title": "Test / Suggestion / Update Evidence Registers"
     },
     {
-      "phase_id": "AO-MA-4.6",
-      "title": "Native Worker Result Import (import-only)",
-      "status": "pending",
+      "closed_at": null,
       "milestone_ref": null,
+      "phase_id": "AO-MA-4.6",
       "slice_ids": [
         "AO-MA-4.6-1"
       ],
-      "closed_at": null
+      "status": "done",
+      "title": "Native Worker Result Import (import-only)"
     },
     {
-      "phase_id": "AO-MA-11G",
-      "title": "SPM Quality Profile Hardening",
-      "status": "pending",
+      "closed_at": null,
       "milestone_ref": null,
+      "phase_id": "AO-MA-11G",
       "slice_ids": [
         "AO-MA-11G-1"
       ],
-      "closed_at": null
+      "status": "in_progress",
+      "title": "SPM Quality Profile Hardening"
     }
   ],
+  "production_platform_claim_allowed": false,
+  "program_id": "ao-ma-spm",
+  "program_title": "Governed Autonomous Multi-AI Software Production System",
+  "progress_estimates": {
+    "phases": {
+      "done_count": 4,
+      "next_phase_id": "AO-MA-11G",
+      "percent": 57,
+      "total_count": 7
+    },
+    "slices": {
+      "merged_count": 6,
+      "percent": 67,
+      "total_count": 9
+    }
+  },
+  "release_authority": "ao-release-gate+github-ruleset",
+  "repository_full_name": "Halildeu/ao-kernel",
+  "required_startup_checks": [
+    {
+      "command": "git status --short --branch",
+      "id": "git_status"
+    },
+    {
+      "command": "git rev-list --left-right --count HEAD...origin/main",
+      "id": "origin_divergence"
+    },
+    {
+      "command": "bash .claude/scripts/ops.sh preflight",
+      "id": "preflight"
+    },
+    {
+      "command": "python3 scripts/ao_ma_next.py",
+      "id": "ao_ma_next"
+    }
+  ],
+  "required_workflow": [
+    "read this status + master plan before starting any slice",
+    "run 3-AI plan consensus (anthropic+openai+minimax) before implementation",
+    "present unanimous-AGREE plan at the single operator approval gate",
+    "implement in a dedicated worktree + short-lived branch",
+    "cross-provider review (implementer != reviewer)",
+    "ao-release-gate technical + review green before merge",
+    "squash merge (no --admin) + forensic cleanup",
+    "update this status + roadmap doc after merge"
+  ],
+  "schema_version": "ao-ma-status.v1",
   "slices": [
     {
-      "slice_id": "AO-MA-11A-1",
-      "phase_id": "AO-MA-11A",
-      "title": "plan_consensus validator + consensus-bundle + plan-approval schemas",
-      "status": "merged",
-      "risk_class": "critical",
-      "issue_ref": null,
-      "pr_refs": [
-        758
-      ],
       "anchor": {
         "ao_authority_artifact": "ao_kernel/orchestration/plan_consensus.py",
         "artifact_sha256": "sha256:9c2e183c232e10f024d5d4867777a66e4f7f5fef35868b4475ed1eccc2652b38",
-        "plan_digest": null,
-        "phase_id": "AO-MA-11A",
-        "slice_id": "AO-MA-11A-1",
         "last_sync_run_id": null,
-        "mirror_projection_sha256": null
+        "mirror_projection_sha256": null,
+        "phase_id": "AO-MA-11A",
+        "plan_digest": null,
+        "slice_id": "AO-MA-11A-1"
+      },
+      "approval_ref": {
+        "decision": "approved",
+        "operator_decision_ref": "operator single-gate program approval 2026-05-30 (AskUserQuestion); per-slice approval not required under the autonomous-after-single-gate model",
+        "state": "approved"
       },
       "consensus_ref": {
-        "state": "agreed",
         "consultation_refs": [
           {
             "provider_id": "anthropic",
@@ -128,61 +190,59 @@
             "provider_id": "minimax",
             "ref": "mavis:mvs_ba774375"
           }
-        ]
+        ],
+        "state": "agreed"
       },
-      "approval_ref": {
-        "state": "approved",
-        "decision": "approved",
-        "operator_decision_ref": "operator single-gate program approval 2026-05-30 (AskUserQuestion); per-slice approval not required under the autonomous-after-single-gate model"
-      },
-      "evidence_refs": []
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-11A",
+      "pr_refs": [
+        758
+      ],
+      "risk_class": "critical",
+      "slice_id": "AO-MA-11A-1",
+      "status": "merged",
+      "title": "plan_consensus validator + consensus-bundle + plan-approval schemas"
     },
     {
-      "slice_id": "AO-MA-11A-2",
-      "phase_id": "AO-MA-11A",
-      "title": "GitHub Environment ao-ma-plan-approval required-reviewer wiring",
-      "status": "not_started",
-      "risk_class": "high",
-      "issue_ref": null,
-      "pr_refs": [],
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
-        "plan_digest": null,
-        "phase_id": "AO-MA-11A",
-        "slice_id": "AO-MA-11A-2",
         "last_sync_run_id": null,
-        "mirror_projection_sha256": null
-      },
-      "consensus_ref": {
-        "state": "not_started"
+        "mirror_projection_sha256": null,
+        "phase_id": "AO-MA-11A",
+        "plan_digest": null,
+        "slice_id": "AO-MA-11A-2"
       },
       "approval_ref": {
         "state": "not_requested"
       },
-      "evidence_refs": []
+      "consensus_ref": {
+        "state": "not_started"
+      },
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-11A",
+      "pr_refs": [],
+      "risk_class": "high",
+      "slice_id": "AO-MA-11A-2",
+      "status": "not_started",
+      "title": "GitHub Environment ao-ma-plan-approval required-reviewer wiring"
     },
     {
-      "slice_id": "AO-MA-11E-1",
-      "phase_id": "AO-MA-11E",
-      "title": "Derived tracking SSOT: ao_ma_status + schema + ao_ma_next + roadmap + drift core",
-      "status": "merged",
-      "risk_class": "critical",
-      "issue_ref": null,
-      "pr_refs": [
-        760
-      ],
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
-        "plan_digest": null,
-        "phase_id": "AO-MA-11E",
-        "slice_id": "AO-MA-11E-1",
         "last_sync_run_id": null,
-        "mirror_projection_sha256": null
+        "mirror_projection_sha256": null,
+        "phase_id": "AO-MA-11E",
+        "plan_digest": null,
+        "slice_id": "AO-MA-11E-1"
+      },
+      "approval_ref": {
+        "state": "not_requested"
       },
       "consensus_ref": {
-        "state": "agreed",
         "consultation_refs": [
           {
             "provider_id": "anthropic",
@@ -196,59 +256,59 @@
             "provider_id": "minimax",
             "ref": "mavis:mvs_ba774375"
           }
-        ]
+        ],
+        "state": "agreed"
       },
-      "approval_ref": {
-        "state": "not_requested"
-      },
-      "evidence_refs": []
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-11E",
+      "pr_refs": [
+        760
+      ],
+      "risk_class": "critical",
+      "slice_id": "AO-MA-11E-1",
+      "status": "merged",
+      "title": "Derived tracking SSOT: ao_ma_status + schema + ao_ma_next + roadmap + drift core"
     },
     {
-      "slice_id": "AO-MA-11E-2",
-      "phase_id": "AO-MA-11E",
-      "title": "GitHub Projects/Milestone/Issue one-way sync + anchor injection + live drift",
-      "status": "not_started",
-      "risk_class": "high",
-      "issue_ref": null,
-      "pr_refs": [],
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
-        "plan_digest": null,
-        "phase_id": "AO-MA-11E",
-        "slice_id": "AO-MA-11E-2",
         "last_sync_run_id": null,
-        "mirror_projection_sha256": null
+        "mirror_projection_sha256": null,
+        "phase_id": "AO-MA-11E",
+        "plan_digest": null,
+        "slice_id": "AO-MA-11E-2"
+      },
+      "approval_ref": {
+        "state": "not_requested"
       },
       "consensus_ref": {
         "state": "not_started"
       },
-      "approval_ref": {
-        "state": "not_requested"
-      },
-      "evidence_refs": []
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-11E",
+      "pr_refs": [],
+      "risk_class": "high",
+      "slice_id": "AO-MA-11E-2",
+      "status": "not_started",
+      "title": "GitHub Projects/Milestone/Issue one-way sync + anchor injection + live drift"
     },
     {
-      "slice_id": "AO-MA-11I-1",
-      "phase_id": "AO-MA-11I",
-      "title": "Autonomous Run Governor: PAUSE kill-switch + budget/iteration cap + safe-stop",
-      "status": "merged",
-      "risk_class": "critical",
-      "issue_ref": null,
-      "pr_refs": [
-        762
-      ],
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
-        "plan_digest": null,
-        "phase_id": "AO-MA-11I",
-        "slice_id": "AO-MA-11I-1",
         "last_sync_run_id": null,
-        "mirror_projection_sha256": null
+        "mirror_projection_sha256": null,
+        "phase_id": "AO-MA-11I",
+        "plan_digest": null,
+        "slice_id": "AO-MA-11I-1"
+      },
+      "approval_ref": {
+        "state": "not_requested"
       },
       "consensus_ref": {
-        "state": "agreed",
         "consultation_refs": [
           {
             "provider_id": "anthropic",
@@ -262,184 +322,170 @@
             "provider_id": "minimax",
             "ref": "mavis:mvs_ba774375"
           }
-        ]
+        ],
+        "state": "agreed"
       },
-      "approval_ref": {
-        "state": "not_requested"
-      },
-      "evidence_refs": []
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-11I",
+      "pr_refs": [
+        762
+      ],
+      "risk_class": "critical",
+      "slice_id": "AO-MA-11I-1",
+      "status": "merged",
+      "title": "Autonomous Run Governor: PAUSE kill-switch + budget/iteration cap + safe-stop"
     },
     {
-      "slice_id": "AO-MA-11H-1",
-      "phase_id": "AO-MA-11H",
-      "title": "Notification & Escalation: Mavis chat + GitHub-native, blocked_notification_failed safe-stop",
-      "status": "in_progress",
-      "risk_class": "high",
-      "issue_ref": null,
-      "pr_refs": [],
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
-        "plan_digest": null,
+        "last_sync_run_id": null,
+        "mirror_projection_sha256": null,
         "phase_id": "AO-MA-11H",
-        "slice_id": "AO-MA-11H-1",
-        "last_sync_run_id": null,
-        "mirror_projection_sha256": null
-      },
-      "consensus_ref": {
-        "state": "not_started"
-      },
-      "approval_ref": {
-        "state": "not_requested"
-      },
-      "evidence_refs": []
-    },
-    {
-      "slice_id": "AO-MA-11F-1",
-      "phase_id": "AO-MA-11F",
-      "title": "Test/Suggestion/Update evidence registers + slice-closeout + evidence bundle",
-      "status": "not_started",
-      "risk_class": "normal",
-      "issue_ref": null,
-      "pr_refs": [],
-      "anchor": {
-        "ao_authority_artifact": null,
-        "artifact_sha256": null,
         "plan_digest": null,
-        "phase_id": "AO-MA-11F",
-        "slice_id": "AO-MA-11F-1",
-        "last_sync_run_id": null,
-        "mirror_projection_sha256": null
-      },
-      "consensus_ref": {
-        "state": "not_started"
+        "slice_id": "AO-MA-11H-1"
       },
       "approval_ref": {
         "state": "not_requested"
       },
-      "evidence_refs": []
-    },
-    {
-      "slice_id": "AO-MA-4.6-1",
-      "phase_id": "AO-MA-4.6",
-      "title": "Native worker result import-only: schema-validate + provenance-bind (no call)",
-      "status": "not_started",
+      "consensus_ref": {
+        "consultation_refs": [
+          {
+            "provider_id": "anthropic",
+            "ref": "claude:da2b8cec"
+          },
+          {
+            "provider_id": "openai",
+            "ref": "codex:019e7e2b"
+          },
+          {
+            "provider_id": "minimax",
+            "ref": "mavis:mvs_ba774375"
+          }
+        ],
+        "state": "agreed"
+      },
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-11H",
+      "pr_refs": [
+        763
+      ],
       "risk_class": "high",
-      "issue_ref": null,
-      "pr_refs": [],
+      "slice_id": "AO-MA-11H-1",
+      "status": "merged",
+      "title": "Notification & Escalation: Mavis chat + GitHub-native, blocked_notification_failed safe-stop"
+    },
+    {
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
-        "plan_digest": null,
-        "phase_id": "AO-MA-4.6",
-        "slice_id": "AO-MA-4.6-1",
         "last_sync_run_id": null,
-        "mirror_projection_sha256": null
-      },
-      "consensus_ref": {
-        "state": "not_started"
+        "mirror_projection_sha256": null,
+        "phase_id": "AO-MA-11F",
+        "plan_digest": null,
+        "slice_id": "AO-MA-11F-1"
       },
       "approval_ref": {
         "state": "not_requested"
       },
-      "evidence_refs": []
-    },
-    {
-      "slice_id": "AO-MA-11G-1",
-      "phase_id": "AO-MA-11G",
-      "title": "SPM quality profile hardening: ADR template + ISO 25010 profile + changelog discipline",
-      "status": "not_started",
+      "consensus_ref": {
+        "consultation_refs": [
+          {
+            "provider_id": "anthropic",
+            "ref": "claude:da2b8cec"
+          },
+          {
+            "provider_id": "openai",
+            "ref": "codex:019e7fce"
+          },
+          {
+            "provider_id": "minimax",
+            "ref": "mavis:mvs_ba774375"
+          }
+        ],
+        "state": "agreed"
+      },
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-11F",
+      "pr_refs": [
+        765
+      ],
       "risk_class": "normal",
-      "issue_ref": null,
-      "pr_refs": [],
+      "slice_id": "AO-MA-11F-1",
+      "status": "merged",
+      "title": "Test/Suggestion/Update evidence registers + slice-closeout + evidence bundle"
+    },
+    {
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
-        "plan_digest": null,
-        "phase_id": "AO-MA-11G",
-        "slice_id": "AO-MA-11G-1",
         "last_sync_run_id": null,
-        "mirror_projection_sha256": null
-      },
-      "consensus_ref": {
-        "state": "not_started"
+        "mirror_projection_sha256": null,
+        "phase_id": "AO-MA-4.6",
+        "plan_digest": null,
+        "slice_id": "AO-MA-4.6-1"
       },
       "approval_ref": {
         "state": "not_requested"
       },
-      "evidence_refs": []
+      "consensus_ref": {
+        "consultation_refs": [
+          {
+            "provider_id": "anthropic",
+            "ref": "claude:da2b8cec"
+          },
+          {
+            "provider_id": "openai",
+            "ref": "codex:019e8000"
+          },
+          {
+            "provider_id": "minimax",
+            "ref": "mavis:mvs_ba774375"
+          }
+        ],
+        "state": "agreed"
+      },
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-4.6",
+      "pr_refs": [
+        766
+      ],
+      "risk_class": "high",
+      "slice_id": "AO-MA-4.6-1",
+      "status": "merged",
+      "title": "Native worker result import-only: schema-validate + provenance-bind (no call)"
+    },
+    {
+      "anchor": {
+        "ao_authority_artifact": null,
+        "artifact_sha256": null,
+        "last_sync_run_id": null,
+        "mirror_projection_sha256": null,
+        "phase_id": "AO-MA-11G",
+        "plan_digest": null,
+        "slice_id": "AO-MA-11G-1"
+      },
+      "approval_ref": {
+        "state": "not_requested"
+      },
+      "consensus_ref": {
+        "state": "not_started"
+      },
+      "evidence_refs": [],
+      "issue_ref": null,
+      "phase_id": "AO-MA-11G",
+      "pr_refs": [],
+      "risk_class": "normal",
+      "slice_id": "AO-MA-11G-1",
+      "status": "in_progress",
+      "title": "SPM quality profile hardening: ADR template + ISO 25010 profile + changelog discipline"
     }
   ],
-  "blocked_slices": [],
-  "required_startup_checks": [
-    {
-      "id": "git_status",
-      "command": "git status --short --branch"
-    },
-    {
-      "id": "origin_divergence",
-      "command": "git rev-list --left-right --count HEAD...origin/main"
-    },
-    {
-      "id": "preflight",
-      "command": "bash .claude/scripts/ops.sh preflight"
-    },
-    {
-      "id": "ao_ma_next",
-      "command": "python3 scripts/ao_ma_next.py"
-    }
-  ],
-  "required_workflow": [
-    "read this status + master plan before starting any slice",
-    "run 3-AI plan consensus (anthropic+openai+minimax) before implementation",
-    "present unanimous-AGREE plan at the single operator approval gate",
-    "implement in a dedicated worktree + short-lived branch",
-    "cross-provider review (implementer != reviewer)",
-    "ao-release-gate technical + review green before merge",
-    "squash merge (no --admin) + forensic cleanup",
-    "update this status + roadmap doc after merge"
-  ],
-  "forbidden_actions": [
-    "treat ao_ma_status.v1.json as a governance authority (it is derived only)",
-    "downgrade a computed risk_class via this file, an AI claim, a GitHub mirror field, or a manual edit",
-    "import governance state from GitHub into ao-kernel (mirror is one-way ao-kernel->github)",
-    "set support_widening_allowed / production_platform_claim_allowed / live_adapter_execution_allowed to true without an operator-bound supersession PR",
-    "merge with a red ao-release-gate or with --admin / bypass actors",
-    "write to GitHub (issues/milestones/projects) from 11E-1 (that is 11E-2 scope)"
-  ],
-  "next_allowed_actions": [
-    "complete AO-MA-11H-1 (current slice): land the notifier pure-decision core (notifier.py decide_notification + notification-intent + notification-receipt schemas + tests) and merge its PR",
-    "then AO-MA-11H-2 (side-effect executor: Mavis CLI + gh delivery, high-risk) and AO-MA-11H-3 (governor blocked_notification_failed feedback, high-risk) per the master plan order",
-    "AO-MA-11A-2 (GitHub Environment required-reviewer wiring) and AO-MA-11E-2 (GitHub Projects/Milestone/Issue mirror sync) remain high-risk deferred slices"
-  ],
+  "status_role": "machine_readable_derived_tracking_index",
   "support_widening_allowed": false,
-  "production_platform_claim_allowed": false,
-  "live_adapter_execution_allowed": false,
-  "release_authority": "ao-release-gate+github-ruleset",
-  "ai_output_release_authority": false,
-  "github_mirror": {
-    "authority": false,
-    "direction": "ao-kernel-to-github",
-    "manual_edit_override_allowed": false,
-    "sync_state": "not_wired"
-  },
-  "drift_policy": {
-    "on_status_or_mirror_drift": "halt_autonomy_and_escalate",
-    "comparator": "pure_local_digest_and_inventory"
-  },
-  "progress_estimates": {
-    "phases": {
-      "done_count": 1,
-      "total_count": 7,
-      "percent": 14,
-      "next_phase_id": "AO-MA-11H"
-    },
-    "slices": {
-      "merged_count": 3,
-      "total_count": 9,
-      "percent": 33
-    }
-  },
-  "created_at": "2026-05-30T04:00:00Z",
   "updated_at": "2026-05-30T04:00:00Z"
 }
