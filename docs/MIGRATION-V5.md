@@ -148,8 +148,10 @@ for the SSOT.
 # Capture current state for downgrade safety net
 ao-kernel version
 python -m pip show ao-kernel
-mkdir -p backup/$(date +%Y%m%d-%H%M%S)
-cp -a .ao/ backup/$(date +%Y%m%d-%H%M%S)/
+# Single timestamp captured once — mkdir + cp must target the same dir
+ts=$(date +%Y%m%d-%H%M%S)
+mkdir -p "backup/$ts"
+cp -a .ao/ "backup/$ts/"
 ```
 
 ### 3.2 Upgrade
@@ -163,10 +165,18 @@ pip install -U ao-kernel
 ### 3.3 Post-upgrade verification (mandatory)
 
 ```bash
-ao-kernel version         # → 5.0.0
-ao-kernel doctor          # 8 health checks, all green
-ao-kernel policy-sim --dry-run  # policy load OK
+ao-kernel version          # → 5.0.0
+ao-kernel doctor           # 9 health checks; expect 0 FAIL (known WARN'leri
+                           # ayrıca değerlendir, deployment-spesifik olabilir)
+ao-kernel policy-sim run --proposed-policies /path/to/proposed-policy.json
+                           # Replace with your proposed policy JSON. Omit
+                           # --proposed-patches if you only want a load smoke.
 ```
+
+> The `policy-sim` subcommand requires `run` + at least one of
+> `--proposed-policies` / `--proposed-patches`. There is no
+> `--dry-run` flag; the simulator is dry-run by design (no live
+> apply).
 
 ### 3.4 Optional production telemetry adoption (Epic 5)
 
@@ -238,11 +248,18 @@ Bounds:
 - `EXPORT_TIMEOUT_MS` ∈ `[100, 600000]` (100ms – 10min)
 - `HEADERS` — sensitive value detection redacts errors (no leak in logs)
 
-Verify with:
+Verify the parsed config (does NOT contact OTEL collector; pure load
++ bounds validation):
 
 ```bash
-ao-kernel doctor  # OTEL config validation included
+python -c 'from ao_kernel.telemetry_config import load_production_config; \
+import json; print(json.dumps(dict(load_production_config().to_dict()), indent=2))'
 ```
+
+> `ao-kernel doctor` does **not** currently validate OTEL env vars
+> (Epic 5 follow-up). Use the snippet above until the doctor check
+> ships; misconfigured tunables surface as `TelemetryConfigError` at
+> `load_production_config()` time, not at first span emit.
 
 ---
 
@@ -295,20 +312,30 @@ approval before emitting `executed` decision.
 
 ## 7. Known migration gotchas
 
-### 7.1 `ao-release-gate` finding taxonomy (v4.1.0 → v5.0.0)
+### 7.1 `ao-release-gate` finding taxonomy (post-PR #793 future state)
 
-The release gate's procedural evidence findings
+> **Pending PR #793 merge.** The semantics below describe the
+> *future* behavior of the release gate once
+> [PR #793 (RG-019e830d extension)](https://github.com/Halildeu/ao-kernel/pull/793)
+> lands on `main`. Until that PR merges, the procedural evidence
+> findings still classify as `failure` (current source truth in
+> `ao_kernel/ao_release_gate.py::_REVIEW_ACTION_FINDINGS`). This
+> section will be tightened to "current" wording in the v5.0.0 final
+> release notes once the PR is shipped.
+
+After PR #793 ships, the release gate's procedural evidence findings
 (`review_evidence_not_accepting`, `review_evidence_context_unverifiable`)
-moved from `failure` to `action_required` semantic in PR #793
-(RG-019e830d extension). Effect:
+will move from `failure` to `action_required` semantic:
 
-- Previously: high-risk PR without evidence file → red CI.
-- Now: high-risk PR without evidence file → `action_required` on
-  `ao-release-gate-review` (yellow "needs attention" UI signal).
+- Future high-risk PR with procedural-only evidence finding →
+  `action_required` on `ao-release-gate-review` (yellow "needs
+  attention" UI signal) instead of red CI on legacy wrapper.
 - `allow=false` decision unchanged; merge **still blocked** until
   CODEOWNER review or evidence accept.
 - Structural defects (`missing`, `schema_invalid`, `context_unbound`)
-  remain `failure` (red CI).
+  remain `failure` (red CI). Boundary violations (admin bypass,
+  forbidden secret context, live adapter requested, GPP boundary
+  open, PAT-backed bot, AI release authority) also remain `failure`.
 
 If your branch protection ruleset has `ao-release-gate` (legacy
 wrapper) as the only required check, verify

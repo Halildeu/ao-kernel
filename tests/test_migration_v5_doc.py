@@ -153,3 +153,69 @@ def test_migration_v5_guard_flag_constant_false_pinned() -> None:
     assert "const false" in text, "Guard flag const-false claim must be present"
     for flag in ("support_widening", "production_platform_claim", "live_adapter_execution"):
         assert flag in text, f"Guard flag {flag} must be named in migration guide"
+
+
+def test_migration_v5_section_7_1_pending_pr793_qualifier() -> None:
+    """Codex iter-1 absorb (E-8-6) — §7.1 release-gate taxonomy
+    describes the FUTURE state once PR #793 ships. Until then the
+    qualifier 'Pending PR #793 merge' must be visible so operators
+    don't act on a not-yet-live semantic.
+    """
+    text = _doc_text()
+    assert "Pending PR #793 merge" in text, (
+        "§7.1 release-gate taxonomy must qualify itself as pending "
+        "PR #793 merge until the taxonomy extension is on main"
+    )
+
+
+def test_migration_v5_policy_sim_command_is_valid_shape() -> None:
+    """Codex iter-1 absorb (E-8-6) — the migration guide's
+    ``policy-sim`` invocation must use the ``run`` subcommand with
+    ``--proposed-policies``; there is no ``--dry-run`` flag.
+    """
+    text = _doc_text()
+    assert "ao-kernel policy-sim --dry-run" not in text, (
+        "Invalid ``policy-sim --dry-run`` invocation must NOT appear in the migration guide (CLI lacks --dry-run flag)"
+    )
+    assert "ao-kernel policy-sim run" in text, "Migration guide must use ``ao-kernel policy-sim run`` subcommand form"
+
+
+def test_migration_v5_doctor_claim_is_accurate() -> None:
+    """Codex iter-1 absorb (E-8-6) — the doctor claim must reflect
+    current ``ao_kernel/doctor_cmd.py`` behavior (9 checks; surface
+    WARN possibility); NOT a hard-coded ``8 health checks all green``
+    that drifts away from source truth.
+    """
+    text = _doc_text()
+    assert "9 health checks" in text, (
+        "Migration guide doctor claim must say '9 health checks' (matches doctor_cmd.build_report() check count)"
+    )
+    assert "8 health checks" not in text, "Stale '8 health checks' claim must NOT appear"
+
+
+def test_migration_v5_backup_snapshot_uses_single_timestamp() -> None:
+    """Codex iter-1 absorb (E-8-6) — backup snippet must capture
+    timestamp once into a shell variable; two separate ``$(date)``
+    calls race across second boundary.
+    """
+    text = _doc_text()
+    # Pre-upgrade backup snippet must use a single-variable pattern
+    assert "ts=$(date +%Y%m%d-%H%M%S)" in text, "Backup snippet must capture timestamp once via ``ts=$(date ...)``"
+    # Must NOT contain the two-call racy pattern verbatim
+    assert "mkdir -p backup/$(date" not in text, (
+        "Racy two-call ``mkdir -p backup/$(date ...)`` pattern must NOT appear (timestamp may differ from cp target)"
+    )
+
+
+def test_migration_v5_otel_validation_uses_load_production_config() -> None:
+    """Codex iter-1 absorb (E-8-6) — the OTEL validation snippet must
+    use ``ao_kernel.telemetry_config.load_production_config`` directly,
+    not claim ``ao-kernel doctor`` validates OTEL (doctor does not).
+    """
+    text = _doc_text()
+    assert "from ao_kernel.telemetry_config import load_production_config" in text, (
+        "Migration guide must surface the real OTEL validation path (load_production_config)"
+    )
+    assert "ao-kernel doctor  # OTEL config validation included" not in text, (
+        "Stale 'doctor validates OTEL' claim must NOT appear (doctor does not currently validate OTEL config)"
+    )
