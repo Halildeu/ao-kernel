@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260601-004",
+  "status": "RESOLVED",
+  "iteration": 1,
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "transport": "mcp",
+  "topic": "v5_0_0_full_production_promotion_roadmap_plan_time_review",
+  "mode": "adversarial_plan_review",
+  "question": {
+    "title": "v5.0.0 Full Production Promotion roadmap plan-time review (PR-X0 plan doc + projection manifest + master plan amend)",
+    "body": "AO-MA-SPM master plan §Faz 1-7 program 2026-06-01'de tamamlandi (7/7 fazlar MERGED, main f1dc032). v4.1.0 release lifecycle akiyor (PR #769 11G-2a merged, PR-B 11G-2b in CI). Kullanici sordu: 'urun tam production icin neler kaldi? Plan olusturup GitHub'a ekleyelim (gorunurluk).' Bu istisare: v5.0.0 Full Production Promotion roadmap'i hazirlamak ve GitHub-native gorunurluk (Milestone + Issues + Project board + plan doc) icin ready_for_impl AGREE almak.",
+    "context_refs": [
+      ".claude/plans/AO-MA-SPM-MASTER-PLAN.md",
+      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      ".claude/plans/v5_issue_projection.v1.json",
+      ".claude/plans/gpp_status.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "ao_kernel/defaults/schemas/ao-ma-11a-plan-approval.schema.v1.json"
+    ]
+  },
+  "created_at": "2026-06-01T11:30:00+03:00",
+  "branch": "chore/v5-production-promotion-roadmap",
+  "base_sha": "4536a70",
+  "mcp_thread_id": "019e80b3-27e9-7452-9cc2-4daa286bbb08",
+  "plan_verdict": "Codex iter-1 REVISE (8 missing invariants: production_ready_semantics flag flip degil evidence matrix sonucu; visibility_not_authority mirror SSOT degil; v5_source_manifest 80 issue tek seferde acma projection manifest + lazy expand; guard_flip_path AO-MA-11A normal yetmez operator-bound supersession ayri; tenant_isolation_claim ayri epic; final_promotion_decision roadmap sonunda tek PR flag flip o PR'da; issue_scale_control epic + P0 gate ilk dalga; public_claim_language production-ready final PR'a kadar yok) + revize 4-PR yapisi (PR-X0 plan + projection + acceptance matrix; PR-X1 master plan amend; PR-X2 GH mirror sync post-11E-2; PR-Xfinal flag flip). Bagimlilik sirasi: P0 runway -> Epic 1 follow-up -> Epic 2 live adapter -> Epic 3 support widening -> Epic 4-8 paralel -> Epic 9 final promotion. Multi-tenancy ayri Epic 4 (Observability altinda DEGIL). 8 epic -> 9 epic (Promotion Governance P0 ayri).",
+  "status_note": "PR-X0 (PR-X1 dahil; combined plan doc + projection + master plan amend); 3-dosya scope (.claude/plans/V5-...md + v5_issue_projection.v1.json + AO-MA-SPM-MASTER-PLAN.md amend + local-ai-review-evidence.v1.json + CNS); allowlist'li paths; .github'a dokunmaz; otonom merge beklenir. PR-X2 (GH mirror sync) 11E-2 sonrasi; PR-Xfinal flag flip TUM evidence sonrasi.",
+  "resolution": "Codex thread 019e80b3 iter-1 REVISE absorb: 8 missing invariants spec'e gomuldu, multi-tenancy ayri epic, 9 epic + P0 (10 toplam parent), revize 4-PR yapisi. ready_for_impl=true Codex iter-2 sonrasi (henuz post-impl review almadi; PR-X0 commit + push + Codex post-impl review iter -> AGREE -> otonom merge)."
+}

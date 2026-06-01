@@ -1,19 +1,19 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11G-2B-RELEASE-V4-1-0",
+  "work_package": "V5-EPIC-P0-ROADMAP-PLAN",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/release-v4-1-0",
+    "head_ref": "refs/heads/chore/v5-production-promotion-roadmap",
     "changed_files": [
       "local-ai-review-evidence.v1.json",
-      "CHANGELOG.md",
-      "pyproject.toml",
-      "ao_kernel/__init__.py",
-      "tests/test_pr_a6_features.py",
-      "tests/test_v410_version_pin.py"
+      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      ".claude/plans/v5_issue_projection.v1.json",
+      ".claude/plans/AO-MA-SPM-MASTER-PLAN.md",
+      ".claude/plans/ao_ma_status.v1.json",
+      ".claude/plans/consultations/CNS-20260601-004.request.v1.json"
     ]
   },
   "checks_considered": [
@@ -21,21 +21,19 @@
     { "name": "secret_scan", "status": "pass" },
     { "name": "ruff_lint", "status": "pass" },
     { "name": "mypy_strict", "status": "pass" },
-    { "name": "version_consistency_pin", "status": "pass" },
-    { "name": "pyyaml_runtime_dep_declared", "status": "pass" },
-    { "name": "changelog_release_entry_pin", "status": "pass" },
-    { "name": "pyproject_semantic_discipline", "status": "pass" },
-    { "name": "guard_flags_remain_false", "status": "pass" },
+    { "name": "visibility_not_authority", "status": "pass" },
+    { "name": "no_guard_flip", "status": "pass" },
+    { "name": "no_github_write_in_this_pr", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "AO-MA-11G-2b (v4.1.0 release lifecycle PR-B; PR-A 11G-2a #769 merged main 4536a70 release-gate allowlist widening). Release prep: pyproject.toml::project.version 4.0.0 -> 4.1.0 + project.dependencies += PyYAML>=6.0; ao_kernel/__init__.py::__version__ 4.0.0 -> 4.1.0; CHANGELOG.md [Unreleased] -> [4.1.0] - 2026-06-01 finalization (AO-MA-SPM master plan §Faz 1-7 program release notu; mevcut Unreleased Fixed entry korunur; yeni bos [Unreleased] acilir); tests/test_pr_a6_features.py 4.0.0 pin -> 4.1.0; tests/test_v410_version_pin.py yeni single source-of-truth pin (pyproject==__version__ + pyyaml dep presence + CHANGELOG [4.1.0] entry + Unreleased order). Post-merge: primary main ff-only sync -> git tag v4.1.0 -m 'AO-MA-SPM master plan §Faz 1-7 tamamlanmasi' -> git push origin v4.1.0 -> .github/workflows/publish.yml push.tags:['v*'] tetiklenir -> environment pypi trusted publishing OIDC -> https://pypi.org/project/ao-kernel/4.1.0/.",
-    "Cross-AI review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread 019e809a-46f6-7b11-9505-cc175ca1afdc (CNS-20260601-003) iki-PR plan kapsaminda; PR-A merge sonrasi PR-B otonom akar. PR-B post-impl review iter ile authoritative contract verify.",
-    "Pyproject semantic discipline (Codex iter-2 absorb): bu PR yalniz project.version + project.dependencies degisimi yapar. project.scripts ([project.scripts]), [build-system], [tool.setuptools.packages.find], [tool.setuptools.package-data], entrypoint, ruff/mypy/pytest/coverage tool config DEGISMEZ. Future widening of pyproject semantic surface ayri review lane gerektirir.",
-    "Self-hosting Keep-a-Changelog discipline (ADR-0005 dogfooding): bu PR kendi 4.1.0 entry'sini CHANGELOG'a ekler ([Unreleased] -> [4.1.0] - 2026-06-01 + AO-MA-SPM §Faz 1-7 7 slice ozeti); ADR-0005 'changelog discipline' karari bu PR'da CURRENT olarak dogfoode edildi. 11G-1 PR'inda lazy yaml import + @requires_yaml decorator ile baslatildi; 11G-2a release-gate allowlist widening ile pyyaml runtime dep yolu acildi; 11G-2b (bu PR) runtime dep declaration + version bump + CHANGELOG finalize yapar.",
-    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu release NARROW STABLE RUNTIME promotion'i degildir; AO-MA-SPM governance plane release'idir. Production claim flip + live adapter execution + support widening ayri operator-bound supersession decision PR ile yapilir (v5 roadmap kapsaminda CNS-20260601-004 Codex iter-1 absorb).",
-    "Local gate green: 6 yeni/guncellenmis test PASS (test_v410_version_pin.py 6 + test_pr_a6_features.py 2 update); pyproject.toml semantic diff yalniz version+dep; ao_kernel/__init__.py __version__ pin; CHANGELOG.md [4.1.0] release entry + Unreleased header preserved; ruff + mypy strict 266 src file temiz (test ekleme yeni dosya); full suite hala 5200+/0 fail (yeni test 6).",
-    "No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change, .github change, support widening, production platform claim, live adapter execution, or ISO 25010 certification claim introduced. live_adapter_execution=false korunur; release lifecycle PR; post-merge operator-authorized tag push triggers PyPI trusted publishing OIDC."
+    "V5-EPIC-P0 (v5.0.0 Full Production Promotion roadmap PR-X0): plan doc + projection manifest + master plan amend. AO-MA-SPM §Faz 1-7 tamamlanmasi sonrasi v5.0.0 Full Production Promotion programi planlanir. 9 epic (P0 + 1-8 + 9 final) + 3 P0 gate issue (v4.1.0 publish, PR #764, mirror sync); 4-PR yapisi (PR-X0 plan, PR-X2 GH mirror sync post-11E-2, PR-X(epic-N) her epic, PR-Xfinal operator-bound supersession + flag flip). 9-boyutlu production readiness evidence matrix flag flip ANCAK final PR'da. Visibility one-way mirror SSOT repo artifacts kalir. Public claim language 'roadmap' kalir final PR'a kadar.",
+    "Cross-AI review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread 019e80b3-27e9-7452-9cc2-4daa286bbb08 (CNS-20260601-004): plan-time iter-1 REVISE (8 missing invariants: production_ready_semantics + visibility_not_authority + v5_source_manifest + guard_flip_path + tenant_isolation_claim + final_promotion_decision + issue_scale_control + public_claim_language) + revize 4-PR yapisi + 9 epic ayrimi (P0 + 1-8 + 9; multi-tenancy ayri epic 4; promotion governance P0). PR-X0 post-impl review iter ile authoritative contract verify.",
+    "Visibility one-way mirror governance: GitHub Milestone 'v5.0.0' + 9 epic issue + 3 P0 gate issue + Project board 'Roadmap v5.0.0' (Kanban + Roadmap view + custom fields Epic/Risk/Guard/Dependency/Estimate/Consensus/Evidence/Mirror digest/Release impact) PR-X2'de (11E-2 sonrasi) acilir. Issue forms (YAML) zorunlu anchor fields (spm_anchor + ao_authority_artifact + artifact_sha256 + plan_digest + slice_id + risk_class_source + evidence_classes); risk field manuel dusurulemez (computed classifier). Created GH IDs + projection digest repo evidence'a geri yazilir (one-way mirror authority repo kalir).",
+    "Guard flag flip authority path (Codex iter-1 invariant #4): live_adapter_execution / support_widening / production_platform_claim icin AO-MA-11A normal approval YETMEZ (ao-ma-11a-plan-approval.schema.v1.json zaten guard flags const false pinliyor). Bunlar ayri operator-bound supersession path gerektirir. Operator acik decision (commit/comment 'I authorize flag flip') + AO-MA-11A consensus advisory evidence (release authority degil) + promotion decision PR tum 9 epic evidence refs'i baglar. Final PR squash mesajinda flag flip + evidence ref + operator authorization acik kayit.",
+    "Public claim language: README/badge/project page dili 'v5 production promotion roadmap' kalir; 'production-ready' / 'full production' public claim FINAL PROMOTION PR'DAN ONCE KULLANILMAZ. Mevcut 'narrow stable runtime' framing devam eder. Final promotion sonrasi 'v5.0.0 - Production-Ready Governed Multi-AI Orchestration Runtime' claim'i public yapilir.",
+    "Bootstrap (AO-MA-SPM 7/7 -> v5 promotion): AO-MA-SPM makinesi v5 epic'lerini yazmak icin kullanilir (self-hosting devam): her epic'in sub-issue'su AO-MA-11A plan-consensus + 11E mirror sync + 11I run governor + 11H notification + 11F evidence registers + 4.6 native-import + 11G ADR/ISO/CHANGELOG discipline ile yurur. Yani v5 program AO-MA-SPM'in kullanicisi olur (faz 1-7 tuketicisi).",
+    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR plan + projection + master plan amend; HICBIR flag flip yok. GitHub write yok (PR-X2'de mirror sync). PyPI publish yok (Epic 9 final PR'da). No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change, .github change introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

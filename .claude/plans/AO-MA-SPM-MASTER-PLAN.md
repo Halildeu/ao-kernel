@@ -281,8 +281,72 @@ Bir slice "tamamlandı" sayılır ancak ilgili TÜM kalemler sağlanırsa. Bazı
 
 ## 11. Mevcut Durum + Sonraki Adım
 
-- **AO-MA-11A-1:** ✅ implement edildi — PR #758 (`feat/ao-ma-11a-plan-consensus`). Codex cross-AI iter-2 AGREE. CI/merge süreci.
-- **Sonraki:** 11A-2 (Environment wiring) → Faz 2 (AO-MA-11E tracking mirror) → 11I → 11H → 11F → 4.6 → 11G.
-- **Bootstrap durumu:** Geçici mod aktif. 11A merge olunca consensus+approval makinesi "var" olur; 11E sonrası program kendi yol haritasını kendi aynasında gösterir; her sonraki faz bir öncekinin makinesinden geçer.
+- **AO-MA-SPM §Faz 1-7 ✅ TAMAMLANDI (2026-06-01)** — 7/7 fazlar MERGED (11A-1 #758 + 11E-1 #760 + 11I-1 #762 + 11H-1 #763 + 11F-1 #765 + 4.6-1 #766 + 11G-1 #767). Self-hosting compiler döngüsü kapandı: program kendi makinesiyle inşa edildi.
+- **AO-MA-11G-2 release lifecycle LIVE:** PR #769 11G-2a allowlist widening MERGED (`4536a70`); PR #770 11G-2b v4.1.0 release prep MERGED (`4d0aa6d`); tag `v4.1.0` pushed 2026-06-01. **GitHub Actions publish.yml twine check fail** (`dist/` JSON evidence files); fix ayrı PR (`.github/workflows/publish.yml` high-risk operator review gerek); PyPI v4.1.0 yayını publish workflow fix sonrası.
+- **Pending follow-up:** PR #764 (CI shadow-skip permanent fix, operator gate), 11A-2 (GH Environment gate wiring), 11E-2 (GH Projects/Milestone/Issue mirror sync), 11G-2c/d (CI/pre-commit changelog enforcement), 4.6-2 (native-import operator dogfooding), retro ADR cross-AI revalidation.
 
-> **Karar kuralı (tek cümle):** Her slice — hedef → 3-AI consensus → tek operatör onayı → otonom impl → cross-AI review → yeşil CI → merge → tracking; geçici mod manuel başlar, her faz bir parçayı sistem moduna devreder; değişmezler (3 guard flag FALSE + RI-7.8c + GPP-9) her fazda korunur.
+---
+
+## 12. v5.0.0 Full Production Promotion Program (operator-bound supersession yolu)
+
+**Status:** PROPOSED · **Target:** 2026-12-31 (aspirational; exit criteria authoritative)
+**Plan doc:** `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`
+**Projection manifest:** `.claude/plans/v5_issue_projection.v1.json`
+**Consultation:** CNS-20260601-004 · **Codex thread** `019e80b3` (1 tur REVISE → revize 4-PR yapısı + 8 invariant absorb)
+
+### Vizyon
+
+AO-MA-SPM §Faz 1-7 governance plane tamamlandı; v5.0.0 **Full Production Promotion** ile sistem ilk kez `production_platform_claim=true` + `live_adapter_execution=true` + `support_widening=true` (3 guard flag flip) iddiasında bulunabilir hale gelir. Bu **operator-bound supersession decision**'dır; AO-MA-11A normal approval gate'inden geçemez (`ao-ma-11a-plan-approval.schema.v1.json` zaten guard flags const false pin'liyor).
+
+### 9 Epic (parallel + dependency)
+
+| # | Epic | Risk | Guard flip | Bağımlılık |
+|---|---|---|---|---|
+| **P0** | Promotion governance + visibility source manifest | normal | YOK | — |
+| 1 | AO-MA-SPM follow-up (sistem mod tam aktivasyon) | normal | YOK | P0 |
+| 2 | Live adapter execution (`live_adapter_execution=true`) | critical | EVET | E-1 |
+| 3 | Support widening (`support_widening=true`) | critical | EVET | E-1 + E-2 |
+| 4 | Deployment + operations + tenancy | high | YOK | E-1 + E-2 |
+| 5 | Observability + production telemetry | normal | YOK | E-2 paralel |
+| 6 | Security + compliance | high | YOK | paralel |
+| 7 | Performance + scalability | normal | YOK | E-2 + E-5 paralel |
+| 8 | Documentation + onboarding | low | YOK | paralel |
+| **9** | **Final promotion decision (operator-bound supersession PR)** | **critical** | **EVET (3 flag)** | **Tüm E-1..8 complete** |
+
+### 9-boyutlu production readiness evidence matrix
+
+`production_platform_claim=true` flag flip **production-ready KANITI DEĞIL**; semantic readiness 9 boyutta evidence gerek:
+1. Public support matrix net (OS/Python/provider)
+2. Real provider live calls protected env'de çalışmış (live adapter envelope)
+3. Cost/rate/circuit breaker limits canlı evidence ile doğrulanmış
+4. Observability prod tunables (OTEL traces/metrics + dashboards)
+5. Security/SBOM/license scans temiz (SOC2/CodeQL/Snyk/Dependabot)
+6. Install/deploy lifecycle smoke (k8s/Helm + standalone PyPI)
+7. Multi-tenancy isolation (varsa) testli (RBAC + secret + quota + audit)
+8. Docs/runbooks güncel (deployment guide + operator runbook + API ref)
+9. ao-release-gate + GitHub ruleset bypass-sız geçmiş (autonomous merge trail)
+
+Final epic 9 PR-Xfinal tüm evidence refs'i bağlar; flag flip o PR'da.
+
+### Visibility (one-way mirror, NOT authority)
+
+GitHub Milestone "v5.0.0" + 9 epic + 3 P0 gate issues + Project board ("Roadmap v5.0.0"; Kanban + Roadmap view + custom fields Epic/Risk/Guard/Dependency/Estimate/Consensus/Evidence/Mirror digest/Release impact). Issue forms (YAML) zorunlu anchor fields. Repo artifacts (`.claude/plans/`) SSOT kalır; GitHub'dan governance import YASAK.
+
+### Public claim language
+
+README/badge/project page dili **"v5 production promotion roadmap" kalır**; **"production-ready" public claim FINAL PR'DAN ÖNCE KULLANILMAZ**. Mevcut "narrow stable runtime" framing devam eder. Final promotion sonrası "v5.0.0 — Production-Ready Governed Multi-AI Orchestration Runtime" claim'i public yapılır.
+
+### 4-PR yapısı
+
+| PR | Scope | Guard flip |
+|---|---|---|
+| **PR-X0** (bu PR) | plan doc + projection manifest + acceptance matrix + master plan amend | YOK |
+| **PR-X2** (post-11E-2) | GH mirror sync (Milestone + 9 epic + 3 P0 gate issue + Project board create; created IDs + digest repo evidence'a geri yaz) | YOK |
+| **PR-X(epic-N)** | her epic kendi sub-issue + plan-consensus + impl + cross-AI review + merge | YOK (Epic 9 hariç) |
+| **PR-Xfinal** | operator-bound supersession decision; 3 guard flag flip + v4.x → v5.0.0 + CHANGELOG release + tag push | **EVET** |
+
+### Bootstrap (AO-MA-SPM 7/7 → v5 promotion)
+
+AO-MA-SPM makinesi v5 epic'lerini yazmak için kullanılır (self-hosting devam): her epic'in sub-issue'su AO-MA-11A plan-consensus + 11E mirror sync + 11I run governor + 11H notification + 11F evidence registers + 4.6 native-import + 11G ADR/ISO/CHANGELOG discipline ile yürür. Yani v5 program AO-MA-SPM'in **kullanıcısı** olur (faz 1-7'nin tüketicisi).
+
+> **v5 karar kuralı (tek cümle):** AO-MA-SPM tamamlanması "production-ready" değildir; v5 promotion 9-boyutlu evidence matrix + operator-bound supersession decision sonucudur; flag flip ANCAK final epic 9 PR-Xfinal'da; visibility mirror authority değil; public claim language final PR'dan önce "roadmap" kalır.

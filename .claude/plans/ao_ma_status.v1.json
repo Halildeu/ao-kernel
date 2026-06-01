@@ -34,7 +34,7 @@
       "## 5. Roadmap \u2014 7 Faz",
       "## 6. Bootstrap / Self-Hosting Mekanizmas\u0131"
     ],
-    "sha256": "sha256:a80f0a498dc9e5e269c69c60cbd5cf5c44cc361da2109c1bfa5357197b22ec9d"
+    "sha256": "sha256:3d467043d36963a5158009fe1eaf8007466e0907fde5f928600de1a2d3d2eb68"
   },
   "next_allowed_actions": [
     "complete AO-MA-11G-1 (current slice): land the SPM quality profile hardening core (3 schemas + quality_profile.py pure module + 4 retrospective ADRs (ADR-0001..0004) + 1 current ADR (ADR-0005 Keep-a-Changelog per-PR discipline) + ISO 25010 bundled profile + CHANGELOG discipline check + AO-MA tracking drift fix) and merge its PR \u2014 SON FAZ"
