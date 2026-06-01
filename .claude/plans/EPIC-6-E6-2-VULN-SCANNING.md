@@ -67,7 +67,7 @@ updates:
 | Decision | Why (Codex absorb) |
 |---|---|
 | 4 trigger (push main + PR main + schedule + dispatch) | Standart security workflow pattern |
-| Schedule cron `"23 4 * * 1"` (Mon 04:23 UTC) | Off-peak; Dependabot 04:00 slot'undan sonra |
+| Schedule cron `"23 4 * * 1"` (Mon 04:23 UTC) | Off-peak; best-effort stagger after the Dependabot 04:00 window (GitHub may delay either job; strict ordering is NOT guaranteed) |
 | Permissions: `contents:read + security-events:write` | Minimum surface; gereksiz scope yok |
 | `pull_request_target` YASAK | Fork-PR token risk |
 | `actions/checkout@v6 + persist-credentials: false` | Repo convention + supply-chain hardening |
@@ -82,13 +82,14 @@ updates:
 
 ### 3c. `tests/test_vuln_scanning_invariants.py` (YENİ)
 
-29 invariant test (regex-free substring matching; YAML 1.1 `on:` bool
-trap'ı dodge — Codex 019e8385 absorb).
+31 invariant test (no YAML parse; substring assertions plus one
+semver regex for the trivy-action pin — Codex 019e8385 absorb;
+YAML 1.1 `on:` bool trap dodge).
 
 Test grupları:
 - Dependabot config (9 invariant)
 - Trivy workflow shape (17 invariant)
-- Snyk deferred + plan doc invariants (3 invariant)
+- Snyk deferred + plan doc invariants (5 invariant)
 
 ### 3d. Plan doc — bu dosya.
 
@@ -119,7 +120,7 @@ Test grupları:
 
 ## 6. Acceptance
 
-- ✅ `pytest tests/test_vuln_scanning_invariants.py -x` → 29 pass local
+- ✅ `pytest tests/test_vuln_scanning_invariants.py -x` → 31 pass local
 - ✅ `ruff check tests/test_vuln_scanning_invariants.py` clean
 - ✅ Plan doc — this file
 - ⏳ Cross-AI post-impl review (Codex thread `019e8385` reply ile yeni iter)

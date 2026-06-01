@@ -157,6 +157,32 @@ def test_trivy_workflow_rejects_id_token_write() -> None:
     assert "id-token: write" not in _trivy_text()
 
 
+def test_trivy_workflow_rejects_all_extra_write_permissions() -> None:
+    """Codex 019e8385 iter-2 absorb (non-blocking hardening) — single
+    regression pin against future drift adding ``packages: write``,
+    ``checks: write``, ``deployments: write``, ``actions: write``,
+    ``pull-requests: write``, ``pages: write``, ``issues: write``,
+    ``discussions: write``, ``statuses: write``,
+    ``repository-projects: write``. Only ``security-events: write``
+    is allowed in this workflow.
+    """
+    text = _trivy_text()
+    forbidden_writes = [
+        "packages: write",
+        "checks: write",
+        "deployments: write",
+        "actions: write",
+        "pull-requests: write",
+        "pages: write",
+        "issues: write",
+        "discussions: write",
+        "statuses: write",
+        "repository-projects: write",
+    ]
+    leaked = [w for w in forbidden_writes if w in text]
+    assert not leaked, f"workflow declares forbidden *: write permissions: {leaked}"
+
+
 def test_trivy_workflow_uses_checkout_v6_no_persist_credentials() -> None:
     text = _trivy_text()
     assert "uses: actions/checkout@v6" in text
