@@ -119,6 +119,87 @@ def test_canonical_digest_format_is_sha256_prefixed():
     assert len(digest) == len("sha256:") + 64
 
 
+def test_dry_run_project_v2_fetch_degrades_gracefully(tmp_path):
+    """CI-fix invariant: when Projects v2 fetch fails in dry-run, engine MUST
+    NOT abort with api_error; instead degrade gracefully + set marker in
+    report.reason field. Operator review catches the gap explicitly.
+    """
+    manifest = _make_manifest(tmp_path)
+
+    def project_v2_failing_caller(method, path, body=None):
+        if path == "/repos/Halildeu/ao-kernel/issues?milestone=3&state=all&per_page=100":
+            return [
+                {
+                    "number": 774,
+                    "body": "OLD",
+                    "labels": [{"name": "epic-1"}, {"name": "mirror:authority"}],
+                }
+            ]
+        if path == "graphql:project_items:PVT_xxx":
+            raise RuntimeError("HTTP 403: Projects v2 scope missing")
+        if "environments/ao-ma-mirror-sync" in path:
+            return {
+                "name": "ao-ma-mirror-sync",
+                "protection_rules": [{"type": "required_reviewers", "reviewers": [{"id": 1}]}],
+            }
+        raise KeyError(path)
+
+    report = sync_v5_mirror(
+        projection_manifest_path=manifest,
+        gh_api_caller=project_v2_failing_caller,
+        network_allowed=True,
+        token_present=True,
+        apply_mode=False,
+        now_iso=_now(),
+    )
+    # Dry-run MUST NOT fail-closed with api_error
+    assert report.sync_state == SyncState.DRY_RUN_COMPLETE
+    # Marker MUST appear in reason
+    assert report.reason is not None
+    assert "project_v2_fetch_degraded" in report.reason
+
+
+def test_apply_project_v2_fetch_still_fails_closed(tmp_path):
+    """CI-fix invariant: apply mode MUST NOT degrade gracefully on Projects v2
+    fetch failure; safe-write requires verified read.
+    """
+    manifest = _make_manifest(tmp_path)
+
+    def project_v2_failing_caller(method, path, body=None):
+        if "environments/ao-ma-mirror-sync" in path:
+            return {
+                "name": "ao-ma-mirror-sync",
+                "protection_rules": [{"type": "required_reviewers", "reviewers": [{"id": 1}]}],
+            }
+        if path == "/repos/Halildeu/ao-kernel/issues?milestone=3&state=all&per_page=100":
+            return [
+                {
+                    "number": 774,
+                    "body": "OLD",
+                    "labels": [{"name": "epic-1"}, {"name": "mirror:authority"}],
+                }
+            ]
+        if path == "graphql:project_items:PVT_xxx":
+            raise RuntimeError("HTTP 403: Projects v2 scope missing")
+        raise KeyError(path)
+
+    report = sync_v5_mirror(
+        projection_manifest_path=manifest,
+        gh_api_caller=project_v2_failing_caller,
+        network_allowed=True,
+        token_present=True,
+        apply_mode=True,
+        confirmation=_APPLY_CONFIRMATION,
+        accepted_dry_run_report_digest=_VALID_ACCEPTED_DIGEST,
+        now_iso=_now(),
+    )
+    # Apply MUST fail-closed with api_error (safe-write requires verified read)
+    assert report.sync_state == SyncState.API_ERROR
+    assert report.reason is not None
+    rsn = report.reason.lower()
+    assert "project" in rsn
+
+
 def test_canonical_digest_stable_under_planned_changes_reordering():
     """Codex iter-3 §3 absorb: digest MUST be stable when planned_changes is in
     a different order (set iteration would otherwise produce non-deterministic

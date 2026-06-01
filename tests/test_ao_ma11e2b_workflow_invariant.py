@@ -27,6 +27,36 @@ def test_workflow_exists() -> None:
     assert _WORKFLOW_PATH.is_file()
 
 
+def test_workflow_all_gh_token_assignments_use_pat_fallback() -> None:
+    """CI-fix invariant: every `GH_TOKEN:` env-var assignment in the workflow
+    MUST use the PAT fallback pattern `secrets.REPO_GH_PAT_PROJECTS_RW ||
+    secrets.GITHUB_TOKEN`. Without this, Projects v2 calls fail under the
+    default GITHUB_TOKEN scope (run 26745803729 exit 3 root cause).
+    Future drift (someone adds a plain `secrets.GITHUB_TOKEN` line) is
+    caught by this test before merge.
+    """
+    content = _read()
+    all_gh_token_lines = [line for line in content.splitlines() if "GH_TOKEN:" in line]
+    assert all_gh_token_lines, "workflow MUST define at least one GH_TOKEN env var"
+    fallback_pat = re.compile(r"secrets\.REPO_GH_PAT_PROJECTS_RW\s*\|\|\s*secrets\.GITHUB_TOKEN")
+    for line in all_gh_token_lines:
+        assert fallback_pat.search(line), (
+            f"GH_TOKEN line lacks PAT fallback pattern: {line.strip()!r}; "
+            "Projects v2 needs operator-managed PAT or graceful degrade."
+        )
+
+
+def test_workflow_documents_pat_fallback_pattern() -> None:
+    """CI-fix invariant: comment block MUST document the PAT fallback so
+    operators know how to unlock Projects v2 access.
+    """
+    content = _read()
+    assert "REPO_GH_PAT_PROJECTS_RW" in content and ("Projects v2" in content or "Projects V2" in content), (
+        "workflow MUST mention REPO_GH_PAT_PROJECTS_RW + Projects v2 in "
+        "comments so operators know what secret unlocks the full feature."
+    )
+
+
 def test_workflow_dispatch_only_trigger() -> None:
     """Only workflow_dispatch trigger; no schedule/push to prevent autonomous run."""
     content = _read()
