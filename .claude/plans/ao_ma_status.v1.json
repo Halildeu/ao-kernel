@@ -37,7 +37,7 @@
     "sha256": "sha256:a769f3183d0b753bef5ba79a37d302fc664a63db119baa46b1fc72084acd2fb9"
   },
   "next_allowed_actions": [
-    "complete AO-MA-11G-1 (current slice): land the SPM quality profile hardening core (3 schemas + quality_profile.py pure module + 4 retrospective ADRs (ADR-0001..0004) + 1 current ADR (ADR-0005 Keep-a-Changelog per-PR discipline) + ISO 25010 bundled profile + CHANGELOG discipline check + AO-MA tracking drift fix) and merge its PR \u2014 SON FAZ"
+    "AO-MA-SPM master plan SON FAZ core slice (AO-MA-11G-1) MERGED 2026-06-01. Phase status reflektion: 5/7 phase=done (core slice landed); 2 phase (AO-MA-11A, AO-MA-11E) in_progress for sub-slice follow-up (11A-2 GH Environment ao-ma-plan-approval gate wiring, 11E-2 GH Projects/Milestone one-way sync + drift checker). Plus 11G-2 follow-up (CI/pre-commit changelog enforcement + 4.6 dogfooding + retro ADR cross-AI revalidation + allowlist widening for CHANGELOG/pyproject). Follow-up sub-slices demand-driven; SON FAZ semantic = core capabilities all landed."
   ],
   "phases": [
     {
@@ -109,7 +109,7 @@
       "slice_ids": [
         "AO-MA-11G-1"
       ],
-      "status": "in_progress",
+      "status": "done",
       "title": "SPM Quality Profile Hardening"
     }
   ],
@@ -118,14 +118,14 @@
   "program_title": "Governed Autonomous Multi-AI Software Production System",
   "progress_estimates": {
     "phases": {
-      "done_count": 4,
-      "next_phase_id": "AO-MA-11G",
-      "percent": 57,
+      "done_count": 5,
+      "next_phase_id": null,
+      "percent": 71,
       "total_count": 7
     },
     "slices": {
-      "merged_count": 6,
-      "percent": 67,
+      "merged_count": 7,
+      "percent": 78,
       "total_count": 9
     }
   },
@@ -473,15 +473,31 @@
         "state": "not_requested"
       },
       "consensus_ref": {
-        "state": "not_started"
+        "consultation_refs": [
+          {
+            "provider_id": "anthropic",
+            "ref": "claude:da2b8cec"
+          },
+          {
+            "provider_id": "openai",
+            "ref": "codex:019e8050"
+          },
+          {
+            "provider_id": "minimax",
+            "ref": "mavis:mvs_ba774375"
+          }
+        ],
+        "state": "agreed"
       },
       "evidence_refs": [],
       "issue_ref": null,
       "phase_id": "AO-MA-11G",
-      "pr_refs": [],
+      "pr_refs": [
+        767
+      ],
       "risk_class": "normal",
       "slice_id": "AO-MA-11G-1",
-      "status": "in_progress",
+      "status": "merged",
       "title": "SPM quality profile hardening: ADR template + ISO 25010 profile + changelog discipline"
     }
   ],

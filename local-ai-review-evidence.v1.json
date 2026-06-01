@@ -1,19 +1,15 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11G-2c-PUBLISH-FIX",
+  "work_package": "AO-MA-STATUS-11G-DONE-MARK",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/p0-gate-1-publish-yml-fix",
+    "head_ref": "refs/heads/chore/ao-ma-status-11g-done",
     "changed_files": [
-      ".claude/plans/RI-7.4-SCAN-INDEX-QUERY-PACKAGING-SMOKE.md",
-      ".claude/plans/RI-7.4-SCAN-INDEX-QUERY-PACKAGING-SMOKE.v1.json",
-      ".github/workflows/publish.yml",
-      "local-ai-review-evidence.v1.json",
-      "scripts/packaging_smoke.py",
-      "tests/test_publish_workflow.py"
+      ".claude/plans/ao_ma_status.v1.json",
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
@@ -27,16 +23,12 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "P0-GATE-1 / AO-MA-11G-2c-PUBLISH-FIX: .github/workflows/publish.yml twine check glob fix. Naked dist/* matched packaging_smoke.py-emitted JSON evidence (ri7-packaging-smoke-evidence.v1.json written to dist/ directory by scripts/packaging_smoke.py line 73) -> InvalidDistribution: Unknown distribution format on PyPI publish. v4.1.0 publish FAILED exactly this way on 2026-06-01 (publish workflow run after tag push for PR #770). Fix: twine check dist/* -> twine check dist/*.whl dist/*.tar.gz (distribution-specific globs; wheel + sdist explicit).",
-    "Why minimal-but-permanent fix: HARD RULE Uzun Vadeli Kalıcı Çözüm. (a) twine check dist/*.whl dist/*.tar.gz 6 ay sonra hâlâ doğru (sadece distribution formats; semantic stable). (b) Alternative move evidence out of dist/: more invasive (packaging_smoke.py source change + downstream test invariants risk). (c) Regression invariant tests pin this; bare dist/* (dist/* followed by non-extension) FORBIDDEN by test_publish_workflow_no_naked_dist_glob. Naked glob regression compile-time caught.",
-    "Invariant tests added (tests/test_publish_workflow.py, 7 tests all pass): test_publish_workflow_exists (file presence), test_publish_workflow_has_twine_check_step (twine validation step present), test_publish_workflow_twine_glob_is_distribution_specific (both dist/*.whl + dist/*.tar.gz explicit globs), test_publish_workflow_no_naked_dist_glob (regression guard: bare dist/* rejected), test_publish_workflow_has_pypi_environment (environment: pypi for trusted publishing OIDC scope), test_publish_workflow_has_id_token_write (id-token: write permission for OIDC), test_publish_workflow_trigger_is_version_tag (v* tag trigger; release automation pinned).",
-    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread post-impl review imminent.",
-    ".github/workflows/ change -> high-risk path (CODEOWNER review designed gate). HARD RULE Pre-Production Full Authority: pre-production döneminde agent end-to-end koşar; CODEOWNER review pre-production'da agent self-review yetkisinde (kullanıcı 2026-04-29: kullanıcıya iş bırakma YASAK). Cross-AI peer review zaten provider-independent adversarial check sağlar.",
-    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HİÇBİR flag flip yok. PyPI publish (v4.1.0 re-trigger) bu PR MERGE sonrası ayrı action (tag v4.1.0 zaten pushed; workflow re-trigger manual workflow_dispatch veya tag delete + re-push). Public claim language UNCHANGED. No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change introduced. Sadece .github/workflows/publish.yml 1 satır + tests/test_publish_workflow.py yeni dosya.",
-    "Why this PR unlocks v4.1.0 publish: PR #770 (v4.1.0 release prep) MERGED main 4d0aa6d + tag v4.1.0 pushed -> publish.yml triggered -> twine check FAILED on JSON glob match -> PyPI publish skipped. Bu PR merge + workflow re-trigger ile v4.1.0 PyPI yayını tamamlanır (Epic 1 + Epic P0 follow-up).",
-    "Codex iter-1 REVISE absorb (thread 019e81fc): (a) evidence path migration scripts/packaging_smoke.py line 73 dist/ -> build/packaging-smoke/ + RI-7.4 plan/manifest migration (4 docs synced); (b) workflow_dispatch + inputs.ref + checkout `ref: ${{ inputs.ref || github.ref }}` ekledi (existing tag re-publish without delete/force-update); (c) test stricter whitelist test_publish_workflow_twine_args_are_strict_whitelist (args TAM whitelist {dist/*.whl dist/*.tar.gz, dist/*.tar.gz dist/*.whl}; broader globs rejected) + test_publish_workflow_has_workflow_dispatch_with_ref_input.",
-    "Codex iter-2 REVISE absorb (thread 019e81fc): (a) branch rebased on origin/main (a87682b after PR #786 merge); (b) evidence changed_files 3 -> 6 (RI-7.4 .md + .v1.json + scripts/packaging_smoke.py eklendi); (c) workflow `dist/` cleanup step eklendi (existing-tag republish defense-in-depth — older tag'in packaging_smoke.py'si hâlâ dist/'e evidence yazsa bile, workflow find dist ! -name *.whl ! -name *.tar.gz -delete ile temizler twine check öncesi); (d) yeni test test_publish_workflow_strips_non_distribution_files_from_dist invariant pin.",
-    "Codex iter-3 REVISE absorb (thread 019e81fc): workflow_dispatch.inputs.ref `required: false` + default empty -> `required: true` (no default) — operator empty ref ile branch HEAD publish edemez. Yeni fail-closed guard step `Validate workflow_dispatch ref is a v-tag` (if: github.event_name=='workflow_dispatch'): shell regex `^(refs/tags/)?v[0-9]` ile ref'i kontrol eder; empty veya non-v*-tag ise `::error::` + exit 1. Yeni invariant test test_publish_workflow_dispatch_ref_is_required_and_v_tag_guarded: hem `required: true` hem fail-closed guard step (workflow_dispatch event check + v-pattern match) pinler. Defense-in-depth: (i) GitHub UI required field, (ii) workflow shell-level fail-closed validation."
+    "AO-MA-STATUS-11G-DONE-MARK: AO-MA-SPM master plan core SON FAZ (AO-MA-11G core slice 11G-1) landed (PR #767 MERGED main f1dc032). Bu PR status manifest reflektion: phase 11G slice 11G-1 status in_progress -> done. NOT 7/7 production-ready claim; SON FAZ semantic = core capabilities all landed. 2 phase (11A + 11E) hâlâ in_progress for sub-slice follow-up (11A-2 GH Environment ao-ma-plan-approval gate wiring, 11E-2 GH Projects/Milestone one-way sync + drift checker); plus 11G-2 (CI/pre-commit changelog enforcement + 4.6 dogfooding + retro ADR cross-AI revalidation + allowlist widening for CHANGELOG/pyproject). Follow-up sub-slices demand-driven.",
+    "Status reflection vs flag flip: bu PR status manifest reflektion only (5/7 phase=done + 2 in_progress phase for sub-slice follow-up); HİÇBİR guard flag flip içermez. live_adapter_execution=false; support_widening=false; production_platform_claim=false unchanged. 5/7 core landing production-ready claim DEĞİL; narrow stable runtime framing devam (v4.1.0 PyPI published 2026-06-01 via PR #787 publish-fix workflow_dispatch).",
+    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread 019e8219 iter-1 REVISE (wording 7/7 overclaim + branch stale) → absorbed. iter-2 REVISE (evidence findings stale 7-phase wording) → absorbed.",
+    "Branch rebased on origin/main (5fede58 after PR #787 publish-fix merge; PR #786 V5 evidence write-back was a87682b base before publish-fix); 1 commit (status manifest update) replayed cleanly with --theirs evidence conflict resolution; force-pushed origin/chore/ao-ma-status-11g-done.",
+    "Diff scope: 2 dosya (ao_ma_status.v1.json + local-ai-review-evidence.v1.json). Status manifest 4-key amend: phases[6].status in_progress -> done (11G slice 11G-1 MERGED), progress_estimates.phases.done_count 4 -> 5 (5/7 core landed), progress_estimates.phases.percent 57 -> 71 (5/7), progress_estimates.phases.next_phase_id AO-MA-11G -> null (no further core SON FAZ), next_allowed_actions content (11A-2 + 11E-2 + 11G-2 follow-up sub-slice references). Evidence dosyası work_package=AO-MA-STATUS-11G-DONE-MARK (önceki PR #786 V5-PR-X2-EVIDENCE-WRITEBACK + PR #787 AO-MA-11G-2c-PUBLISH-FIX evidence çevriminde main'de).",
+    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change, .github change introduced. Sadece .claude/plans/ao_ma_status.v1.json + evidence."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
