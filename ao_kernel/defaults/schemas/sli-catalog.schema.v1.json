@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:sli-catalog:v1",
+  "title": "ao-kernel SLI/SLO Catalog (V5 Epic 5 E-5-4)",
+  "description": "Machine-readable Service Level Indicator + Objective catalog. Codex 019e8394 absorb: three objective_kind variants (ratio_slo, budget_objective, advisory_sli); PromQL whitelist on the 8 ao_* metric families; explicit non-SLA / non-production-claim guard; uptime is OUT (no health/up metric in v1 metric surface).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "service", "guard_flags", "uptime_status", "indicators"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "sli-catalog.v1",
+      "description": "Schema contract version pin (literal)."
+    },
+    "service": {
+      "type": "string",
+      "const": "ao-kernel",
+      "description": "Service identifier (literal — single-service catalog in v1)."
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      },
+      "description": "Codex 019e8394 absorb — explicit guard flag invariant. SLI/SLO catalog does NOT promote any guard flag."
+    },
+    "uptime_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["in_scope", "reason"],
+      "properties": {
+        "in_scope": { "const": false },
+        "reason": {
+          "type": "string",
+          "minLength": 16
+        }
+      },
+      "description": "Codex 019e8394 absorb — uptime SLI requires operator scrape target or a future health/freshness metric; v1 catalog does NOT claim service_uptime."
+    },
+    "indicators": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/indicator" },
+      "description": "Codex absorb — minimum 3 indicators (hard SLOs); advisory SLIs are additional."
+    }
+  },
+  "$defs": {
+    "indicator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description",
+        "objective_kind",
+        "sli_expr",
+        "operator_owned",
+        "is_contractual_sla"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]+$",
+          "minLength": 3,
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "minLength": 16
+        },
+        "objective_kind": {
+          "enum": ["ratio_slo", "budget_objective", "advisory_sli"]
+        },
+        "sli_expr": {
+          "type": "string",
+          "minLength": 4,
+          "description": "PromQL expression. Test invariant whitelists the 8 ao_* metric families and forbids label values not present in the runtime metric surface (e.g. outcome=error)."
+        },
+        "operator_owned": {
+          "const": true,
+          "description": "SLO targets are operator-tunable, not contractual. Const-true pins the discipline."
+        },
+        "is_contractual_sla": {
+          "const": false,
+          "description": "Catalog is NOT an SLA. Const-false pins public-claim discipline."
+        },
+        "target_status": {
+          "enum": ["proposed_initial_default", "placeholder", "observed_only"]
+        },
+        "slo_target": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1,
+          "description": "Ratio SLO target (0..1 exclusive). Required for objective_kind=ratio_slo; forbidden for budget_objective/advisory_sli."
+        },
+        "window": {
+          "type": "string",
+          "pattern": "^(7d|14d|28d|30d|60d|90d)$"
+        },
+        "error_budget_alerts": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/mwmbr_alert" }
+        },
+        "unit": {
+          "enum": ["usd_per_month", "usd_per_day", "ratio", "events_per_hour"]
+        },
+        "threshold_source": {
+          "enum": ["operator_configured", "baseline_to_be_measured", "n_a"]
+        },
+        "hard_slo": {
+          "type": "boolean"
+        },
+        "baseline_required": {
+          "type": "boolean"
+        },
+        "alerting_kind": {
+          "enum": ["mwmbr", "budget_alarm", "spike", "none"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "objective_kind": { "const": "ratio_slo" } }
+          },
+          "then": {
+            "required": ["slo_target", "window", "error_budget_alerts", "target_status"],
+            "properties": {
+              "alerting_kind": { "const": "mwmbr" },
+              "hard_slo": { "const": true }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "objective_kind": { "const": "budget_objective" } }
+          },
+          "then": {
+            "required": ["unit", "threshold_source", "target_status", "alerting_kind"],
+            "properties": {
+              "unit": { "const": "usd_per_month" },
+              "threshold_source": { "const": "operator_configured" },
+              "target_status": { "const": "placeholder" },
+              "alerting_kind": { "const": "budget_alarm" },
+              "slo_target": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "objective_kind": { "const": "advisory_sli" } }
+          },
+          "then": {
+            "required": ["hard_slo", "baseline_required", "alerting_kind"],
+            "properties": {
+              "hard_slo": { "const": false },
+              "baseline_required": { "const": true },
+              "slo_target": false
+            }
+          }
+        }
+      ]
+    },
+    "mwmbr_alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "burn_rate", "long_window", "short_window"],
+      "properties": {
+        "severity": { "enum": ["critical", "warning"] },
+        "burn_rate": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "long_window": { "pattern": "^(5m|30m|1h|6h)$" },
+        "short_window": { "pattern": "^(5m|30m|1h|6h)$" }
+      },
+      "description": "Multi-window multi-burn-rate (MWMBR) alert (Google SRE Workbook pattern). Codex 019e8394 absorb — only ratio SLOs use MWMBR; budget/advisory use other alert kinds."
+    }
+  }
+}
