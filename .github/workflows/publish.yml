@@ -8,11 +8,14 @@ on:
   # `archive/**` ruleset blocks tag delete/force-update. Default ref = main;
   # operator may pass explicit tag ref via input.
   workflow_dispatch:
+    # P0-GATE-1 (Codex iter-3 absorb): inputs.ref REQUIRED + v*-tag guard.
+    # Default empty would let operator accidentally publish branch HEAD to PyPI
+    # instead of the intended version tag. Fail-closed: ref must match `v*`
+    # semantic version tag pattern (e.g. v4.1.0, refs/tags/v4.1.0).
     inputs:
       ref:
-        description: "Git ref to publish (defaults to triggering branch HEAD; pass a tag like v4.1.0 to re-publish that tag)"
-        required: false
-        default: ""
+        description: "Git tag to publish (REQUIRED; MUST match v* semantic version tag, e.g. v4.1.0 or refs/tags/v4.1.0)"
+        required: true
 
 jobs:
   publish:
@@ -22,11 +25,32 @@ jobs:
       id-token: write  # OIDC for trusted publishing
 
     steps:
+      - name: Validate workflow_dispatch ref is a v-tag
+        # P0-GATE-1 (Codex iter-3 absorb): fail-closed guard. Only run for
+        # workflow_dispatch (tag push trigger is already constrained by
+        # `on.push.tags: ["v*"]`). Reject any non-v* ref before checkout so
+        # operator cannot accidentally publish branch HEAD or arbitrary commit.
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          REF="${{ inputs.ref }}"
+          if [[ -z "$REF" ]]; then
+            echo "::error::workflow_dispatch requires inputs.ref (got empty)"
+            exit 1
+          fi
+          if [[ ! "$REF" =~ ^(refs/tags/)?v[0-9] ]]; then
+            echo "::error::workflow_dispatch ref MUST match v* tag pattern (got: $REF)"
+            echo "::error::Allowed: v4.1.0 OR refs/tags/v4.1.0"
+            exit 1
+          fi
+          echo "ref validated: $REF"
+
       - uses: actions/checkout@v6
         with:
           # P0-GATE-1 (V5-PR #783): for workflow_dispatch w/ ref input,
           # checkout the operator-specified ref (e.g. v4.1.0 tag) so we
           # publish the intended commit, not the dispatch branch head.
+          # ref guard above ensures workflow_dispatch input is v*; push.tags
+          # trigger guarantees github.ref is refs/tags/v* by definition.
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Set up Python

@@ -95,6 +95,39 @@ def test_publish_workflow_twine_args_are_strict_whitelist() -> None:
         )
 
 
+def test_publish_workflow_dispatch_ref_is_required_and_v_tag_guarded() -> None:
+    """P0-GATE-1 (Codex iter-3 absorb): workflow_dispatch.inputs.ref MUST be
+    `required: true` AND a fail-closed guard step MUST reject non-v* refs.
+
+    Without these guards, operator could trigger workflow_dispatch with no
+    `ref` input (empty default) and accidentally publish the dispatch branch
+    HEAD to PyPI instead of the intended version tag. Defense-in-depth:
+    (a) `required: true` makes the field mandatory in the GitHub UI,
+    (b) shell guard validates the ref matches `v*` semver tag pattern.
+    """
+    content = _publish_workflow().read_text(encoding="utf-8")
+    # inputs.ref must be marked required: true (not optional/default empty).
+    assert re.search(
+        r"inputs:\s*\n\s*ref:[\s\S]{0,300}?required:\s*true",
+        content,
+    ), (
+        "publish.yml `workflow_dispatch.inputs.ref` NOT marked `required: true` — "
+        "operator could trigger with empty ref and publish branch HEAD to PyPI."
+    )
+    # A fail-closed guard step must check the ref pattern before checkout.
+    # Look for shell logic that exits non-zero for non-v* refs.
+    has_v_pattern_check = re.search(
+        r"if:\s*github\.event_name\s*==\s*'workflow_dispatch'"
+        r"[\s\S]{0,800}?"
+        r"(?:v\[0-9\]|v\*|refs/tags/v|=~.{0,40}v\d)",
+        content,
+    )
+    assert has_v_pattern_check, (
+        "publish.yml missing fail-closed ref guard step — workflow_dispatch ref "
+        "is not validated against v* tag pattern before checkout/publish."
+    )
+
+
 def test_publish_workflow_has_workflow_dispatch_with_ref_input() -> None:
     """P0-GATE-1 (Codex iter-1 absorb): publish workflow MUST expose
     `workflow_dispatch` with optional `ref` input for manual re-trigger.
