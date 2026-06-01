@@ -1,0 +1,460 @@
+{
+  "schema_version": "control-evidence-catalog.v1",
+  "service": "ao-kernel",
+  "artifact_kind": "compliance-posture-documentation",
+  "operator_owned": true,
+  "is_contractual_sla": false,
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "compliance_disclaimer": {
+    "not_certified": true,
+    "not_audited": true,
+    "documentation_only": true
+  },
+  "prohibited_claims": [
+    "we comply with",
+    "soc2 compliant",
+    "iso compliant",
+    "meets soc2",
+    "meets iso 27001",
+    "certification-ready",
+    "audit-ready",
+    "certified",
+    "audited",
+    "control implemented"
+  ],
+  "frameworks": [
+    {
+      "id": "SOC2-TSC",
+      "framework_version": "SOC2-2017",
+      "controls": [
+        {
+          "control_id": "CC1",
+          "name": "Control Environment",
+          "ao_kernel_status": "documented",
+          "status_rationale": "Repo ships governance ADRs and HARD RULE policies that describe a control environment posture.",
+          "operator_boundary": "Organization-level control environment effectiveness is operator-owned.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "CLAUDE.md",
+              "path": "CLAUDE.md",
+              "description": "Project-level control environment policy reference",
+              "claim_boundary": "documentation only"
+            },
+            {
+              "type": "hard_rule",
+              "ref": "Pre-Production Full Authority (2026-04-29)",
+              "description": "Governance posture HARD RULE",
+              "claim_boundary": "governance rule"
+            }
+          ]
+        },
+        {
+          "control_id": "CC2",
+          "name": "Communication and Information",
+          "ao_kernel_status": "partial",
+          "status_rationale": "ADRs, runbooks, and migration guides document internal communication posture; org training/comms is operator-owned.",
+          "operator_boundary": "Operator owns end-user communication, training program, and external information channel.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "docs/MIGRATION-V5.md",
+              "path": "docs/MIGRATION-V5.md",
+              "description": "Migration documentation surface",
+              "claim_boundary": "documentation only"
+            }
+          ]
+        },
+        {
+          "control_id": "CC3",
+          "name": "Risk Assessment",
+          "ao_kernel_status": "partial",
+          "status_rationale": "Plan-time cross-AI peer review process and risk matrices in ADRs document a risk assessment surface.",
+          "operator_boundary": "Enterprise risk assessment program operator-owned.",
+          "evidence_refs": [
+            {
+              "type": "hard_rule",
+              "ref": "Cross-AI Peer Review (2026-05-05)",
+              "description": "Risk assessment via cross-provider review",
+              "claim_boundary": "governance rule"
+            }
+          ]
+        },
+        {
+          "control_id": "CC4",
+          "name": "Monitoring Activities",
+          "ao_kernel_status": "partial",
+          "status_rationale": "CI gate, ao-release-gate, SLI/SLO catalog, and Alertmanager rule templates document a monitoring surface.",
+          "operator_boundary": "Ongoing management monitoring and review cadence is operator-owned.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "docs/sli-catalog.v1.json",
+              "path": "docs/sli-catalog.v1.json",
+              "description": "SLI/SLO catalog (E-5-4)",
+              "claim_boundary": "documentation only"
+            },
+            {
+              "type": "pr",
+              "ref": "PR #799",
+              "description": "E-5-4 SLI/SLO catalog merged",
+              "claim_boundary": "merge audit trail"
+            },
+            {
+              "type": "pr",
+              "ref": "PR #800",
+              "description": "E-5-5 Alertmanager rule templates",
+              "claim_boundary": "merge audit trail"
+            }
+          ]
+        },
+        {
+          "control_id": "CC5",
+          "name": "Control Activities",
+          "ao_kernel_status": "partial",
+          "status_rationale": "ao-release-gate decision pipeline and invariant test suites document a repo-level control activity surface.",
+          "operator_boundary": "Operational control effectiveness is operator-owned audit subject.",
+          "evidence_refs": [
+            {
+              "type": "source",
+              "ref": "ao_kernel/ao_release_gate.py",
+              "path": "ao_kernel/ao_release_gate.py",
+              "description": "Release-gate decision pipeline source",
+              "claim_boundary": "repo source artifact"
+            },
+            {
+              "type": "pr",
+              "ref": "PR #793",
+              "description": "RG-019e830d evidence finding taxonomy",
+              "claim_boundary": "merge audit trail"
+            }
+          ]
+        },
+        {
+          "control_id": "CC6",
+          "name": "Logical and Physical Access",
+          "ao_kernel_status": "partial",
+          "status_rationale": "Repo enforces secret-scan and no-secret-in-PR-body conventions; SSO, MFA, authn, and physical access are operator-owned.",
+          "operator_boundary": "Operator owns authn/SSO/MFA, key management, and physical access controls.",
+          "evidence_refs": [
+            {
+              "type": "hard_rule",
+              "ref": "No Fake Work / No Cosmetic Operations (2026-04-25)",
+              "description": "Secret discipline governance",
+              "claim_boundary": "governance rule"
+            }
+          ]
+        },
+        {
+          "control_id": "CC7",
+          "name": "System Operations",
+          "ao_kernel_status": "partial",
+          "status_rationale": "OTEL tracing tunables (E-5-1), W3C trace context (E-5-3a), Alertmanager templates (E-5-5), and incident playbook (E-6-6) document a system operations surface.",
+          "operator_boundary": "Live deployment, scrape target provisioning, and alert delivery operator-owned.",
+          "evidence_refs": [
+            {
+              "type": "pr",
+              "ref": "PR #791",
+              "description": "E-5-1 OTEL prod tunables",
+              "claim_boundary": "merge audit trail"
+            },
+            {
+              "type": "pr",
+              "ref": "PR #797",
+              "description": "E-5-3a W3C tracing primitives",
+              "claim_boundary": "merge audit trail"
+            },
+            {
+              "type": "pr",
+              "ref": "PR #801",
+              "description": "E-6-6 incident response playbook",
+              "claim_boundary": "merge audit trail"
+            }
+          ]
+        },
+        {
+          "control_id": "CC8",
+          "name": "Change Management",
+          "ao_kernel_status": "partial",
+          "status_rationale": "Cross-AI peer review HARD RULE plus CI gate plus ao-release-gate plus ADR-as-record document a strong change-management surface.",
+          "operator_boundary": "Operator owns production deployment change-control board and post-deploy verification.",
+          "evidence_refs": [
+            {
+              "type": "hard_rule",
+              "ref": "Cross-AI Peer Review (2026-05-05)",
+              "description": "Implementer != reviewer provider discipline",
+              "claim_boundary": "governance rule"
+            },
+            {
+              "type": "hard_rule",
+              "ref": "Admin Merge YASAK (2026-05-05)",
+              "description": "Governance bypass prohibition",
+              "claim_boundary": "governance rule"
+            },
+            {
+              "type": "hard_rule",
+              "ref": "CI Kirmiziyken Merge YASAK (2026-05-17)",
+              "description": "Required-check enforcement",
+              "claim_boundary": "governance rule"
+            }
+          ]
+        },
+        {
+          "control_id": "CC9",
+          "name": "Risk Mitigation",
+          "ao_kernel_status": "partial",
+          "status_rationale": "SBOM generator (E-6-1a), CodeQL workflow (E-6-5), Trivy fs scanner (E-6-2), and ao-release-gate document a vulnerability-mitigation surface.",
+          "operator_boundary": "Operator owns vendor risk program and supply-chain incident response.",
+          "evidence_refs": [
+            {
+              "type": "pr",
+              "ref": "PR #795",
+              "description": "E-6-1a SBOM generator",
+              "claim_boundary": "merge audit trail"
+            },
+            {
+              "type": "pr",
+              "ref": "PR #796",
+              "description": "E-6-5 CodeQL workflow",
+              "claim_boundary": "merge audit trail"
+            },
+            {
+              "type": "pr",
+              "ref": "PR #798",
+              "description": "E-6-2 Dependabot + Trivy",
+              "claim_boundary": "merge audit trail"
+            }
+          ]
+        },
+        {
+          "control_id": "A",
+          "name": "Availability (Trust Service Category)",
+          "ao_kernel_status": "partial",
+          "status_rationale": "SLI/SLO catalog (E-5-4) and Alertmanager templates (E-5-5) document an availability monitoring surface; uptime SLI is explicitly out of scope in v1.",
+          "operator_boundary": "No uptime SLI in v1 (uptime_status.in_scope=false). No live operator deployment evidence. No BCP ownership.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "docs/sli-catalog.v1.json",
+              "path": "docs/sli-catalog.v1.json",
+              "description": "uptime_status.in_scope=false; availability gap documented",
+              "claim_boundary": "documentation only"
+            }
+          ]
+        },
+        {
+          "control_id": "C",
+          "name": "Confidentiality (Trust Service Category)",
+          "ao_kernel_status": "partial",
+          "status_rationale": "Repo enforces secret-scan and no-secret-in-PR-body discipline; data classification and operator storage are out of scope.",
+          "operator_boundary": "Operator owns data classification, key management, and storage encryption.",
+          "evidence_refs": [
+            {
+              "type": "hard_rule",
+              "ref": "No Fake Work / No Cosmetic Operations (2026-04-25)",
+              "description": "Secret discipline governance",
+              "claim_boundary": "governance rule"
+            }
+          ]
+        },
+        {
+          "control_id": "PI",
+          "name": "Processing Integrity (Trust Service Category)",
+          "ao_kernel_status": "partial",
+          "status_rationale": "Schema validation (jsonschema Draft 2020-12 across all artifact types) and evidence trail (JSONL append-only) document a processing-integrity surface.",
+          "operator_boundary": "Operator owns business-process integrity outside repo runtime.",
+          "evidence_refs": [
+            {
+              "type": "source",
+              "ref": "ao_kernel/_internal/evidence/",
+              "path": "ao_kernel/_internal/evidence",
+              "description": "JSONL evidence writer with SHA256 integrity manifest",
+              "claim_boundary": "repo source artifact"
+            }
+          ]
+        },
+        {
+          "control_id": "P",
+          "name": "Privacy (Trust Service Category)",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "ao-kernel runtime does not process repo-owned PII; operator privacy program owns DPIA, records of processing, and data subject rights.",
+          "operator_boundary": "Operator privacy program owns DPIA, ROPA, and data subject rights workflow.",
+          "evidence_refs": [
+            {
+              "type": "hard_rule",
+              "ref": "Kullanici Aktif Credential'ina Dokunma YASAK (2026-04-29)",
+              "description": "User credential / personal data discipline",
+              "claim_boundary": "governance rule"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ISO-27001-Annex-A",
+      "framework_version": "ISO-27001-2022",
+      "controls": [
+        {
+          "control_id": "A.5",
+          "name": "Information security policies",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Organization-level information security policy is operator-owned.",
+          "operator_boundary": "Operator owns information security policy authorship and approval.",
+          "evidence_refs": []
+        },
+        {
+          "control_id": "A.6",
+          "name": "Organization of information security",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Organization-level role definition is operator-owned.",
+          "operator_boundary": "Operator owns role definition and segregation-of-duties matrix.",
+          "evidence_refs": []
+        },
+        {
+          "control_id": "A.7",
+          "name": "Human resources security",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Human resources controls are operator-owned.",
+          "operator_boundary": "Operator owns hiring, training, and termination procedures.",
+          "evidence_refs": []
+        },
+        {
+          "control_id": "A.8",
+          "name": "Asset management",
+          "ao_kernel_status": "partial",
+          "status_rationale": "SBOM generator (E-6-1a) documents software asset inventory; physical and organizational asset management is operator-owned.",
+          "operator_boundary": "Operator owns physical asset inventory and organizational ownership records.",
+          "evidence_refs": [
+            {
+              "type": "pr",
+              "ref": "PR #795",
+              "description": "E-6-1a SBOM generator (CycloneDX 1.5)",
+              "claim_boundary": "merge audit trail"
+            }
+          ]
+        },
+        {
+          "control_id": "A.9",
+          "name": "Access control",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Logical access control is operator-owned.",
+          "operator_boundary": "Operator owns access control policy, provisioning, and review.",
+          "evidence_refs": []
+        },
+        {
+          "control_id": "A.10",
+          "name": "Cryptography",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Cryptographic controls are operator-owned at transport layer.",
+          "operator_boundary": "Operator owns TLS, KMS, and key rotation.",
+          "evidence_refs": []
+        },
+        {
+          "control_id": "A.11",
+          "name": "Physical and environmental security",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Physical security is operator-owned at hosting layer.",
+          "operator_boundary": "Operator owns datacenter and physical environment controls.",
+          "evidence_refs": []
+        },
+        {
+          "control_id": "A.12",
+          "name": "Operations security",
+          "ao_kernel_status": "partial",
+          "status_rationale": "Incident response playbook (E-6-6), monitoring surface (E-5-1/2/3/4/5), and SBOM/scanning (E-6-1/2/5) document operations security artifacts.",
+          "operator_boundary": "Operator owns live monitoring deployment and operational change board.",
+          "evidence_refs": [
+            {
+              "type": "pr",
+              "ref": "PR #801",
+              "description": "E-6-6 incident response playbook",
+              "claim_boundary": "merge audit trail"
+            }
+          ]
+        },
+        {
+          "control_id": "A.13",
+          "name": "Communications security",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Communications security is operator-owned at transport layer.",
+          "operator_boundary": "Operator owns network segmentation and transport encryption.",
+          "evidence_refs": []
+        },
+        {
+          "control_id": "A.14",
+          "name": "System acquisition, development, and maintenance",
+          "ao_kernel_status": "partial",
+          "status_rationale": "Cross-AI peer review HARD RULE plus CI gate plus ADR-as-record plus invariant tests document a system development surface.",
+          "operator_boundary": "Operator owns production maintenance cadence and post-deploy verification.",
+          "evidence_refs": [
+            {
+              "type": "hard_rule",
+              "ref": "Cross-AI Peer Review (2026-05-05)",
+              "description": "Implementer != reviewer provider discipline",
+              "claim_boundary": "governance rule"
+            }
+          ]
+        },
+        {
+          "control_id": "A.15",
+          "name": "Supplier relationships",
+          "ao_kernel_status": "partial",
+          "status_rationale": "LLM provider vendor list is implicit in adapter registry; supplier contracts are operator-owned.",
+          "operator_boundary": "Operator owns vendor contract, SLA review, and supplier risk assessment.",
+          "evidence_refs": [
+            {
+              "type": "source",
+              "ref": "ao_kernel/defaults/",
+              "path": "ao_kernel/defaults",
+              "description": "Adapter registry (provider list)",
+              "claim_boundary": "repo source artifact"
+            }
+          ]
+        },
+        {
+          "control_id": "A.16",
+          "name": "Information security incident management",
+          "ao_kernel_status": "partial",
+          "status_rationale": "E-6-6 incident response playbook documents incident management surface; real incident org, notification, tabletop exercise, postmortem cadence are operator-owned.",
+          "operator_boundary": "Operator owns incident on-call rotation, customer notification, tabletop exercise schedule, and postmortem distribution cadence.",
+          "evidence_refs": [
+            {
+              "type": "pr",
+              "ref": "PR #801",
+              "description": "E-6-6 incident response playbook documentation",
+              "claim_boundary": "merge audit trail"
+            }
+          ]
+        },
+        {
+          "control_id": "A.17",
+          "name": "Information security aspects of business continuity",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Business continuity is operator-owned.",
+          "operator_boundary": "Operator owns BCP, DR plan, and RTO/RPO target setting.",
+          "evidence_refs": []
+        },
+        {
+          "control_id": "A.18",
+          "name": "Compliance",
+          "ao_kernel_status": "partial",
+          "status_rationale": "This control-reference mapping documents a compliance documentation surface; certification, audit engagement, and regulatory determination are operator-owned.",
+          "operator_boundary": "Operator owns auditor engagement, certification scope, and regulatory determination.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "docs/compliance/README.md",
+              "path": "docs/compliance/README.md",
+              "description": "Compliance posture documentation index",
+              "claim_boundary": "documentation only"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

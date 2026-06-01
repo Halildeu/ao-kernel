@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:control-evidence-catalog:v1",
+  "title": "ao-kernel Compliance Control-Reference Mapping + Evidence Index (V5 Epic 6 E-6-3)",
+  "description": "Schema for control-reference mapping + evidence index. NOT a compliance claim. NOT an audit attestation. NOT a certification statement. Documentation surface only — operator owns audit engagement, certification, and attestation. Codex 019e83d1 cross-AI plan-time AGREE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "artifact_kind",
+    "operator_owned",
+    "is_contractual_sla",
+    "guard_flags",
+    "compliance_disclaimer",
+    "prohibited_claims",
+    "frameworks"
+  ],
+  "properties": {
+    "schema_version": { "const": "control-evidence-catalog.v1" },
+    "service": { "const": "ao-kernel" },
+    "artifact_kind": { "const": "compliance-posture-documentation" },
+    "operator_owned": { "const": true },
+    "is_contractual_sla": { "const": false },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    },
+    "compliance_disclaimer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["not_certified", "not_audited", "documentation_only"],
+      "properties": {
+        "not_certified": { "const": true },
+        "not_audited": { "const": true },
+        "documentation_only": { "const": true }
+      }
+    },
+    "prohibited_claims": {
+      "type": "array",
+      "minItems": 10,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 4 },
+      "description": "Explicit list of forbidden public-claim tokens. Enforced by test_no_compliance_claim_language."
+    },
+    "frameworks": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/framework" }
+    }
+  },
+  "$defs": {
+    "framework": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "framework_version", "controls"],
+      "properties": {
+        "id": { "enum": ["SOC2-TSC", "ISO-27001-Annex-A"] },
+        "framework_version": {
+          "type": "string",
+          "pattern": "^[A-Z0-9-]+$",
+          "minLength": 4
+        },
+        "controls": {
+          "type": "array",
+          "minItems": 12,
+          "items": { "$ref": "#/$defs/control" }
+        }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control_id",
+        "name",
+        "ao_kernel_status",
+        "status_rationale",
+        "operator_boundary",
+        "evidence_refs"
+      ],
+      "properties": {
+        "control_id": {
+          "type": "string",
+          "pattern": "^[A-Z]+[A-Za-z0-9.]*$",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "name": {
+          "type": "string",
+          "minLength": 8
+        },
+        "ao_kernel_status": {
+          "enum": ["documented", "partial", "out_of_scope", "not_applicable"]
+        },
+        "status_rationale": {
+          "type": "string",
+          "minLength": 16
+        },
+        "operator_boundary": {
+          "type": "string",
+          "minLength": 16
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence_ref" }
+        }
+      }
+    },
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "ref", "description", "claim_boundary"],
+      "properties": {
+        "type": {
+          "enum": ["pr", "adr", "hard_rule", "doc", "test", "source"]
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "path": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 8
+        },
+        "claim_boundary": {
+          "type": "string",
+          "minLength": 8
+        }
+      }
+    }
+  }
+}
