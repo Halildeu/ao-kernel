@@ -151,6 +151,16 @@ the playbook references vendor escalation as an external handoff:
 - Customer comms about vendor outage = operator/owner decision (out of
   scope for v1).
 
+**E-6-6b extension:** A schema-backed vendor escalation matrix lives at
+[`vendor-escalation-matrix.v1.json`](vendor-escalation-matrix.v1.json)
+(with the operator runbook at
+[`vendor-escalation-runbook.v1.md`](vendor-escalation-runbook.v1.md)).
+The matrix enumerates 8 vendors (6 LLM providers + GHCR + PyPI) with
+status page URLs, support portals, incident classifications, applicable
+SEV tiers, and standardized operator workflow steps. Real account
+manager contact details are NEVER committed; `account_manager_contact`
+is always the constant `"operator_provisioned"`.
+
 ## 7. Operator Deployment Boundary
 
 This package ships **process contract + templates + schema + tests**. The

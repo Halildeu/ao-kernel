@@ -1,23 +1,20 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-OPS-OPERATOR-ACTION-RUNBOOKS",
+  "work_package": "EPIC-6-E6-6B-VENDOR-ESCALATION-MATRIX",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/operator-action-runbooks",
+    "head_ref": "refs/heads/codex/epic-6-e6-6b-vendor-escalation",
     "changed_files": [
-      ".claude/plans/E-OPS-OPERATOR-ACTION-RUNBOOKS.md",
-      "ao_kernel/defaults/schemas/operator-action-checklist.schema.v1.json",
-      "docs/operator-runbooks/01-pypi-publish.md",
-      "docs/operator-runbooks/02-plan-approval-environment.md",
-      "docs/operator-runbooks/03-mirror-pat-secret.md",
-      "docs/operator-runbooks/04-mirror-sync-environment.md",
-      "docs/operator-runbooks/README.md",
-      "docs/operator-runbooks/operator-action-checklist.v1.json",
+      ".claude/plans/EPIC-6-E6-6B-VENDOR-ESCALATION-MATRIX.md",
+      "ao_kernel/defaults/schemas/vendor-escalation-matrix.schema.v1.json",
+      "docs/incident-response/README.md",
+      "docs/incident-response/vendor-escalation-matrix.v1.json",
+      "docs/incident-response/vendor-escalation-runbook.v1.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_operator_runbooks.py"
+      "tests/test_vendor_escalation_matrix.py"
     ]
   },
   "checks_considered": [
@@ -29,22 +26,19 @@
     { "name": "no_guard_flip", "status": "pass" },
     { "name": "no_github_write_in_this_pr", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" },
-    { "name": "no_workflow_mutation", "status": "pass" }
+    { "name": "no_pii_in_repo", "status": "pass" }
   ],
   "findings": [
-    "V5 E-Ops Operator Action Runbooks: 4 schema-backed runbooks for the explicit operator-action chain per HARD RULE Tam Otonom Onerme (2026-05-28). Agent prepares all artifacts; operator clicks 1 button per action.",
-    "Codex plan-time thread 019e84c6 3-iter chain (REVISE/REVISE/AGREE). iter-1 6 BLOCKER: MC-1 workflow/secret/env name drift (corrected); MC-2 PAT classic+fine-grained distinct minimal; MC-3 AO-MA-11A-2 operator does NOT dispatch; MC-4 mirror-sync env separate 4th action; MC-5 TestPyPI removed (publish.yml does not support); MC-6 schema audit-grade 18 fields.",
-    "iter-2 5 BLOCKER: R1 PyPI env 'pypi' enum allowlist; R2 secret scan token-prefix-only (sha256 false-positive removed); R3 affirmative-claim scanner negation-aware; R4 fine-grained PAT minimal (PR Read only); R5 agent_executed_external_action rename.",
-    "iter-3 AGREE + ready_for_impl:true + must_close_findings:[]. 3 non-blocking notes: sk-proj- pattern coverage; affirmative-claim token-proximity; status_evidence_refs URL allowlist.",
-    "Schema operator-action-checklist.schema.v1.json: Draft 2020-12 + additionalProperties:false everywhere; const pins; guard_flags 3 const false; runbook_disclaimer 3 const true + claim_boundary 4 const true; actions exactly 4 (minItems=maxItems=4); per-action 18 fields with agent_executed_external_action const false + credential_material_committed const false.",
-    "Checklist 4 pending actions: p0-1-pypi-publish (env pypi; v-tag refs/tags/v4.1.0; 5 min); ao-ma-11a-2-plan-approval-environment (env ao-ma-plan-approval; 4 min); ao-ma-11e-2b-mirror-pat-secret (no env; secret REPO_GH_PAT_PROJECTS_RW; 6 min); ao-ma-11e-2b-mirror-sync-environment (env ao-ma-mirror-sync; depends on Action 3; 4 min). Total ~19 min.",
-    "4 runbook markdown: 01-pypi-publish.md (no TestPyPI; yank-not-delete rollback; v-tag SHA verify); 02-plan-approval-environment.md (operator does NOT dispatch; env configure only); 03-mirror-pat-secret.md (Classic+Fine-grained sections distinct; stdin pipe D43; body/echo forbidden); 04-mirror-sync-environment.md (depends Action 3; apply dispatch dependency chain).",
-    "README docs/operator-runbooks/README.md (8 section): Layout + Checklist Overview table + Discipline 4 sub-section (agent + credential + public-claim + authority boundary) + Action 1-4 + Out-of-scope 6 follow-up + References. README links all 4 runbooks + checklist + schema.",
-    "36 invariant test pass local: 6 schema validity + 3 negative + 5 checklist content + 4 runbook structure + 5 credential discipline + 2 plan-approval discipline + 3 PyPI discipline + 3 public claim + 3 repo-contract drift + 2 governance. ruff clean.",
-    "Public claim discipline + ZERO TOUCH: PR HICBIR guard flag flip; HICBIR .github/workflows mutation; HICBIR actual operator action execution; HICBIR credential material commit (token-prefix regex pattern + checklist scan); HICBIR affirmative claim (negation-aware scanner). claim_boundary 4 const true.",
-    "Risk class: conservative low-risk (docs/schemas/tests only; no runtime; no workflows; no operator action execution).",
-    "Out-of-scope follow-up slices (6): E-Ops-2 TestPyPI workflow input + E-Ops-3 Vault integration + E-Ops-4 audit trail + E-Ops-5 multi-tenant + E-Ops-6 Grafana dashboard + E-Ops-7 runbook localization.",
-    "Cross-AI peer review trail (HARD RULE Cross-AI Peer Review 2026-05-05 + 2026-05-14): implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e84c6 (3-iter REVISE/REVISE/AGREE + must_close_findings:[])."
+    "V5 Epic 6 E-6-6b Vendor Escalation Matrix: schema-backed external vendor handoff matrix for 8 vendors (6 LLM providers + GHCR + PyPI). Operator-owned external handoff; agent prepares contract. Follow-up to E-6-6 (PR #801 MERGED).",
+    "Plan-time consultation auto-mode classifier denied (cross-AI worktree spawn restriction). Implementation followed E-6-6 parent plan + Codex parent thread 019e83c3 F4 absorb (regulatory + vendor escalation explicit fence). Post-impl Codex review pending.",
+    "Schema vendor-escalation-matrix.schema.v1.json: Draft 2020-12 + additionalProperties:false everywhere; const pins; guard_flags 3 const false; matrix_disclaimer 5 const true (operator_owned_external_handoff + no_vendor_sla_promise + no_customer_notification_authority + no_pii_in_repo + operator_legal_counsel_required); vendors minItems 3; per-vendor 11 fields with account_manager_contact const 'operator_provisioned' + no_pii_committed const true.",
+    "Matrix 8 vendors: 6 llm_provider (anthropic-claude + openai + google-gemini + xai-grok + deepseek + qwen) + 1 container_registry (ghcr) + 1 package_index (pypi). All applicable_severity SEV-1/SEV-2 (no SEV-3 mapping — v1 conservatism).",
+    "Runbook docs/incident-response/vendor-escalation-runbook.v1.md (7 section): Source of Truth + Vendor Categories + Standard Workflow 5-step + Severity Mapping + PII Boundary + Stop and contact owner if (5 conditions) + References. README §6.6 extended with E-6-6b link.",
+    "26 invariant test pass local: 5 schema validity + 3 schema negative + 5 matrix content + 3 severity cross-validation + 3 PII/credential discipline + 2 URL pattern + 3 runbook structure + 2 governance. ruff clean.",
+    "Public claim discipline: PR HICBIR guard flag flip; HICBIR .github/workflows mutation; HICBIR runtime vendor integration; HICBIR customer notification authority; HICBIR vendor SLA promise; HICBIR real PII.",
+    "Risk class: conservative low-risk (docs/schemas/tests + 1 README §6.6 extension).",
+    "Out-of-scope (4): E-6-6b-2 automated vendor outage detection + E-6-6b-3 SLA tracking dashboard + E-6-6b-4 incident replay analyzer + E-6-6b-5 multi-region matrix.",
+    "Cross-AI peer review trail (HARD RULE 2026-05-05 + 2026-05-14): implementer Anthropic Claude != reviewer OpenAI Codex. Plan-time consultation deferred to post-impl review."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

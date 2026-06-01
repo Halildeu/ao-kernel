@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:vendor-escalation-matrix:v1",
+  "title": "ao-kernel Vendor Escalation Matrix (V5 Epic 6 E-6-6b)",
+  "description": "Schema-backed external vendor handoff matrix. Operator-owned; agent prepares contract. NO vendor SLA promise, NO customer notification authority, NO PII (account manager contacts are operator_provisioned). Cross-validates with E-6-6 severity matrix tier IDs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "artifact_kind",
+    "guard_flags",
+    "matrix_disclaimer",
+    "vendors"
+  ],
+  "properties": {
+    "schema_version": { "const": "vendor-escalation-matrix.v1" },
+    "service": { "const": "ao-kernel" },
+    "artifact_kind": { "const": "vendor-escalation-matrix" },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    },
+    "matrix_disclaimer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operator_owned_external_handoff",
+        "no_vendor_sla_promise",
+        "no_customer_notification_authority",
+        "no_pii_in_repo",
+        "operator_legal_counsel_required"
+      ],
+      "properties": {
+        "operator_owned_external_handoff": { "const": true },
+        "no_vendor_sla_promise": { "const": true },
+        "no_customer_notification_authority": { "const": true },
+        "no_pii_in_repo": { "const": true },
+        "operator_legal_counsel_required": { "const": true }
+      }
+    },
+    "vendors": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/vendor" }
+    }
+  },
+  "$defs": {
+    "vendor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "category",
+        "status_page_url",
+        "support_portal_url",
+        "account_manager_contact",
+        "incident_classifications",
+        "applicable_severity",
+        "operator_workflow_steps",
+        "verification_required",
+        "no_pii_committed"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]+$" },
+        "name": { "type": "string", "minLength": 4 },
+        "category": {
+          "enum": [
+            "llm_provider",
+            "embedding_provider",
+            "container_registry",
+            "package_index",
+            "telemetry_backend"
+          ]
+        },
+        "status_page_url": {
+          "type": "string",
+          "pattern": "^https://[A-Za-z0-9.-]+\\.(com|io|net|dev|org|status|ai)(/.*)?$"
+        },
+        "support_portal_url": {
+          "type": "string",
+          "pattern": "^https://[A-Za-z0-9.-]+\\.(com|io|net|dev|org|ai)(/.*)?$"
+        },
+        "account_manager_contact": {
+          "const": "operator_provisioned"
+        },
+        "incident_classifications": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "api_outage",
+              "model_degradation",
+              "rate_limit_spike",
+              "account_lockout",
+              "billing_dispute",
+              "registry_outage",
+              "publish_failure",
+              "ingest_delay"
+            ]
+          }
+        },
+        "applicable_severity": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["SEV-1", "SEV-2", "SEV-3"] }
+        },
+        "operator_workflow_steps": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 7,
+          "items": { "type": "string", "minLength": 8 }
+        },
+        "verification_required": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 8 }
+        },
+        "no_pii_committed": { "const": true }
+      }
+    }
+  }
+}
