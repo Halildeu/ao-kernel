@@ -1,18 +1,16 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11E-2B-CI-TOKEN-FIX",
+  "work_package": "EPIC-5-E-5-1-OTEL-PROD-TUNABLES",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-11e-2b-ci-token-fix",
+    "head_ref": "refs/heads/codex/epic5-e5-1-otel-prod-tunables",
     "changed_files": [
-      ".github/workflows/ao-ma-11e-2b-mirror-sync.yml",
-      "ao_kernel/_internal/ao_ma/github_mirror_sync.py",
+      "ao_kernel/telemetry_config.py",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma11e2b_mirror_sync.py",
-      "tests/test_ao_ma11e2b_workflow_invariant.py"
+      "tests/test_telemetry_production_config.py"
     ]
   },
   "checks_considered": [
@@ -26,13 +24,13 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "AO-MA-11E-2B-CI-TOKEN-FIX: 11E-2b dry-run workflow run 26745803729 FAILED exit 3 (api_error). Lokal exit 0 + 13 issue body rewrite plan. Root cause: Projects v2 is a user-level resource; default GITHUB_TOKEN lacks Projects v2 scope; graphql call to projectV2.items returns 403/permission denied.",
-    "Fix (defense-in-depth): (1) Engine sync_v5_mirror() Projects v2 fetch degrades gracefully in dry-run mode — failure does NOT abort with api_error; instead sets project_v2_fetch_degraded marker in report.reason field; planned_changes for project_item_* over-reported but operator review of dry-run report catches the PAT-scope gap explicitly. (2) Apply mode unchanged: project fetch failure still api_error (cannot safely write without read confirmation). (3) Workflow 5 GH_TOKEN env-var assignments -> PAT fallback pattern secrets.REPO_GH_PAT_PROJECTS_RW || secrets.GITHUB_TOKEN. When operator configures REPO_GH_PAT_PROJECTS_RW (classic PAT with project scope), Projects v2 access unlocked.",
-    "Why minimum viable token wiring: HARD RULE Uzun Vadeli Kalıcı Çözüm. (a) Graceful degradation in dry-run preserves CI workflow execution even WITHOUT operator action (no blocker); (b) Apply path keeps strict scope discipline (cannot write without verified read); (c) PAT fallback opt-in (operator controls PAT scope + secret access); (d) GitHub Actions default token does NOT carry Projects v2 scope — this is GitHub platform constraint, not bug; documented in workflow comment.",
-    "Tests (67/67 PASS unchanged): existing sync engine + schema + workflow + body template + canonical digest tests; no regressions. ruff + mypy strict clean.",
+    "Epic 5 E-5-1: OTEL production tracing tunables. V5 issue #778 sub-slice. Pure feature; env-driven configuration for OTEL exporter, sampling rate, batch size, service name, resource attributes; lazy-loadable -> prod tunables (D12 OTEL optional + lazy import + no-op fallback unchanged; tunables only resolve when AO_KERNEL_OTEL_ENABLED=true).",
+    "Module ao_kernel/telemetry_config.py (pure stdlib + dataclass): ProductionTelemetryConfig frozen dataclass; load_production_config(environ) builder; SAMPLING_RATE_MIN/MAX + BATCH_SIZE_MIN/MAX + EXPORT_TIMEOUT_MS_MIN/MAX constants; TelemetryConfigError fail-closed for malformed values; header redaction in to_dict() (audit safety); 9 env vars: AO_KERNEL_OTEL_ENABLED + EXPORTER_OTLP_ENDPOINT + SAMPLING_RATE + BATCH_SIZE + SERVICE_NAME + RESOURCE_ATTRIBUTES + INSECURE + EXPORT_TIMEOUT_MS + HEADERS.",
+    "Disiplin (HARD RULE pinned): (a) Pure stdlib; no opentelemetry import at module level; (b) D12 lazy import unchanged; default disabled = zero-cost path; (c) header values redacted in serialization (token/auth header may carry secrets); (d) bounds enforce fail-closed range (sampling_rate 0.0-1.0, batch_size 1-10000, export_timeout 100-600000ms 10min hard cap); (e) enabled=true requires explicit OTLP endpoint (fail-closed without endpoint); (f) malformed CSV/boolean/int/float -> TelemetryConfigError (not silent fallback).",
+    "Tests (41 PASS): defaults (enabled false; full capture 1.0 sampling); enabled requires endpoint; bool parsing (true/TRUE/1/yes/on/false/0/no/off/empty); bool rejects garbage (maybe); sampling rate in-range + below-min/above-max/non-numeric rejected; batch size in-range + below-min/above-max/float rejected; export timeout 10min cap; service name default + override + empty fallback; resource attributes CSV parse + malformed pair/empty key rejected; headers parse + redaction in to_dict; dataclass frozen; to_dict integrity + no environ leak; bounds documented. ruff + mypy strict clean.",
     "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread post-impl review imminent.",
-    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Bu PR sadece CI-fix; workflow + engine; canli apply hala operator-bound. No CODEOWNERS / ruleset / branch protection / admin / secrets / new .github push trigger.",
-    "Operator deployment chain (post-merge): (1) Operator GitHub Settings -> Secrets -> New repository secret REPO_GH_PAT_PROJECTS_RW = classic PAT with project scope; (2) workflow_dispatch dry_run=true; (3) Projects v2 access verified; (4) operator computes canonical plan digest + dispatches apply with full chain. PAT secret is optional but recommended for full feature coverage; without PAT, dry-run still produces planned_changes for issue_body_rewrite and label_* operations, only project_item_* are degraded."
+    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Bu PR sadece config module + tests; OTEL endpoint connection runtime side-effect yok (CI'da AO_KERNEL_OTEL_ENABLED set edilmedigi icin no-op). No CODEOWNERS / ruleset / branch protection / admin / secrets / .github / new PyPI publish.",
+    "Operator opt-in path (post-merge): (a) install ao-kernel[otel] extra; (b) set AO_KERNEL_OTEL_ENABLED=true + AO_KERNEL_OTEL_EXPORTER_OTLP_ENDPOINT=https://...; (c) optional: AO_KERNEL_OTEL_SAMPLING_RATE (0.0-1.0), AO_KERNEL_OTEL_BATCH_SIZE (1-10000), AO_KERNEL_OTEL_SERVICE_NAME, AO_KERNEL_OTEL_RESOURCE_ATTRIBUTES (k=v CSV), AO_KERNEL_OTEL_HEADERS (k=v CSV; values redacted in audit logs)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
