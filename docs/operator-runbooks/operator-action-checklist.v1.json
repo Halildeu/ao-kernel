@@ -1,0 +1,147 @@
+{
+  "schema_version": "operator-action-checklist.v1",
+  "service": "ao-kernel",
+  "artifact_kind": "operator-action-checklist",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "runbook_disclaimer": {
+    "agent_prepared_only": true,
+    "operator_action_required": true,
+    "no_credential_committed": true
+  },
+  "claim_boundary": {
+    "visibility_not_authority": true,
+    "repo_ssot_not_github_ui": true,
+    "no_production_ready_claim": true,
+    "no_live_adapter_execution_authority": true
+  },
+  "actions": [
+    {
+      "id": "p0-1-pypi-publish",
+      "title": "PyPI v4.1.0 publish dispatch (P0-1)",
+      "runbook_path": "docs/operator-runbooks/01-pypi-publish.md",
+      "workflow_path": ".github/workflows/publish.yml",
+      "environment_name": "pypi",
+      "secret_names": [],
+      "dispatch_inputs": { "ref": "refs/tags/v4.1.0" },
+      "expected_artifacts": [
+        "https://pypi.org/project/ao-kernel/4.1.0/"
+      ],
+      "operator_must_verify": [
+        "tag SHA matches main release commit",
+        "GHCR + PyPI parity for ao-kernel 4.1.0",
+        "no test release published to production index"
+      ],
+      "forbidden_claims": [
+        "production-ready",
+        "we guarantee",
+        "production sla",
+        "guaranteed performance"
+      ],
+      "agent_executed_external_action": false,
+      "credential_material_committed": false,
+      "agent_prep_status": "done",
+      "operator_action_status": "pending",
+      "status_evidence_refs": [],
+      "blocker_for": ["v4.1.0 GA"],
+      "estimated_minutes": 5,
+      "dependencies": []
+    },
+    {
+      "id": "ao-ma-11a-2-plan-approval-environment",
+      "title": "AO-MA-11A-2 plan-approval environment configure",
+      "runbook_path": "docs/operator-runbooks/02-plan-approval-environment.md",
+      "workflow_path": ".github/workflows/ao-ma-11a-plan-approval.yml",
+      "environment_name": "ao-ma-plan-approval",
+      "secret_names": [],
+      "dispatch_inputs": {},
+      "expected_artifacts": [
+        "https://github.com/Halildeu/ao-kernel/settings/environments"
+      ],
+      "operator_must_verify": [
+        "environment name is exactly ao-ma-plan-approval",
+        "at least one required reviewer is configured",
+        "wait timer is 0",
+        "no environment-scoped secrets are added in v1"
+      ],
+      "forbidden_claims": [
+        "operator dispatches workflow",
+        "self-review supported",
+        "production-ready"
+      ],
+      "agent_executed_external_action": false,
+      "credential_material_committed": false,
+      "agent_prep_status": "done",
+      "operator_action_status": "pending",
+      "status_evidence_refs": [],
+      "blocker_for": ["AO-MA-11A-2 dispatch chain"],
+      "estimated_minutes": 4,
+      "dependencies": []
+    },
+    {
+      "id": "ao-ma-11e-2b-mirror-pat-secret",
+      "title": "AO-MA-11E-2b mirror-sync PAT secret seed",
+      "runbook_path": "docs/operator-runbooks/03-mirror-pat-secret.md",
+      "workflow_path": ".github/workflows/ao-ma-11e-2b-mirror-sync.yml",
+      "environment_name": null,
+      "secret_names": ["REPO_GH_PAT_PROJECTS_RW"],
+      "dispatch_inputs": {},
+      "expected_artifacts": [
+        "https://github.com/Halildeu/ao-kernel/settings/secrets/actions"
+      ],
+      "operator_must_verify": [
+        "secret name is exactly REPO_GH_PAT_PROJECTS_RW",
+        "PAT scope avoids contents write and workflows write",
+        "PAT expiration window is 90 days",
+        "secret was set via stdin pipe (no --body, no shell echo)"
+      ],
+      "forbidden_claims": [
+        "production-ready",
+        "we guarantee",
+        "credentials committed"
+      ],
+      "agent_executed_external_action": false,
+      "credential_material_committed": false,
+      "agent_prep_status": "done",
+      "operator_action_status": "pending",
+      "status_evidence_refs": [],
+      "blocker_for": ["AO-MA-11E-2b apply dispatch"],
+      "estimated_minutes": 6,
+      "dependencies": []
+    },
+    {
+      "id": "ao-ma-11e-2b-mirror-sync-environment",
+      "title": "AO-MA-11E-2b mirror-sync apply environment configure",
+      "runbook_path": "docs/operator-runbooks/04-mirror-sync-environment.md",
+      "workflow_path": ".github/workflows/ao-ma-11e-2b-mirror-sync.yml",
+      "environment_name": "ao-ma-mirror-sync",
+      "secret_names": [],
+      "dispatch_inputs": {},
+      "expected_artifacts": [
+        "https://github.com/Halildeu/ao-kernel/settings/environments"
+      ],
+      "operator_must_verify": [
+        "environment name is exactly ao-ma-mirror-sync",
+        "at least one required reviewer is configured",
+        "wait timer is 0",
+        "PAT secret seed action above is already prepared"
+      ],
+      "forbidden_claims": [
+        "production-ready",
+        "we guarantee",
+        "operator owns AI authority"
+      ],
+      "agent_executed_external_action": false,
+      "credential_material_committed": false,
+      "agent_prep_status": "done",
+      "operator_action_status": "pending",
+      "status_evidence_refs": [],
+      "blocker_for": ["AO-MA-11E-2b apply dispatch"],
+      "estimated_minutes": 4,
+      "dependencies": ["ao-ma-11e-2b-mirror-pat-secret"]
+    }
+  ]
+}
