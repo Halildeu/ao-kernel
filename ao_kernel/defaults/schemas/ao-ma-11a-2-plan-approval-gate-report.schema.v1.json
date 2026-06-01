@@ -104,7 +104,7 @@
       }
     },
     {
-      "description": "Pre-flight passed (validate job, --validate-only mode): path/SHA/binding/consensus + env preflight pass; approval stages NOT evaluated. Codex iter-2 post-impl absorb.",
+      "description": "Pre-flight passed (validate job, --validate-only mode): path/SHA/binding/consensus + env preflight pass; approval stages NOT evaluated. Codex iter-2 post-impl absorb + iter-3 absorb (required_reviewer_configured:true pin).",
       "if": { "properties": { "final_decision": { "const": "pre_flight_passed" } } },
       "then": {
         "properties": {
@@ -113,6 +113,7 @@
           "plan_binding_pass": { "const": true },
           "consensus_validator_pass": { "const": true },
           "approval_validator_pass": { "const": false },
+          "required_reviewer_configured": { "const": true },
           "approval_api_state": { "const": "empty" },
           "approving_login": { "type": "null" },
           "approving_at": { "type": "null" },

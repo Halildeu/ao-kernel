@@ -439,6 +439,9 @@ def test_validate_only_mode_emits_pre_flight_passed(tmp_path):
     assert report.approving_login is None
     assert report.approving_at is None
     assert report.stage_fail_reason is None
+    # Codex iter-3 absorb: required_reviewer_configured MUST be true
+    # (env preflight passed); other bypass sub-fields stay default-False
+    assert report.required_reviewer_configured
     assert report.to_exit_code() == 0
 
 
