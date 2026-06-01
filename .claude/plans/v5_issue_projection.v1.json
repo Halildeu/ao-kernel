@@ -47,7 +47,7 @@
       "sub_issues_planned": [
         "E-P0-1 v5 roadmap plan doc (PR-X0)",
         "E-P0-2 Master plan amend (PR-X0)",
-        "E-P0-3 GitHub mirror sync (PR-X2, post-11E-2)",
+        "E-P0-3 GitHub mirror create — manuel NOW path (PR-X2 manifest amend + PR-X2-impl gh CLI state mutation; AO-MA-11E-2 drift checker LATER binding adapter)",
         "E-P0-4 README badge + roadmap link",
         "E-P0-5 Issue forms (YAML) zorunlu anchor fields"
       ]
@@ -254,7 +254,7 @@
     },
     {
       "id": "P0-GATE-3",
-      "title": "[P0 Gate] V5 GitHub mirror sync (PR-X2; post-11E-2)",
+      "title": "[P0 Gate] V5 GitHub mirror create — manuel NOW path (PR-X2 manifest amend + PR-X2-impl gh CLI state mutation; AO-MA-11E-2 drift checker LATER)",
       "body_anchor": {
         "spm_anchor": "AO-MA-SPM-V5-P0-GATE-3",
         "ao_authority_artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -262,9 +262,9 @@
         "risk_class_source": "computed_normal",
         "evidence_classes": ["mirror_sync_workflow_evidence", "created_gh_ids_back_to_repo", "digest_binding_recorded"]
       },
-      "labels": ["epic-p0", "status:planned", "risk:normal", "mirror:authority"],
+      "labels": ["epic-p0", "status:in_progress", "risk:normal", "mirror:authority"],
       "milestone": "v5.0.0 — Full Production Promotion",
-      "current_state": "Blocked on 11E-2 (GH Projects/Milestone/Issue one-way sync mechanism)"
+      "current_state": "Manual mirror create NOW (this PR amends `github_write_authorized=true`); manifest stays SSOT (each issue body anchor binds slice_id + spm_anchor + ao_authority_artifact); AO-MA-11E-2 drift checker binds GitHub ↔ manifest LATER as adapter, NOT a precondition."
     },
     {
       "id": "P0-GATE-2",
@@ -297,7 +297,7 @@
     ]
   },
   "acceptance_matrix": {
-    "epic_p0": {"complete": false, "evidence_refs": [], "exit_criteria": ["plan_doc_merged", "projection_manifest_merged", "master_plan_amend_merged", "github_mirror_sync_merged"]},
+    "epic_p0": {"complete": false, "evidence_refs": [], "exit_criteria": ["plan_doc_merged", "projection_manifest_merged", "master_plan_amend_merged", "github_mirror_create_authorized", "github_mirror_create_complete"]},
     "epic_1": {"complete": false, "evidence_refs": [], "exit_criteria": ["all_7_sub_issues_merged"]},
     "epic_2": {"complete": false, "evidence_refs": [], "exit_criteria": ["operator_bound_supersession_merged", "live_provider_smoke_green", "cost_circuit_breaker_evidence_complete"]},
     "epic_3": {"complete": false, "evidence_refs": [], "exit_criteria": ["operator_bound_supersession_merged", "multi_arch_ci_matrix_green", "provider_widening_capability_profile_complete"]},
@@ -314,6 +314,9 @@
     "live_adapter_execution": false
   },
   "register_authority": "evidence_record_only",
-  "github_write_authorized": false,
-  "visibility_mode": "one_way_mirror_repo_authority_wins"
+  "github_write_authorized": true,
+  "mirror_creation_path": "manual_now_with_manifest_driven_binding",
+  "drift_checker_binding_deferred_to": "AO-MA-11E-2",
+  "visibility_mode": "one_way_mirror_repo_authority_wins",
+  "rationale_mirror_now": "User explicit visibility complaint (2026-06-01): GitHub Projects/Milestone/Issue surface MUST exist alongside repo SSOT; deferral until AO-MA-11E-2 mechanism conflicts with HARD RULE Yarın YASAK + HARD RULE Pre-Production Full Authority. Manifest remains the authority (issue body anchor fields bind each issue to slice_id + spm_anchor + ao_authority_artifact); AO-MA-11E-2 drift checker is a follow-up adapter that binds GitHub state ↔ this manifest after-the-fact, not a precondition for mirror creation."
 }
