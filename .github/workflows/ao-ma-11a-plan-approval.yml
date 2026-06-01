@@ -56,6 +56,8 @@ jobs:
       - name: Install
         run: pip install -e ".[mcp]"
       - name: Run gate CLI in validate-only mode
+        # Codex iter-1 post-impl §A absorb: --validate-only flag skips API
+        # fetch + approval construction; fail-fast (no `|| true` swallowing).
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -70,7 +72,8 @@ jobs:
             --github-repository "${{ github.repository }}" \
             --github-sha "${{ github.sha }}" \
             --allow-network \
-            --output validate_report.json || true
+            --validate-only \
+            --output validate_report.json
       - name: Upload validate report
         uses: actions/upload-artifact@v4
         with:

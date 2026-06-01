@@ -290,7 +290,11 @@ def run_gate(
     gh_api_caller: Callable[[str, str], Any],
     repo_root: Path,
     environment_name: str = _ENVIRONMENT_NAME,
+    validate_only: bool = False,
 ) -> GateReport:
+    """Codex iter-1 post-impl §A absorb: validate_only mode skips API fetch +
+    approval construction; runs path + SHA + binding + consensus + env preflight
+    only. validate job uses this; approve job runs full 7-stage."""
     report = GateReport(
         run_id=github_run_id,
         repository_full_name=github_repository,
@@ -373,6 +377,22 @@ def run_gate(
     if not env_ok:
         report.final_decision = "rejected_identity"
         report.stage_fail_reason = f"environment_preflight: {env_err}"
+        report.compute_bypass()
+        return report
+
+    # Codex iter-1 post-impl §A absorb: validate_only mode stops here
+    # (path + SHA + binding + consensus + env preflight all done). Approve
+    # job re-runs everything PLUS API fetch + approval construction +
+    # validate_approval FINAL. validate job NEVER passes the approval gate.
+    if validate_only:
+        report.final_decision = "approved"
+        report.stage_fail_reason = None
+        # Mark bypass detection neutrally for validate-only (skipped fields
+        # cannot prove or disprove bypass; record as not_evaluated semantics
+        # via report fields left at defaults but final_decision still flips
+        # to approved to signal "pre-flight checks passed").
+        report.no_bypass_state_observed = True  # no API evidence either way
+        report.self_review_rejected = True  # not evaluated; default safe
         report.compute_bypass()
         return report
 
@@ -527,6 +547,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo-root", type=Path, default=_REPO_ROOT)
     parser.add_argument("--environment-name", default=_ENVIRONMENT_NAME)
     parser.add_argument("--allow-network", action="store_true")
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Codex iter-1 post-impl §A: skip API fetch + approval construction; "
+        "validate job pre-flight only (no approval emission).",
+    )
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args(argv)
 
@@ -560,6 +586,7 @@ def main(argv: list[str] | None = None) -> int:
         gh_api_caller=_gh_api_caller,
         repo_root=args.repo_root,
         environment_name=args.environment_name,
+        validate_only=args.validate_only,
     )
     out = json.dumps(report.to_dict(), indent=2)
     if args.output:

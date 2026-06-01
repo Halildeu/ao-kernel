@@ -84,7 +84,7 @@
   },
   "allOf": [
     {
-      "description": "Approved: all 5 stages pass + no bypass detected.",
+      "description": "Approved: all 5 stages pass + all 3 bypass sub-conditions true + computed bypass_detected:false + approval_api_state=approved + stage_fail_reason:null (Codex iter-1 post-impl §G absorb).",
       "if": { "properties": { "final_decision": { "const": "approved" } } },
       "then": {
         "properties": {
@@ -93,8 +93,12 @@
           "plan_binding_pass": { "const": true },
           "consensus_validator_pass": { "const": true },
           "approval_validator_pass": { "const": true },
+          "no_bypass_state_observed": { "const": true },
+          "self_review_rejected": { "const": true },
+          "required_reviewer_configured": { "const": true },
           "bypass_detected": { "const": false },
-          "approval_api_state": { "const": "approved" }
+          "approval_api_state": { "const": "approved" },
+          "stage_fail_reason": { "type": "null" }
         }
       }
     },
