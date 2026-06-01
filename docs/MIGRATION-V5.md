@@ -176,11 +176,12 @@ ao-kernel policy-sim run --proposed-policies /path/to/proposed-policies-dir
 ```
 
 > The `policy-sim` subcommand requires `run` + at least one of
-> `--proposed-policies` (directory) or `--proposed-patches` (file).
-> There is no `--dry-run` flag; the simulator is dry-run by design
-> (no live apply). An empty / non-existent directory silently
-> evaluates to zero proposed policies and exits 0, so verify the
-> path resolves before treating the exit code as a load smoke.
+> `--proposed-policies` (directory) or `--proposed-patches` (directory
+> containing RFC 7396 JSON merge-patch files). There is no
+> `--dry-run` flag; the simulator is dry-run by design (no live
+> apply). An empty / non-existent directory silently evaluates to
+> zero proposed entries and exits 0, so verify the path resolves
+> before treating the exit code as a load smoke.
 
 ### 3.4 Optional production telemetry adoption (Epic 5)
 
