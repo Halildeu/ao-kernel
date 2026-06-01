@@ -1,0 +1,60 @@
+# AlertmanagerConfig CRD (Prometheus Operator dialect — monitoring.coreos.com/v1alpha1).
+# Active route: Microsoft Teams (HARD RULE Workspace Tooling; ADR-0029).
+# Slack receivers are dormant only — see docs/alertmanager/slack-dormant.snippet.v1.yml
+# (NOT applied; reactivation chain in README §7).
+#
+# Operator boundary:
+# - Webhook URL is operator-injected via Secret (urlSecret); NEVER committed.
+# - Active routes match only severity ∈ {critical, warning}; no tenant_channel
+#   matcher in v1 (Epic 4 multi-tenancy prerequisite).
+# - This snippet expects a Secret named `ao-kernel-teams-webhook` with key `url`
+#   in the same namespace as the Alertmanager instance.
+#
+# Codex 019e83af cross-AI plan-time AGREE.
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: ao-kernel-teams-routes
+  labels:
+    app.kubernetes.io/name: ao-kernel
+    app.kubernetes.io/component: alertmanager-routing
+spec:
+  route:
+    receiver: ao-kernel-teams-default
+    groupBy: [ao_slo, severity]
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 4h
+    routes:
+      - receiver: ao-kernel-teams-critical
+        matchers:
+          - name: severity
+            value: critical
+            matchType: "="
+        continue: false
+      - receiver: ao-kernel-teams-warning
+        matchers:
+          - name: severity
+            value: warning
+            matchType: "="
+        continue: false
+  receivers:
+    - name: ao-kernel-teams-default
+      webhookConfigs:
+        - urlSecret:
+            name: ao-kernel-teams-webhook
+            key: url
+          sendResolved: true
+    - name: ao-kernel-teams-critical
+      webhookConfigs:
+        - urlSecret:
+            name: ao-kernel-teams-webhook
+            key: url
+          sendResolved: true
+    - name: ao-kernel-teams-warning
+      webhookConfigs:
+        - urlSecret:
+            name: ao-kernel-teams-webhook
+            key: url
+          sendResolved: false
