@@ -210,20 +210,21 @@ def test_resource_attributes_empty_key_rejected():
 
 
 def test_headers_parse():
-    cfg = load_production_config(environ={"AO_KERNEL_OTEL_HEADERS": "Authorization=Bearer secret,X-API-Key=other"})
+    cfg = load_production_config(environ={"AO_KERNEL_OTEL_HEADERS": "X-Custom-Header=value-one,X-API-Key=other"})
     assert cfg.headers == {
-        "Authorization": "Bearer secret",
+        "X-Custom-Header": "value-one",
         "X-API-Key": "other",
     }
 
 
 def test_to_dict_redacts_header_values():
     """Codex-style review: header values may carry tokens — redact in serialization."""
-    cfg = load_production_config(environ={"AO_KERNEL_OTEL_HEADERS": "Authorization=Bearer SECRET-TOKEN"})
+    sentinel_value = "FIXTURE-VALUE-XYZ-789"
+    cfg = load_production_config(environ={"AO_KERNEL_OTEL_HEADERS": f"X-Sentinel={sentinel_value}"})
     serialized = cfg.to_dict()
-    assert serialized["headers"] == {"Authorization": "<redacted>"}
+    assert serialized["headers"] == {"X-Sentinel": "<redacted>"}
     # Field still present (key name) but value redacted
-    assert "SECRET-TOKEN" not in str(serialized)
+    assert sentinel_value not in str(serialized)
 
 
 # ---- Dataclass immutability ----
@@ -233,6 +234,49 @@ def test_config_is_frozen():
     cfg = load_production_config(environ={})
     with pytest.raises((AttributeError, Exception)):
         cfg.enabled = True  # type: ignore[misc]
+
+
+def test_config_dict_fields_are_truly_immutable():
+    """Codex iter-1 absorb: frozen=True is shallow; MUST also prevent dict
+    mutation on resource_attributes + headers.
+    """
+    cfg = load_production_config(
+        environ={
+            "AO_KERNEL_OTEL_RESOURCE_ATTRIBUTES": "k=v",
+            "AO_KERNEL_OTEL_HEADERS": "Authorization=X-Custom-Scheme value-two",
+        }
+    )
+    with pytest.raises(TypeError):
+        cfg.resource_attributes["mutated"] = "yes"  # type: ignore[index]
+    with pytest.raises(TypeError):
+        cfg.headers["mutated"] = "yes"  # type: ignore[index]
+
+
+def test_headers_malformed_entry_does_not_leak_value_in_error():
+    """Codex iter-1 absorb: malformed AO_KERNEL_OTEL_HEADERS error message
+    MUST redact the raw value half — even malformed entries can carry tokens.
+    """
+    leaked_token = "REDACT_TEST_FIXTURE_VALUE_001"
+    with pytest.raises(TelemetryConfigError) as exc_info:
+        load_production_config(environ={"AO_KERNEL_OTEL_HEADERS": f"k=v,{leaked_token}"})
+    assert leaked_token not in str(exc_info.value)
+
+
+def test_headers_empty_key_does_not_leak_value_in_error():
+    """Empty-key path also redacts."""
+    leaked_token = "REDACT_TEST_FIXTURE_VALUE_002"
+    with pytest.raises(TelemetryConfigError) as exc_info:
+        load_production_config(environ={"AO_KERNEL_OTEL_HEADERS": f"={leaked_token}"})
+    assert leaked_token not in str(exc_info.value)
+
+
+def test_resource_attributes_malformed_entry_still_shows_value():
+    """Resource attributes are NOT sensitive; error keeps raw entry for
+    operator debugging. Codex iter-1: redaction is HEADERS-only.
+    """
+    with pytest.raises(TelemetryConfigError) as exc_info:
+        load_production_config(environ={"AO_KERNEL_OTEL_RESOURCE_ATTRIBUTES": "deployment=prod,malformed"})
+    assert "malformed" in str(exc_info.value)
 
 
 # ---- to_dict integrity ----

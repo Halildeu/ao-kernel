@@ -27,7 +27,8 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Optional
+from types import MappingProxyType
+from typing import Mapping, Optional
 
 
 # Bounds (Codex iter-1 hardening: explicit min/max enforce fail-closed range)
@@ -57,10 +58,13 @@ class ProductionTelemetryConfig:
     sampling_rate: float = DEFAULT_SAMPLING_RATE
     batch_size: int = DEFAULT_BATCH_SIZE
     service_name: str = DEFAULT_SERVICE_NAME
-    resource_attributes: dict[str, str] = field(default_factory=dict)
+    # Codex iter-1 absorb: frozen=True is shallow. Wrap dict fields in
+    # MappingProxyType so the public surface is a read-only view (mutating
+    # cfg.resource_attributes["k"] = "v" raises TypeError).
+    resource_attributes: Mapping[str, str] = field(default_factory=lambda: MappingProxyType({}))
     insecure: bool = False
     export_timeout_ms: int = DEFAULT_EXPORT_TIMEOUT_MS
-    headers: dict[str, str] = field(default_factory=dict)
+    headers: Mapping[str, str] = field(default_factory=lambda: MappingProxyType({}))
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -106,22 +110,45 @@ def _parse_int_in_range(value: str, *, env_name: str, lo: int, hi: int) -> int:
     return parsed
 
 
+def _redact_pair_for_error(pair: str, *, sensitive: bool) -> str:
+    """Codex iter-1 absorb: when env_name suggests sensitive content
+    (headers/tokens), the raw value half of a malformed CSV pair MUST NOT
+    appear in error messages — even malformed entries may carry auth tokens.
+    """
+    if not sensitive:
+        return repr(pair)
+    if "=" in pair:
+        k, _ = pair.split("=", 1)
+        return repr(f"{k}=<redacted>")
+    return repr("<redacted>")
+
+
 def _parse_csv_kv(value: str, *, env_name: str) -> dict[str, str]:
-    """Parse `k1=v1,k2=v2` CSV. Empty value → empty dict."""
+    """Parse `k1=v1,k2=v2` CSV. Empty value → empty dict.
+
+    Codex iter-1 absorb: HEADERS env-var values may contain auth tokens.
+    Malformed entries are redacted in exception messages so a stack trace
+    cannot leak the raw token.
+    """
     if not value.strip():
         return {}
+    sensitive = "HEADERS" in env_name.upper()
     result: dict[str, str] = {}
     for pair in value.split(","):
         pair = pair.strip()
         if not pair:
             continue
         if "=" not in pair:
-            raise TelemetryConfigError(f"{env_name}: malformed entry {pair!r}; expected key=value")
+            raise TelemetryConfigError(
+                f"{env_name}: malformed entry {_redact_pair_for_error(pair, sensitive=sensitive)}; expected key=value"
+            )
         k, v = pair.split("=", 1)
         k = k.strip()
         v = v.strip()
         if not k:
-            raise TelemetryConfigError(f"{env_name}: empty key in entry {pair!r}")
+            raise TelemetryConfigError(
+                f"{env_name}: empty key in entry {_redact_pair_for_error(pair, sensitive=sensitive)}"
+            )
         result[k] = v
     return result
 
@@ -193,8 +220,8 @@ def load_production_config(*, environ: Optional[dict[str, str]] = None) -> Produ
         sampling_rate=sampling_rate,
         batch_size=batch_size,
         service_name=service_name,
-        resource_attributes=resource_attributes,
+        resource_attributes=MappingProxyType(dict(resource_attributes)),
         insecure=insecure,
         export_timeout_ms=export_timeout_ms,
-        headers=headers,
+        headers=MappingProxyType(dict(headers)),
     )
