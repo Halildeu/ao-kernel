@@ -148,6 +148,27 @@ and does NOT modify any E-6-3 contract. This mapping is NOT an AOC,
 NOT a ROC, NOT a SAQ, NOT an ASV scan report, and NOT a pen-test
 report.
 
+### 3.8 NIST CSF 2.0 Function/Category Reference Mapping (E-6-3e extension)
+
+A separate NIST Cybersecurity Framework 2.0 Function/Category
+reference mapping lives at
+[`nist-csf-control-mapping.v1.json`](nist-csf-control-mapping.v1.json)
+(rendered as
+[`nist-csf-control-mapping.v1.md`](nist-csf-control-mapping.v1.md)),
+with the operator usage runbook in
+[`nist-csf-operator-usage-runbook.v1.md`](nist-csf-operator-usage-runbook.v1.md).
+
+The mapping enumerates 6 Functions (GV, ID, PR, DE, RS, RC) and 22
+Categories. NIST CSF is a **voluntary** risk management framework;
+NIST does NOT operate a CSF certification program. ao-kernel claims
+no Implementation Tier and ships no organizational CSF Profile. The
+mapping ships its own schema, prohibited-claims scanner, and Tier/
+Profile claim discipline; it is **not** an extension of the SOC2/ISO
+catalog and does NOT modify any E-6-3 contract. This is a Function/
+Category reference mapping; it is NOT a 106-Subcategory deep-dive,
+NOT a Profile (Current/Target), NOT a Tier assessment, and NOT an
+implementation plan.
+
 ## 4. ISO 27001 Annex A Coverage Summary (14 areas)
 
 | Annex A area | Status |

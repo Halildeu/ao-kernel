@@ -1,0 +1,323 @@
+{
+  "schema_version": "nist-csf-control-mapping.v1",
+  "artifact_kind": "nist-csf-control-reference-mapping",
+  "service": "ao-kernel",
+  "operator_owned": true,
+  "is_contractual_sla": false,
+  "framework_version": "NIST-CSF-2.0",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false,
+    "csf_certification_claim_allowed": false,
+    "csf_tier_claim_allowed": false,
+    "csf_profile_claim_allowed": false
+  },
+  "csf_disclaimer": {
+    "not_nist_certified": true,
+    "no_nist_csf_certification_program": true,
+    "not_nist_audited": true,
+    "not_cisa_attested": true,
+    "documentation_only": true,
+    "operator_csf_profile_decision": true
+  },
+  "csf_tier_disclosure": {
+    "ao_kernel_claims_tier": "none",
+    "tier_assessment_operator_owned": true,
+    "available_tiers": ["partial", "risk_informed", "repeatable", "adaptive"]
+  },
+  "csf_profile_disclosure": {
+    "ao_kernel_is_organization": false,
+    "no_csf_profile_in_repo": true,
+    "operator_csf_profile_owner": true
+  },
+  "prohibited_claims": [
+    "NIST CSF certified",
+    "NIST-certified",
+    "NIST CSF compliant",
+    "CSF compliant",
+    "CSF-compliant",
+    "fully implements CSF",
+    "CSF Profile complete",
+    "Target Profile complete",
+    "Current Profile complete",
+    "Target Profile achieved",
+    "Implementation Tier achieved",
+    "CSF audit",
+    "CSF attested",
+    "NIST validated",
+    "CISA approved",
+    "CISA validated",
+    "CSF maturity level",
+    "CSF maturity score"
+  ],
+  "functions": [
+    {
+      "function_id": "GV",
+      "function_title": "GOVERN",
+      "function_status": "partial",
+      "categories": [
+        {
+          "category_id": "GV.OC",
+          "category_title": "Organizational Context",
+          "category_status": "out_of_scope",
+          "rationale": "Organizational context (mission, stakeholders, legal requirements) is operator program responsibility. ao-kernel ships no organizational context surface.",
+          "operator_boundary": "Operator owns mission alignment, stakeholder mapping, and legal/regulatory environment determination per NIST CSF 2.0 GV.OC.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "GV.RM",
+          "category_title": "Risk Management Strategy",
+          "category_status": "out_of_scope",
+          "rationale": "Risk management strategy is operator program responsibility. ao-kernel ships no risk management strategy surface.",
+          "operator_boundary": "Operator owns risk appetite, risk tolerance, risk hierarchy, and enterprise risk strategy per NIST CSF 2.0 GV.RM.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "GV.RR",
+          "category_title": "Roles, Responsibilities, and Authorities",
+          "category_status": "out_of_scope",
+          "rationale": "Organizational roles and authorities are operator program responsibility. ao-kernel ships no role/authority surface.",
+          "operator_boundary": "Operator owns role definitions, responsibilities matrix, and authority delegations per NIST CSF 2.0 GV.RR.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "GV.PO",
+          "category_title": "Policy",
+          "category_status": "partial",
+          "rationale": "Repo evidence surface for development governance: ADRs and HARD RULEs in CLAUDE.md. This is NOT an organizational security policy framework and NOT an operating control attestation.",
+          "operator_boundary": "Operator owns organizational policy framework, policy publication cadence, employee acknowledgment, and policy exception management per NIST CSF 2.0 GV.PO.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "CLAUDE.md",
+              "description": "Project HARD RULEs and decision discipline",
+              "claim_boundary": "evidence surface only; not operating effectiveness"
+            }
+          ]
+        },
+        {
+          "category_id": "GV.OV",
+          "category_title": "Oversight",
+          "category_status": "out_of_scope",
+          "rationale": "Cybersecurity oversight is operator board/leadership responsibility. ao-kernel ships no oversight surface.",
+          "operator_boundary": "Operator owns board reporting, executive review cadence, and oversight performance measurement per NIST CSF 2.0 GV.OV.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "GV.SC",
+          "category_title": "Supply Chain Risk Management",
+          "category_status": "out_of_scope",
+          "rationale": "Supply chain risk management is operator program responsibility. ao-kernel ships dependency manifests as evidence surface but operator owns supplier risk assessment.",
+          "operator_boundary": "Operator owns supplier risk assessment, third-party security assessments, vendor SLA review, and supply chain incident response per NIST CSF 2.0 GV.SC.",
+          "evidence_refs": []
+        }
+      ]
+    },
+    {
+      "function_id": "ID",
+      "function_title": "IDENTIFY",
+      "function_status": "partial",
+      "categories": [
+        {
+          "category_id": "ID.AM",
+          "category_title": "Asset Management",
+          "category_status": "partial",
+          "rationale": "Repo evidence surface for software bill of materials (E-6-1 SBOM). This is partial asset inventory for ao-kernel software components only; it is NOT a complete operator asset inventory and NOT an operating control attestation.",
+          "operator_boundary": "Operator owns deployment-time asset inventory, hardware inventory, data flow inventory, and asset criticality determination per NIST CSF 2.0 ID.AM.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "docs/compliance/control-evidence-catalog.v1.json",
+              "description": "E-6-3 evidence catalog (SBOM index)",
+              "claim_boundary": "evidence surface only; not operating effectiveness"
+            }
+          ]
+        },
+        {
+          "category_id": "ID.RA",
+          "category_title": "Risk Assessment",
+          "category_status": "out_of_scope",
+          "rationale": "Organizational risk assessment is operator program responsibility. ao-kernel ships no risk assessment surface.",
+          "operator_boundary": "Operator owns risk assessment methodology, risk register, risk treatment plan, and risk acceptance per NIST CSF 2.0 ID.RA.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "ID.IM",
+          "category_title": "Improvement",
+          "category_status": "partial",
+          "rationale": "Repo evidence surface for application-layer security improvement: E-6-1 SBOM + E-6-2 vulnerability scanning + E-6-5 CodeQL SAST. This is NOT a complete cybersecurity improvement program and NOT an operating control attestation.",
+          "operator_boundary": "Operator owns continuous improvement program, lessons-learned integration, and improvement priority determination per NIST CSF 2.0 ID.IM.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "docs/compliance/control-evidence-catalog.v1.json",
+              "description": "E-6-3 evidence catalog (SBOM + vuln scan + SAST)",
+              "claim_boundary": "evidence surface only; not operating effectiveness"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "function_id": "PR",
+      "function_title": "PROTECT",
+      "function_status": "out_of_scope",
+      "categories": [
+        {
+          "category_id": "PR.AA",
+          "category_title": "Identity Management, Authentication, and Access Control",
+          "category_status": "out_of_scope",
+          "rationale": "Identity, authentication, and access control are operator IAM responsibility. ao-kernel ships no IAM surface.",
+          "operator_boundary": "Operator owns IAM design, MFA enforcement, credential lifecycle, access reviews, and least-privilege enforcement per NIST CSF 2.0 PR.AA.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "PR.AT",
+          "category_title": "Awareness and Training",
+          "category_status": "out_of_scope",
+          "rationale": "Security awareness and training are operator HR program responsibility. ao-kernel ships no awareness/training surface.",
+          "operator_boundary": "Operator owns awareness training curriculum, training cadence, and effectiveness measurement per NIST CSF 2.0 PR.AT.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "PR.DS",
+          "category_title": "Data Security",
+          "category_status": "out_of_scope",
+          "rationale": "Data security controls (encryption at rest, key management, data classification) are operator infrastructure responsibility. ao-kernel ships no data-security operating surface.",
+          "operator_boundary": "Operator owns data classification, encryption at rest, key management, data loss prevention, and data secure-disposal per NIST CSF 2.0 PR.DS.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "PR.PS",
+          "category_title": "Platform Security",
+          "category_status": "out_of_scope",
+          "rationale": "Platform security (OS hardening, secure boot, configuration management) is operator infrastructure responsibility. ao-kernel ships no platform-security surface.",
+          "operator_boundary": "Operator owns OS/platform hardening baseline, secure boot, configuration management, and patch cadence per NIST CSF 2.0 PR.PS.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "PR.IR",
+          "category_title": "Technology Infrastructure Resilience",
+          "category_status": "out_of_scope",
+          "rationale": "Infrastructure resilience (HA architecture, capacity planning, segmentation) is operator infrastructure responsibility.",
+          "operator_boundary": "Operator owns HA architecture, capacity planning, network segmentation, and resilience testing per NIST CSF 2.0 PR.IR.",
+          "evidence_refs": []
+        }
+      ]
+    },
+    {
+      "function_id": "DE",
+      "function_title": "DETECT",
+      "function_status": "partial",
+      "categories": [
+        {
+          "category_id": "DE.CM",
+          "category_title": "Continuous Monitoring",
+          "category_status": "partial",
+          "rationale": "Repo evidence surface for application-layer observability: E-5-3 distributed tracing + E-5-3b consultation tracing. This is limited application-layer telemetry only; it is NOT enterprise SIEM, NOT network monitoring, and NOT an operating control attestation.",
+          "operator_boundary": "Operator owns enterprise SIEM, log aggregation, network monitoring, endpoint detection, and monitoring policy per NIST CSF 2.0 DE.CM.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "docs/sli-catalog.v1.json",
+              "description": "E-5-4 SLI catalog (application-layer observability index)",
+              "claim_boundary": "evidence surface only; not operating effectiveness"
+            }
+          ]
+        },
+        {
+          "category_id": "DE.AE",
+          "category_title": "Adverse Event Analysis",
+          "category_status": "partial",
+          "rationale": "Repo evidence surface for adverse-event tracing context: E-5-3 distributed tracing supports event correlation. This is application-layer tracing only; it is NOT incident detection automation and NOT an operating control attestation.",
+          "operator_boundary": "Operator owns incident detection rules, alert triage, threat intelligence integration, and adverse-event analysis program per NIST CSF 2.0 DE.AE.",
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "docs/sli-catalog.v1.json",
+              "description": "E-5-4 SLI catalog (event correlation index)",
+              "claim_boundary": "evidence surface only; not operating effectiveness"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "function_id": "RS",
+      "function_title": "RESPOND",
+      "function_status": "partial",
+      "categories": [
+        {
+          "category_id": "RS.MA",
+          "category_title": "Incident Management",
+          "category_status": "documented",
+          "rationale": "Repo evidence surface for incident response playbook (E-6-6 PR #801): documented incident management workflow with roles, triage, communications, and post-incident review. This is evidence surface only; not operating effectiveness.",
+          "operator_boundary": "Operator owns incident response team, on-call rotation, communication channels, and live incident command per NIST CSF 2.0 RS.MA.",
+          "evidence_refs": [
+            {
+              "type": "pr",
+              "ref": "PR #801",
+              "description": "E-6-6 incident response playbook",
+              "claim_boundary": "evidence surface only; not operating effectiveness"
+            }
+          ]
+        },
+        {
+          "category_id": "RS.AN",
+          "category_title": "Incident Analysis",
+          "category_status": "documented",
+          "rationale": "Repo evidence surface for incident analysis: E-6-6 incident response playbook + E-5-3 distributed tracing for forensic correlation. This is evidence surface only; not operating effectiveness.",
+          "operator_boundary": "Operator owns incident forensic investigation, scope determination, root-cause analysis, and analysis quality per NIST CSF 2.0 RS.AN.",
+          "evidence_refs": [
+            {
+              "type": "pr",
+              "ref": "PR #801",
+              "description": "E-6-6 incident response playbook (analysis section)",
+              "claim_boundary": "evidence surface only; not operating effectiveness"
+            }
+          ]
+        },
+        {
+          "category_id": "RS.CO",
+          "category_title": "Incident Response Reporting and Communication",
+          "category_status": "out_of_scope",
+          "rationale": "Incident response reporting and external communication are operator program responsibility (customer notification, regulator notification, public disclosure).",
+          "operator_boundary": "Operator owns external communication, customer notification, regulator disclosure, and stakeholder reporting per NIST CSF 2.0 RS.CO.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "RS.MI",
+          "category_title": "Incident Mitigation",
+          "category_status": "out_of_scope",
+          "rationale": "Incident mitigation actions (containment, eradication) require operator deployment context; ao-kernel ships no live mitigation surface.",
+          "operator_boundary": "Operator owns containment actions, eradication, threat mitigation, and live mitigation effectiveness measurement per NIST CSF 2.0 RS.MI.",
+          "evidence_refs": []
+        }
+      ]
+    },
+    {
+      "function_id": "RC",
+      "function_title": "RECOVER",
+      "function_status": "out_of_scope",
+      "categories": [
+        {
+          "category_id": "RC.RP",
+          "category_title": "Incident Recovery Plan Execution",
+          "category_status": "out_of_scope",
+          "rationale": "Incident recovery plan execution is operator BCP/DR responsibility. ao-kernel ships no recovery execution surface.",
+          "operator_boundary": "Operator owns recovery plan, RTO/RPO targets, backup/restore procedures, and recovery testing per NIST CSF 2.0 RC.RP.",
+          "evidence_refs": []
+        },
+        {
+          "category_id": "RC.CO",
+          "category_title": "Incident Recovery Communication",
+          "category_status": "out_of_scope",
+          "rationale": "Incident recovery communication is operator program responsibility. ao-kernel ships no recovery communication surface.",
+          "operator_boundary": "Operator owns recovery communication plan, stakeholder updates, and service restoration messaging per NIST CSF 2.0 RC.CO.",
+          "evidence_refs": []
+        }
+      ]
+    }
+  ]
+}
