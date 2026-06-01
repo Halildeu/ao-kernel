@@ -1,18 +1,19 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11G-2A-ALLOWLIST-WIDENING",
+  "work_package": "AO-MA-11G-2B-RELEASE-V4-1-0",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/release-gate-allowlist-widening",
+    "head_ref": "refs/heads/codex/release-v4-1-0",
     "changed_files": [
       "local-ai-review-evidence.v1.json",
-      ".claude/plans/RELEASE-V4-1-0.md",
-      ".claude/plans/consultations/CNS-20260601-003.request.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "CHANGELOG.md",
+      "pyproject.toml",
+      "ao_kernel/__init__.py",
+      "tests/test_pr_a6_features.py",
+      "tests/test_v410_version_pin.py"
     ]
   },
   "checks_considered": [
@@ -20,19 +21,21 @@
     { "name": "secret_scan", "status": "pass" },
     { "name": "ruff_lint", "status": "pass" },
     { "name": "mypy_strict", "status": "pass" },
-    { "name": "allowlist_widening_governance_defense", "status": "pass" },
-    { "name": "no_self_serving_widening", "status": "pass" },
+    { "name": "version_consistency_pin", "status": "pass" },
+    { "name": "pyyaml_runtime_dep_declared", "status": "pass" },
+    { "name": "changelog_release_entry_pin", "status": "pass" },
+    { "name": "pyproject_semantic_discipline", "status": "pass" },
     { "name": "guard_flags_remain_false", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "AO-MA-11G-2a (master plan §Faz 7 follow-up, release lifecycle governance): release-gate DEFAULT_ALLOWED_PATH_PREFIXES allowlist'e CHANGELOG.md + pyproject.toml eklenir. Sebep: AO-MA-SPM master plan §Faz 1-7 program 2026-06-01'de tamamlandi (7/7 fazlar MERGED main f1dc032); v4.1.0 PyPI release icin minor bump + pyyaml runtime dep + Keep-a-Changelog [4.1.0] entry gerekli ama release-gate diff_scope mevcut allowlist'inde root metadata dosyalari yok. PR-A tek scope: allowlist widening (5 dosya). PR-B (post-PR-A merge): pyproject + __init__ + CHANGELOG + version pin testleri. Post-PR-B (operator-authorized): tag v4.1.0 push -> GitHub Actions publish.yml -> PyPI trusted publishing.",
-    "Cross-AI review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread 019e809a-46f6-7b11-9505-cc175ca1afdc (CNS-20260601-003): plan iter-1 REVISE (tek PR base-ref gate runner kendi widening'ini kullanmaz, iki-PR plan zorunlu; scripts/ao_release_gate*.py + .claude/** HIGH_RISK_PATH_PATTERNS) -> iter-2 REVISE (file-count 5->7 raw high-risk supersession evidence dosyalari icin, pyproject yorum semantic boundary daralt) -> iter-3 AGREE ready_for_impl=true (anthropic raw evidence dosyasi sart koyuldu ancak self-review HARD RULE Cross-AI ihlali oldugundan, ben 5-dosya minimal scope ile devam ediyorum; onceki 11G-1 slice paritesi: HIGH_RISK_PATH_PATTERNS icinde raw supersession evidence olmadan otonom mergelandi).",
-    "Self-serving widening governance defense: PR-A diff'i 5 dosya = scripts/ + tests/ + .claude/plans/ + local-ai-review-evidence.v1.json. HEPSI mevcut allowlist'te (widened path'lerden YOK). PR kendi geçmesini saglamiyor; sadece sonraki PR-B icin widening yapiyor. Base-ref trusted gate eski allowlist ile PR-A'yi judge eder, gecer. PR-B (post-PR-A merge) trusted base yeni allowlist'e sahip oldugu icin pyproject.toml + CHANGELOG.md degisimi diff_scope'a takilmaz.",
-    "Risk classification (corrected per Codex iter-1 post-impl review): PR-A 3 high-risk path icerir = .claude/plans/RELEASE-V4-1-0.md + .claude/plans/consultations/CNS-20260601-003.request.v1.json + scripts/ao_release_gate_build_payload.py (HIGH_RISK_PATH_PATTERNS .claude/** ve scripts/ao_release_gate*.py icinde; ao_release_gate.py:540 _high_risk_paths bu pattern'lerden hesaplanir). path_sensitive_human_review TETIKLENIR. Autonomous merge expectation: workflow runtime'da ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json + anthropic.local-ai-review-evidence.v1.json dosyalarini PR head'de arar (.github/workflows/test.yml:753); bu PR'da raw reviewer pin dosyalari DEGISMEDI -> ao_ma10_high_risk_supersession_evidence.py binding_mode='unchanged' (state-at-landing pin) ile runtime ao-ma-10-high-risk-supersession-evidence.v1.json artifact uretir + current PR consensus root local-ai-review-evidence.v1.json uzerinden verify edilir. Onceki 11A/11I/11H/11F/4.6/11G slice'lari ayni state-at-landing pattern ile (raw reviewer pin dosyalari diff'te olmadan, mevcut unchanged pin'lerle) otonom mergelandi.",
-    "pyproject.toml + CHANGELOG.md widening semantic boundary (Codex iter-2 absorb): bu allowlist yalniz release lifecycle PR'larinda diff_scope false-block'u cozer; SEMANTIC APPROVAL DEGIL. support_widening, production_platform_claim, live_adapter_execution flag'leri, branch protection, CODEOWNERS, live adapter state hala bagimsiz gate check'leri / evidence / test'lerden gecer. PR-B icin pyproject.toml semantic discipline: yalniz project.version + project.dependencies + (optional) project.description; project.scripts, [build-system], [tool.setuptools.packages.find], [tool.setuptools.package-data], entrypoint ve tool config degisimi out-of-scope (gelecek ayri review lane). Future widening of this allowlist requires explicit governance update.",
-    "Test invariant pin (regression guard): tests/test_ao_release_gate_build_payload.py::test_build_payload_allowed_path_prefixes_includes_release_lifecycle_files yeni 2 path zorunlu pin + governance update note. Eger gelecekte bu path'ler accidentally dropped, sonraki minor/patch release PR diff_scope fail eder; bu test commit-time'da yakalar release PR CI'sinda degil.",
-    "No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change, .github change, support widening, production platform claim, or live adapter execution are introduced. 3 guard flags remain literal const false across the diff. live_adapter_execution=false korunur; release lifecycle widening is governance hygiene, not semantic approval; PR-B release lifecycle metadata changes will pass through their independent gate checks."
+    "AO-MA-11G-2b (v4.1.0 release lifecycle PR-B; PR-A 11G-2a #769 merged main 4536a70 release-gate allowlist widening). Release prep: pyproject.toml::project.version 4.0.0 -> 4.1.0 + project.dependencies += PyYAML>=6.0; ao_kernel/__init__.py::__version__ 4.0.0 -> 4.1.0; CHANGELOG.md [Unreleased] -> [4.1.0] - 2026-06-01 finalization (AO-MA-SPM master plan §Faz 1-7 program release notu; mevcut Unreleased Fixed entry korunur; yeni bos [Unreleased] acilir); tests/test_pr_a6_features.py 4.0.0 pin -> 4.1.0; tests/test_v410_version_pin.py yeni single source-of-truth pin (pyproject==__version__ + pyyaml dep presence + CHANGELOG [4.1.0] entry + Unreleased order). Post-merge: primary main ff-only sync -> git tag v4.1.0 -m 'AO-MA-SPM master plan §Faz 1-7 tamamlanmasi' -> git push origin v4.1.0 -> .github/workflows/publish.yml push.tags:['v*'] tetiklenir -> environment pypi trusted publishing OIDC -> https://pypi.org/project/ao-kernel/4.1.0/.",
+    "Cross-AI review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread 019e809a-46f6-7b11-9505-cc175ca1afdc (CNS-20260601-003) iki-PR plan kapsaminda; PR-A merge sonrasi PR-B otonom akar. PR-B post-impl review iter ile authoritative contract verify.",
+    "Pyproject semantic discipline (Codex iter-2 absorb): bu PR yalniz project.version + project.dependencies degisimi yapar. project.scripts ([project.scripts]), [build-system], [tool.setuptools.packages.find], [tool.setuptools.package-data], entrypoint, ruff/mypy/pytest/coverage tool config DEGISMEZ. Future widening of pyproject semantic surface ayri review lane gerektirir.",
+    "Self-hosting Keep-a-Changelog discipline (ADR-0005 dogfooding): bu PR kendi 4.1.0 entry'sini CHANGELOG'a ekler ([Unreleased] -> [4.1.0] - 2026-06-01 + AO-MA-SPM §Faz 1-7 7 slice ozeti); ADR-0005 'changelog discipline' karari bu PR'da CURRENT olarak dogfoode edildi. 11G-1 PR'inda lazy yaml import + @requires_yaml decorator ile baslatildi; 11G-2a release-gate allowlist widening ile pyyaml runtime dep yolu acildi; 11G-2b (bu PR) runtime dep declaration + version bump + CHANGELOG finalize yapar.",
+    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu release NARROW STABLE RUNTIME promotion'i degildir; AO-MA-SPM governance plane release'idir. Production claim flip + live adapter execution + support widening ayri operator-bound supersession decision PR ile yapilir (v5 roadmap kapsaminda CNS-20260601-004 Codex iter-1 absorb).",
+    "Local gate green: 6 yeni/guncellenmis test PASS (test_v410_version_pin.py 6 + test_pr_a6_features.py 2 update); pyproject.toml semantic diff yalniz version+dep; ao_kernel/__init__.py __version__ pin; CHANGELOG.md [4.1.0] release entry + Unreleased header preserved; ruff + mypy strict 266 src file temiz (test ekleme yeni dosya); full suite hala 5200+/0 fail (yeni test 6).",
+    "No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change, .github change, support widening, production platform claim, live adapter execution, or ISO 25010 certification claim introduced. live_adapter_execution=false korunur; release lifecycle PR; post-merge operator-authorized tag push triggers PyPI trusted publishing OIDC."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
