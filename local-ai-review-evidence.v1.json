@@ -1,17 +1,17 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "RG-019E830D-EVIDENCE-FINDING-TAXONOMY-EXTENSION",
+  "work_package": "EPIC-8-E8-6-MIGRATION-GUIDE-V5",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/release-gate-review-evidence-action-required",
+    "head_ref": "refs/heads/codex/epic-8-e8-6-migration-guide-v5",
     "changed_files": [
-      ".claude/plans/RG-019E830D-EVIDENCE-FINDING-TAXONOMY.md",
-      "ao_kernel/ao_release_gate.py",
+      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "docs/MIGRATION-V5.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_release_gate.py"
+      "tests/test_migration_v5_doc.py"
     ]
   },
   "checks_considered": [
@@ -25,12 +25,13 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "RG-019E830D extension: PR #793 V5 P0-4 unblock — ao-release-gate finding taxonomy genişletildi. Iki evidence finding (review_evidence_not_accepting + review_evidence_context_unverifiable) failure → review_action (action_required Checks API conclusion) taşındı. Structural failures (missing, schema_invalid, context_unbound) failure pinlendi.",
-    "Codex plan-time thread 019e830d iter-1 REVISE + ready_for_impl=true: sibling evidence failure pinleme + boundary violation pinleme + dual check-run behavior + build_technical/review_check_run filtering + mixed-blocker rules. Plus operator action shape semantigi genisletildi (review_action = CODEOWNER review pending OR procedural evidence finding).",
-    "Codex post-impl review iter-1 REVISE -> iter-2 REVISE -> iter-3 AGREE (single P1 + 2 nit absorb chain): plan doc PR #764 effect rewritten (no rerun+merge bypass claim), structural evidence claim narrowed, build_review_check_run docstring + summary/text wording widened from CODEOWNER-only, required-check topology preflight section 6.1 added, 2 yeni invariant test (pr764_exact_procedural_pair + structural_pair).",
-    "Source changes: ao_kernel/ao_release_gate.py _REVIEW_ACTION_FINDINGS frozenset extended (3 finding) + docstring extensions (set + finding_conclusion_kind + wrapper_exit_code + RG-CONCLUSION-SEMANTICS block comment); tests/test_ao_release_gate.py 44 yeni + 6 mevcut revize; plan doc + audit nit fix.",
-    "Tests: 111 pass local in tests/test_ao_release_gate.py; 440 pass + 2 skip in tests/ -k 'release_gate or ao_ma10'; ruff + mypy --ignore-missing-imports clean.",
-    "Three guard flags + production claim + iso/audit claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Cross-AI peer review trail (HARD RULE implementer Anthropic Claude != reviewer OpenAI Codex; threads 019e830d plan-time + post-impl)."
+    "V5 Epic 8 E-8-6: docs/MIGRATION-V5.md operator-facing migration guide v4.x -> v5.0.0. 9 section: TL;DR (no breaking changes), Epic 1-9 summary, upgrade steps + downgrade path, OTEL prod tunables (Epic 5 E-5-1), V5 mirror discipline, plan-approval gate discipline, known gotchas, references, doc status.",
+    "Public claim discipline conservative: production-ready marketing claim YOK; v5.0.0 PLANNED (not released); three guard flags pinned const false until Epic 9 final supersession PR. Section 7.1 ao-release-gate finding taxonomy gotcha 'Pending PR #793 merge' qualifier ile future-tense framed.",
+    "Codex post-impl review thread 019e8326 iter-1 RED -> iter-2 REVISE -> iter-3 AGREE + ready_to_merge:true (3 iter absorb chain). 4 P1+P3 source-truth fix: backup snippet tek timestamp variable, policy-sim --proposed-policies DIRECTORY wording + run subcommand, doctor 9 health checks (was 8 stale), OTEL load_production_config Python snippet (was false 'doctor validates OTEL' claim). Plus iter-2 non-blocking nit: 'operator-facing OTEL production tunables' (was 'production-grade'); iter-3 polish: --proposed-patches directory symmetric wording.",
+    "8 -> 13 -> 15 doc invariant tests (tests/test_migration_v5_doc.py): canonical path, top header, 9 required sections, conservative public claim, 9 OTEL env vars complete, downgrade pin verbatim, cross-doc links resolve, guard flag const-false visible, section 7.1 Pending PR #793 qualifier, policy-sim CLI shape, doctor claim accurate, backup tek timestamp, OTEL validation load_production_config, policy-sim directory wording + exits 0 warning, OTEL avoids production-grade marketing.",
+    "V5 roadmap section 1 guncellendi (this turn merges): Epic 1 E-1-1 AO-MA-11A-2 MERGED PR #792, Epic 1 E-1-2 AO-MA-11E-2a/b MERGED PR #788+#789+#790, Epic 5 E-5-1 OTEL prod tunables MERGED PR #791, Epic 5 E-5-2 dashboard DONE-DISCOVERED, Epic 8 E-8-6 THIS PR, P0-4 ao-release-gate taxonomy fix MERGED-PENDING PR #793.",
+    "Tests: 15 pass local; ruff + mypy clean.",
+    "Three guard flags + production claim + iso/audit claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Cross-AI peer review trail (HARD RULE implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e8326)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

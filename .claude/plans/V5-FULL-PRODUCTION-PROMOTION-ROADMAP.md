@@ -5,13 +5,21 @@
 
 > **Visibility, NOT authority.** GitHub Milestones / Issues / Project board are a one-way mirror of this plan. Repo artifacts (`.claude/plans/`, JSONL evidence, `ao-release-gate`) remain the SSOT. Promotion authority lives in the **final operator-bound supersession PR** at the end of this roadmap; no individual epic or slice can flip the three guard flags on its own.
 
-## 1. Mevcut durum (2026-06-01)
+## 1. Mevcut durum (2026-06-01, updated)
 
-- **PyPI:** `v4.1.0` source LIVE on main (post-PR #770 merge `4d0aa6d` + tag `v4.1.0` pushed 2026-06-01); GitHub Actions publish.yml `dist/` artifact format hatasıyla başarısız (twine check JSON evidence dosyalarını distribution saydı); fix ayrı PR (`.github/workflows/publish.yml` high-risk operator review gerek)
+- **PyPI:** `v4.1.0` source LIVE on main (post-PR #770 merge `4d0aa6d` + tag `v4.1.0` pushed 2026-06-01); publish.yml twine glob whitelist + workflow_dispatch fix MERGED (PR #787 → `5fede58`). PyPI publish operator dispatch pending.
 - **Master plan:** AO-MA-SPM §Faz 1-7 program tamamlandı (7/7 fazlar MERGED 2026-06-01); autonomous multi-AI code-writing makinesi inşa edildi
 - **Guard flags:** `support_widening` + `production_platform_claim` + `live_adapter_execution` = **const false** (GPP-9 closed; `keep_narrow_stable_runtime` decision)
 - **Public claim:** "narrow stable runtime" governance plane; production-ready iddiası YOK
-- **Pending follow-up:** PR #764 (CI shadow-skip permanent fix operator gate), 11A-2 (GH Environment gate wiring), 11E-2 (GH Projects/Milestone/Issue mirror sync), 11G-2c (CI/pre-commit changelog enforcement + 4.6 dogfooding + retro ADR cross-AI revalidation)
+- **Epic ilerleme (this turn 2026-06-01):**
+  - **Epic 1 E-1-1** AO-MA-11A-2 plan-approval gate wiring **MERGED** (PR #792 → `009d43b`)
+  - **Epic 1 E-1-2** AO-MA-11E-2a drift checker **MERGED** (PR #788 → `7129bdb`)
+  - **Epic 1 E-1-2** AO-MA-11E-2b sync workflow + PAT fallback **MERGED** (PR #789+#790 → `52307e1`+`abd9d58`)
+  - **Epic 5 E-5-1** OTEL production tunables **MERGED** (PR #791 → `a8defc9`)
+  - **Epic 5 E-5-2** Prometheus + Grafana dashboard **DONE-DISCOVERED** (PR-B5 baseline `docs/grafana/ao_kernel_default.v1.json` 8 panels + README + shape test)
+  - **Epic 8 E-8-6** Migration guide v4.x → v5.0.0 **THIS PR** (`docs/MIGRATION-V5.md`)
+  - **P0-4** ao-release-gate finding taxonomy fix **MERGED-PENDING** (PR #793 — CI green, awaiting auto-merge)
+- **Pending operator action:** PR #764 CI shadow-skip permanent fix (operator review; PR #793 unblocks the dual check-run semantic), 11A-2 GH Environment setup (operator UI), 11E-2b PAT secret + workflow_dispatch (operator).
 
 ## 2. "Tam production" semantiği (Codex iter-1 invariant #1)
 
