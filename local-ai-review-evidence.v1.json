@@ -1,24 +1,23 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-7-PERFORMANCE-BASELINE",
+  "work_package": "E-OPS-OPERATOR-ACTION-RUNBOOKS",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-7-performance-baseline",
+    "head_ref": "refs/heads/codex/operator-action-runbooks",
     "changed_files": [
-      ".claude/plans/EPIC-7-PERFORMANCE-BASELINE.md",
-      "ao_kernel/defaults/schemas/performance-baseline.schema.v1.json",
-      "ao_kernel/defaults/schemas/performance-regression-threshold.schema.v1.json",
-      "ao_kernel/defaults/schemas/performance-scenario-catalog.schema.v1.json",
-      "docs/performance/README.md",
-      "docs/performance/baseline.v1.json",
-      "docs/performance/performance-regression-threshold.v1.json",
-      "docs/performance/performance-scenario-catalog.v1.json",
+      ".claude/plans/E-OPS-OPERATOR-ACTION-RUNBOOKS.md",
+      "ao_kernel/defaults/schemas/operator-action-checklist.schema.v1.json",
+      "docs/operator-runbooks/01-pypi-publish.md",
+      "docs/operator-runbooks/02-plan-approval-environment.md",
+      "docs/operator-runbooks/03-mirror-pat-secret.md",
+      "docs/operator-runbooks/04-mirror-sync-environment.md",
+      "docs/operator-runbooks/README.md",
+      "docs/operator-runbooks/operator-action-checklist.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/promote_baseline.py",
-      "tests/test_performance_baseline.py"
+      "tests/test_operator_runbooks.py"
     ]
   },
   "checks_considered": [
@@ -30,23 +29,22 @@
     { "name": "no_guard_flip", "status": "pass" },
     { "name": "no_github_write_in_this_pr", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" },
-    { "name": "scorecard_schema_zero_touch", "status": "pass" }
+    { "name": "no_workflow_mutation", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 7 Performance Baseline: schema-backed performance baseline + regression threshold policy for existing PR-B7 benchmark suite. Policy definition only (enforcement_mode advisory); CI red gating future E-7x slice. 3 schemas (catalog + baseline + threshold) + 3 artifacts + deterministic promote_baseline.py + 10-section operator README + 45 invariant tests.",
-    "Codex plan-time thread 019e8410 4-iter chain (REVISE/REVISE/REVISE/AGREE). iter-1 5 BLOCKER: E7-GATE-SEMANTICS (advisory policy definition only); E7-P95-MISMATCH (duration_ms single_run; p95 deferred); E7-THRESHOLD-DEFAULTS (20%/30% conservative matches existing repo); E7-SCENARIO-CATALOG-FILE (3 schemas+artifacts); E7-BASELINE-SCHEMA (baseline manifest own schema).",
-    "iter-2 1 BLOCKER E7-WORKFLOW-ID-SOURCE: scorecard doesn't carry workflow_id; catalog source-of-truth + script join by source_scorecard_scenario.",
-    "iter-3 1 BLOCKER E7-BASELINE-CATALOG-MODE-FILTER: mode + enforcement filter; baseline IDs = catalog where mode==benchmark_mode AND enforcement=='policy_threshold'.",
-    "iter-4 AGREE + ready_for_impl:true + must_close_findings:[]. 4 non-blocking impl notes: empty selection exit 2; baseline schema minItems:1; claim scanner allowlist not_sla/not SLA; scanner across all artifacts.",
-    "3 schemas (Draft 2020-12 + additionalProperties:false): catalog (workflow_id pinned + enforcement enum); baseline (candidate const true + sample_count const 1 + variance_profile const + generated_from 7 fields + metric duration_ms single_run + cost_source enum); threshold (enforcement_mode 3-enum + policy_disclaimer 3 const true + baseline_ref pattern + global_defaults + per-scenario override).",
-    "3 artifacts: catalog 3 scenarios (governed_review/bugfix fast/policy_threshold + full_mode_smoke full/advisory_only); baseline 2 scenarios fast mode (governed_bugfix 120ms + governed_review 200ms); threshold enforcement advisory + 20%/30% global_defaults + full_mode null/advisory_only override.",
-    "Generator promote_baseline.py (~210 line): catalog-join pattern; select_scenarios_for_baseline filters mode+enforcement; build_baseline joins by source_scorecard_scenario; deterministic (sort_keys + indent + trailing newline); --generated-at required; --allow-empty opt-in; exit 2 empty without flag; no network.",
-    "Operator README (10 section): Disclaimer + Source of Truth + Catalog table + Generation Rule mode+enforcement filter + Threshold advisory + Promote Workflow + Update Cadence + Investigation Runbook + 8 follow-up + Wording Discipline allowlist not_sla/not SLA + References.",
-    "45 invariant test pass: 8 schema validity + 4 negative reject + 4 catalog + 5 baseline + 5 threshold + 6 cross-validation + 4 promote script + 2 zero-touch governance + 3 README. ruff clean. Existing scorecard schema tests untouched.",
-    "Public claim discipline + ZERO TOUCH: PR HICBIR guard flag flip; HICBIR .github/workflows mutation; HICBIR tests/test_scorecard_schema.py mutation; HICBIR scorecard schema file mutation; HICBIR ao_kernel/_internal/scorecard/* mutation; HICBIR tests/benchmarks/* mutation; HICBIR runtime perf optimization. enforcement_mode advisory; no CI red; no production SLA claim. Scanner allowlist not_sla/not SLA disclaimer explicit.",
-    "Risk class: conservative low-risk (docs/schemas/scripts/tests only; no runtime; no workflows). Cross-AI peer review evidence + actual diff parity zorunlu.",
-    "Out-of-scope (8): E-7b concurrency + E-7c memory + E-7d large-corpus + E-7e multi-provider + E-7f cost p95 (E-5-4 compose) + E-7g Grafana dashboard + E-7h statistical collector + E-7x CI promotion track.",
-    "Cross-AI peer review trail (HARD RULE 2026-05-05 + 2026-05-14): implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e8410 (4-iter REVISE/REVISE/REVISE/AGREE)."
+    "V5 E-Ops Operator Action Runbooks: 4 schema-backed runbooks for the explicit operator-action chain per HARD RULE Tam Otonom Onerme (2026-05-28). Agent prepares all artifacts; operator clicks 1 button per action.",
+    "Codex plan-time thread 019e84c6 3-iter chain (REVISE/REVISE/AGREE). iter-1 6 BLOCKER: MC-1 workflow/secret/env name drift (corrected); MC-2 PAT classic+fine-grained distinct minimal; MC-3 AO-MA-11A-2 operator does NOT dispatch; MC-4 mirror-sync env separate 4th action; MC-5 TestPyPI removed (publish.yml does not support); MC-6 schema audit-grade 18 fields.",
+    "iter-2 5 BLOCKER: R1 PyPI env 'pypi' enum allowlist; R2 secret scan token-prefix-only (sha256 false-positive removed); R3 affirmative-claim scanner negation-aware; R4 fine-grained PAT minimal (PR Read only); R5 agent_executed_external_action rename.",
+    "iter-3 AGREE + ready_for_impl:true + must_close_findings:[]. 3 non-blocking notes: sk-proj- pattern coverage; affirmative-claim token-proximity; status_evidence_refs URL allowlist.",
+    "Schema operator-action-checklist.schema.v1.json: Draft 2020-12 + additionalProperties:false everywhere; const pins; guard_flags 3 const false; runbook_disclaimer 3 const true + claim_boundary 4 const true; actions exactly 4 (minItems=maxItems=4); per-action 18 fields with agent_executed_external_action const false + credential_material_committed const false.",
+    "Checklist 4 pending actions: p0-1-pypi-publish (env pypi; v-tag refs/tags/v4.1.0; 5 min); ao-ma-11a-2-plan-approval-environment (env ao-ma-plan-approval; 4 min); ao-ma-11e-2b-mirror-pat-secret (no env; secret REPO_GH_PAT_PROJECTS_RW; 6 min); ao-ma-11e-2b-mirror-sync-environment (env ao-ma-mirror-sync; depends on Action 3; 4 min). Total ~19 min.",
+    "4 runbook markdown: 01-pypi-publish.md (no TestPyPI; yank-not-delete rollback; v-tag SHA verify); 02-plan-approval-environment.md (operator does NOT dispatch; env configure only); 03-mirror-pat-secret.md (Classic+Fine-grained sections distinct; stdin pipe D43; body/echo forbidden); 04-mirror-sync-environment.md (depends Action 3; apply dispatch dependency chain).",
+    "README docs/operator-runbooks/README.md (8 section): Layout + Checklist Overview table + Discipline 4 sub-section (agent + credential + public-claim + authority boundary) + Action 1-4 + Out-of-scope 6 follow-up + References. README links all 4 runbooks + checklist + schema.",
+    "36 invariant test pass local: 6 schema validity + 3 negative + 5 checklist content + 4 runbook structure + 5 credential discipline + 2 plan-approval discipline + 3 PyPI discipline + 3 public claim + 3 repo-contract drift + 2 governance. ruff clean.",
+    "Public claim discipline + ZERO TOUCH: PR HICBIR guard flag flip; HICBIR .github/workflows mutation; HICBIR actual operator action execution; HICBIR credential material commit (token-prefix regex pattern + checklist scan); HICBIR affirmative claim (negation-aware scanner). claim_boundary 4 const true.",
+    "Risk class: conservative low-risk (docs/schemas/tests only; no runtime; no workflows; no operator action execution).",
+    "Out-of-scope follow-up slices (6): E-Ops-2 TestPyPI workflow input + E-Ops-3 Vault integration + E-Ops-4 audit trail + E-Ops-5 multi-tenant + E-Ops-6 Grafana dashboard + E-Ops-7 runbook localization.",
+    "Cross-AI peer review trail (HARD RULE Cross-AI Peer Review 2026-05-05 + 2026-05-14): implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e84c6 (3-iter REVISE/REVISE/AGREE + must_close_findings:[])."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

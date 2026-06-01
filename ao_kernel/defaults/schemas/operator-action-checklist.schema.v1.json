@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:operator-action-checklist:v1",
+  "title": "ao-kernel Operator Action Checklist (V5 E-Ops)",
+  "description": "Schema-backed checklist for the 4 operator-action runbooks. Agent prepares everything; operator executes the explicit step (PAT create, environment configure, workflow dispatch). NO credential material is committed; agent does NOT execute external actions. Codex 019e84c6 cross-AI plan-time AGREE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "artifact_kind",
+    "guard_flags",
+    "runbook_disclaimer",
+    "claim_boundary",
+    "actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "operator-action-checklist.v1" },
+    "service": { "const": "ao-kernel" },
+    "artifact_kind": { "const": "operator-action-checklist" },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    },
+    "runbook_disclaimer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_prepared_only", "operator_action_required", "no_credential_committed"],
+      "properties": {
+        "agent_prepared_only": { "const": true },
+        "operator_action_required": { "const": true },
+        "no_credential_committed": { "const": true }
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "visibility_not_authority",
+        "repo_ssot_not_github_ui",
+        "no_production_ready_claim",
+        "no_live_adapter_execution_authority"
+      ],
+      "properties": {
+        "visibility_not_authority": { "const": true },
+        "repo_ssot_not_github_ui": { "const": true },
+        "no_production_ready_claim": { "const": true },
+        "no_live_adapter_execution_authority": { "const": true }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/action" }
+    }
+  },
+  "$defs": {
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "runbook_path",
+        "workflow_path",
+        "environment_name",
+        "secret_names",
+        "dispatch_inputs",
+        "expected_artifacts",
+        "operator_must_verify",
+        "forbidden_claims",
+        "agent_executed_external_action",
+        "credential_material_committed",
+        "agent_prep_status",
+        "operator_action_status",
+        "status_evidence_refs",
+        "blocker_for",
+        "estimated_minutes",
+        "dependencies"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]+$" },
+        "title": { "type": "string", "minLength": 8 },
+        "runbook_path": {
+          "type": "string",
+          "pattern": "^docs/operator-runbooks/[0-9]{2}-[a-z0-9-]+\\.md$"
+        },
+        "workflow_path": {
+          "type": ["string", "null"],
+          "pattern": "^\\.github/workflows/[a-z0-9-]+\\.yml$"
+        },
+        "environment_name": {
+          "type": ["string", "null"],
+          "enum": [null, "pypi", "ao-ma-plan-approval", "ao-ma-mirror-sync"]
+        },
+        "secret_names": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["REPO_GH_PAT_PROJECTS_RW"]
+          }
+        },
+        "dispatch_inputs": {
+          "type": "object"
+        },
+        "expected_artifacts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 4 }
+        },
+        "operator_must_verify": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 8 }
+        },
+        "forbidden_claims": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 4 }
+        },
+        "agent_executed_external_action": { "const": false },
+        "credential_material_committed": { "const": false },
+        "agent_prep_status": { "enum": ["done", "in_progress"] },
+        "operator_action_status": { "enum": ["pending", "completed"] },
+        "status_evidence_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 4 }
+        },
+        "blocker_for": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 4 }
+        },
+        "estimated_minutes": { "type": "integer", "minimum": 1 },
+        "dependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]+$" }
+        }
+      }
+    }
+  }
+}
