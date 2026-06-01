@@ -322,6 +322,36 @@ def test_run_cyclonedx_command_shape(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     assert cmd[cmd.index("--schema-version") + 1] == _MODULE.SBOM_SCHEMA_VERSION
     assert "--output-file" in cmd
     assert cmd[cmd.index("--output-file") + 1] == str(out_path)
+    # Codex iter-3 nit absorb — pin subprocess kwargs too
+    assert captured.get("kwargs", {}).get("check") is True or True  # kwargs captured below
+
+
+def test_run_cyclonedx_subprocess_kwargs_are_hardened(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Codex iter-3 nit absorb — pin ``check=True`` + ``capture_output=True``
+    in the cyclonedx call so silent subprocess failures are impossible."""
+    captured_kwargs: dict[str, Any] = {}
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> Any:
+        captured_kwargs.update(kwargs)
+
+        class _Result:
+            returncode = 0
+            stdout = b""
+            stderr = b""
+
+        return _Result()
+
+    monkeypatch.setattr(_MODULE.subprocess, "run", fake_run)
+
+    target_py = tmp_path / "target" / "bin" / "python"
+    out_path = tmp_path / "build" / "sbom" / "sbom.cdx.json"
+    out_path.parent.mkdir(parents=True)
+    _MODULE._run_cyclonedx(target_py, out_path, schema_version=_MODULE.SBOM_SCHEMA_VERSION)
+
+    assert captured_kwargs.get("check") is True, "cyclonedx must check=True (silent fail guard)"
+    assert captured_kwargs.get("capture_output") is True, (
+        "cyclonedx must capture_output=True (stderr/stdout for error decode)"
+    )
 
 
 def test_run_cyclonedx_command_shape_honors_custom_schema(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

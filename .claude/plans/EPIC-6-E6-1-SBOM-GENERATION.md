@@ -125,16 +125,18 @@ Bu dosya.
 | Target venv install pip cache hit eder | `--no-cache-dir` flag |
 | Spec version drift | `SBOM_SCHEMA_VERSION` const + `validate_sbom` reject |
 | Wheel path traversal / non-wheel file | `_ensure_wheel_path` + `.whl` suffix check |
-| Output path `dist/` içine yazar | CLI `parent.resolve().name == "dist"` reject + test invariant |
-| Subprocess silent fail | `check=True` + `capture_output=True` + stderr decode in error message |
+| Output path `dist/` içine yazar (any depth) | `_output_path_contains_dist_segment` helper — `"dist" in resolved.parts` reject + 4 test invariant (direct + nested + deeply-nested + segment helper unit) |
+| Subprocess silent fail | `check=True` + `capture_output=True` + stderr decode + stdout-tail fallback in error message |
+| Pip env drift (user/CI config influence) | `--isolated` + `--no-input` + `--no-cache-dir` + `--disable-pip-version-check` + command-shape unit test pin |
+| CLI flag drift over cyclonedx-bom major | Skip-immune command-shape test pin (3 invariants: install + cyclonedx + custom spec) |
 
 ## 6. Acceptance
 
-- ✅ `pytest tests/test_sbom_generation.py -x` → 14 pass + 1 skip local
+- ✅ `pytest tests/test_sbom_generation.py -x` → 20 pass + 1 skip local
 - ✅ `ruff check scripts/generate_sbom.py tests/test_sbom_generation.py` clean
 - ✅ `mypy scripts/generate_sbom.py --ignore-missing-imports` clean
 - ✅ Plan doc bu dosya
-- ⏳ Cross-AI post-impl review (Codex thread `019e8337` reply ile yeni iter veya yeni thread)
+- ✅ Cross-AI post-impl review — Codex thread `019e8337` iter-3 AGREE + `ready_to_merge: true`
 - ⏳ CI green (Test workflow + ao-release-gate — gate önkoşulu PR #793 merge'e bağlı, ayrı concern)
 - ⏳ Squash merge audit trail: Implementer Anthropic Claude / Reviewer OpenAI Codex
 
