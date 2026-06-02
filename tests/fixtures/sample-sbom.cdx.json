@@ -1,0 +1,96 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "bom-ref": "ao-kernel@4.0.0",
+      "name": "ao-kernel",
+      "version": "4.0.0"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "tenacity@8.5.0",
+      "name": "tenacity",
+      "version": "8.5.0",
+      "purl": "pkg:pypi/tenacity@8.5.0",
+      "licenses": [
+        { "license": { "id": "Apache-2.0" } }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "jsonschema@4.23.0",
+      "name": "jsonschema",
+      "version": "4.23.0",
+      "purl": "pkg:pypi/jsonschema@4.23.0",
+      "licenses": [
+        { "license": { "id": "MIT" } }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "mcp@1.0.0",
+      "name": "mcp",
+      "version": "1.0.0",
+      "purl": "pkg:pypi/mcp@1.0.0",
+      "licenses": [
+        { "license": { "id": "MIT" } }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "opentelemetry-api@1.27.0",
+      "name": "opentelemetry-api",
+      "version": "1.27.0",
+      "purl": "pkg:pypi/opentelemetry-api@1.27.0",
+      "licenses": [
+        { "license": { "id": "Apache-2.0" } }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "tiktoken@0.7.0",
+      "name": "tiktoken",
+      "version": "0.7.0",
+      "purl": "pkg:pypi/tiktoken@0.7.0",
+      "licenses": [
+        { "license": { "id": "MIT" } }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "psycopg2-binary@2.9.9",
+      "name": "psycopg2-binary",
+      "version": "2.9.9",
+      "purl": "pkg:pypi/psycopg2-binary@2.9.9",
+      "licenses": [
+        { "license": { "id": "LGPL-3.0-or-later" } }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "example-dual@1.0.0",
+      "name": "example-dual-license",
+      "version": "1.0.0",
+      "purl": "pkg:pypi/example-dual@1.0.0",
+      "licenses": [
+        { "expression": "MIT OR Apache-2.0" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "example-name-only@1.0.0",
+      "name": "example-name-only",
+      "version": "1.0.0",
+      "purl": "pkg:pypi/example-name-only@1.0.0",
+      "licenses": [
+        { "license": { "name": "Custom Permissive License" } }
+      ]
+    }
+  ]
+}

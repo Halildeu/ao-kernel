@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:license-compliance-policy:v1",
+  "title": "ao-kernel License Compliance Policy (V5 Epic 6 E-6-4)",
+  "description": "Schema for third-party dependency SPDX license-tier policy. DISTINCT from runtime ao_kernel/defaults/policies/policy_license.v1.json (capability check). v1 supports simple SPDX identifier match only; composite expressions, exceptions, LicenseRef, and unknowns fall to review_required. Codex 019e83df cross-AI plan-time AGREE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "operator_owned",
+    "is_contractual_sla",
+    "guard_flags",
+    "policy_disclaimer",
+    "ao_kernel_license",
+    "spdx_license_list_version",
+    "spdx_expression_handling",
+    "composite_expression_handling",
+    "license_exception_handling",
+    "license_ref_handling",
+    "deprecated_identifier_handling",
+    "unknown_handling",
+    "tiers"
+  ],
+  "properties": {
+    "schema_version": { "const": "license-compliance-policy.v1" },
+    "service": { "const": "ao-kernel" },
+    "operator_owned": { "const": true },
+    "is_contractual_sla": { "const": false },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    },
+    "policy_disclaimer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["not_legal_counsel", "not_legal_advice", "operator_responsibility"],
+      "properties": {
+        "not_legal_counsel": { "const": true },
+        "not_legal_advice": { "const": true },
+        "operator_responsibility": { "const": true }
+      }
+    },
+    "ao_kernel_license": { "const": "MIT" },
+    "spdx_license_list_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "spdx_expression_handling": { "const": "simple_identifier_only" },
+    "composite_expression_handling": { "const": "review_required" },
+    "license_exception_handling": { "const": "review_required" },
+    "license_ref_handling": { "const": "review_required" },
+    "deprecated_identifier_handling": { "const": "review_required" },
+    "unknown_handling": { "enum": ["review", "deny"] },
+    "tiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "review", "deny"],
+      "properties": {
+        "allow": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/spdx_id" }
+        },
+        "review": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/spdx_id" }
+        },
+        "deny": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/spdx_id" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "spdx_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9.+-]+(-(only|or-later))?$",
+      "minLength": 2,
+      "maxLength": 64
+    }
+  }
+}

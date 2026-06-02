@@ -1,0 +1,117 @@
+{
+  "components": [
+    {
+      "bom_ref": "example-dual@1.0.0",
+      "license_expression": "MIT OR Apache-2.0",
+      "license_id": null,
+      "license_name": null,
+      "name": "example-dual-license",
+      "policy_decision": "review",
+      "policy_tier": "n/a",
+      "purl": "pkg:pypi/example-dual@1.0.0",
+      "review_reason": "unsupported_expression",
+      "version": "1.0.0"
+    },
+    {
+      "bom_ref": "example-name-only@1.0.0",
+      "license_expression": null,
+      "license_id": null,
+      "license_name": "Custom Permissive License",
+      "name": "example-name-only",
+      "policy_decision": "review",
+      "policy_tier": "n/a",
+      "purl": "pkg:pypi/example-name-only@1.0.0",
+      "review_reason": "unresolved_name",
+      "version": "1.0.0"
+    },
+    {
+      "bom_ref": "jsonschema@4.23.0",
+      "license_expression": null,
+      "license_id": "MIT",
+      "license_name": null,
+      "name": "jsonschema",
+      "policy_decision": "pass",
+      "policy_tier": "allow",
+      "purl": "pkg:pypi/jsonschema@4.23.0",
+      "review_reason": null,
+      "version": "4.23.0"
+    },
+    {
+      "bom_ref": "mcp@1.0.0",
+      "license_expression": null,
+      "license_id": "MIT",
+      "license_name": null,
+      "name": "mcp",
+      "policy_decision": "pass",
+      "policy_tier": "allow",
+      "purl": "pkg:pypi/mcp@1.0.0",
+      "review_reason": null,
+      "version": "1.0.0"
+    },
+    {
+      "bom_ref": "opentelemetry-api@1.27.0",
+      "license_expression": null,
+      "license_id": "Apache-2.0",
+      "license_name": null,
+      "name": "opentelemetry-api",
+      "policy_decision": "pass",
+      "policy_tier": "allow",
+      "purl": "pkg:pypi/opentelemetry-api@1.27.0",
+      "review_reason": null,
+      "version": "1.27.0"
+    },
+    {
+      "bom_ref": "psycopg2-binary@2.9.9",
+      "license_expression": null,
+      "license_id": "LGPL-3.0-or-later",
+      "license_name": null,
+      "name": "psycopg2-binary",
+      "policy_decision": "review",
+      "policy_tier": "review",
+      "purl": "pkg:pypi/psycopg2-binary@2.9.9",
+      "review_reason": "policy_review_tier",
+      "version": "2.9.9"
+    },
+    {
+      "bom_ref": "tenacity@8.5.0",
+      "license_expression": null,
+      "license_id": "Apache-2.0",
+      "license_name": null,
+      "name": "tenacity",
+      "policy_decision": "pass",
+      "policy_tier": "allow",
+      "purl": "pkg:pypi/tenacity@8.5.0",
+      "review_reason": null,
+      "version": "8.5.0"
+    },
+    {
+      "bom_ref": "tiktoken@0.7.0",
+      "license_expression": null,
+      "license_id": "MIT",
+      "license_name": null,
+      "name": "tiktoken",
+      "policy_decision": "pass",
+      "policy_tier": "allow",
+      "purl": "pkg:pypi/tiktoken@0.7.0",
+      "review_reason": null,
+      "version": "0.7.0"
+    }
+  ],
+  "generator_name": "scripts/generate_license_inventory.py",
+  "generator_version": "v1.0.0",
+  "report_status": "review_required",
+  "schema_version": "dependency-license-inventory.v1",
+  "service": "ao-kernel",
+  "source_policy_path": "docs/license-compliance/license-compliance-policy.v1.json",
+  "source_policy_sha256": "7dc4e07e4c6b554f264d677619ca063ae1991efdb7ee4729fb555f43b52b50b8",
+  "source_sbom_bom_format": "CycloneDX",
+  "source_sbom_path": "tests/fixtures/sample-sbom.cdx.json",
+  "source_sbom_sha256": "7382c405d036578db66967cf840392d56df89d356d878c8078d7f267bcadfc37",
+  "source_sbom_spec_version": "1.5",
+  "summary": {
+    "component_count": 8,
+    "deny_count": 0,
+    "pass_count": 5,
+    "review_count": 3
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:dependency-license-inventory:v1",
+  "title": "ao-kernel Dependency License Inventory (V5 Epic 6 E-6-4)",
+  "description": "Schema for generated dependency license inventory: SBOM (CycloneDX 1.5) + policy → per-component policy tier match + report status. Deterministic, no wall-clock timestamps. Codex 019e83df cross-AI plan-time AGREE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "source_sbom_path",
+    "source_sbom_sha256",
+    "source_sbom_bom_format",
+    "source_sbom_spec_version",
+    "source_policy_path",
+    "source_policy_sha256",
+    "generator_name",
+    "generator_version",
+    "report_status",
+    "summary",
+    "components"
+  ],
+  "properties": {
+    "schema_version": { "const": "dependency-license-inventory.v1" },
+    "service": { "const": "ao-kernel" },
+    "source_sbom_path": { "type": "string", "minLength": 4 },
+    "source_sbom_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "source_sbom_bom_format": { "const": "CycloneDX" },
+    "source_sbom_spec_version": { "type": "string", "pattern": "^1\\.[0-9]+$" },
+    "source_policy_path": { "type": "string", "minLength": 4 },
+    "source_policy_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "generator_name": { "const": "scripts/generate_license_inventory.py" },
+    "generator_version": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "report_status": {
+      "enum": [
+        "pass_no_deny_matches",
+        "review_required",
+        "blocked_by_deny_license",
+        "invalid_input"
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_count",
+        "pass_count",
+        "review_count",
+        "deny_count"
+      ],
+      "properties": {
+        "component_count": { "type": "integer", "minimum": 0 },
+        "pass_count": { "type": "integer", "minimum": 0 },
+        "review_count": { "type": "integer", "minimum": 0 },
+        "deny_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/component" }
+    }
+  },
+  "$defs": {
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "license_id",
+        "license_expression",
+        "license_name",
+        "policy_tier",
+        "policy_decision",
+        "review_reason"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "purl": { "type": ["string", "null"] },
+        "bom_ref": { "type": ["string", "null"] },
+        "license_id": { "type": ["string", "null"] },
+        "license_expression": { "type": ["string", "null"] },
+        "license_name": { "type": ["string", "null"] },
+        "policy_tier": {
+          "enum": ["allow", "review", "deny", "n/a"]
+        },
+        "policy_decision": {
+          "enum": ["pass", "review", "deny"]
+        },
+        "review_reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "policy_review_tier",
+            "unsupported_expression",
+            "unsupported_exception",
+            "license_ref",
+            "noassertion",
+            "none_declared",
+            "unresolved_name",
+            "unresolved_url",
+            "missing_license",
+            "unknown_identifier"
+          ]
+        }
+      }
+    }
+  }
+}
