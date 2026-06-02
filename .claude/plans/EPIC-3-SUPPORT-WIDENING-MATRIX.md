@@ -73,7 +73,10 @@ Six additive, opt-in slices. Each slice is independently mergeable, carries its 
    - `subprocess.Popen.__init__` / `subprocess.run` / `subprocess.call` / `subprocess.check_output` / `subprocess.check_call` → raise
    - `os.system` / `os.popen` → raise
    - `eval` / `exec` invocations inside harness module path → raise (sys.audit hook `exec` / `compile`)
-   - Any `os.environ.get` call where the key matches regex `(?i)(api[_-]?key|secret|token|password|credential)` → raise (whitelist of allowed config keys, e.g. `WORKSPACE_ROOT`)
+   - **Environment variable access (per iter-3 F3' — all bypass paths covered, not just `os.environ.get`):**
+     - Preferred approach: harness execution starts with a **sanitized env mapping** restricted to an explicit allowlist (`WORKSPACE_ROOT`, `CI`, `PYTHONPATH`, `PATH`); `os.environ` replaced with this sanitized view for the duration of harness execution.
+     - Defense-in-depth: monkey-patch ALL env read paths (`os.environ.get`, `os.environ.__getitem__` for `os.environ["TOKEN"]` direct indexing, `os.environ.__contains__`, `os.getenv`, `os.environb.get`, `os.environb.__getitem__`, `os.environ.copy()`, `os.environ.items()`, `os.environ.keys()`, `os.environ.values()`, `os.environ.__iter__`) to raise `SupportWideningError` if any key (or iterated key) matches regex `(?i)(api[_-]?key|secret|token|password|credential|bearer|auth)` (with whitelist exemption for the allowlist above).
+     - Negative tests cover: `os.environ["API_KEY"]` direct indexing, `os.getenv("SECRET")`, `os.environ.copy()` snapshot, `for k, v in os.environ.items()` iteration, `os.environb[b"TOKEN"]` bytes path. Each path MUST fail-closed.
    - `importlib.import_module` invocations whose target name matches the forbidden list above → raise
 3. **Runtime declaration layer:** harness module's first action asserts `live_adapter_execution=false` at runtime and raises `SupportWideningError` if any stub adapter declares `live_capability=True`.
 
@@ -93,13 +96,16 @@ Harness output never contains a `live_call_made: true` or equivalent claim. The 
         types: [opened, labeled, synchronize, reopened]
       workflow_dispatch:
     ```
-  - **Job-level label gate** (per F4 — only way to filter by label correctly):
+  - **Job-level label gate** (per F4 — only way to filter by label correctly; per iter-3 F4' the gate must also allow `workflow_dispatch` since manual dispatch has no `github.event.pull_request` context):
     ```yaml
     jobs:
       smoke:
-        if: contains(github.event.pull_request.labels.*.name, 'support-matrix-smoke')
+        if: >-
+          github.event_name == 'workflow_dispatch'
+          || contains(github.event.pull_request.labels.*.name, 'support-matrix-smoke')
         # ... matrix definition below
     ```
+    On `workflow_dispatch`, the job runs unconditionally (operator opt-in via manual dispatch UI). On `pull_request`, label must be present.
   - **No `push` trigger on `main`.** **No `repository_dispatch`.** **No `schedule`.**
   - Job matrix dimension placeholders: `surface_class: [provider, python_version, os_platform, db_backend, deployment_topology]`; per-class job invokes `scripts/run_support_smoke.py --surface <class>` and uploads the v1 evidence artifact as a GitHub Actions artifact (NOT to GHCR, NOT to a public registry).
   - `continue-on-error: true` per matrix cell so a stub gap in one surface does not block PR merges that opt into the label.
@@ -139,18 +145,74 @@ Harness output never contains a `live_call_made: true` or equivalent claim. The 
 **Risk:** low (process + checklist + machine-checkable assertion list; no runtime code).
 **Deliverables:**
 - `.claude/plans/EPIC-3-E-3-5-SUPERSESSION-CONSENSUS-PROTOCOL.md` — checklist that the **future** Epic 9 supersession PR must satisfy *before* the flag flip is permitted. Structure:
-  - **Operator authority block** — explicit operator GitHub login + commit-message authorization phrase + commit verification required. Per iter-2 absorb F6, `operator_authority.operator_github_login` MUST NOT appear in `implementer_provider.github_login` OR any entry of `reviewer_providers[].github_login` (strict disjointness; schema-allOf enforced).
+  - **Operator authority block** — explicit operator GitHub login + commit-message authorization phrase + commit verification required. Per iter-2/iter-3 absorb F6/F1', the canonical field is **`operator_authority.github_login`** (single canonical name throughout schema, checklist, validator, tests, §8); legacy alias `operator_github_login` rejected by `additionalProperties: false`. This `operator_authority.github_login` MUST NOT appear in `implementer_provider.github_login` OR any entry of `reviewer_providers[].github_login` (strict disjointness; schema-allOf enforced).
   - **Cross-AI consensus block** — at least two reviewers from **distinct providers** per ADR-0004 (e.g. Codex + Mavis), each emitting AGREE on the same plan digest; same-provider review insufficient regardless of session/thread/subagent distinctness. Per iter-2 absorb F6, `reviewer_providers[]` entries MUST be pairwise distinct (no duplicate provider) AND `implementer_provider` MUST NOT appear in `reviewer_providers[]` (strict disjointness; schema-allOf enforced).
   - **Evidence block** — for every surface class being widened, a v2-schema evidence artifact backed by `evidence_class: live` (NOT `simulated`), with per-class minimum thresholds (provider: 3+ live integration tests passing across 7 consecutive days; Python: full pytest matrix green on 3.11/3.12/3.13 and any added version; OS: smoke per added platform; DB: pgvector backend round-trip on test corpus; topology: isolation test passing).
-  - **Evidence-pack bind block (per iter-2 absorb F5 — closes replay / stale artifact / TOCTOU / reviewer drift / denominator manipulation):** every v2 evidence artifact MUST bind the following identity fields, each independently re-derivable and checkable:
+  - **Evidence-pack bind block (per iter-2/iter-3 absorb F5/F2' — closes replay / stale artifact / TOCTOU / reviewer drift / denominator manipulation; richer manifest structure cross-links GitHub API and raw verdict records):** every v2 evidence artifact MUST bind the following identity fields, each independently re-derivable and cross-linked:
+
+    Top-level bind primitives:
     - `plan_digest` — SHA256 of the plan doc at plan-time (recomputed at validator time from `.claude/plans/EPIC-9-SUPERSESSION-PR-PLAN.md` HEAD blob; mismatch rejects).
     - `final_diff_digest` — SHA256 of the merged diff at post-impl (recomputed from `git diff <base>..<merge-commit>`; mismatch rejects).
     - `pr_head_sha` — 40-hex commit SHA matched to GitHub API `/pulls/{n}.head.sha`; mismatch rejects.
-    - `workflow_run_ids[]` — array of GitHub Actions run IDs that produced the evidence; validator queries `/actions/runs/{id}` and verifies status=completed, conclusion=success, head_sha matches.
-    - `artifact_sha256[]` — per-artifact SHA256 array; validator re-hashes downloaded artifact bytes and matches; any drift rejects.
-    - `time_window_boundaries` — `{start, end}` ISO-8601 timestamps for any 7-day window evidence; validator verifies window length >= 7 days AND end <= now AND no artifact in `artifact_sha256[]` is timestamped outside this window (TOCTOU + stale replay closure).
-    - `reviewer_identity_hashes[]` — per reviewer; SHA256 of `{provider, github_login, thread_id}` triple. Validator asserts pairwise distinct (no duplicate identity); duplicate reviewer identity rejects.
-    - `verdict_completeness_proof` — `{verdicts_received_total: int, verdicts_claimed_in_consensus: int, negative_verdicts_present: bool}`. Validator asserts `verdicts_received_total == verdicts_claimed_in_consensus` (denominator integrity) AND, if `negative_verdicts_present=true`, validator MUST find the negative verdict explicitly listed in `provider_verdicts[]` (filtered-negative-verdict closure).
+    - `time_window_boundaries` — `{start, end}` ISO-8601 timestamps for any 7-day window evidence; validator verifies window length >= 7 days AND end <= now AND no artifact in `artifacts[]` is timestamped outside this window (TOCTOU + stale replay closure).
+
+    Rich `artifacts[]` manifest (per iter-3 F2' — replaces flat `artifact_sha256[]`; closes "artifact not from listed run" gap):
+    ```json
+    "artifacts": [
+      {
+        "run_id": "<github-actions-run-id>",
+        "artifact_id": "<github-artifact-id-or-name>",
+        "sha256": "<64-hex>",
+        "produced_at": "<ISO-8601>",
+        "head_sha": "<40-hex>"
+      }
+    ]
+    ```
+    For every entry: validator queries `/actions/runs/{run_id}/artifacts`, asserts (a) `artifact_id` exists in that run's artifact list, (b) downloaded bytes' SHA256 equals declared `sha256`, (c) `produced_at` matches API value, (d) `head_sha` matches `pr_head_sha`. Any drift rejects with specific reason code.
+
+    `workflow_run_ids[]` provenance binding (per iter-3 F2'):
+    Validator iterates every `run_id` in `workflow_run_ids[]`, queries `/actions/runs/{id}`, asserts:
+    - `status == "completed"`
+    - `conclusion == "success"`
+    - `head_sha == pr_head_sha`
+    - `created_at` falls inside `time_window_boundaries`
+    Any mismatch rejects with specific reason code. Every `artifacts[].run_id` MUST appear in `workflow_run_ids[]` (no orphan artifact).
+
+    Rich `provider_verdicts[]` records (per iter-3 F2' — closes "reviewer hash recomputed from raw verdict; verdict bound to final diff/head SHA"):
+    ```json
+    "provider_verdicts": [
+      {
+        "provider": "<openai|anthropic|google|...>",
+        "github_login": "<gh-user>",
+        "thread_id": "<mcp-thread-id>",
+        "verdict": "<AGREE|REVISE|RED>",
+        "plan_digest": "<64-hex>",
+        "final_diff_digest": "<64-hex>",
+        "pr_head_sha": "<40-hex>",
+        "raw_verdict_sha256": "<sha256 of canonicalized verdict payload>"
+      }
+    ]
+    ```
+    Validator asserts:
+    - Each `provider_verdicts[i].plan_digest` equals top-level `plan_digest` (verdict pinned to plan).
+    - Each `provider_verdicts[i].final_diff_digest` equals top-level `final_diff_digest` (verdict pinned to final diff).
+    - Each `provider_verdicts[i].pr_head_sha` equals top-level `pr_head_sha`.
+    - Each `provider_verdicts[i].raw_verdict_sha256` is the SHA256 of the canonicalized JSON of that verdict record (the entry self-witnesses; tampering changes the hash).
+
+    `reviewer_identity_hashes[]` (per F5 + iter-3 F2' — recomputed from raw verdict records, not self-reported):
+    Validator recomputes each entry from `provider_verdicts[i]` as `SHA256(provider || "|" || github_login || "|" || thread_id)`; producer-supplied hash MUST match recomputed value. Asserts pairwise distinct (no duplicate identity); duplicate reviewer identity rejects.
+
+    `verdict_completeness_proof` (per F5 + iter-3 F2' — denominator and filtered-negative closure):
+    ```json
+    "verdict_completeness_proof": {
+      "verdicts_received_total": <int>,
+      "verdicts_claimed_in_consensus": <int>,
+      "negative_verdicts_present": <bool>
+    }
+    ```
+    Validator asserts `verdicts_received_total == len(provider_verdicts)` (denominator from raw count, NOT self-reported); `verdicts_claimed_in_consensus == count of provider_verdicts[].verdict == "AGREE"`; if `negative_verdicts_present == true`, at least one `provider_verdicts[i].verdict` MUST be `REVISE` or `RED`; if `negative_verdicts_present == false`, no `provider_verdicts[i].verdict` may be `REVISE`/`RED` (filtered-negative-verdict closure: producer cannot claim "no negatives" while raw verdicts contain one).
+
+    **Closes iter-3 F2' gap:** every bind field has explicit drift negative test in §6 E-3-5/E-3-6, including `final_diff_digest` drift, `pr_head_sha` drift, workflow run status/conclusion/head_sha mismatch, orphan artifact (not in any listed run), reviewer hash recomputation mismatch, and verdict-binding drift to plan/diff/head SHA.
   - **Recompute-not-trust block** — every evidence artifact's `consensus_*` and `widening_authorized` fields re-derived from raw inputs by the E-3-6 validator and matched against the producer's claim; any drift rejects.
   - **Rollback block** — explicit rollback decision tree (revert tag, revert flag, revert evidence artifact) recorded in the PR body.
 - A machine-checkable assertion list (`ao_kernel/defaults/widening-supersession-checklist.v1.json`) the validator consumes. Per F5, every assertion entry has explicit `recompute_strategy` AND `bind_fields[]` listing which evidence-pack bind fields the assertion depends on.
@@ -278,7 +340,13 @@ This three-layer separation is the structural reason no Epic 3 slice — includi
 - BLK-no_guard_flip-2: stub adapter import test (advisory) — `ast`-walk the harness modules, assert no `requests`, `httpx`, `urllib.request`, `urllib3`, `socket`, `openai`, `anthropic`, `google.generativeai`, `aiohttp`, `boto3`, `paramiko`, `subprocess` live-network imports.
 - BLK-runtime-kill-switch-network (F3, dominant): test wraps harness execution with monkey-patches that make `socket.socket.__init__`, `http.client.HTTPConnection.__init__`, `urllib.request.urlopen`, `urllib.request.OpenerDirector.open`, `requests.request`, `requests.Session.send`, `requests.adapters.HTTPAdapter.send`, `httpx.Client.send`, `httpx.AsyncClient.send` raise `SupportWideningError` on any call; harness invocation MUST complete successfully (no network attempted). Any kill-switch raise → test fails.
 - BLK-runtime-kill-switch-subprocess (F3): test patches `subprocess.Popen.__init__`, `subprocess.run`, `subprocess.call`, `subprocess.check_output`, `subprocess.check_call`, `os.system`, `os.popen` to raise on any call; harness completes without invocation.
-- BLK-runtime-kill-switch-secrets (F3): test patches `os.environ.get` to raise if key matches regex `(?i)(api[_-]?key|secret|token|password|credential)` (with explicit whitelist of allowed config keys like `WORKSPACE_ROOT`, `CI`, `PYTHONPATH`); harness completes without forbidden env reads.
+- BLK-runtime-kill-switch-secrets (F3 + F3' iter-3): test patches the **full env-access surface** to raise on forbidden key access (with whitelist `WORKSPACE_ROOT`, `CI`, `PYTHONPATH`, `PATH`). Patched paths: `os.environ.get`, `os.environ.__getitem__` (direct indexing `os.environ["TOKEN"]`), `os.environ.__contains__` (`"TOKEN" in os.environ`), `os.getenv`, `os.environb.get`, `os.environb.__getitem__`, `os.environ.copy()`, `os.environ.items()`, `os.environ.keys()`, `os.environ.values()`, `os.environ.__iter__`. Negative tests cover each path independently; harness completes without forbidden env reads via any of them. Regex `(?i)(api[_-]?key|secret|token|password|credential|bearer|auth)` (expanded per F3' to cover `bearer`/`auth` variants).
+- BLK-env-direct-index-rejected (F3' iter-3, negative test): test invokes `os.environ["API_KEY"]` inside harness path; MUST raise.
+- BLK-env-getenv-rejected (F3' iter-3, negative test): test invokes `os.getenv("SECRET")` inside harness path; MUST raise.
+- BLK-env-copy-rejected (F3' iter-3, negative test): test invokes `dict(os.environ)` or `os.environ.copy()` inside harness path with any forbidden key present; MUST raise.
+- BLK-env-iter-rejected (F3' iter-3, negative test): test invokes `for k in os.environ: ...` iteration inside harness path; MUST raise if any forbidden key encountered.
+- BLK-env-bytes-rejected (F3' iter-3, negative test): test invokes `os.environb[b"TOKEN"]` inside harness path; MUST raise.
+- BLK-sanitized-env-preferred (F3' iter-3): test asserts harness execution starts with `os.environ` replaced by sanitized allowlist mapping; any access outside allowlist raises before reaching kill-switch (defense-in-depth).
 - BLK-runtime-kill-switch-dynamic-import (F3): test patches `importlib.import_module` to raise if target name matches the forbidden network/secret module list; harness completes without forbidden dynamic imports. Also `sys.audit` hook for `compile` / `exec` events fails the test if harness path triggers them.
 - BLK-no_live_call: runtime assertion in `harnesses/__init__.py` raises if any adapter declares `live_capability=True`.
 - BLK-library-mode: harness asserts `workspace_root=None` (library mode); `.ao/` filesystem snapshot before/after is byte-identical.
@@ -289,7 +357,8 @@ This three-layer separation is the structural reason no Epic 3 slice — includi
 - BLK-no_guard_flip-1: workflow YAML grep for `support_widening: true` literal — must not appear.
 - BLK-no_guard_flip-2: assertion list of files MUST NOT be modified by this workflow: `.github/workflows/test.yml`, `ao-autonomous-merge-executor.yml`, `ao-release-gate-container-publish.yml`, `ao-release-gate-deploy-cloud-run.yml`, `bc1-protected-live-adapter-attestation.yml`, `bc10-real-adapter-usage-cost.yml`, `live-adapter-gate.yml`, `publish.yml`, `ao-ma-11a-plan-approval.yml`, `ao-ma-11e-2b-mirror-sync.yml`, `policy-container-publish.yml`, `policy-service-deploy-cloud-run.yml`, `ao-ma10q-dedicated-actor-smoke.yml`. CI test `git diff --stat origin/main -- <paths>` MUST be empty.
 - BLK-trigger-correct (F4): workflow trigger is `pull_request: types: [opened, labeled, synchronize, reopened]` + `workflow_dispatch` ONLY; no `push`, no `repository_dispatch`, no `schedule`. Test parses workflow YAML and asserts exact trigger shape. **No `labels:` filter at trigger level** (GitHub Actions does not support it; previous design assumed it incorrectly).
-- BLK-job-label-gate (F4): jobs in this workflow MUST carry `if: contains(github.event.pull_request.labels.*.name, 'support-matrix-smoke')` job-level gate (label filtering happens at job, not trigger). Test parses workflow YAML and asserts every job carries this `if:` expression (or equivalent label-match expression).
+- BLK-job-label-gate (F4 + F4' iter-3): jobs in this workflow MUST carry `if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'support-matrix-smoke')` job-level gate (label filtering happens at job, not trigger; workflow_dispatch path allowed since manual dispatch has no `github.event.pull_request` context). Test parses workflow YAML and asserts every job carries the combined `if:` expression covering both paths.
+- BLK-workflow-dispatch-path-runs (F4' iter-3): test simulates a `workflow_dispatch` event payload (no `github.event.pull_request`) and asserts the job's `if:` expression evaluates to truthy (job is NOT skipped on manual dispatch).
 - BLK-no-ruleset-collision (F4): workflow `name:` value and every job-id-derived check-run name MUST NOT appear in any branch protection ruleset's `required_status_checks.contexts[]`. Test queries `gh api repos/{owner}/{repo}/rulesets` + per-ruleset detail, parses contexts, asserts no collision. The previous "no required-check status published" invariant is REMOVED (incorrect — workflow inevitably produces a check-run); replaced by this collision invariant.
 - BLK-no-ruleset-mutation (F4): the slice PR diff MUST NOT modify any branch protection ruleset. Test asserts `gh api` ruleset listing SHA before and after the slice diff is identical (no ruleset added, removed, or modified).
 - BLK-no-job-name-collision (F4): job names in this workflow MUST NOT exact-match or substring-match any job name in `.github/workflows/test.yml`, `ao-autonomous-merge-executor.yml`, `ao-release-gate-*.yml`, `publish.yml`. Test parses all referenced workflow files and asserts the disjoint property.
@@ -329,6 +398,14 @@ This three-layer separation is the structural reason no Epic 3 slice — includi
 - BLK-filtered-negative-verdict-rejected (F5, negative test): test feeds pack with `verdict_completeness_proof.negative_verdicts_present: true` but `provider_verdicts[]` carries only `agree` entries; checklist MUST trigger reject.
 - BLK-denominator-manipulation-rejected (F5, negative test): test feeds pack with `verdict_completeness_proof.verdicts_received_total: 3` but `len(provider_verdicts) == 2`; checklist MUST trigger reject.
 - BLK-7day-window-race-rejected (F5, negative test): test feeds pack with `time_window_boundaries` length < 7 days OR an artifact timestamp outside the window; checklist MUST trigger reject.
+- BLK-final-diff-digest-drift-rejected (F2' iter-3, negative test): pack with `final_diff_digest` not matching recomputed `git diff <base>..<merge-commit>` SHA256 → reject.
+- BLK-pr-head-sha-drift-rejected (F2' iter-3, negative test): pack with `pr_head_sha` not matching GitHub API `/pulls/{n}.head.sha` → reject.
+- BLK-workflow-run-status-mismatch-rejected (F2' iter-3, negative test): pack with any `workflow_run_ids[]` entry whose API-fetched `status != "completed"` OR `conclusion != "success"` OR `head_sha != pr_head_sha` → reject.
+- BLK-orphan-artifact-rejected (F2' iter-3, negative test): pack with `artifacts[i].run_id` not in `workflow_run_ids[]` → reject (artifact not from any listed run).
+- BLK-artifact-not-in-run-rejected (F2' iter-3, negative test): pack with `artifacts[i].artifact_id` not present in API-fetched `/actions/runs/{run_id}/artifacts` list → reject.
+- BLK-reviewer-hash-recomputation-mismatch-rejected (F2' iter-3, negative test): pack with `reviewer_identity_hashes[i]` not matching `SHA256(provider || "|" || github_login || "|" || thread_id)` of corresponding `provider_verdicts[i]` → reject (producer-supplied hash must match recomputed; cannot fabricate).
+- BLK-verdict-binding-drift-rejected (F2' iter-3, negative test): pack with any `provider_verdicts[i].plan_digest != top.plan_digest` OR `final_diff_digest != top.final_diff_digest` OR `pr_head_sha != top.pr_head_sha` → reject (verdict not pinned to current plan/diff/head).
+- BLK-raw-verdict-sha-mismatch-rejected (F2' iter-3, negative test): pack with `provider_verdicts[i].raw_verdict_sha256` not matching SHA256 of canonicalized JSON of that verdict record → reject (tampered verdict).
 - BLK-disjoint-identities-required (F6): checklist requires `operator_authority.github_login`, `implementer_provider.github_login`, and every `reviewer_providers[].github_login` to be pairwise distinct; same-login overlap rejects.
 - BLK-disjoint-providers-required (F6): checklist requires `reviewer_providers[].provider` entries pairwise distinct AND `implementer_provider.provider` not in `reviewer_providers[].provider`; overlap rejects.
 
@@ -342,10 +419,18 @@ This three-layer separation is the structural reason no Epic 3 slice — includi
 - BLK-forged-consensus-rejected: validator rejects producer-claimed `consensus_status: agree` when raw `provider_verdicts[]` contains a `revise`.
 - BLK-same-provider-rejected (F6): validator rejects artifact with `reviewer_providers: [{provider:"anthropic",...}, {provider:"anthropic",...}]` (ADR-0004; duplicate provider).
 - BLK-implementer-in-reviewer-rejected (F6): validator rejects artifact where `implementer_provider.provider` appears in `reviewer_providers[].provider` (self-review at provider level).
-- BLK-operator-login-collision-rejected (F6): validator rejects artifact where `operator_authority.operator_github_login` equals `implementer_provider.github_login` OR any `reviewer_providers[].github_login` (self-review at identity level).
+- BLK-operator-login-collision-rejected (F6): validator rejects artifact where `operator_authority.github_login` equals `implementer_provider.github_login` OR any `reviewer_providers[].github_login` (self-review at identity level). Canonical field name is `operator_authority.github_login`; legacy alias `operator_github_login` rejected by schema `additionalProperties: false` (F1' iter-3 absorb).
+- BLK-operator-alias-rejected (F1' iter-3): validator rejects artifact carrying legacy `operator_authority.operator_github_login` alias; tests assert canonical `github_login` is the only accepted field name and missing canonical (alias-only) artifact rejects.
 - BLK-mutually-exclusive: validator rejects artifact with both `simulated_only: true` and `live_call_made: true`.
 - BLK-plan-digest-drift-rejected (F5): validator rejects artifact with `plan_digest` not matching the recomputed SHA256 of the referenced plan doc HEAD blob.
-- BLK-artifact-sha-drift-rejected (F5): validator rejects artifact with any `artifact_sha256[i]` not matching the on-disk SHA256 of the referenced artifact file.
+- BLK-artifact-sha-drift-rejected (F5): validator rejects artifact with any `artifacts[i].sha256` not matching the on-disk SHA256 of the referenced artifact file.
+- BLK-final-diff-digest-drift-rejected-validator (F2' iter-3): validator queries `git diff <base>..<merge-commit>`, computes SHA256, rejects if not matching `final_diff_digest`.
+- BLK-pr-head-sha-drift-rejected-validator (F2' iter-3): validator queries GitHub API `/pulls/{n}.head.sha`, rejects if not matching `pr_head_sha`.
+- BLK-workflow-run-provenance-rejected-validator (F2' iter-3): validator iterates `workflow_run_ids[]`, queries `/actions/runs/{id}`, rejects on status/conclusion/head_sha mismatch.
+- BLK-orphan-artifact-rejected-validator (F2' iter-3): validator rejects any `artifacts[i].run_id` not in `workflow_run_ids[]`.
+- BLK-reviewer-hash-recomputation-validator (F2' iter-3): validator recomputes each `reviewer_identity_hashes[i]` from `provider_verdicts[i]`; mismatch rejects.
+- BLK-verdict-binding-validator (F2' iter-3): validator asserts every `provider_verdicts[i]` `plan_digest`/`final_diff_digest`/`pr_head_sha` matches top-level values; mismatch rejects.
+- BLK-raw-verdict-sha-validator (F2' iter-3): validator recomputes `provider_verdicts[i].raw_verdict_sha256` from canonicalized JSON of the entry; mismatch rejects.
 
 Per CLAUDE.md test-quality gate (conftest AST-based BLK rules): assertions are concrete (no `assert callable(x)`, no `assert True`); negative cases use `pytest.raises(SupportWideningError)` not bare `except: pass`.
 
@@ -600,6 +685,30 @@ This section maps each Codex iter-1 finding (F1..F7) to the specific sections up
 4. **Disjoint roles at every layer** — F6 disjointness applied at schema (`allOf`), module (validator), and process (checklist) layers. Operator-as-implementer-as-reviewer attack surface closed.
 5. **Public-claim language is regex-fenced** — F7 forbidden-language set expanded to cover paraphrase variants the original set missed.
 
-**Iter-2 verdict (next):** awaiting Codex iter-2 review. If AGREE + `ready_for_impl=true`, E-3-1 evidence schema slice may open (V5 §Epic 3 PR-1 sequencing). If REVISE, absorb iter-3 and continue.
+**Iter-2 verdict (received):** Codex iter-2 review (thread `019e87b2-457f-78c3-a550-6925c322c466`, fresh thread since iter-1 thread `019e87a0` full UUID not available): **REVISE**, `ready_for_impl=false`. 3 blocker + 1 non-blocker residual findings (F1'..F4').
 
-**No-Fake-Work attestation (HARD RULE 2026-04-25):** iter-1 verdict was real REVISE (Codex MCP thread `019e87a0`); iter-2 absorb covers each of F1..F7 by section; iter-2 verdict will be recorded as real Codex output. No aspirational AGREE fabrication.
+---
+
+## Iter-3 Absorb Summary (Codex iter-2 verdict)
+
+Iter-2 absorb addressed F1..F7 from iter-1, but Codex iter-2 review identified residual gaps:
+
+| Iter-3 Finding | Severity | Category | Sections updated in iter-3 |
+|---|---|---|---|
+| **F1'** — Operator field naming drift (`operator_github_login` vs `github_login` inconsistency across schema/checklist/validator/§8) | blocker (high) | self-review field contract | §2 E-3-5 operator authority block (canonical `operator_authority.github_login`, alias rejected); §2 E-3-6 BLK-operator-login-collision-rejected (canonical name); §6 E-3-6 BLK-operator-alias-rejected (new: alias rejection + missing-canonical rejection) |
+| **F2'** — Bind-field test coverage gaps (`final_diff_digest` drift, `pr_head_sha` drift, workflow run provenance, orphan artifact, reviewer hash recomputation, verdict binding) | blocker (high) | bind-field recompute closure | §2 E-3-5 evidence-pack bind block (rich `artifacts[]` manifest with `{run_id, artifact_id, sha256, produced_at, head_sha}`; rich `provider_verdicts[]` with `{provider, github_login, thread_id, verdict, plan_digest, final_diff_digest, pr_head_sha, raw_verdict_sha256}`; verdict pinned to plan/diff/head; reviewer hash recomputed from raw verdict; verdict_completeness denominator from raw count); §6 E-3-5 new BLKs (BLK-final-diff-digest-drift-rejected, BLK-pr-head-sha-drift-rejected, BLK-workflow-run-status-mismatch-rejected, BLK-orphan-artifact-rejected, BLK-artifact-not-in-run-rejected, BLK-reviewer-hash-recomputation-mismatch-rejected, BLK-verdict-binding-drift-rejected, BLK-raw-verdict-sha-mismatch-rejected); §6 E-3-6 new BLKs (BLK-final-diff-digest-drift-rejected-validator, BLK-pr-head-sha-drift-rejected-validator, BLK-workflow-run-provenance-rejected-validator, BLK-orphan-artifact-rejected-validator, BLK-reviewer-hash-recomputation-validator, BLK-verdict-binding-validator, BLK-raw-verdict-sha-validator) |
+| **F3'** — Runtime secret kill-switch only `os.environ.get`; direct indexing / `os.getenv` / `os.environb` / copy / iteration bypass paths open | blocker (medium) | env-access surface closure | §2 E-3-2 runtime kill-switch layer (sanitized env allowlist preferred + defense-in-depth monkey-patch of `os.environ.get`, `__getitem__`, `__contains__`, `os.getenv`, `os.environb.*`, `copy()`, `items()`, `keys()`, `values()`, `__iter__`; regex expanded to `bearer\|auth`); §6 E-3-2 BLK-runtime-kill-switch-secrets (expanded patch surface) + new BLKs (BLK-env-direct-index-rejected, BLK-env-getenv-rejected, BLK-env-copy-rejected, BLK-env-iter-rejected, BLK-env-bytes-rejected, BLK-sanitized-env-preferred) |
+| **F4'** — `workflow_dispatch` path likely skips job (gate fixed to PR-only expression) | non-blocker (medium) | workflow_dispatch viability | §2 E-3-3 job-level label gate (combined expression: `github.event_name == 'workflow_dispatch' \|\| contains(...)`); §6 E-3-3 BLK-job-label-gate (updated to combined expression); new BLK-workflow-dispatch-path-runs (simulated dispatch event asserts job not skipped) |
+
+**Iter-3 absorb principles:**
+
+1. **Canonical-name discipline (F1')** — when schema field naming must be enforced disjointness across multiple layers, choose ONE canonical name and reject all aliases at the `additionalProperties: false` boundary; document the canonical name in every cross-referenced section.
+2. **Bind-field cross-link integrity (F2')** — every bind field must be recomputable from authoritative sources (GitHub API, on-disk file, raw verdict record), and each verdict/artifact must self-witness via its own SHA256; producer-supplied hashes are inert unless recompute matches.
+3. **Rich manifest over flat array (F2')** — `artifacts[]` becomes `{run_id, artifact_id, sha256, produced_at, head_sha}` records (not flat sha256 array) to cross-link with `workflow_run_ids[]` and pin to `pr_head_sha`/`time_window_boundaries`.
+4. **Verdict pinning (F2')** — every `provider_verdicts[i]` carries `plan_digest`/`final_diff_digest`/`pr_head_sha` matching top-level; stale verdict from earlier plan revision cannot survive validator.
+5. **Defense-in-depth env access (F3')** — sanitized allowlist mapping replaces `os.environ` for harness duration; defense-in-depth kill-switches on all alternative paths catch any escape.
+6. **Workflow event-aware gating (F4')** — `if:` expression branches on `github.event_name` so workflow_dispatch path remains viable without requiring `github.event.pull_request` context.
+
+**Iter-3 verdict (next):** awaiting Codex iter-3 review. If AGREE + `ready_for_impl=true`, E-3-1 evidence schema slice may open. If REVISE, absorb iter-4 and continue.
+
+**No-Fake-Work attestation (HARD RULE 2026-04-25):** iter-1 verdict was real REVISE (Codex MCP); iter-2 absorb addressed F1..F7; iter-2 verdict was real REVISE (Codex thread `019e87b2-...`); iter-3 absorb addresses F1'..F4'; iter-3 verdict will be recorded as real Codex output. No aspirational AGREE fabrication.
