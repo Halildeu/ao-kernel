@@ -63,9 +63,25 @@ Final operator-bound decision PR tüm evidence refs'i bağlar — flag flip ANCA
 
 ### Epic 2 (Live Adapter Execution Infrastructure — flag flip ITSELF Epic 9'da)
 
-**Risk:** critical (epic-aggregate; eventual flip downstream) · **Bağımlılık:** Epic 1 + E-P0-2 (master plan amend) · **Reframe:** 2026-06-02 (Codex thread `019e87b6` iter-1 F7 absorb)
+**Risk:** critical (epic-aggregate; eventual flip downstream) · **Bağımlılık:** Epic 1 + E-P0-2 (master plan amend) + **HARD STOP §14a preconditions** · **Reframe:** 2026-06-02 (Codex thread `019e87b6` iter-1 F7 absorb; this amend `019e87c9` iter-1 REVISE → iter-2 absorb)
 
-> **AMEND NOTU (2026-06-02):** Önceki E-2-1 listesi "operator-bound GPP supersession PR (flip authority)" idi. Bu yapı yeniden çerçevelendi: **bu epic infrastructure-only**; `live_adapter_execution` flag flip authority **Epic 9 PR-Xfinal**'e taşındı. Detaylı plan: `.claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md` (Codex iter-N AGREE chain ile mühürlendi).
+> **AMEND NOTU (2026-06-02, iter-2 absorb):** Önceki E-2-1 listesi "operator-bound GPP supersession PR (flip authority)" idi. Bu yapı yeniden çerçevelendi: **bu epic infrastructure-only**; `live_adapter_execution` flag flip authority **Epic 9 PR-Xfinal**'e taşındı. Detaylı plan: `.claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md` (kaynak PR #827).
+>
+> **FAIL-CLOSED READINESS (iter-2 F1 absorb):** PR #827 is the Epic 2 detailed plan source; **current status REVISE / pending** until real Codex AGREE recorded and PR merged. **E-2-1 implementation MUST NOT start until:**
+> 1. PR #827 merged to main with Codex AGREE evidence (cross-AI peer review verdict), AND
+> 2. This amend (PR #828) merged to main with Codex AGREE evidence, AND
+> 3. Full drift sweep complete (§4 / §7 / §10 / §14 / §14a all aligned).
+>
+> See §14a "HARD STOP — E-2-* + E-3-* implementation prerequisites" for machine-checkable gate conditions.
+>
+> **Scope-mapping for removed content (iter-2 F4 absorb):** Previous Epic 2 included production execution slices that are now mapped to other epics:
+>
+> | Old slice | New destination | Notes |
+> |---|---|---|
+> | Old E-2-2 production runbook | **Epic 4 (Deployment, Operations, Tenancy)** + **Epic 8 E-8-3 (Operator runbook docs)** | Runbook authority follows deployment epic |
+> | Old E-2-3 real LLM worker / live provider envelope | **Epic 9 PR-Xfinal prerequisites** (live-evidence window) OR explicit pre-Xfinal operator-bound slice | Real network calls only under flip authority chain |
+> | Old E-2-4 live test suite | **Epic 9 PR-Xfinal** pre-supersession 7-day live test window evidence | Time-bound live evidence is supersession prerequisite |
+> | Old E-2-5 production telemetry | **Epic 5 (Observability + Production Telemetry)** — mostly merged via E-5-1 / E-5-2 | OTEL prod tunables already shipped |
 
 - E-2-1 Live adapter envelope schema (`live_adapter_envelope.v1.json`; `mode` enum stub/dry_run only; `live_adapter_execution: const false` pin)
 - E-2-2 Per-call audit evidence schema (`per_call_audit.v1.json`; cost field required = fail-closed)
@@ -77,9 +93,27 @@ Final operator-bound decision PR tüm evidence refs'i bağlar — flag flip ANCA
 
 ### Epic 3 (Support Widening Infrastructure — flag flip ITSELF Epic 9'da)
 
-**Risk:** critical (epic-aggregate; eventual flip downstream) · **Bağımlılık:** Epic 1 (Epic 2 paralel olabilir) · **Reframe:** 2026-06-02 (Codex thread `019e87b2` iter-4 AGREE)
+**Risk:** critical (epic-aggregate; eventual flip downstream) · **Bağımlılık:** Epic 1 (Epic 2 paralel olabilir) + **HARD STOP §14a preconditions** · **Reframe:** 2026-06-02 (Codex thread `019e87b2` iter-4 AGREE; this amend `019e87c9` iter-1 REVISE → iter-2 absorb)
 
-> **AMEND NOTU (2026-06-02):** Önceki E-3-1 listesi "operator-bound GPP supersession PR (flip authority)" idi. Bu yapı yeniden çerçevelendi: **bu epic infrastructure-only**; `support_widening` flag flip authority **Epic 9 PR-Xfinal**'e taşındı. Detaylı plan: `.claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md` (Codex 4-iter chain AGREE ile mühürlendi).
+> **AMEND NOTU (2026-06-02, iter-2 absorb):** Önceki E-3-1 listesi "operator-bound GPP supersession PR (flip authority)" idi. Bu yapı yeniden çerçevelendi: **bu epic infrastructure-only**; `support_widening` flag flip authority **Epic 9 PR-Xfinal**'e taşındı. Detaylı plan: `.claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md` (kaynak PR #826; Codex 4-iter chain AGREE, pending merge).
+>
+> **FAIL-CLOSED READINESS (iter-2 F1 absorb):** PR #826 (Epic 3 detail plan) is AGREE'd but pending merge. **E-3-1 implementation MUST NOT start until:**
+> 1. PR #826 merged to main with Codex AGREE evidence, AND
+> 2. This amend (PR #828) merged to main with Codex AGREE evidence, AND
+> 3. Full drift sweep complete (§4 / §7 / §10 / §14 / §14a all aligned).
+>
+> See §14a "HARD STOP — E-2-* + E-3-* implementation prerequisites" for machine-checkable gate conditions.
+>
+> **Per-surface enablement future map (iter-2 F5 absorb):** Previous Epic 3 framed each surface dimension as part of its own flip PR. The reframed model is: **Epic 3 ships decision infrastructure only**; actual per-surface enablement happens in **Epic 9 PR-Xfinal per-class evidence subordinate PRs** (one PR per surface dimension), each requiring its own live evidence + operator authorization.
+>
+> | Old slice (support widening surface) | New destination | Provider-class | Specific platform / dimension |
+> |---|---|---|---|
+> | Old E-3-2 Windows desktop | Epic 9 PR-Xfinal per-surface supersession evidence | `os_platform` | `windows-amd64` |
+> | Old E-3-3 Python 3.10 backward compat | Epic 9 PR-Xfinal per-surface supersession evidence | `python_version` | `cpython-3.10` |
+> | Old E-3-4 Provider widening Mistral/Cohere/Llama | Epic 9 PR-Xfinal per-surface supersession evidence | `provider` | Mistral / Cohere / Llama (one PR per provider) |
+> | Old E-3-5 ARM64 / Apple Silicon Docker | Epic 9 PR-Xfinal per-surface supersession evidence | `os_platform` | `linux-arm64` / `macos-arm64` |
+>
+> Each per-class evidence subordinate PR is operator-bound (no autonomous flip), carries its own live evidence pack, and supersedes a single surface dimension only. Aggregate `support_widening=true` flip remains in Epic 9 PR-Xfinal after all per-class subordinate PRs land.
 
 - E-3-1 Support widening evidence schema v1 (`support_widening_evidence.v1.json`; const false + recursive closure)
 - E-3-2 Per-surface smoke harness scaffolding (library-mode; stub adapters; runtime kill-switches)
@@ -145,16 +179,20 @@ Final operator-bound decision PR tüm evidence refs'i bağlar — flag flip ANCA
 
 **Risk:** critical · **Bağımlılık:** Tüm Epic 1-8 evidence complete
 
-> **AMEND NOTU (2026-06-02):** Epic 2 + Epic 3 reframe sonrası, **3 guard flag flip authority** bu epic'e konsolide edildi:
+> **AMEND NOTU (2026-06-02, iter-2 absorb):** Epic 2 + Epic 3 reframe sonrası, **3 guard flag flip authority** bu epic'e konsolide edildi. Her flag **independent per-flag gate** üzerinden değerlendirilir (single bundled super-flip YASAK; iter-2 F2 partial absorb):
 > - `live_adapter_execution` flip → Epic 9 PR-Xfinal (Epic 2 E-2-7 pre-supersession checklist 18 conditions evidence pack)
-> - `support_widening` flip → Epic 9 PR-Xfinal (Epic 3 E-3-5 supersession consensus protocol checklist evidence pack)
+> - `support_widening` flip → Epic 9 PR-Xfinal (Epic 3 E-3-5 supersession consensus protocol checklist evidence pack + per-class subordinate PR evidence aggregate)
 > - `production_platform_claim` flip → Epic 9 PR-Xfinal (Epic 1-8 toplam evidence)
 >
+> **Per-flag independent gate semantic:** Flip authority bağımsız değerlendirilir — bir flag'in evidence pack'i complete iken diğeri pending olabilir; her flag kendi evidence chain'iyle gate geçer. Aggregate flip kararı PR-Xfinal'de toplanır ama gate logic her flag için ayrıdır. Bu, fail-closed semantic + recompute-not-trust pattern (Epic 3 E-3-6 validator) ile uyumlu.
+>
 > Bu konsolidasyon HARD RULE Cross-AI Peer Review + Plan Consensus Autonomy + Admin Merge YASAK + CI Kırmızıyken Merge YASAK ile uyumlu; operator-bound supersession tek noktada (Epic 9) toplanır. Detay supersession PR taslağı: `.claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md` (gelecek slice; Epic 1-8 complete sonrası).
+>
+> **Machine-checkable preconditions:** §14a "HARD STOP — E-2-* + E-3-* implementation prerequisites" bu epic için de geçerli — Epic 9 PR-Xfinal açılışı tüm Epic 1-8 evidence + per-flag gate green + operator authorization şartlarına bağlı.
 
 **PR-Xfinal:** operator-bound supersession decision PR. Tüm epic evidence refs'i bağlar + 3 guard flag flip (`support_widening=true` + `production_platform_claim=true` + `live_adapter_execution=true`) + version bump (`v4.x` → `v5.0.0`) + CHANGELOG release entry + tag push. **Bu PR'dan ÖNCE hiçbir flag flip YOK.**
 
-## 4. Bağımlılık + sıralama (Codex iter-1 absorb)
+## 4. Bağımlılık + sıralama (Codex iter-1 absorb + iter-2 F3 absorb: Epic 2/3 reframe)
 
 ```
 P0 runway (visibility + governance manifest)
@@ -166,18 +204,23 @@ Epic 1 (follow-up; sistem mod aktivasyon) ----------+
    |                                                 |
    +-> Epic 8 (docs; paralel) ---------------------- |
    |                                                 v
-   |   Epic 2 (live adapter envelope + flip)
+   |   Epic 2 (live adapter infrastructure; flip in Epic 9)
    |                |
    |                v
-   |   Epic 3 (support widening + flip)
+   |   Epic 3 (support widening infrastructure; flip in Epic 9)
    |   Epic 4 (deployment + tenancy)
    |   Epic 5 (observability prod)
    |   Epic 7 (performance + scalability)
    |                |
    +----------------+
                     v
-   Epic 9 (final operator-bound promotion decision PR + 3 flag flip + v5.0.0)
+   Epic 9 (final operator-bound promotion decision PR-Xfinal
+           + 3 guard flag flip [per-flag independent gates]
+           + per-class subordinate PR evidence aggregate
+           + v5.0.0 version bump)
 ```
+
+**Reframe NOTU (iter-2 F3 absorb):** Epic 2 ve Epic 3 artık **infrastructure-only** epic'lerdir; içlerinde guard flag flip YOK. Flip authority **Epic 9 PR-Xfinal**'e konsolide edildi (per-flag independent gate semantic). Detay: §3 Epic 2 + Epic 3 + Epic 9 amend notları.
 
 **Forecast:** 2026-12-31 (6 ay). **Authoritative:** exit criteria per epic; tarihten önce tamamlanan epic erken kapanır.
 
@@ -216,17 +259,17 @@ Final epic 9 ek koşullar:
 
 Codex iter-1 invariant #7: ilk dalgada 80 issue açma; epic + P0 gate issues + source manifest projection açılır, alt issues lazy-expand edilir.
 
-**P0 first wave issues (13 total: 10 epic parent + 3 P0 gate):**
+**P0 first wave issues (13 total: 10 epic parent + 3 P0 gate; iter-2 F3 absorb: Epic 2/3 labels updated to "infrastructure / flip-prerequisite"):**
 1. Epic P0 — Promotion governance + visibility source manifest (parent)
 2. Epic 1 — AO-MA-SPM follow-up (parent)
-3. Epic 2 — Live adapter execution (parent; guard-flip)
-4. Epic 3 — Support widening (parent; guard-flip)
+3. Epic 2 — Live adapter execution **infrastructure** (parent; flip-prerequisite — flip authority Epic 9)
+4. Epic 3 — Support widening **infrastructure** (parent; flip-prerequisite — flip authority Epic 9)
 5. Epic 4 — Deployment + operations + tenancy (parent)
 6. Epic 5 — Observability + production telemetry (parent)
 7. Epic 6 — Security + compliance (parent)
 8. Epic 7 — Performance + scalability (parent)
 9. Epic 8 — Documentation + onboarding (parent)
-10. Epic 9 — Final promotion decision (parent; guard-flip + flag flip)
+10. Epic 9 — Final promotion decision (parent; **3 guard flag flip authority — per-flag independent gate; consolidates Epic 2/3 flip authority**)
 11. P0-GATE-1: v4.1.0 PyPI publish workflow fix (`.github/workflows/publish.yml` twine check JSON-distribution false-positive; high-risk operator gate)
 12. P0-GATE-2: PR #764 CI shadow-skip permanent fix (high-risk `.github/workflows/test.yml` operator gate)
 13. P0-GATE-3: V5 GitHub mirror create (PR-X2 manuel mirror NOW path; AO-MA-11E-2 drift checker LATER binding adapter)
@@ -237,14 +280,15 @@ Alt issues lazy expand: her epic'in sub-issue'ları E-N-M ID ile epic issue body
 
 - **Title:** "Roadmap v5.0.0"
 - **Layout:** Kanban (Todo / In Progress / Review / Blocked / Done) + Roadmap view (epic timeline)
-- **Custom fields:** Epic (single-select 9 epic) / Risk (computed) / Guard (single-select live_adapter/support/production/none) / Dependency (text) / Estimate (number) / Consensus (single-select agreed/pending/not_started) / Evidence (URL) / Mirror digest (text) / Release impact (single-select minor/patch/major)
+- **Custom fields:** Epic (single-select 9 epic) / Risk (computed) / Guard role (single-select `flip-prerequisite:live_adapter` / `flip-prerequisite:support_widening` / `flip-prerequisite:production_platform_claim` / `flip-authority` / `none`; iter-2 F3 absorb: prerequisite vs authority ayrımı) / Dependency (text) / Estimate (number) / Consensus (single-select agreed/pending/not_started) / Evidence (URL) / Mirror digest (text) / Release impact (single-select minor/patch/major)
 
 ### Labels
 
 - `epic-p0`, `epic-1`, ..., `epic-9`
 - `status:planned`, `status:in_progress`, `status:review`, `status:blocked`, `status:done`
 - `risk:critical`, `risk:high`, `risk:normal`, `risk:low`
-- `guard-flip:live_adapter`, `guard-flip:support_widening`, `guard-flip:production_platform_claim`
+- `flip-prerequisite:live_adapter` (Epic 2 infrastructure slices), `flip-prerequisite:support_widening` (Epic 3 infrastructure slices), `flip-prerequisite:production_platform_claim` (Epic 1-8 prerequisite slices)
+- `flip-authority:live_adapter`, `flip-authority:support_widening`, `flip-authority:production_platform_claim` (Epic 9 PR-Xfinal ONLY; iter-2 F3 absorb: flip authority labels gate Epic 9'a kilitli, per-flag independent gate)
 - `mirror:authority` (kalıcı; bu issue authority değil)
 
 ### README badge + roadmap link
@@ -267,18 +311,31 @@ README, project page, badges — **dil "roadmap / planned" kalır**. "production
 
 Final promotion sonrası: "v5.0.0 — Production-Ready Governed Multi-AI Orchestration Runtime" claim'i public yapılır.
 
-## 10. PR yapısı (Codex iter-1 revize 4-PR plan + PR-X2 manuel mirror NOW amend)
+## 10. PR yapısı (Codex iter-1 revize 4-PR plan + PR-X2 manuel mirror NOW amend + iter-2 F3 absorb: Epic 2/3 slice families)
 
 | PR | Scope | Risk | Guard flip |
 |---|---|---|---|
 | **PR-X0** (MERGED main 565876b, #771) | plan doc + projection manifest + acceptance matrix + master plan amend | normal | YOK |
 | **PR-X1** | (PR-X0'a dahil; combined) | — | YOK |
-| **PR-X2 (BU PR)** | manuel mirror NOW path amend: `github_write_authorized=true` + plan/projection PR-X2 path "manuel mirror NOW + 11E-2 drift checker LATER" yeniden tanım + master plan §12 satır eşleştirme | normal | YOK |
+| **PR-X2 (PR #769 family ailesi)** | manuel mirror NOW path amend: `github_write_authorized=true` + plan/projection PR-X2 path "manuel mirror NOW + 11E-2 drift checker LATER" yeniden tanım + master plan §12 satır eşleştirme | normal | YOK |
 | **PR-X2-impl** | PR-X2 merge sonrası gh CLI ile mirror create (milestone + 23 label + 13 issue + project board) — repo-side state mutation; PR DEĞİL | normal | YOK |
 | **PR-X2-evidence** | PR-X2-impl sonrası: created GH IDs + projection digest manifest'e geri yazılır (one-way mirror evidence write-back) | normal | YOK |
-| **PR-Xfinal** | Final operator-bound production promotion decision; 3 guard flag flip + v5.0.0 version bump + CHANGELOG release + tag push | critical | EVET (operator-bound) |
+| **PR-X3-epic-2 (BU PR ailesi: detay plan + amend)** | Epic 2 reframe family: PR #827 (Epic 2 detail plan doc) + PR #828 (this; V5 roadmap §3 Epic 2 + Epic 3 amend) | medium (governance/docs) | YOK (infrastructure-only) |
+| **PR-X3-epic-3** | Epic 3 reframe family: PR #826 (Epic 3 detail plan doc; Codex 4-iter AGREE pending merge) | medium (governance/docs) | YOK (infrastructure-only) |
+| **Epic 2 slice family (E-2-1..E-2-7)** | 7 infrastructure slice PR'ları (envelope schema, audit, cost ceiling, dry-run, secret discipline, opt-in CI, pre-supersession checklist); each PR cross-AI reviewed | normal..high | YOK (infrastructure; flip authority Epic 9) |
+| **Epic 3 slice family (E-3-1..E-3-6)** | 6 infrastructure slice PR'ları (evidence schema, smoke harness, advisory CI matrix, surface inventory, consensus protocol, recompute validator); each PR cross-AI reviewed | normal..high | YOK (infrastructure; flip authority Epic 9) |
+| **PR-Xfinal** | Final operator-bound production promotion decision; 3 guard flag flip (per-flag independent gates) + v5.0.0 version bump + CHANGELOG release + tag push; per-class subordinate PRs (per-surface enablement) supersession evidence aggregate | critical | EVET (operator-bound; per-flag) |
 
-PR-X2 (BU PR) ön koşulu: YOK (manifest amend authorized — cross-AI peer review + CI + merge). PR-X2-impl ön koşulu: PR-X2 merged. PR-X2-evidence ön koşulu: PR-X2-impl tamamlandı. AO-MA-11E-2 drift checker (Epic 1 E-1-2 sub-issue) LATER binding adapter olarak gelir; manuel mirror precondition DEĞİL.
+PR-X2 (PR #769) ön koşulu: YOK (manifest amend authorized — cross-AI peer review + CI + merge). PR-X2-impl ön koşulu: PR-X2 merged. PR-X2-evidence ön koşulu: PR-X2-impl tamamlandı. AO-MA-11E-2 drift checker (Epic 1 E-1-2 sub-issue) LATER binding adapter olarak gelir; manuel mirror precondition DEĞİL.
+
+**PR-X3 family ön koşulu (iter-2 F1 absorb):** Epic 2 + Epic 3 slice family PR'larının açılışı **§14a HARD STOP** preconditions'a bağlı — PR #826 + PR #827 + PR #828 üçü de merged + Codex AGREE evidence + drift sweep complete olmadan E-2-* / E-3-* slice PR'ı AÇILMAZ.
+
+**Detay plan referansları:**
+- Epic 2 (E-2-1..E-2-7): `.claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md` (PR #827)
+- Epic 3 (E-3-1..E-3-6): `.claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md` (PR #826)
+- Epic 9 supersession draft: `.claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md` (future slice; Epic 1-8 complete sonrası)
+
+Opt-in CI check eklenebilir (gelecek slice) — slice PR'larının body'sinde §14a preconditions explicit declaration ZORUNLU (şimdilik PR body-based, gelecekte machine-checkable CI gate'e taşınabilir).
 
 ## 11. Out-of-scope (bu PR; v5 roadmap PR-X0)
 
@@ -299,10 +356,67 @@ PR-X2 (BU PR) ön koşulu: YOK (manifest amend authorized — cross-AI peer revi
 
 Implementer: Claude (Anthropic). Reviewer: Codex (OpenAI) thread `019e80b3` — plan-time iter-1 REVISE (8 missing invariants + revize 4-PR yapısı: production_ready_semantics + visibility_not_authority + v5_source_manifest + guard_flip_path + tenant_isolation_claim + final_promotion_decision + issue_scale_control + public_claim_language). Post-impl review iter ile authoritative contract verify.
 
-## 14. Sonraki adımlar (PR-X0 merge sonrası)
+## 14. Sonraki adımlar (PR-X0 merge sonrası; iter-2 F3 absorb: Epic 2/3 reframe)
 
-1. PR-X2 (manuel mirror NOW path amend; BU PR) merge sonrası: PR-X2-impl gh CLI mirror create (milestone + 23 label + 13 issue + project board); PR-X2-evidence ayrı PR ile created IDs + digest manifest'e geri yazılır; AO-MA-11E-2 (Epic 1 E-1-2) drift checker LATER binding adapter
+1. PR-X2 (manuel mirror NOW path amend; PR #769) merge sonrası: PR-X2-impl gh CLI mirror create (milestone + 23 label + 13 issue + project board); PR-X2-evidence ayrı PR ile created IDs + digest manifest'e geri yazılır; AO-MA-11E-2 (Epic 1 E-1-2) drift checker LATER binding adapter
 2. Epic 1 sub-issue'ları lazy-expand (her sub-issue kendi consensus consultation)
-3. Epic 2+3 (guard-flip) ayrı Codex+Mavis cross-AI consensus
+3. **Epic 2 + Epic 3 infrastructure consensus before implementation** (iter-2 F3 absorb): PR #827 (Epic 2 detail plan) + PR #826 (Epic 3 detail plan) + PR #828 (this amend) üçü merged + Codex AGREE evidence; slice family PR'ları (E-2-1..E-2-7 + E-3-1..E-3-6) §14a HARD STOP preconditions sağlandıktan sonra açılır
 4. Epic 4-8 paralel sub-issue açılışı (her sub-issue kendi plan-consensus + impl + cross-AI review + merge)
-5. Tüm epic evidence complete → PR-Xfinal operator-bound supersession decision + flag flip + v5.0.0 publish
+5. **Flip authority Epic 9 PR-Xfinal** (iter-2 F3 absorb): per-flag independent gate semantic; Epic 1-8 evidence complete → PR-Xfinal operator-bound supersession decision + 3 flag flip (`live_adapter_execution` / `support_widening` / `production_platform_claim`) + per-class subordinate PR evidence aggregate + v5.0.0 publish
+
+## 14a. HARD STOP — E-2-* + E-3-* implementation prerequisites (iter-2 F2 absorb)
+
+Epic 2 ve Epic 3 slice (E-2-1..E-2-7 ve E-3-1..E-3-6) implementation PR'ı **AÇILMAZ** aşağıdaki **machine-checkable preconditions** sağlanmadan:
+
+### Pre-implementation gate conditions
+
+1. **PR #828 (this amend) MERGED to main**
+   - Verify: `git log origin/main --grep="V5-ROADMAP-EPIC-2-3-AMEND" -1 --format="%H %s"` returns merge commit
+   - Verify: `gh pr view 828 --json mergedAt,baseRefName,mergeCommit` returns non-null `mergedAt`, `baseRefName="main"`, `mergeCommit.oid` matches main HEAD ancestry
+
+2. **PR #827 (Epic 2 detail plan source) MERGED to main with Codex AGREE evidence**
+   - Verify: `gh pr view 827 --json mergedAt,baseRefName` returns non-null `mergedAt`, `baseRefName="main"`
+   - Verify: `local-ai-review-evidence.v1.json` from PR #827 has `reviewer.verdict="AGREE"` (cross-AI peer review)
+   - Verify: `.claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md` exists on `origin/main`
+
+3. **PR #826 (Epic 3 detail plan source) MERGED to main with Codex AGREE evidence**
+   - Verify: `gh pr view 826 --json mergedAt,baseRefName` returns non-null `mergedAt`, `baseRefName="main"`
+   - Verify: `local-ai-review-evidence.v1.json` from PR #826 has `reviewer.verdict="AGREE"` (Codex 4-iter chain AGREE)
+   - Verify: `.claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md` exists on `origin/main`
+
+4. **3 guard flags STILL `const false`** (no premature flip)
+   - Verify: `ao_kernel/defaults/extensions.v1.json` (or canonical guard flag manifest) has:
+     - `live_adapter_execution.const = false`
+     - `support_widening.const = false`
+     - `production_platform_claim.const = false`
+   - Verify: No flag flip commit between this amend merge and slice PR opening
+
+5. **Drift sweep complete** (iter-2 F3 alignment verified)
+   - Verify: §4 dependency diagram does NOT contain "Epic 2 (... + flip)" or "Epic 3 (... + flip)"
+   - Verify: §7 issue labels use `flip-prerequisite:*` / `flip-authority:*` (NOT `guard-flip:*` alone)
+   - Verify: §10 PR yapısı references Epic 2 (E-2-1..E-2-7) + Epic 3 (E-3-1..E-3-6) slice families
+   - Verify: §14 sonraki adımlar references "infrastructure consensus before implementation"
+
+### Slice PR opening discipline (interim — until CI gate exists)
+
+Şimdilik (iter-2 F2 absorb partial): Slice implementation PR'larının body'sinde **explicit declaration ZORUNLU**. PR body template:
+
+```markdown
+## §14a HARD STOP precondition check
+
+- [x] PR #828 merged to main (commit: `<sha>`)
+- [x] PR #827 merged to main with Codex AGREE (commit: `<sha>`)
+- [x] PR #826 merged to main with Codex AGREE (commit: `<sha>`)
+- [x] 3 guard flags STILL const false (verified: `<manifest path>`)
+- [x] §4 / §7 / §10 / §14 drift sweep complete (verified: this amend merge)
+
+Slice ID: E-X-Y
+Detail plan ref: `.claude/plans/EPIC-X-*.md`
+Cross-AI reviewer: <provider> (different from implementer)
+```
+
+**Gelecek slice (opt-in CI check):** Bu PR body declaration'ı machine-checkable CI gate'e taşınabilir — `.github/workflows/v5-slice-precondition.yml` (opt-in label trigger, advisory; no required check şimdilik). Bu iter-2 F2 absorb full machine-enforcement için gelecek work item.
+
+### No-bypass clause
+
+Bu HARD STOP'u bypass etme — admin merge, force push, ya da declaration eksik PR — **HARD RULE Admin Merge YASAK + HARD RULE No Fake Work** ihlali sayılır. Slice PR'ı açma yetkisi yok; PR açıldıysa close edilir ve §14a precondition complete after merge'den sonra yeniden açılır.
