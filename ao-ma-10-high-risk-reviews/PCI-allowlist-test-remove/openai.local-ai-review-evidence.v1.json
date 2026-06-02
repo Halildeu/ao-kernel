@@ -1,0 +1,20 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "artifact_kind": "local-ai-review-evidence",
+  "review_target": "PCI-allowlist-test-remove",
+  "review_target_paths": ["tests/test_pci_dss_mapping.py"],
+  "provider": "openai",
+  "reviewer": "codex",
+  "review_method": "Codex spawn_task autonomous PR — Option 2 (remove cross-slice allowlist anti-pattern) chosen over Option 1 (conditional skip) per HARD RULE Uzun Vadeli Kalıcı Çözüm. Test assertion 'every PR's git diff matches PCI-DSS slice allowlist' was a per-slice scope creep masquerading as repo-wide invariant. Removal restores per-slice ownership pattern (each slice owns its own zero-touch invariant test); no protection lost.",
+  "verdict": "agree",
+  "ready_to_merge": true,
+  "verdict_rationale": "Test was introduced by PR #811 (E-6-3d PCI-DSS slice) with hardcoded ALLOWED_CHANGED_FILES set. The test runs `git diff --name-only origin/main HEAD` on EVERY PR's CI and fails on every non-PCI PR because their files are outside the PCI allowlist. This created a repo-wide blocker. Option 2 (remove the cross-slice allowlist) is the correct durable fix: PCI-DSS slice already has its own test_e63_catalog_zero_touch + test_runbook_e63_zero_touch invariants that enforce slice scope. Cross-slice allowlist test assertion was always semantically wrong (this should be per-slice, not repo-wide).",
+  "findings_count_by_severity": {"blocker": 0, "high": 0, "medium": 0, "low": 0},
+  "key_findings_summary": [],
+  "consensus_state": "agree_with_anthropic_cross_review",
+  "guard_flags_const_false": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}
