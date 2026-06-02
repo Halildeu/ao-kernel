@@ -1,53 +1,34 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-6-E6-3E-NIST-CSF-MAPPING",
+  "work_package": "EPIC-7-2-STRESS-SESSION-HARNESS",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-6-e6-3e-nist-csf",
+    "head_ref": "refs/heads/codex/epic-7-2-stress-test",
     "changed_files": [
-      ".claude/plans/EPIC-6-E6-3E-NIST-CSF-MAPPING.md",
-      "ao_kernel/defaults/schemas/nist-csf-control-mapping.schema.v1.json",
-      "docs/compliance/README.md",
-      "docs/compliance/nist-csf-control-mapping.v1.json",
-      "docs/compliance/nist-csf-control-mapping.v1.md",
-      "docs/compliance/nist-csf-operator-usage-runbook.v1.md",
+      ".claude/plans/EPIC-7-2-STRESS-SESSION-HARNESS.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/render_nist_csf_docs.py",
-      "tests/test_nist_csf_mapping.py"
+      "scripts/run_stress_session.py",
+      "tests/test_stress_session_harness.py"
     ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" },
     { "name": "ruff_lint", "status": "pass" },
-    { "name": "visibility_not_authority", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
-    { "name": "no_github_write_in_this_pr", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "e63_catalog_zero_touch", "status": "pass" },
-    { "name": "e63b_hipaa_zero_touch", "status": "pass" },
-    { "name": "e63c_gdpr_zero_touch", "status": "pass" },
-    { "name": "e63d_pci_zero_touch", "status": "pass" },
-    { "name": "allowlist_diff_no_other_files", "status": "pass" }
+    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "no_live_provider_import", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 6 E-6-3e NIST CSF 2.0 Function/Category reference mapping: schema-backed 6 Functions + 22 Categories + voluntary framework characterization + operator usage runbook + deterministic Markdown render. Additive to E-6-3 (PR #802 MERGED), E-6-3b HIPAA (PR #809), E-6-3c GDPR (PR #810), E-6-3d PCI (PR #811); ZERO TOUCH all four. Compliance suite tamamlama.",
-    "Codex plan-time thread 019e8516 2-iter chain (REVISE -> AGREE). iter-1 5 BLOCKER: F1 status distribution conservative (2/5/15/0); F2 exact per-function category sets; F3 function_status derivation semantic; F4 two-layer scanner (18 exact + 5 regex); F5 git diff 3-dot allowlist + zero-touch skip-fallback.",
-    "iter-2 AGREE + ready_for_impl:true + must_close_findings:[]. 6 guardrails enforced.",
-    "Schema nist-csf-control-mapping.schema.v1.json: Draft 2020-12 + additionalProperties:false everywhere; root 6 const pins; 6 guard_flags const false (3 V5-canonical + 3 CSF-scoped); 6 csf_disclaimer const true (incl. no_nist_csf_certification_program); Tier disclosure + Profile disclosure const pins; functions 6 contains for GV/ID/PR/DE/RS/RC; category_id pattern; status enum + allOf if/then evidence_refs cardinality; evidence_ref claim_boundary required.",
-    "Instance: 2 documented (RS.MA + RS.AN from E-6-6) + 5 partial (GV.PO + ID.AM + ID.IM + DE.CM + DE.AE) + 15 out_of_scope + 0 not_applicable. function_status derived: GV/ID/DE/RS partial; PR/RC out_of_scope.",
-    "18 exact prohibited tokens + 5 regex patterns (Tier 1-4, named tier, current/target profile, framework adopted/matured/achieved, maturity achieved/score/level) + 6 contract patterns.",
-    "Renderer scripts/render_nist_csf_docs.py deterministic byte-equal drift.",
-    "Operator runbook: voluntary framework characterization, Implementation Tiers + CSF Profiles operator-owned, public claim discipline.",
-    "README §3.8 NIST CSF 2.0 reference (+22 lines).",
-    "54 invariant tests pass + ruff clean.",
-    "Public claim discipline + ZERO TOUCH: HICBIR guard flag flip; HICBIR workflows mutation; HICBIR E-6-3/E-6-3b/E-6-3c/E-6-3d mutation; HICBIR NIST CSF certified claim; HICBIR Tier/Profile prose claim; HICBIR framework adopted/maturity achieved claim.",
-    "Risk class: conservative low-risk.",
-    "Out-of-scope follow-up slices (4): E-6-3e-2 106 Subcategory deep-dive + E-6-3e-3 Operator CSF Profile workshop + E-6-3e-4 Implementation Tier guide + E-6-3e-5 NIST SP 800-53.",
-    "Cross-AI peer review (HARD RULE 2026-05-05 + 2026-05-14): Anthropic Claude != OpenAI Codex (thread 019e8516)."
+    "V5 Epic 7 E-7-2 long-running session stress harness (library mode + stub LLM only). CLI exposes --iterations + --duration-seconds + --json-out. Default 50 iter (CI-safe). 24h+ operator profile invoked manually; never scheduled.",
+    "Run report schema-pinned: stress-session-report.v1 with iterations_requested + iterations_completed + duration budget/actual + rss_kib_start/end/delta + python_version + platform + pid + 3 guard flags const false.",
+    "RSS measured via resource.getrusage (POSIX-portable; macOS bytes/Linux KiB normalized to KiB). No mprof dependency (E-7-3 future slice).",
+    "13 invariants: 4 harness presence + module structure (file + --help + import + docstring constraints) + 6 run report contract (small iter + RSS/duration + 3 guard flags + file output + duration short-circuit + invalid iter exit 2) + 3 CI safety (default iter 50 + no anthropic/openai/requests import + ZERO TOUCH workflows).",
+    "ZERO TOUCH: no .github/workflows/ mutation (24h+ scheduled run is future operator decision), no live provider client imports, no .ao/ workspace write, no guard flag flip."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
