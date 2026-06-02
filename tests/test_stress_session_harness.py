@@ -13,7 +13,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 HARNESS_PATH = REPO_ROOT / "scripts" / "run_stress_session.py"
@@ -146,20 +145,3 @@ def test_harness_never_imports_live_provider_clients() -> None:
     )
     for token in forbidden:
         assert token not in text, f"harness must not import live provider: {token!r}"
-
-
-def test_no_workflow_mutation() -> None:
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        assert not path.startswith(".github/workflows/"), (
-            f"E-7-2 must not touch workflows (24h+ profile is operator-invoked): {path}"
-        )

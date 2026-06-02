@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -431,24 +430,6 @@ def test_no_existing_schema_modified():
 # ---------------------------------------------------------------------------
 # Section 9 — Governance (2 invariants)
 # ---------------------------------------------------------------------------
-
-
-def test_no_github_workflow_change_in_pr_diff():
-    """Path-sensitive runtime: must not touch .github/workflows/."""
-    try:
-        result = subprocess.run(
-            ["git", "diff", "--name-only", "origin/main...HEAD"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pytest.skip("git not available or origin/main not fetched")
-    if result.returncode != 0:
-        pytest.skip(f"git diff failed: {result.stderr}")
-    for line in result.stdout.splitlines():
-        assert not line.startswith(".github/workflows/"), f"E-5-3b must not touch workflows: {line}"
 
 
 def test_make_link_not_modified():

@@ -1,30 +1,51 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "NIST-CSF-allowlist-test-remove",
+  "work_package": "GOV-REMOVE-WHOLE-DIFF-CROSS-SLICE-SCANS",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/fix/nist-csf-allowlist-test-remove",
+    "head_ref": "refs/heads/codex/remove-cross-slice-workflow-guards",
     "changed_files": [
+      "local-ai-review-evidence.v1.json",
+      "tests/test_adr_cross_ai_revalidation.py",
+      "tests/test_compliance_documentation.py",
+      "tests/test_consultation_tracing.py",
+      "tests/test_gdpr_dpia_template.py",
+      "tests/test_hipaa_mapping.py",
+      "tests/test_license_compliance.py",
+      "tests/test_memory_profile_harness.py",
       "tests/test_nist_csf_mapping.py",
-      "ao-ma-10-high-risk-reviews/NIST-CSF-allowlist-test-remove/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/NIST-CSF-allowlist-test-remove/anthropic.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json"
+      "tests/test_operator_runbooks.py",
+      "tests/test_pci_dss_mapping.py",
+      "tests/test_readme_v5_roadmap_badge.py",
+      "tests/test_regression_gate.py",
+      "tests/test_sphinx_api_reference_scaffold.py",
+      "tests/test_stress_session_harness.py",
+      "tests/test_vendor_escalation_matrix.py"
     ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
-    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "ruff_lint", "status": "pass" },
+    { "name": "git_diff_check", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
+    { "name": "coverage_gate", "status": "pass" },
+    { "name": "zero_touch_family", "status": "pass" },
+    { "name": "delete_only", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" }
+    { "name": "no_runtime_module_change", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Identical anti-pattern fix to PR #832 (PCI-DSS allowlist remove). PR #812 (NIST CSF E-6-3e) introduced same hardcoded ALLOWED_CHANGED_FILES cross-slice diff assertion. Every non-NIST-CSF PR fails this test → another mass pipeline blocker.",
-    "Removal: tests/test_nist_csf_mapping.py loses ALLOWED_CHANGED_FILES frozenset (lines ~30) + def test_allowlist_diff_no_other_files() function. Per-slice zero-touch siblings (test_e63e_*_zero_touch) + schema validity + drift checks preserved (53 tests still passing).",
-    "Cross-AI: implementer claude (anthropic) != reviewer codex (openai). HARD RULE Uzun Vadeli Kalıcı Çözüm: anti-pattern removal (not skip)."
+    "Systemic governance anti-pattern removal (delete-only). A family of v5 compliance/slice tests scanned the WHOLE PR diff (`git diff --name-only origin/main...HEAD`) and asserted file-set membership: (a) `.github/workflows/` prefix bans, (b) cross-slice 'sibling zero-touch' file sets. Because they scan the whole diff (not the authoring slice's own write-set), they block every legitimate cross-cutting PR: any workflow-maintenance PR (e.g. the parallel CI-fast PR #901) fails all 13 workflow guards, and the sibling zero-touch sets mutually freeze the compliance test files (tests/test_hipaa_mapping.py, tests/test_gdpr_dpia_template.py) so they can never be maintained by any PR.",
+    "Same anti-pattern class PCI #832 and NIST #902 already removed (cross-slice ALLOWED_CHANGED_FILES allowlists), proliferated across the v5 program. Workflow / cross-slice risk is already enforced at the correct layer: RiskClassifier marks `.github/workflows/**` high-risk (tests/test_orchestration_risk_classifier.py) and ao-release-gate gates it via the autonomous-merge eligibility prohibited-path set (tests/test_ao_ma10_autonomous_merge_eligibility.py). The pytest whole-diff scans are therefore redundant with the real policy layer and harmful to maintenance.",
+    "Removed (15 test files, 474 deletions, delete-only): (1) 13 whole-diff `.github/workflows/` prefix-ban guards (E-5-3b consultation_tracing, GDPR, E-Ops operator_runbooks, E-7-3 memory_profile, E-6-3b hipaa, E-P0-4 readme_v5, E-7-2 stress_session, E-1-6 adr, E-8-4 sphinx, E-6-6b vendor_escalation, license-compliance, E-7x regression_gate, compliance_documentation); (2) 11 compliance whole-diff cross-slice zero-touch tests (nist test_e63_catalog/b_hipaa/c_gdpr/d_pci_zero_touch; pci catalog/hipaa/gdpr; gdpr catalog/hipaa; hipaa test_e63_catalog_file_unchanged; regression_gate test_compare_py_untouched_in_pr_diff); (3) orphaned nist _diff_files helper + stale docstring prose; (4) ruff --fix unused imports (subprocess/pytest).",
+    "KEPT (per Codex keep-list, verified not removed): RI/AO-MA introducer/self-gate state-at-landing audits including forbidden_surfaces_actually_unchanged_in_diff (these are scoped to their own introducing PR, not every future PR); ADR path-filtered content invariant test_no_adr_decision_section_mutation (`git diff origin/main...HEAD -- .claude/plans/adr/` is scoped to the slice's own files, not the whole diff); hipaa test_e63_schema_unchanged (file-existence/content pin, no git diff); RiskClassifier + ao-release-gate (the correct policy layer). NIST ALLOWED_CHANGED_FILES already removed by #902, so not part of this diff.",
+    "Cross-AI review: Codex thread 019e894f (plan-time A-prime AGREE in prior thread 019e8916 which dropped). Post-impl iter-1 REVISE (3 bounded blockers: branch behind+NIST conflict with #902, git diff --check 'new blank line at EOF' x8, evidence not bound to post-rebase diff). All absorbed: reset --hard to origin/main eb279a0 + re-derived deletions on fresh base (no manual conflict; #902's allowlist removal preserved by AST skip-if-absent), EOF-normalize (`rstrip(newlines)+newline`), evidence bound to exact diff. Post-impl iter-2 AGREE ready_for_merge=true.",
+    "Validation (isolated venv, committed against base eb279a0): ruff check ao_kernel/ tests/ -> All checks passed!; git diff --check origin/main...HEAD -> clean; pytest -k 'zero_touch or untouched or unchanged or no_workflow or workflow_mutation or compare_py or allowlist' -> 73 passed, 25 skipped, 0 failed (the 5 prior failures gone); full serial suite pytest --cov --cov-branch -> exit 0, 6143 passed / 86 skipped, 85.21% >= 85% coverage gate.",
+    "ZERO TOUCH on guarded surfaces: this PR touches only tests/ (+ this evidence file). No .github/workflows/ change, no ao_kernel/ runtime module change, no scripts/ change, no defaults/ change, no .ao/ workspace write, no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no secret material. Pure delete-only test-governance hygiene."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

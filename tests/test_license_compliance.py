@@ -17,7 +17,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -501,21 +500,3 @@ def test_policy_guard_flags_const_false():
     assert flags["support_widening_allowed"] is False
     assert flags["production_platform_claim_allowed"] is False
     assert flags["live_adapter_execution_allowed"] is False
-
-
-def test_no_github_workflow_change_in_pr_diff():
-    """Conservative low-risk lane: PR must not touch .github/workflows/."""
-    try:
-        result = subprocess.run(
-            ["git", "diff", "--name-only", "origin/main...HEAD"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pytest.skip("git not available or origin/main not fetched")
-    if result.returncode != 0:
-        pytest.skip(f"git diff failed: {result.stderr}")
-    for line in result.stdout.splitlines():
-        assert not line.startswith(".github/workflows/"), f"compliance docs PR must not touch workflows: {line}"

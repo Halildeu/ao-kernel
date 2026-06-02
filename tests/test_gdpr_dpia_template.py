@@ -28,7 +28,6 @@ import contextlib
 import ipaddress
 import json
 import re
-import subprocess
 from pathlib import Path
 
 import jsonschema
@@ -435,62 +434,6 @@ def test_drift_committed_matches_generated() -> None:
     expected = mod.render_markdown(data)
     actual = MD_PATH.read_text()
     assert actual == expected, "Markdown drift; regenerate via render_gdpr_dpia_template.py"
-
-
-def test_e63_catalog_zero_touch() -> None:
-    """E-6-3 SOC2/ISO catalog file must NOT be modified by this PR."""
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = set(proc.stdout.split())
-    assert "docs/compliance/control-evidence-catalog.v1.json" not in changed
-    assert "ao_kernel/defaults/schemas/control-evidence-catalog.schema.v1.json" not in changed
-    assert "docs/compliance/soc2-trust-services-criteria-mapping.v1.md" not in changed
-    assert "docs/compliance/iso-27001-controls-mapping.v1.md" not in changed
-
-
-def test_e63b_hipaa_zero_touch() -> None:
-    """E-6-3b HIPAA artifacts (if present) must NOT be modified."""
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = set(proc.stdout.split())
-    forbidden = {
-        "docs/compliance/hipaa-control-mapping.v1.json",
-        "ao_kernel/defaults/schemas/hipaa-control-mapping.schema.v1.json",
-        "docs/compliance/hipaa-control-mapping.v1.md",
-        "scripts/render_hipaa_mapping.py",
-        "tests/test_hipaa_mapping.py",
-    }
-    overlap = forbidden & changed
-    assert not overlap, f"HIPAA artifacts modified: {overlap}"
-
-
-def test_no_workflows_modified() -> None:
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        assert not path.startswith(".github/workflows/"), f"Workflow modified by GDPR slice: {path}"
 
 
 # ---- 7. Cross-validation (3) ---------------------------------------------
