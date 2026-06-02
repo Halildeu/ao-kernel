@@ -66,6 +66,10 @@ class PgVectorBackend:
         # missing extras / missing env / unreachable host.
         self._conn: Any = None
         self._extras_imported = False
+        # Lazy import targets (assigned by _import_extras on first call;
+        # declared here so mypy can resolve attribute types).
+        self._psycopg2_module: Any = None
+        self._register_vector: Any = None
 
     # ---- extras + connection plumbing (lazy) ----------------------------
 
