@@ -2,8 +2,15 @@
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
   "work_package": "FIX-PCI-DSS-ALLOWLIST-CONDITIONAL-SCOPE",
-  "implementer": { "agent": "claude", "provider": "anthropic" },
-  "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/fix/pci-allowlist-test-conditional",
@@ -13,22 +20,45 @@
     ]
   },
   "checks_considered": [
-    { "name": "tests", "status": "pass" },
-    { "name": "no_workflow_mutation", "status": "pass" },
-    { "name": "no_guard_flip", "status": "pass" },
-    { "name": "scope_minimal", "status": "pass" },
-    { "name": "long_term_durable_solution", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" }
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_guard_flip",
+      "status": "pass"
+    },
+    {
+      "name": "scope_minimal",
+      "status": "pass"
+    },
+    {
+      "name": "long_term_durable_solution",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "CRITICAL BUG FIX: test_pci_dss_mapping.py::test_allowlist_diff_no_other_files PR #811'den hardcoded ALLOWED_CHANGED_FILES frozenset bıraktı; her non-PCI-DSS PR'da fail ediyor → pipeline'da 20+ PR aynı anda BLOCKED.",
-    "Iter-1 verdict (Codex thread 019e87f0): REVISE 4 blocker. F1 evidence check name 'tests_self_pass' yerine 'tests' gerekti (gpp_gate exact name kontratı). F2 gerçek test sonucu 'passed' (bu PR test dosyasını değiştirdiği için PCI marker triggered) — 'skipped' iddiası audit error. F3 ALLOWED_CHANGED_FILES marker olarak kullanılması docs/compliance/README.md shared compliance index için false positive (HIPAA/GDPR/NIST README'ye eklenir, PCI marker'ı tetiklenir). F4 exact-set detection PCI-benzeri yeni dosyalar (docs/compliance/pci-dss-*, tests/test_pci_dss_*, scripts/render_pci_dss_*) için false negative.",
+    "CRITICAL BUG FIX: test_pci_dss_mapping.py::test_allowlist_diff_no_other_files PR #811'den hardcoded ALLOWED_CHANGED_FILES frozenset b\u0131rakt\u0131; her non-PCI-DSS PR'da fail ediyor \u2192 pipeline'da 20+ PR ayn\u0131 anda BLOCKED.",
+    "Iter-1 verdict (Codex thread 019e87f0): REVISE 4 blocker. F1 evidence check name 'tests_self_pass' yerine 'tests' gerekti (gpp_gate exact name kontrat\u0131). F2 ger\u00e7ek test sonucu 'passed' (bu PR test dosyas\u0131n\u0131 de\u011fi\u015ftirdi\u011fi i\u00e7in PCI marker triggered) \u2014 'skipped' iddias\u0131 audit error. F3 ALLOWED_CHANGED_FILES marker olarak kullan\u0131lmas\u0131 docs/compliance/README.md shared compliance index i\u00e7in false positive (HIPAA/GDPR/NIST README'ye eklenir, PCI marker'\u0131 tetiklenir). F4 exact-set detection PCI-benzeri yeni dosyalar (docs/compliance/pci-dss-*, tests/test_pci_dss_*, scripts/render_pci_dss_*) i\u00e7in false negative.",
     "Iter-2 absorb: _PCI_SLICE_MARKERS_EXACT = ALLOWED_CHANGED_FILES - {local-ai-review-evidence.v1.json, docs/compliance/README.md} (F3 shared file exclusion). _PCI_SLICE_MARKER_PREFIXES = (docs/compliance/pci-dss-, docs/compliance/pci_dss_, tests/test_pci_dss_, scripts/render_pci_dss_, ao_kernel/defaults/schemas/pci-dss-, ao_kernel/defaults/schemas/pci_dss_, .claude/plans/EPIC-6-E6-3D-PCI-DSS) (F4 future extension coverage).",
-    "Iter-2 _pr_touches_pci_slice() helper: exact-set OR prefix-pattern detection. False negatives kapatıldı (yeni PCI-DSS extension PR'ları yakalanır), false positives kapatıldı (shared compliance README + evidence dosyaları marker değil).",
-    "Iter-2 self-test sonucu: bu PR tests/test_pci_dss_mapping.py'ı değiştirdiği için (marker), test PASS (1 passed, 0 skipped). Diğer non-PCI PR'lar için test SKIP. Bu davranış doğru (F2 audit honest).",
-    "Pipeline impact: bu fix MERGE edilince 20+ PR rebase ile fix'i alır → CI yeşillenir → auto-merge zinciri tetiklenir → V5 batch + plan PR'lar + Epic 4 implementation merge.",
-    "HARD RULE compliance: Uzun Vadeli Kalıcı Çözüm (test scope refactored not suppressed; marker/exact + prefix pattern 6 ay test'i ayakta tutar); No Fake Work (gerçek pytest verdict recorded); Cross-AI provider distinct."
+    "Iter-2 _pr_touches_pci_slice() helper: exact-set OR prefix-pattern detection. False negatives kapat\u0131ld\u0131 (yeni PCI-DSS extension PR'lar\u0131 yakalan\u0131r), false positives kapat\u0131ld\u0131 (shared compliance README + evidence dosyalar\u0131 marker de\u011fil).",
+    "Iter-2 self-test sonucu: bu PR tests/test_pci_dss_mapping.py'\u0131 de\u011fi\u015ftirdi\u011fi i\u00e7in (marker), test PASS (1 passed, 0 skipped). Di\u011fer non-PCI PR'lar i\u00e7in test SKIP. Bu davran\u0131\u015f do\u011fru (F2 audit honest).",
+    "Pipeline impact: bu fix MERGE edilince 20+ PR rebase ile fix'i al\u0131r \u2192 CI ye\u015fillenir \u2192 auto-merge zinciri tetiklenir \u2192 V5 batch + plan PR'lar + Epic 4 implementation merge.",
+    "HARD RULE compliance: Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm (test scope refactored not suppressed; marker/exact + prefix pattern 6 ay test'i ayakta tutar); No Fake Work (ger\u00e7ek pytest verdict recorded); Cross-AI provider distinct.",
+    "Iter-3 absorb (Codex thread 019e87f0): F5 rebase on origin/main (HEAD 33bea2c #820 E-7-3 merged absorbed); F6 git diff two-dot \u2192 three-dot semantics (origin/main...HEAD) for PR-scope merge-base diff (mirrors scripts/local_gpp_gate.py).",
+    "Iter-3 self-test: pytest tests/test_pci_dss_mapping.py::test_allowlist_diff_no_other_files -v \u2192 1 passed (this PR modifies tests/test_pci_dss_mapping.py \u2192 marker triggers \u2192 allowlist assertion runs; changed = {local-ai-review-evidence.v1.json, tests/test_pci_dss_mapping.py} both ALLOWED \u2192 no extras \u2192 pass)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
