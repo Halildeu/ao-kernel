@@ -191,13 +191,28 @@ def test_trivy_workflow_uses_checkout_v6_no_persist_credentials() -> None:
 
 def test_trivy_action_pinned_to_exact_semver_not_major() -> None:
     """Codex 019e8385 P1 absorb — ``@v0`` floating major rejected;
-    exact semver tag pinned (Dependabot github-actions ecosystem
-    will keep it current)."""
+    exact semver tag pinned with ``v`` prefix matching upstream
+    release tags (aquasecurity/trivy-action publishes ``vX.Y.Z`` only;
+    unprefixed ``X.Y.Z`` does not resolve at workflow runtime).
+    Anthropic reviewer B1 absorb."""
     text = _trivy_text()
-    assert "aquasecurity/trivy-action@v0" not in text, "floating @v0 major must NOT be used; pin to exact semver"
-    # Look for exact semver pattern (X.Y.Z)
-    semver_match = re.search(r"aquasecurity/trivy-action@(\d+\.\d+\.\d+)", text)
-    assert semver_match is not None, "trivy-action must be pinned to exact semver (X.Y.Z)"
+    # Floating major (`@v0`) rejected — must be exact semver
+    assert re.search(r"aquasecurity/trivy-action@v\d+(?!\.)", text) is None, (
+        "floating @vMAJOR (e.g. @v0) must NOT be used; pin to exact semver"
+    )
+    # Exact semver MUST carry the upstream `v` prefix to resolve at runtime
+    vprefixed = re.search(r"aquasecurity/trivy-action@v(\d+\.\d+\.\d+)", text)
+    assert vprefixed is not None, (
+        "trivy-action must be pinned to vX.Y.Z (upstream publishes "
+        "vX.Y.Z only; bare X.Y.Z fails at runtime with "
+        "'Unable to resolve action')"
+    )
+    # Negative invariant: bare X.Y.Z (no v prefix) must NOT appear
+    bare = re.search(r"aquasecurity/trivy-action@(?<!v)(\d+\.\d+\.\d+)", text)
+    assert bare is None, (
+        f"trivy-action@{bare.group(1) if bare else 'X.Y.Z'} pinned WITHOUT v prefix "
+        "does not resolve on GitHub Actions; use @vX.Y.Z"
+    )
 
 
 def test_trivy_scan_type_fs() -> None:
