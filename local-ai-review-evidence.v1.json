@@ -1,40 +1,40 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GOV-BLK005-PREVENT-WORKFLOW-BAN-GATE",
+  "work_package": "CI-FAST-SUITE",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/prevent-workflow-ban-gate",
+    "head_ref": "refs/heads/codex/ci-fast-suite",
     "changed_files": [
+      ".github/workflows/test.yml",
+      ".gitignore",
       "local-ai-review-evidence.v1.json",
-      "tests/conftest.py",
-      "tests/test_conftest_quality_gate.py",
-      "tests/test_operator_runbook.py"
+      "pyproject.toml",
+      "tests/test_workflow_state_machine.py"
     ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
     { "name": "ruff_lint", "status": "pass" },
-    { "name": "git_diff_check", "status": "pass" },
     { "name": "secret_scan", "status": "pass" },
-    { "name": "coverage_gate", "status": "pass" },
-    { "name": "blk005_unit_matrix", "status": "pass" },
-    { "name": "no_false_positive_on_keep_tests", "status": "pass" },
+    { "name": "xdist_determinism", "status": "pass" },
+    { "name": "coverage_gate_parity", "status": "pass" },
+    { "name": "required_check_names_preserved", "status": "pass" },
+    { "name": "workflow_mutation_reviewed", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
     { "name": "no_runtime_module_change", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Prevention gate (a)+(b) for the whole-diff workflow-mutation anti-pattern. PR #903 removed 24 existing instances, but #816 (operator runbook) merged concurrently and reintroduced one (tests/test_operator_runbook.py::test_no_workflow_mutation) — proving the anti-pattern keeps propagating as parallel v5 slices copy it. This PR (a) removes that straggler and (b) adds a collection-time test-quality gate BLK-005 so new slices cannot reintroduce it.",
-    "BLK-005 (tests/conftest.py, AST-based, blocking): flags a test function that contains BOTH (1) a static `git diff` / wrapper `diff` argv with NO `-- <pathspec>` (whole-repo diff) AND (2) a direct-literal `.startswith(\".github/workflows/\")` assertion (or a literal tuple/list arg containing that prefix). Helpers: _call_static_argv (static list/tuple-of-str only; dynamic argv untouched), _argv_is_git_diff_without_pathspec (drops leading 'git', accepts wrapper 'diff', whole-diff iff no '--' or '--' is last token), _assert_has_direct_workflow_prefix (literal only; dynamic startswith(<var>) excluded), _blk005_scan (uses _walk_outside_nested_scopes — same nested-scope pruning as BLK-004).",
-    "Narrow boundary preserves the legitimate KEEP set (Codex plan-time + post-impl verified, thread 019e89a3): ADR path-filtered `git diff ... -- .claude/plans/adr/` (path-filtered -> not whole-diff); RI/AO-MA introducer-scoped self-gates `f.startswith(surface)` / `startswith(forbidden_prefixes)` (dynamic arg -> not matched); content-pin / file-existence tests (no git diff). Collection of the full tree (6252 tests) shows zero BLK-005 false-positives.",
-    "Unit-test matrix (tests/test_conftest_quality_gate.py, 9 tests): 3 positive (straggler pattern; wrapper _git(['diff',...]); literal tuple prefix), 5 negative (ADR path-filtered; dynamic startswith(surface); changed & introducer detection; whole-diff non-workflow assert; workflow assert with no git diff), 1 forcing function test_blk005_zero_hits_in_current_suite that locks in 0 BLK-005 hits across tests/ (self-file excluded via Path.resolve) so a future reintroduction fails first.",
-    "Cross-AI review: Codex thread 019e89a3. Plan-time AGREE (dar BLK-005 boundary, ready_for_impl). Post-impl AGREE, ready_for_merge=true, no blocking findings; Codex independently spot-checked the helper truth table (whole-diff True / path-filtered False / wrapper True / '--'-last True; literal startswith True / dynamic surface False / literal-tuple True) and the zero-hit scan.",
-    "Validation (isolated venv, base origin/main dbb874b): ruff check ao_kernel/ tests/ -> All checks passed!; git diff --check -> clean; targeted pytest (test_conftest_quality_gate.py + test_operator_runbook.py) -> 53 passed; full collection 6252 (BLK-005 collection-gate blocks no real file); full serial suite pytest --cov --cov-branch -> exit 0, 6166 passed / 86 skipped, 85.21% >= 85% coverage gate.",
-    "Documented non-blocking residual (Codex): _argv_is_git_diff_without_pathspec recognizes `[git, diff, ...]` and wrapper `[diff, ...]` but not git global-option forms (`git -C <p> diff`, `git --no-pager diff`, `git -c x=y diff`). No such guard exists in the current suite; this is an out-of-contract false-negative and a future hardening candidate, not a blocker.",
-    "ZERO TOUCH on guarded surfaces: changes are confined to tests/ (+ this evidence file). No .github/workflows/ change, no ao_kernel/ runtime module change, no scripts/ change, no defaults/ change, no .ao/ workspace write, no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no secret material."
+    "CI-perf change: the Test workflow re-ran the full ~6k-test suite up to 4x (3-version matrix each with coverage instrumentation + a separate `coverage` job re-running the whole suite) serially with no pip cache and no workflow-level concurrency. Measured a clean run at ~9m20s wall-clock with frequent 17-27m cancelled-run pileups. This PR parallelizes + dedups without weakening any gate.",
+    "Change set (4 functional files + this evidence): (1) pyproject [dev] += pytest-xdist; (2) test matrix runs `-n auto`, drops `-v`, runs coverage instrumentation only on the 3.13 leg (3.11/3.12 functional-only) -- the 3.13 leg stages combined `.coverage` as `coverage.data` and uploads it + `coverage.xml`; (3) the `coverage` required-check becomes a fail-closed sentinel (needs:[event-gate,test] + always(); fails closed if the test matrix did not succeed or the artifact is missing) that runs `coverage report --fail-under=85` on the consumed artifact with NO suite rerun; (4) top-level concurrency supersedes stale in-progress runs per ref; (5) pip caching on setup-python; (6) determinism fix in tests/test_workflow_state_machine.py.",
+    "Determinism fix (xdist prerequisite): TestValidateTransitionMatrix.test_allowed_transitions parametrized over a frozenset (`for n in allowed`); frozenset iteration is PYTHONHASHSEED-dependent so xdist worker processes collected a different parametrize order -> 'Different tests were collected between gw*' collection abort. Fixed with `sorted(allowed)` (the correct collection-determinism fix, NOT a PYTHONHASHSEED pin which would mask latent non-determinism). Verified seed-robust across PYTHONHASHSEED=1/42/12345.",
+    "Required-check semantics preserved (#764): the matrix job names `test (3.11)`/`test (3.12)`/`test (3.13)` and the `coverage` job name are unchanged, so the ao-release-gate `--required-check` allowlist and the test_ao_release_gate_enforce_job invariant remain valid and were NOT modified. Top-level concurrency carves out `main` (post-merge scorecard-main baseline must complete) and all `pull_request: edited` events (a non-retarget title/body edit is skipped by event-gate, so cancelling would shadow-cancel an in-progress real required-check run).",
+    "PoC evidence (isolated /tmp venv, pytest-xdist 3.8.0 + pytest-cov 7.1.0): serial+cov 192s/6132 pass/85% -> `-n4`+cov 97s/6132 pass/85.21% (2x, coverage parity) -> `-n4` no-cov 59s (3.3x). Re-validated post-revival on rebased base @c98cbdf (which now includes #903 whole-diff anti-pattern removal + #904 BLK-005 gate): EXACT 3.13 leg `-n auto`+cov+--cov-fail-under=85 -> exit 0, 57s (serial baseline 156s on the same base, ~2.7x), 6166 passed/86 skipped, 85.21% >= 85%, no collection divergence; BLK-005 does NOT block this PR (test.yml is not a tests/ Python test function, so the conftest collection-gate at tests/conftest.py never scans it; full collection 6252 tests, gate clean); sentinel simulation (coverage.data -> coverage report --fail-under=85) -> exit 0, 85%; ruff clean.",
+    "Cross-AI review: Codex thread 019e88cc. Plan-time: REVISE (xdist determinism doubt + coverage-job-delete -> sentinel) -> AGREE ready_for_impl. Post-impl: iter-1 BLOCK (concurrency could shadow-cancel pull_request:edited required runs; coverage.data left dirty; branch behind origin/main) -> all absorbed (edited carve-out added, coverage.data removed + gitignored, ff-rebased to 46121bb + re-validated) -> iter-2 AGREE ready_for_merge. Revival re-confirm on rebased base @c98cbdf (BLK-005 now live): Codex thread 019e89e6 -> AGREE, explicitly confirming (a) BLK-005 non-conflict, (b) coverage fail-closed sentinel correctness (no path to mask a failing test matrix and still go green), (c) the pull_request:edited cancel carve-out leaves no CI gap on retarget, (d) no other post-rebase risk. Reviewer verdict is one evidence layer for this high-risk workflow diff; merge authority remains the repo-owned ao-release-gate required check + GitHub ruleset.",
+    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime module change, no defaults/ change, no scripts/ change, no .ao/ workspace write, no secret material. Diff is workflow + CI-dep + one test-determinism line + .gitignore + this evidence file."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
