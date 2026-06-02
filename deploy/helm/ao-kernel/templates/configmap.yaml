@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ao-kernel.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ao-kernel.labels" . | nindent 4 }}
+data:
+  # Non-secret configuration only. Secrets MUST be referenced via Kubernetes Secret
+  # + secretKeyRef in deployment.yaml (see env block). This ConfigMap MUST NOT carry
+  # any token, API key, password, or webhook URL value.
+  workspace_root: {{ .Values.config.workspaceRoot | quote }}
+  {{- if .Values.config.logLevel }}
+  log_level: {{ .Values.config.logLevel | quote }}
+  {{- end }}

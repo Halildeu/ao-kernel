@@ -1,0 +1,30 @@
+apiVersion: v2
+name: ao-kernel
+description: Operator-installable Helm chart skeleton for ao-kernel (governed AI orchestration runtime). Beta template; production claim deferred to v5 final promotion.
+type: application
+# Chart version (chart semver; tracks chart skeleton iteration, NOT app version).
+version: 0.1.0
+# appVersion bound to ao_kernel.__version__ at slice author time.
+# This is a manual pin per Epic 4 plan (NO auto-bump); operator confirms match on upgrade.
+appVersion: "4.1.0"
+kubeVersion: ">=1.25.0-0"
+home: https://github.com/Halildeu/ao-kernel
+sources:
+  - https://github.com/Halildeu/ao-kernel
+maintainers:
+  - name: ao-kernel maintainers
+    url: https://github.com/Halildeu/ao-kernel
+keywords:
+  - ao-kernel
+  - governance
+  - llm-orchestration
+  - policy-driven
+annotations:
+  # Operator-installable beta artifact (V5 Epic 4 E-4-1 skeleton).
+  # Three runtime guard flags governed by ao-kernel remain at their default state;
+  # this chart does NOT flip any of them. See the chart README for the full
+  # six-invariant contract and per-invariant test pointers.
+  # Operator MUST configure egress + tenant boundary + secret resolution per
+  # the future Epic 4 multi-tenant and security baseline slices.
+  ao-kernel.dev/lifecycle: "beta-skeleton"
+  ao-kernel.dev/production-claim-deferred: "true"

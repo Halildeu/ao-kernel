@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ao-kernel.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ao-kernel.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+    - name: healthz
+      port: {{ .Values.service.healthzPort }}
+      targetPort: healthz
+      protocol: TCP
+    - name: readyz
+      port: {{ .Values.service.readyzPort }}
+      targetPort: readyz
+      protocol: TCP
+  selector:
+    {{- include "ao-kernel.selectorLabels" . | nindent 4 }}

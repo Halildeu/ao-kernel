@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/e-4-1-helm-chart-evidence.v1.json",
+  "title": "V5 Epic 4 E-4-1 Helm chart skeleton evidence",
+  "description": "Strict (additionalProperties:false + unevaluatedProperties:false) evidence artifact for V5 Epic 4 slice E-4-1 (Helm chart skeleton). Captures decision, write-set, invariant audit, guard-flag pin (3 const false), and cross-AI provider distinctness. Bound to .claude/plans/E-4-1-HELM-CHART-SKELETON.md + tests/test_epic_4_1_helm_chart_skeleton.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "slice_id",
+    "epic_id",
+    "decision",
+    "decision_summary",
+    "write_set",
+    "checks_completed",
+    "guard_flags",
+    "reviewer_providers",
+    "no_workflow_mutation",
+    "no_pyproject_change",
+    "chart_template_no_live_command",
+    "evidence_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "e-4-1-helm-chart-evidence.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "epic-4-slice-decision-record"
+    },
+    "slice_id": {
+      "type": "string",
+      "const": "E-4-1"
+    },
+    "epic_id": {
+      "type": "string",
+      "const": "EPIC-4"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["accepted", "rejected", "deferred"]
+    },
+    "decision_summary": {
+      "type": "string",
+      "minLength": 10
+    },
+    "write_set": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "not": { "pattern": "^\\.github/workflows/" }
+      },
+      "description": "Sorted list of files MODIFIED or ADDED on the slice branch relative to origin/main; MUST exactly equal `git diff --name-only origin/main..HEAD` (sorted)."
+    },
+    "checks_completed": {
+      "type": "array",
+      "minItems": 10,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "shape",
+          "no_guard_flip",
+          "no_workflow_mutation",
+          "helm_template_deterministic",
+          "values_replicas_min_1",
+          "no_secret_in_values",
+          "evidence_validates",
+          "write_set_exact_match",
+          "no_pyproject_change",
+          "chart_template_no_live_command"
+        ]
+      }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "support_widening",
+        "production_platform_claim",
+        "live_adapter_execution"
+      ],
+      "properties": {
+        "support_widening": { "const": false },
+        "production_platform_claim": { "const": false },
+        "live_adapter_execution": { "const": false }
+      },
+      "description": "All three runtime guard flags MUST stay const false in this slice. Schema pins them; module-level forbidden-change audit re-verifies key-string absence in chart files."
+    },
+    "reviewer_providers": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["anthropic", "openai", "google", "minimax", "xai"]
+      },
+      "description": "Cross-AI provider list (implementer + reviewer). Provider strings MUST be distinct (HARD RULE Cross-AI Peer Review: provider-level distinct)."
+    },
+    "no_workflow_mutation": {
+      "const": true,
+      "description": "Pinned true: this slice MUST NOT touch .github/workflows/**. Test enforces via git diff allowlist."
+    },
+    "no_pyproject_change": {
+      "const": true,
+      "description": "Pinned true: this slice MUST NOT modify pyproject.toml (F8 absorb: [k8s-helm] extra out of scope)."
+    },
+    "chart_template_no_live_command": {
+      "const": true,
+      "description": "Pinned true: chart NOTES.txt + README.md MUST NOT contain `kubectl apply`, `helm install`, or `helm upgrade` strings."
+    },
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["plan_doc", "test_file", "chart_dir"],
+      "properties": {
+        "plan_doc": {
+          "type": "string",
+          "const": ".claude/plans/E-4-1-HELM-CHART-SKELETON.md"
+        },
+        "test_file": {
+          "type": "string",
+          "const": "tests/test_epic_4_1_helm_chart_skeleton.py"
+        },
+        "chart_dir": {
+          "type": "string",
+          "const": "deploy/helm/ao-kernel/"
+        }
+      }
+    },
+    "ao_kernel_version_pinned": {
+      "type": "string",
+      "minLength": 1,
+      "description": "ao_kernel.__version__ at slice author time (chart appVersion pin reference)."
+    },
+    "cross_ai_review_thread": {
+      "type": ["string", "null"],
+      "description": "Optional Codex MCP thread id for post-impl review (filled in after review submission)."
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

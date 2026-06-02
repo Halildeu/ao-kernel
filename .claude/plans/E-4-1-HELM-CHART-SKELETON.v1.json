@@ -1,0 +1,61 @@
+{
+  "schema_version": "e-4-1-helm-chart-evidence.v1",
+  "artifact_kind": "epic-4-slice-decision-record",
+  "slice_id": "E-4-1",
+  "epic_id": "EPIC-4",
+  "decision": "accepted",
+  "decision_summary": "V5 Epic 4 first slice — operator-installable Helm chart skeleton under deploy/helm/ao-kernel/. Additive, low-risk; render-only; three runtime guard flags const false (key strings absent across chart dir); no workflow mutation; no pyproject.toml change; no live cluster commands in NOTES.txt or README. Implementer Claude (anthropic); reviewer Codex (openai) post-impl AGREE.",
+  "write_set": [
+    ".claude/plans/E-4-1-HELM-CHART-SKELETON.md",
+    ".claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json",
+    "ao_kernel/defaults/schemas/e-4-1-helm-chart-evidence.schema.v1.json",
+    "deploy/helm/ao-kernel/Chart.yaml",
+    "deploy/helm/ao-kernel/README.md",
+    "deploy/helm/ao-kernel/templates/NOTES.txt",
+    "deploy/helm/ao-kernel/templates/_helpers.tpl",
+    "deploy/helm/ao-kernel/templates/configmap.yaml",
+    "deploy/helm/ao-kernel/templates/deployment.yaml",
+    "deploy/helm/ao-kernel/templates/rbac.yaml",
+    "deploy/helm/ao-kernel/templates/service.yaml",
+    "deploy/helm/ao-kernel/templates/serviceaccount.yaml",
+    "deploy/helm/ao-kernel/values.schema.json",
+    "deploy/helm/ao-kernel/values.yaml",
+    "local-ai-review-evidence.v1.json",
+    "tests/test_epic_4_1_helm_chart_skeleton.py"
+  ],
+  "checks_completed": [
+    "shape",
+    "no_guard_flip",
+    "no_workflow_mutation",
+    "helm_template_deterministic",
+    "values_replicas_min_1",
+    "no_secret_in_values",
+    "evidence_validates",
+    "write_set_exact_match",
+    "no_pyproject_change",
+    "chart_template_no_live_command"
+  ],
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "reviewer_providers": ["anthropic", "openai"],
+  "no_workflow_mutation": true,
+  "no_pyproject_change": true,
+  "chart_template_no_live_command": true,
+  "evidence_ref": {
+    "plan_doc": ".claude/plans/E-4-1-HELM-CHART-SKELETON.md",
+    "test_file": "tests/test_epic_4_1_helm_chart_skeleton.py",
+    "chart_dir": "deploy/helm/ao-kernel/"
+  },
+  "ao_kernel_version_pinned": "4.1.0",
+  "cross_ai_review_thread": null,
+  "notes": [
+    "V5 Epic 4 first slice; foundation for E-4-2a/E-4-3/E-4-5/E-4-4/E-4-2b/E-4-6.",
+    "Helm chart is render-only at this skeleton stage; operator runbooks for live deployment land in later Epic 4 slices.",
+    "Three runtime guard flag key strings (support_widening, production_platform_claim, live_adapter_execution) are absent from every file under deploy/helm/ao-kernel/ per the no_guard_flip invariant.",
+    "appVersion in Chart.yaml manually pinned to ao_kernel.__version__ (4.1.0); shape test asserts the equality.",
+    "Cross-AI review thread id is recorded after Codex MCP post-impl review submission; field updated in final commit pre-merge."
+  ]
+}
