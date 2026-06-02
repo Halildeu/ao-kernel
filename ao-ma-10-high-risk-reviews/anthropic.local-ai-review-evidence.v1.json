@@ -7,7 +7,7 @@
     "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-opus-4-7-1m-adversarial-self-review",
+    "agent": "claude-opus-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
