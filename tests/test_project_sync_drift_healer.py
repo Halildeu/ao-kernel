@@ -195,3 +195,41 @@ def test_drift_values_match_does_not_numeric_coerce_text_fields() -> None:
     assert DriftHealer._values_match("1", "1.0", data_type="NUMBER") is True
     assert DriftHealer._values_match("1.5", "2", data_type="NUMBER") is False
     assert DriftHealer._values_match("alpha", "alpha", data_type="TEXT") is True
+
+
+def test_drift_heal_items_added_counts_issues_not_findings(tmp_path: Path) -> None:
+    """One missing issue with 3 missing fields -> items_added=1 (not 3).
+
+    Codex iter-2 audit-semantics regression guard: a single new issue
+    with 3 missing-field findings must report items_added=1, fields_set=3.
+    The earlier _sync_payload counted ``kind="missing"`` findings as
+    item adds, which double-counted by field width.
+    """
+    client = StubProjectClient(item_id=None, actual={})  # issue has no board item
+    healer = DriftHealer(
+        issue_client=StubIssueClient(),
+        project_client=client,
+        manifest=_manifest(tmp_path),
+    )
+    report = healer.heal(_issues())
+    assert report.items_added == 1
+    assert report.items_existing == 0
+    # 3 fields healed for the one issue (Epic, Risk, Guard).
+    assert len(report.healed) == 3
+
+
+def test_drift_heal_items_existing_when_board_item_present(tmp_path: Path) -> None:
+    """Existing item + per-field drift -> items_added=0, items_existing=1."""
+    client = StubProjectClient(
+        item_id=ProjectItemId("item_1"),
+        actual={"Epic": "2", "Risk": "normal", "Guard": "none"},
+    )
+    healer = DriftHealer(
+        issue_client=StubIssueClient(),
+        project_client=client,
+        manifest=_manifest(tmp_path),
+    )
+    report = healer.heal(_issues())
+    assert report.items_added == 0
+    assert report.items_existing == 1
+    assert len(report.healed) >= 3

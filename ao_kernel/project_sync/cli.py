@@ -320,17 +320,21 @@ def _drift_payload(command: str, report: DriftReport, *, scanned: int) -> dict[s
 
 
 def _sync_payload(report: DriftReport, *, scanned: int, manifest_digest: str) -> dict[str, Any]:
-    """Schema-bound payload for ``ao-kernel project sync`` (sync-report.v1)."""
-    items_added = sum(1 for f in report.healed if f.kind == "missing")
-    items_existing = max(scanned - items_added, 0)
+    """Schema-bound payload for ``ao-kernel project sync`` (sync-report.v1).
+
+    ``items_added`` / ``items_existing`` come straight off the
+    :class:`DriftReport` so a single new issue with N missing-field
+    findings counts as one item add (not N). Codex iter-2 absorb:
+    workflow consumers expect issue-level granularity.
+    """
     payload: dict[str, Any] = {
         "schema_version": "project-sync-sync-report.v1",
         "command": "sync",
         "summary": {
             "issues_scanned": scanned,
             "fields_set": len(report.healed),
-            "items_added": items_added,
-            "items_existing": items_existing,
+            "items_added": report.items_added,
+            "items_existing": report.items_existing,
         },
         "manifest_digest": manifest_digest,
     }
