@@ -458,7 +458,14 @@ def test_drift_committed_matches_generated() -> None:
 
 
 def test_allowlist_diff_no_other_files() -> None:
-    """H7: PR may only change files in ALLOWED_CHANGED_FILES."""
+    """H7: When this PR touches PCI-DSS slice files, it MUST NOT touch other files.
+
+    Conditional scope: this invariant applies ONLY to PRs that modify at least one
+    file inside the PCI-DSS slice's write-set (ALLOWED_CHANGED_FILES). PRs that do
+    not touch the slice are out of scope and the test skips — otherwise this test
+    would fail on every PR in the repo since the merged PR #811 (HARD RULE Uzun
+    Vadeli Kalıcı Çözüm).
+    """
     proc = subprocess.run(
         ["git", "diff", "--name-only", "origin/main", "HEAD"],
         cwd=REPO_ROOT,
@@ -469,8 +476,19 @@ def test_allowlist_diff_no_other_files() -> None:
     if proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
     changed = set(proc.stdout.split())
+    # Conditional scope: only run when PR overlaps PCI-DSS slice files.
+    # local-ai-review-evidence.v1.json is shared cross-AI evidence (touched by
+    # every slice) — exclude it from the slice-detection key so we do not treat
+    # every PR as a PCI-DSS PR.
+    pci_slice_keys = ALLOWED_CHANGED_FILES - {"local-ai-review-evidence.v1.json"}
+    pci_files_in_diff = changed & pci_slice_keys
+    if not pci_files_in_diff:
+        pytest.skip(
+            "PR does not touch PCI-DSS slice files; allowlist scope does not apply "
+            "(this test is slice-scoped, not repo-wide)"
+        )
     extras = changed - ALLOWED_CHANGED_FILES
-    assert not extras, f"PR changes files outside allowlist: {extras}"
+    assert not extras, f"PCI-DSS slice PR changes files outside allowlist: {extras}"
 
 
 def test_e63_catalog_zero_touch() -> None:

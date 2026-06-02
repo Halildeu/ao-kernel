@@ -1,39 +1,33 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-8-4-API-REFERENCE-SPHINX",
+  "work_package": "FIX-PCI-DSS-ALLOWLIST-CONDITIONAL-SCOPE",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-8-4-api-reference",
+    "head_ref": "refs/heads/fix/pci-allowlist-test-conditional",
     "changed_files": [
-      ".claude/plans/EPIC-8-4-API-REFERENCE-SPHINX.md",
-      "docs/api/README.md",
-      "docs/api/conf.py",
-      "docs/api/index.rst",
       "local-ai-review-evidence.v1.json",
-      "pyproject.toml",
-      "tests/test_sphinx_api_reference_scaffold.py"
+      "tests/test_pci_dss_mapping.py"
     ]
   },
   "checks_considered": [
-    { "name": "tests", "status": "pass" },
-    { "name": "ruff_lint", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" },
-    { "name": "no_guard_flip", "status": "pass" },
+    { "name": "tests_self_pass", "status": "pass" },
     { "name": "no_workflow_mutation", "status": "pass" },
-    { "name": "no_live_provider_import", "status": "pass" },
-    { "name": "no_live_provider_extra_dep", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" }
+    { "name": "no_guard_flip", "status": "pass" },
+    { "name": "scope_minimal", "status": "pass" },
+    { "name": "long_term_durable_solution", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 8 E-8-4 Sphinx API-reference scaffold. Opt-in build via [docs] extra (sphinx + sphinx-autodoc-typehints); operator-invoked sphinx-build; not scheduled in CI in this slice.",
-    "conf.py discipline: autodoc + napoleon + viewcode + intersphinx extensions; _internal namespace excluded; autodoc_mock_imports lists optional extras (tenacity, tiktoken, mcp, starlette, uvicorn, opentelemetry) so build works with core install; __version__ read via text parse (not import); rst_prolog pins 3 guard flags const false in every page.",
-    "index.rst lists 13 public facade modules (client + governance + llm + config + session + workspace + tool_gateway + mcp_server + telemetry + errors + cli + context + ao_kernel root); explicitly excludes _internal, bundled JSON, tests, live provider surfaces.",
-    "pyproject [docs] extra added: sphinx>=7.0.0 + sphinx-autodoc-typehints>=2.0.0. No live provider dep pulled in.",
-    "18 invariants: 4 scaffold presence + 6 conf.py discipline (extensions + exclude _internal + mock extras + lazy version + rst_prolog guard flags + no live provider imports) + 4 index.rst content (modules + exclusions + guard flags + cross-doc refs) + 3 pyproject [docs] extra (present + sphinx pinned + no live provider deps) + 1 ZERO TOUCH workflows.",
-    "ZERO TOUCH: no .github/workflows/ mutation (CI scheduled build + GH Pages publication are future operator decisions), no _internal autodoc, no live provider imports (anthropic/openai/requests/httpx blocked), no guard flag flip, scaffold-only operator-invoked build."
+    "CRITICAL BUG FIX: test_pci_dss_mapping.py::test_allowlist_diff_no_other_files PR #811'den hardcoded ALLOWED_CHANGED_FILES frozenset bıraktı; her non-PCI-DSS PR'da fail ediyor → pipeline'da 20 PR aynı anda BLOCKED.",
+    "Test scope: PR PCI-DSS slice file'larına dokunduğunda → allowlist invariant aktif (orijinal davranış); aksi halde skip ('PR does not touch PCI-DSS slice files; allowlist scope does not apply').",
+    "local-ai-review-evidence.v1.json shared cross-AI evidence olduğu için slice-detection key'inden hariç tutuldu (her slice tarafından yazılır; PCI-DSS marker değil).",
+    "Fix kalıcı (HARD RULE Uzun Vadeli Kalıcı Çözüm): test'i suppress etmek/skip globally değil; conditional scope ile orijinal invariant PCI-DSS PR'ı için korunuyor.",
+    "Local pytest: test başarıyla skip ediyor (PCI-DSS dosyası touch edilmediği için). Self-test pass.",
+    "Bu fix MERGE edilince 20+ PR'da CI yeşillenir; auto-merge zinciri tetiklenir; major pipeline unblock."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
