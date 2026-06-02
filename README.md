@@ -1,8 +1,21 @@
 # ao-kernel
 
+[![v5 promotion roadmap](https://img.shields.io/badge/v5-promotion%20roadmap-blue)](.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md)
+[![GPP](https://img.shields.io/badge/GPP-keep__narrow__stable__runtime-green)](.claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md)
+[![guard flags](https://img.shields.io/badge/guard_flags-3%20const%20false-lightgrey)](.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md#2-tam-production-semantiği-codex-iter-1-invariant-1)
+
 Governed AI orchestration runtime — policy-driven, fail-closed, evidence-trail.
 
 ao-kernel is **not** a general-purpose agent framework or a blanket "production coding automation platform" claim. It is a **governed runtime** that enforces policies, records evidence, and provides deterministic LLM routing for production Python teams.
+
+> **Roadmap status:** A V5.0.0 Full Production Promotion Roadmap is published
+> as a transparent program plan; it does **not** flip the three guard flags
+> (`support_widening`, `production_platform_claim`, `live_adapter_execution`),
+> which remain `const false`. Promotion authority lives in the final
+> operator-bound supersession PR at the end of the roadmap, not in any
+> individual epic or slice. See
+> [`V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`](.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md)
+> for the evidence matrix.
 
 ## Installation
 
