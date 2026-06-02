@@ -427,7 +427,7 @@ def test_runbook_qsa_engagement_workflow_section_present() -> None:
     assert "penetration testing" in text
 
 
-# ---- 6. Drift / governance (5) -------------------------------------------
+# ---- 6. Drift / governance (4) -------------------------------------------
 
 
 def test_drift_committed_matches_generated() -> None:
