@@ -403,10 +403,10 @@ All verify commands are **commit-scoped** (use PR merge commit, not current root
      PR827_SHA=$(gh pr view 827 --json mergeCommit --jq '.mergeCommit.oid')
      git fetch origin main --quiet
      git show "$PR827_SHA:local-ai-review-evidence.v1.json" \
-       | jq -e '.work_package=="V5-EPIC-2-LIVE-ADAPTER-EXECUTION-PLAN" and .reviewer.verdict=="AGREE"'
+       | jq -e '.work_package=="EPIC-2-LIVE-ADAPTER-EXECUTION-PLAN" and .reviewer.verdict=="AGREE"'
      # Alternative via GitHub contents API (no local clone):
      gh api "repos/Halildeu/ao-kernel/contents/local-ai-review-evidence.v1.json?ref=$PR827_SHA" \
-       --jq '.content' | base64 -d | jq -e '.reviewer.verdict=="AGREE"'
+       --jq '.content' | base64 -d | jq -e '.work_package=="EPIC-2-LIVE-ADAPTER-EXECUTION-PLAN" and .reviewer.verdict=="AGREE"'
      ```
    - Verify detail plan file exists on `origin/main`:
      ```bash
@@ -426,7 +426,7 @@ All verify commands are **commit-scoped** (use PR merge commit, not current root
      PR826_SHA=$(gh pr view 826 --json mergeCommit --jq '.mergeCommit.oid')
      git fetch origin main --quiet
      git show "$PR826_SHA:local-ai-review-evidence.v1.json" \
-       | jq -e '.work_package=="V5-EPIC-3-SUPPORT-WIDENING-MATRIX-PLAN" and .reviewer.verdict=="AGREE"'
+       | jq -e '.work_package=="EPIC-3-SUPPORT-WIDENING-MATRIX-PLAN" and .reviewer.verdict=="AGREE"'
      ```
    - Verify detail plan file exists on `origin/main`:
      ```bash
@@ -439,8 +439,12 @@ All verify commands are **commit-scoped** (use PR merge commit, not current root
      ```bash
      jq -e '.support_widening_allowed == false and .production_platform_claim_allowed == false and .live_adapter_execution_allowed == false' \
        .claude/plans/gpp_status.v1.json
-     # Cross-check via gpp_next.py canonical guard authority output:
-     python3 scripts/gpp_next.py | grep -E "(support_widening|production_platform_claim|live_adapter_execution).*false"
+     # Cross-check via gpp_next.py canonical summary lines (iter-4 N5 absorb — exact-string match):
+     GPP_NEXT=$(python3 scripts/gpp_next.py)
+     printf '%s\n' "$GPP_NEXT" | grep -Fx "Support widening allowed: false" \
+       && printf '%s\n' "$GPP_NEXT" | grep -Fx "Production platform claim allowed: false" \
+       && printf '%s\n' "$GPP_NEXT" | grep -Fx "Live adapter execution allowed: false" \
+       && echo "gpp_next.py canonical guard summary lines confirmed"
      ```
    - Verify no flag flip commit between this amend merge and slice PR opening:
      ```bash
