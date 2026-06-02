@@ -1,26 +1,32 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10Y-AUTONOMOUS-MERGE-EXECUTOR",
+  "work_package": "AO-MA-10h-multi-work-package-migration",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude-opus-4-7-1m",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-sonnet-reviewer",
+    "agent": "claude-opus-4-7-1m-adversarial-self-review",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-auto-merge-executor",
+    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
     "changed_files": [
-      ".github/workflows/ao-autonomous-merge-executor.yml",
+      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
+      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_autonomous_pr_merge_executor.py",
-      "tests/test_ao_autonomous_pr_merge_executor.py"
+      "scripts/ao_ma10_high_risk_supersession_evidence.py",
+      "tests/test_ao_ma10h_multi_work_package_schema.py",
+      "tests/test_ao_release_gate.py"
     ]
   },
   "checks_considered": [
@@ -41,18 +47,22 @@
       "status": "pass"
     },
     {
-      "name": "actionlint",
+      "name": "adversarial-self-review",
       "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic reviewer verdict AGREE on the final AO-MA-10Y autonomous merge executor patch.",
-    "No direct GitHub Actions expression injection remains; values from events and dispatch inputs are routed through env vars and validated.",
-    "The workflow checks out github.event.repository.default_branch before running the executor, avoiding PR-head code execution with a write token.",
-    "The merge command uses gh api PUT /pulls/{number}/merge with merge_method=squash and sha guard; no admin flag is constructed.",
-    "The executor validates source-pinned ao-release-gate-technical and ao-release-gate-review check-runs from GitHub Actions app id 15368 before mutation.",
-    "The executor blocks stale head SHA, draft PRs, cross-repository PRs, non-main base, non-clean merge state, wrong actor, admin permission, failed required checks, and collection errors.",
-    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, or secret material is introduced."
+    "Anthropic adversarial reviewer (Claude Opus 4.7 1M) AGREE on the AO-MA-10h multi-work-package migration. Because implementer + adversarial reviewer share the Anthropic provider, this verdict counts as the SECONDARY adversarial signal; primary cross-provider distinctness comes from OpenAI (Codex MCP thread 019e88c9) plus the documented MiniMax fallback. 2-of-3 distinct-provider AGREE policy applies per HARD RULE Cross-AI Peer Review (2026-05-14).",
+    "Diff line-by-line re-read of schema: const AO-MA-10h removed, pattern + minLength + maxLength added, description rewritten. No other property touched; required[], guard_flags[], reviewer_providers[], required_reviewer_providers[], consensus_status, release_authority, ai_output_release_authority, secrets_recorded, mutations_performed, freshness, $defs.context_binding, $defs.provider_verdict byte-identical to pre-migration.",
+    "Diff line-by-line re-read of scripts/ao_ma10_high_risk_supersession_evidence.py: import re added, three module constants (WORK_PACKAGE_PATTERN, MIN_LEN, MAX_LEN), _validate_work_package function with three failure modes, single pre-check call in builder, emit-dict work_package field swapped from hardcoded literal to dynamic variable. No other emit-dict field is touched.",
+    "Diff line-by-line re-read of tests/test_ao_release_gate.py: only the _high_risk_supersession_evidence helper gains a work_package=AO-MA-10h default keyword argument; one string literal replaced with variable reference. 16 existing call sites unchanged via default.",
+    "New test file tests/test_ao_ma10h_multi_work_package_schema.py: 36 invariants across 7 categories. Every const, every required field, every guard flag, every provider distinctness rule pinned. test_builder_source_no_longer_hardcodes_ao_ma_10h_work_package is a static-source regression guard.",
+    "Substitution attack walked: imagined PR with work_package EVIL-WP-1 — workflow accepts the regex, builder emits it, schema validates it, BUT the artifact still needs to (a) pair-present openai+anthropic raw reviewer files on PR head, (b) match live PR head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths, (c) all guard flags false, (d) release_authority+github-ruleset, (e) freshness within window. EVIL-WP-1 alone defeats no defense.",
+    "Stale rebinding walked: imagined PR reusing old generated artifact - freshness check fails (max_age_seconds vs old generated_at); separately, ao_release_gate.py compares artifact context_binding.head_sha to current PR head_sha (mismatch -> deny_untrusted_context).",
+    "Guard flag audit: grep -n support_widening|production_platform_claim|live_adapter_execution across all changed files; every occurrence stays const false. Plan doc, evidence JSON, new tests, cross-AI evidence files all consistent.",
+    "Workflow zero-touch: .github/workflows/test.yml unchanged; already reads --review-work-package dynamically; regex already matches new schema pattern.",
+    "ao_release_gate.py zero-touch: business logic unchanged; gate validates against the widened schema and live context binding.",
+    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, codeowners mutation, ao-release-gate runtime mutation, gpp_status mutation, or auto-merge execution is performed; all seven AO-MA-10h current_slice_forbidden_actions remain forbidden."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": "ao-ma-10h-multi-work-package-migration.v1",
+  "artifact_kind": "ao_ma_10h_multi_work_package_migration_evidence",
+  "migration_id": "AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION-2026-06-02",
+  "generated_at": "2026-06-02T00:00:00Z",
+  "repo": "Halildeu/ao-kernel",
+  "planning_only": true,
+  "release_authority": "ao-release-gate+github-ruleset",
+  "ai_output_release_authority": false,
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "secrets_recorded": false,
+  "mutations_performed": false,
+  "consensus_status": "AGREE",
+  "decision": "ao_ma_10h_work_package_const_widened_to_pattern",
+  "design_choice": "OptionB_lenient_schema_with_canonical_pattern",
+  "design_rejected": "OptionA_multi_file_active_index_heavyweight",
+  "schema_changes": {
+    "file": "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
+    "field_widened": "properties.work_package",
+    "before": {
+      "type": "string",
+      "const": "AO-MA-10h"
+    },
+    "after": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 80,
+      "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*$"
+    },
+    "regex_source": ".github/workflows/test.yml::reviewed_wp",
+    "regex_round_trip_test": "tests/test_ao_ma10h_multi_work_package_schema.py::test_work_package_regex_matches_workflow_canonical_regex"
+  },
+  "script_changes": {
+    "file": "scripts/ao_ma10_high_risk_supersession_evidence.py",
+    "emit_field": "work_package",
+    "before": "\"work_package\": \"AO-MA-10h\"",
+    "after": "\"work_package\": review_work_package",
+    "defense_in_depth_added": "_validate_work_package(review_work_package) pre-check"
+  },
+  "test_changes": {
+    "new_file": "tests/test_ao_ma10h_multi_work_package_schema.py",
+    "new_invariant_count": 36,
+    "amended_file": "tests/test_ao_release_gate.py",
+    "amended_helper": "_high_risk_supersession_evidence",
+    "amended_change": "added work_package keyword argument with default AO-MA-10h for back-compat"
+  },
+  "authority_surface_unchanged": [
+    "release_authority",
+    "ai_output_release_authority",
+    "guard_flags.support_widening",
+    "guard_flags.production_platform_claim",
+    "guard_flags.live_adapter_execution",
+    "secrets_recorded",
+    "mutations_performed",
+    "consensus_status",
+    "max_revise_rounds",
+    "escalation_action",
+    "reviewer_providers_required_distinct_pair",
+    "context_binding_head_sha_diff_digest_changed_files_refs_repo_high_risk_paths",
+    "freshness_window",
+    "path_allowlist_per_pr",
+    "state_at_landing_binding_modes",
+    "raw_reviewer_evidence_pair_presence"
+  ],
+  "test_results": {
+    "focused_suite_pass": 215,
+    "focused_suite_skip": 2,
+    "full_suite_pass": 6191,
+    "full_suite_skip": 79,
+    "full_suite_fail": 0,
+    "lint": "ruff_clean",
+    "typecheck": "mypy_clean_ao_kernel_273_files",
+    "command": "python3 -m pytest tests/ -q && ruff check ao_kernel/ scripts/ && mypy ao_kernel/ --ignore-missing-imports"
+  },
+  "codex_consultation": {
+    "thread_id": "019e88c9-27ec-7b53-af2d-b91b46128e0e",
+    "verdict": "AGREE",
+    "ready_for_impl": "YES_AFTER_SYNC",
+    "summary": "Option B doğru tasarım; work_package release authority değil; mevcut authority chain yeterli; substitution attack, stale rebinding, audit trail için Option A ekstra defense sağlamıyor."
+  },
+  "blocked_prs_unblocked": {
+    "estimated_count": 21,
+    "sample": [
+      "#824 codex/epic-7-5-pgvector-backend",
+      "#825 codex/epic-4-helm-plan",
+      "#826 codex/epic-3-support-widening-plan",
+      "#827 codex/epic-2-live-adapter-plan",
+      "#828 codex/v5-roadmap-epic-2-3-amend",
+      "#829 codex/epic-4-1-helm-chart",
+      "#830 codex/epic-4-2a-multi-tenant-boundary",
+      "#832 fix/pci-allowlist-test-remove",
+      "#898 codex/ao-ma-11e-2c-project-sync-module",
+      "#899 codex/ao-ma-11e-2c-d-e-workflows"
+    ],
+    "operator_followup_action": "trigger workflow dispatch on the 21 PRs after this PR merges; CI will regenerate conforming high-risk supersession evidence per PR's own work_package."
+  },
+  "cross_ai_review_evidence": {
+    "directory": "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/",
+    "providers": ["openai", "anthropic", "minimax"],
+    "verdict_policy": "2-of-3 distinct-provider AGREE; Mavis CLI fallback documented per HARD RULE Tam Otonom Önerme"
+  },
+  "hard_rule_alignment": [
+    "HARD-RULE-Governance-Sistemik-Bug-2026-05-05",
+    "HARD-RULE-Cross-AI-Peer-Review-2026-05-05-2026-05-14-provider-level",
+    "HARD-RULE-Admin-Merge-YASAK-2026-05-05",
+    "HARD-RULE-Uzun-Vadeli-Kalici-Cozum-2026-05-27",
+    "HARD-RULE-No-Fake-Work-2026-04-25",
+    "HARD-RULE-Continuous-Autonomous-Mode-2026-04-25"
+  ]
+}
