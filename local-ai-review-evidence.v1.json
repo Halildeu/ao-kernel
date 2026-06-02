@@ -1,66 +1,30 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10h-multi-work-package-migration",
-  "implementer": {
-    "agent": "claude-opus-4-7-1m",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex-mcp-thread-019e88c9",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
+  "work_package": "NIST-CSF-allowlist-test-remove",
+  "implementer": { "agent": "claude", "provider": "anthropic" },
+  "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
+    "head_ref": "refs/heads/fix/nist-csf-allowlist-test-remove",
     "changed_files": [
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/test_ao_ma10h_multi_work_package_schema.py",
-      "tests/test_ao_release_gate.py"
+      "tests/test_nist_csf_mapping.py",
+      "ao-ma-10-high-risk-reviews/NIST-CSF-allowlist-test-remove/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/NIST-CSF-allowlist-test-remove/anthropic.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "design-adversarial-review",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "no_guard_flip", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" }
   ],
   "findings": [
-    "Root reviewer evidence for AO-MA-10h multi-work-package governance migration (2026-06-02). Cross-AI implementer-reviewer pair: Anthropic Claude Opus 4.7 1M (implementer) + OpenAI Codex MCP thread 019e88c9-27ec-7b53-af2d-b91b46128e0e (reviewer); distinct providers per HARD RULE Cross-AI Peer Review (2026-05-14 clarification).",
-    "Codex verdict AGREE: 'Option B doğru tasarım. work_package burada release authority veya permission boundary değil; PR'e bağlanan review/evidence kimliği. Mevcut authority zinciri ao-release-gate+github-ruleset, context binding, path allowlist, provider distinctness, unanimous AGREE, freshness ve guard flag const false kontrolleriyle kapanıyor.'",
-    "Schema widened: ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json::properties.work_package changes from const 'AO-MA-10h' to pattern '^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*$' with minLength 3 and maxLength 80. Aligned with .github/workflows/test.yml::reviewed_wp regex verbatim (round-trip test pinned).",
-    "Builder dynamic: scripts/ao_ma10_high_risk_supersession_evidence.py emits work_package from --review-work-package CLI arg (supplied by trusted-base workflow per-PR); removed hardcoded 'AO-MA-10h' literal. Defense-in-depth: _validate_work_package pre-check enforces same regex + length bounds.",
-    "Authority surface preserved unchanged: release_authority+github-ruleset, ai_output_release_authority=false, all three guard_flags const false (support_widening, production_platform_claim, live_adapter_execution), secrets_recorded=false, mutations_performed=false, consensus_status=AGREE const, reviewer_providers distinct pair (openai+anthropic), context_binding (head_sha, diff_digest, changed_files_count, refs, repo, high_risk_changed_paths), freshness window.",
-    "36 new invariants in tests/test_ao_ma10h_multi_work_package_schema.py pin every const, every required field, every guard flag, provider distinctness, regex parity with workflow, builder source-guard against re-hardcoding 'AO-MA-10h'. test_builder_source_no_longer_hardcodes_ao_ma_10h_work_package is a static-source guard.",
-    "Full test suite: 6191 tests passed, 79 skipped, 0 failed (python3 -m pytest tests/). Lint: ruff clean. Typecheck: mypy clean (273 source files in ao_kernel/).",
-    "ZERO TOUCH on .github/workflows/, ao_kernel/ao_release_gate.py, ruleset, branch protection, codeowners, gpp_status.v1.json. Only widened the schema field; preserved every authority boundary.",
-    "Operator follow-up after this PR merges: 21 currently-blocked PRs (#824-#899) can have CI re-triggered; the trusted-base workflow will now generate conforming high-risk supersession evidence per each PR's own work_package."
+    "Identical anti-pattern fix to PR #832 (PCI-DSS allowlist remove). PR #812 (NIST CSF E-6-3e) introduced same hardcoded ALLOWED_CHANGED_FILES cross-slice diff assertion. Every non-NIST-CSF PR fails this test → another mass pipeline blocker.",
+    "Removal: tests/test_nist_csf_mapping.py loses ALLOWED_CHANGED_FILES frozenset (lines ~30) + def test_allowlist_diff_no_other_files() function. Per-slice zero-touch siblings (test_e63e_*_zero_touch) + schema validity + drift checks preserved (53 tests still passing).",
+    "Cross-AI: implementer claude (anthropic) != reviewer codex (openai). HARD RULE Uzun Vadeli Kalıcı Çözüm: anti-pattern removal (not skip)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
