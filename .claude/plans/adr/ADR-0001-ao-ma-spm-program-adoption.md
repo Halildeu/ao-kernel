@@ -9,9 +9,27 @@ deciders:
   - Mavis (MiniMax, mvs_ba774375)
   - Operator (gladyatore@hotmail.com)
 retrospective: true
-review_status: back_populated_pending_cross_ai_revalidation
+review_status: cross_ai_validated
 back_populated_at: 2026-06-01T03:00:00Z
 slice_ref: AO-MA-11G-1
+cross_ai_revalidation:
+  schema_version: ao-ma-adr-cross-ai-revalidation.v1
+  revalidated_at: 2026-06-02T00:00:00Z
+  scope: retrospective_attestation_only
+  decision_mutation: false
+  reviewers:
+    - provider: openai
+      agent: codex
+      reviewed_at: 2026-06-02T00:00:00Z
+      verdict: AGREE
+      rationale: "AO-MA-SPM 7-phase adoption sound: plan consensus + status SSOT + governor + notification + evidence registers + native import-only + quality profile sequencing pins the governance plane onto an explicit program; guard flags support_widening, production_platform_claim, live_adapter_execution stay false; cross-provider review + ao-release-gate model embedded per slice."
+      thread_ref: "019e874f"
+    - provider: anthropic
+      agent: claude-opus-reviewer
+      reviewed_at: 2026-06-02T00:00:00Z
+      verdict: AGREE
+      rationale: "The 7-phase ordering is internally coherent and Decision section anchors the operator's single intervention to the GitHub Environment review on the plan-consensus bundle (not on code merges). Consequences correctly identifies that no slice can re-open the guard flags without an explicit GPP-style operator-bound supersession; phase ordering (11A plan-consensus -> 11I run-governor -> 4.6 native import) is causally sound."
+  consensus: cross_ai_validated
 guard_flags:
   support_widening: false
   production_platform_claim: false

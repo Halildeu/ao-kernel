@@ -8,9 +8,27 @@ deciders:
   - Codex (OpenAI, threads 019e8000, 019e8028)
   - Operator (gladyatore@hotmail.com)
 retrospective: true
-review_status: back_populated_pending_cross_ai_revalidation
+review_status: cross_ai_validated
 back_populated_at: 2026-06-01T03:00:00Z
 slice_ref: AO-MA-4.6-1
+cross_ai_revalidation:
+  schema_version: ao-ma-adr-cross-ai-revalidation.v1
+  revalidated_at: 2026-06-02T00:00:00Z
+  scope: retrospective_attestation_only
+  decision_mutation: false
+  reviewers:
+    - provider: openai
+      agent: codex
+      reviewed_at: 2026-06-02T00:00:00Z
+      verdict: AGREE
+      rationale: "Native worker import-only contract sound: ao-kernel not spawning LLM worker preserves live_adapter_execution=false boundary and separates governance plane from runtime transport. AST import allowlist + subprocess/network/client import bans + fatal-vs-reportable error split strengthen enforceability. The narrowest safe path to ingest real AI output: not execute but validate + provenance-bind + import."
+      thread_ref: "019e874f"
+    - provider: anthropic
+      agent: claude-opus-reviewer
+      reviewed_at: 2026-06-02T00:00:00Z
+      verdict: AGREE
+      rationale: "Import-only contract is the correct architectural primitive for getting real AI output into the pipeline without flipping live_adapter_execution; Decision explicitly notes ao-kernel calls nothing to obtain worker output. Structural guarantee via AST import-allowlist is the right level of enforcement (physically unfalsifiable rather than policy claim). Two-error-class split (Fatal trust-boundary before any import_report write; Reportable policy-invalid with valid=false and integrated_path=null) aligned with ADR-0002 fail-closed invariant."
+  consensus: cross_ai_validated
 guard_flags:
   support_widening: false
   production_platform_claim: false
