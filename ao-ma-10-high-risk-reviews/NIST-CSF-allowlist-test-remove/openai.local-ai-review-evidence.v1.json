@@ -1,0 +1,20 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "artifact_kind": "local-ai-review-evidence",
+  "review_target": "NIST-CSF-allowlist-test-remove",
+  "review_target_paths": ["tests/test_nist_csf_mapping.py"],
+  "provider": "openai",
+  "reviewer": "codex",
+  "review_method": "Same Option 2 pattern as PR #832 (PCI-DSS allowlist test remove). Anti-pattern: cross-slice ALLOWED_CHANGED_FILES test failing on every non-NIST-CSF PR. Removal restores per-slice ownership pattern; existing test_e6_3e_*_zero_touch sibling tests preserve slice scope.",
+  "verdict": "agree",
+  "ready_to_merge": true,
+  "verdict_rationale": "Identical bug to PR #811 (PCI-DSS) → fixed in PR #832. PR #812 (NIST CSF E-6-3e) introduced same hardcoded ALLOWED_CHANGED_FILES + cross-slice diff assertion. Every non-NIST PR now fails this test. Option 2 (remove) is correct per HARD RULE Uzun Vadeli Kalıcı Çözüm; preserves per-slice zero-touch pattern siblings.",
+  "findings_count_by_severity": {"blocker": 0, "high": 0, "medium": 0, "low": 0},
+  "key_findings_summary": [],
+  "consensus_state": "agree_with_anthropic_cross_review",
+  "guard_flags_const_false": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}

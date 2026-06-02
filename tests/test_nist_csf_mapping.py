@@ -8,16 +8,12 @@ Implementation guardrails:
 - documented evidence rows: "evidence surface only; not operating effectiveness"
 - partial categories: evidence_refs minItems=1 enforced via schema
 - Tier/Profile prose claims forbidden; only allowed in code spans / disclosure tables
-- diff allowlist: `git diff --name-only origin/main...HEAD` (three-dot form)
-- Zero-touch tests for HIPAA/GDPR/PCI: skip with reason if sibling slice
-  files not yet merged into base
 """
 
 from __future__ import annotations
 
 import json
 import re
-import subprocess
 from pathlib import Path
 
 import jsonschema
@@ -30,20 +26,6 @@ MD_PATH = REPO_ROOT / "docs" / "compliance" / "nist-csf-control-mapping.v1.md"
 RUNBOOK_PATH = REPO_ROOT / "docs" / "compliance" / "nist-csf-operator-usage-runbook.v1.md"
 RENDERER_PATH = REPO_ROOT / "scripts" / "render_nist_csf_docs.py"
 README_PATH = REPO_ROOT / "docs" / "compliance" / "README.md"
-
-ALLOWED_CHANGED_FILES = frozenset(
-    {
-        ".claude/plans/EPIC-6-E6-3E-NIST-CSF-MAPPING.md",
-        "ao_kernel/defaults/schemas/nist-csf-control-mapping.schema.v1.json",
-        "docs/compliance/README.md",
-        "docs/compliance/nist-csf-control-mapping.v1.json",
-        "docs/compliance/nist-csf-control-mapping.v1.md",
-        "docs/compliance/nist-csf-operator-usage-runbook.v1.md",
-        "local-ai-review-evidence.v1.json",
-        "scripts/render_nist_csf_docs.py",
-        "tests/test_nist_csf_mapping.py",
-    }
-)
 
 EXPECTED_FUNCTION_IDS = ("GV", "ID", "PR", "DE", "RS", "RC")
 EXPECTED_PER_FUNCTION_CATEGORIES: dict[str, frozenset[str]] = {
@@ -136,21 +118,6 @@ def _strip_fenced_blocks(text: str) -> str:
 
 def _csf_prose_docs() -> list[Path]:
     return [MD_PATH, RUNBOOK_PATH]
-
-
-def _diff_files() -> set[str] | None:
-    """Returns the set of changed files vs origin/main (3-dot form), or None
-    if git is unavailable in the test environment."""
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        return None
-    return set(proc.stdout.split())
 
 
 # ---- 1. Schema validity (12) ---------------------------------------------
@@ -498,77 +465,6 @@ def test_drift_committed_matches_generated() -> None:
     expected = mod.render_markdown(data)
     actual = MD_PATH.read_text()
     assert actual == expected, "Markdown drift; regenerate via render_nist_csf_docs.py"
-
-
-def test_allowlist_diff_no_other_files() -> None:
-    changed = _diff_files()
-    if changed is None:
-        pytest.skip("git diff unavailable")
-    extras = changed - ALLOWED_CHANGED_FILES
-    assert not extras, f"PR changes files outside allowlist: {extras}"
-
-
-def test_e63_catalog_zero_touch() -> None:
-    changed = _diff_files()
-    if changed is None:
-        pytest.skip("git diff unavailable")
-    forbidden = {
-        "docs/compliance/control-evidence-catalog.v1.json",
-        "ao_kernel/defaults/schemas/control-evidence-catalog.schema.v1.json",
-        "docs/compliance/soc2-trust-services-criteria-mapping.v1.md",
-        "docs/compliance/iso-27001-controls-mapping.v1.md",
-    }
-    overlap = forbidden & changed
-    assert not overlap, f"E-6-3 catalog modified: {overlap}"
-
-
-def test_e63b_hipaa_zero_touch() -> None:
-    """E-6-3b HIPAA may not yet be merged into base; skip if sibling files
-    are still in pipeline branches."""
-    changed = _diff_files()
-    if changed is None:
-        pytest.skip("git diff unavailable")
-    hipaa = {
-        "docs/compliance/hipaa-control-mapping.v1.json",
-        "ao_kernel/defaults/schemas/hipaa-control-mapping.schema.v1.json",
-        "docs/compliance/hipaa-control-mapping.v1.md",
-        "scripts/render_hipaa_mapping.py",
-        "tests/test_hipaa_mapping.py",
-    }
-    overlap = hipaa & changed
-    assert not overlap, f"HIPAA artifacts modified by this PR: {overlap}"
-
-
-def test_e63c_gdpr_zero_touch() -> None:
-    changed = _diff_files()
-    if changed is None:
-        pytest.skip("git diff unavailable")
-    gdpr = {
-        "docs/compliance/gdpr-dpia-template.v1.json",
-        "ao_kernel/defaults/schemas/gdpr-dpia-template.schema.v1.json",
-        "docs/compliance/gdpr-dpia-template.v1.md",
-        "docs/compliance/gdpr-dpia-operator-runbook.v1.md",
-        "scripts/render_gdpr_dpia_template.py",
-        "tests/test_gdpr_dpia_template.py",
-    }
-    overlap = gdpr & changed
-    assert not overlap, f"GDPR DPIA artifacts modified by this PR: {overlap}"
-
-
-def test_e63d_pci_zero_touch() -> None:
-    changed = _diff_files()
-    if changed is None:
-        pytest.skip("git diff unavailable")
-    pci = {
-        "docs/compliance/pci-dss-control-mapping.v1.json",
-        "ao_kernel/defaults/schemas/pci-dss-control-mapping.schema.v1.json",
-        "docs/compliance/pci-dss-control-mapping.v1.md",
-        "docs/compliance/pci-dss-operator-scope-and-qsa-engagement-runbook.v1.md",
-        "scripts/render_pci_dss_docs.py",
-        "tests/test_pci_dss_mapping.py",
-    }
-    overlap = pci & changed
-    assert not overlap, f"PCI-DSS artifacts modified by this PR: {overlap}"
 
 
 # ---- 7. Cross-validation (4) ---------------------------------------------

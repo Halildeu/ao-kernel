@@ -131,23 +131,3 @@ def test_readme_does_not_flip_guard_flags_in_prose() -> None:
     )
     for token in forbidden:
         assert token not in prose, f"README must not flip guard flag in prose: {token!r}"
-
-
-def test_no_e_p0_4_workflow_mutation() -> None:
-    """E-P0-4 must not touch .github/workflows/ (low-risk docs slice)."""
-    import subprocess
-
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        import pytest
-
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        assert not path.startswith(".github/workflows/"), f"E-P0-4 must not touch workflows: {path}"

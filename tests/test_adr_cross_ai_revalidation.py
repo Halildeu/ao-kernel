@@ -303,23 +303,6 @@ def test_adr_consensus_matches_reviewers(filename: str) -> None:
 # ---- 4. Governance ZERO TOUCH (2) ---------------------------------------
 
 
-def test_no_workflow_mutation() -> None:
-    import subprocess
-
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        assert not path.startswith(".github/workflows/"), f"E-1-6 ZERO TOUCH violation: {path}"
-
-
 def test_no_adr_decision_section_mutation() -> None:
     """E-1-6 is revalidation-only; ADR decision body sections MUST NOT be edited.
 

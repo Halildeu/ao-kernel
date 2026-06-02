@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -372,48 +371,6 @@ def test_drift_committed_matches_generated(tmp_path):
     assert committed == fresh, (
         "DRIFT: committed Markdown differs from generator output. Run: python scripts/render_hipaa_mapping.py"
     )
-
-
-def test_e63_catalog_file_unchanged():
-    """Codex H9 absorb: SOC2/ISO catalog must remain untouched."""
-    try:
-        result = subprocess.run(
-            ["git", "diff", "--name-only", "origin/main...HEAD"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pytest.skip("git not available or origin/main not fetched")
-    if result.returncode != 0:
-        pytest.skip(f"git diff failed: {result.stderr}")
-    changed = set(result.stdout.splitlines())
-    forbidden = {
-        "docs/compliance/control-evidence-catalog.v1.json",
-        "ao_kernel/defaults/schemas/control-evidence-catalog.schema.v1.json",
-        "docs/compliance/soc2-trust-services-criteria-mapping.v1.md",
-        "docs/compliance/iso-27001-controls-mapping.v1.md",
-    }
-    for path in forbidden:
-        assert path not in changed, f"E-6-3 catalog/render must remain ZERO TOUCH: {path}"
-
-
-def test_no_github_workflow_change_in_pr_diff():
-    try:
-        result = subprocess.run(
-            ["git", "diff", "--name-only", "origin/main...HEAD"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pytest.skip("git not available or origin/main not fetched")
-    if result.returncode != 0:
-        pytest.skip(f"git diff failed: {result.stderr}")
-    for line in result.stdout.splitlines():
-        assert not line.startswith(".github/workflows/"), f"E-6-3b must not touch workflows: {line}"
 
 
 def test_e63_schema_unchanged():

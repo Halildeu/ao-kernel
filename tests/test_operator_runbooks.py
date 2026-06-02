@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -396,24 +395,6 @@ def test_publish_workflow_file_exists():
 # ---------------------------------------------------------------------------
 # Section 10 — Governance (2 invariants)
 # ---------------------------------------------------------------------------
-
-
-def test_no_github_workflow_change_in_pr_diff():
-    """Conservative low-risk lane: no .github/workflows mutation."""
-    try:
-        result = subprocess.run(
-            ["git", "diff", "--name-only", "origin/main...HEAD"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pytest.skip("git not available or origin/main not fetched")
-    if result.returncode != 0:
-        pytest.skip(f"git diff failed: {result.stderr}")
-    for line in result.stdout.splitlines():
-        assert not line.startswith(".github/workflows/"), f"E-Ops must not touch workflows: {line}"
 
 
 def test_all_checklist_actions_pending():

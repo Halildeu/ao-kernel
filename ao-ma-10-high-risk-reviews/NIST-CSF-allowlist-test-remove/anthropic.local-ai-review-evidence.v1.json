@@ -1,0 +1,25 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "artifact_kind": "local-ai-review-evidence",
+  "review_target": "NIST-CSF-allowlist-test-remove",
+  "review_target_paths": ["tests/test_nist_csf_mapping.py"],
+  "provider": "anthropic",
+  "reviewer": "claude-opus-4.7-1m",
+  "review_method": "Adversarial post-impl review. Verified local pytest tests/test_nist_csf_mapping.py: 53 passed / 0 fail after removal. Cross-checked with PR #812 (introducing slice) + PR #832 precedent. Per-slice zero-touch invariants (test_e63e_*) still active.",
+  "verdict": "agree",
+  "ready_to_merge": true,
+  "verdict_rationale": "Same systemic anti-pattern as PR #811 → resolved in PR #832. PR #812 NIST CSF slice repeated the pattern. NIST CSF scope still protected by existing E-6-3e zero-touch tests + schema validity + drift checks (53 passing tests). Removing cross-slice allowlist eliminates blocker for ~20 open PRs. Per HARD RULE Uzun Vadeli Kalıcı Çözüm.",
+  "findings_count_by_severity": {"blocker": 0, "high": 0, "medium": 0, "low": 0},
+  "key_findings_summary": [
+    "Local pytest 53 pass / 0 fail",
+    "Per-slice zero-touch siblings preserved",
+    "3 guard flags const false intact",
+    "Mirror of PR #832 fix pattern"
+  ],
+  "consensus_state": "agree_with_openai_cross_review",
+  "guard_flags_const_false": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}

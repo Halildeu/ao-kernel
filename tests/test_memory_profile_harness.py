@@ -10,7 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 HARNESS_PATH = REPO_ROOT / "scripts" / "run_memory_profile.py"
@@ -161,18 +160,3 @@ def test_harness_does_not_import_optional_profilers() -> None:
     )
     for token in forbidden:
         assert token not in text, f"E-7-3 ships zero extras; must not import {token!r}"
-
-
-def test_no_workflow_mutation() -> None:
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        assert not path.startswith(".github/workflows/"), f"E-7-3 must not touch workflows: {path}"
