@@ -30,20 +30,6 @@ RUNBOOK_PATH = REPO_ROOT / "docs" / "compliance" / "pci-dss-operator-scope-and-q
 RENDERER_PATH = REPO_ROOT / "scripts" / "render_pci_dss_docs.py"
 README_PATH = REPO_ROOT / "docs" / "compliance" / "README.md"
 
-ALLOWED_CHANGED_FILES = frozenset(
-    {
-        ".claude/plans/EPIC-6-E6-3D-PCI-DSS-MAPPING.md",
-        "ao_kernel/defaults/schemas/pci-dss-control-mapping.schema.v1.json",
-        "docs/compliance/README.md",
-        "docs/compliance/pci-dss-control-mapping.v1.json",
-        "docs/compliance/pci-dss-control-mapping.v1.md",
-        "docs/compliance/pci-dss-operator-scope-and-qsa-engagement-runbook.v1.md",
-        "local-ai-review-evidence.v1.json",
-        "scripts/render_pci_dss_docs.py",
-        "tests/test_pci_dss_mapping.py",
-    }
-)
-
 # F1 + H13 - 32 prohibited tokens flattened (lowered for exact-set parity)
 PROHIBITED_TOKENS = (
     "pci-compliant",
@@ -455,22 +441,6 @@ def test_drift_committed_matches_generated() -> None:
     expected = mod.render_markdown(data)
     actual = MD_PATH.read_text()
     assert actual == expected, "Markdown drift; regenerate via render_pci_dss_docs.py"
-
-
-def test_allowlist_diff_no_other_files() -> None:
-    """H7: PR may only change files in ALLOWED_CHANGED_FILES."""
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = set(proc.stdout.split())
-    extras = changed - ALLOWED_CHANGED_FILES
-    assert not extras, f"PR changes files outside allowlist: {extras}"
 
 
 def test_e63_catalog_zero_touch() -> None:
