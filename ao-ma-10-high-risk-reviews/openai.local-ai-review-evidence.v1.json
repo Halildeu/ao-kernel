@@ -1,65 +1,49 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10h-multi-work-package-migration",
+  "work_package": "EPIC-P0-5-ISSUE-FORMS",
   "implementer": {
-    "agent": "claude-opus-4-7-1m",
+    "agent": "claude",
     "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "codex-mcp-thread-019e88c9",
+    "agent": "codex",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
+    "head_ref": "refs/heads/codex/epic-p0-5-issue-forms",
     "changed_files": [
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/EPIC-P0-5-ISSUE-FORMS.md",
+      ".github/ISSUE_TEMPLATE/config.yml",
+      ".github/ISSUE_TEMPLATE/governance-bug.yml",
+      ".github/ISSUE_TEMPLATE/v5-gate.yml",
+      ".github/ISSUE_TEMPLATE/v5-slice.yml",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/test_ao_ma10h_multi_work_package_schema.py",
-      "tests/test_ao_release_gate.py"
+      "tests/test_issue_forms_shape.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "design-adversarial-review",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "issue_forms_shape_invariants", "status": "pass" },
+    { "name": "diff_scope_boundary", "status": "pass" },
+    { "name": "expression_injection_scan", "status": "pass" }
   ],
   "findings": [
-    "OpenAI (Codex MCP thread 019e88c9-27ec-7b53-af2d-b91b46128e0e) reviewer verdict AGREE on the AO-MA-10h multi-work-package governance migration. Plan-time adversarial review concluded that Option B (lenient schema with canonical pattern) is the right design and Option A (multi-file active index) is rejected because it adds new drift/rebase coordination without new defensive value.",
-    "work_package field analysis: work_package is a per-PR review/evidence identifier, not a release authority or permission boundary. The const 'AO-MA-10h' was not providing security value; it was only blocking dynamic-WP PRs from producing conforming high-risk supersession evidence (21 open PRs affected as deny_missing_evidence).",
-    "Authority chain preserved fail-closed after migration: release_authority+github-ruleset, context binding (head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths), path allowlist, provider distinctness (openai+anthropic pair required), unanimous AGREE, freshness window, three guard flags const false (support_widening, production_platform_claim, live_adapter_execution), secrets_recorded const false, mutations_performed const false.",
-    "Substitution attack: a malicious PR with work_package EVIL-WP would still need (a) pair-present openai+anthropic raw reviewer evidence on PR head, (b) live PR head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths match, (c) all guard flags false, (d) release_authority+github-ruleset, (e) freshness within window. The string EVIL-WP alone defeats none of these.",
-    "Stale evidence rebinding: blocked by freshness window plus live PR context binding plus the binding_mode (added/modified/unchanged) discipline. An old artifact cannot be reattached to a new PR.",
-    "Schema regex round-trips with workflow regex verbatim (test_work_package_regex_matches_workflow_canonical_regex pins source-line equality with .github/workflows/test.yml::reviewed_wp).",
-    "ZERO TOUCH on .github/workflows/, ao_kernel/ao_release_gate.py business logic, ruleset, branch protection, codeowners; the change is scoped to schema field + builder dynamic emission + new invariant tests.",
-    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, codeowners mutation, ao-release-gate runtime mutation, gpp_status mutation, or auto-merge execution is performed; all forbidden actions remain forbidden."
+    "OpenAI Codex reviewer verdict AGREE on V5 Epic P0 E-P0-5 GitHub Issue forms patch via Codex MCP consultation thread `019e8775`.",
+    "iter-1 plan-time observation: scope split (slice + gate + governance-bug), 7 mandatory anchor fields all required:true, 9-dim evidence_classes dropdown, ZERO TOUCH boundary all sound. Hardening note: risk_class_source COMPUTED label is UX hint; CI-layer classifier-drift enforcement deferred to follow-up slice (acknowledged in plan doc §6). REVISE -> downgraded to AGREE because the deferred enforcement does not block this scope's authority-only intake.",
+    "Three issue forms (v5-slice / v5-gate / governance-bug) and config.yml exhaustively cover the seven mandatory V5 anchor fields (spm_anchor, ao_authority_artifact, artifact_sha256, plan_digest, slice_id, risk_class_source, evidence_classes) with validations.required:true everywhere.",
+    "risk_class_source carries the '(COMPUTED)' suffix in every form label and the slice form's markdown header reiterates classifier authority; manual downward downgrade is blocked at the UX layer with the follow-up CI enforcement deferred.",
+    "v5-slice.yml's checkboxes block forces operators to acknowledge all three guard flags remain const false; v5-gate.yml's guard_flag_to_flip dropdown declares (not executes) which flag is being prepared for the final operator-bound supersession PR, defaulting safely to none_yet_pending_evidence.",
+    "governance-bug.yml's violation_kind enum maps to the six HARD RULE / ADR categories with rule citations inline (HARD RULE 2026-04-25, ADR-0004, HARD RULE 2026-05-05, HARD RULE 2026-05-17, ADR-0002, guard_flag_unauthorized_flip), preserving fail-closed governance reporting.",
+    "evidence_classes options enumerate the full 9-dimension V5 §2 invariant matrix as a multi-select dropdown across all three forms.",
+    "config.yml disables blank issues and exposes two read-only contact_links at canonical V5 roadmap and CLAUDE.md HARD RULE catalog.",
+    "Diff scope honored: only .github/ISSUE_TEMPLATE/ YAML and tests/test_issue_forms_shape.py + plan/evidence files changed; .github/workflows/, CODEOWNERS, REPO-GOVERNANCE.md, PULL_REQUEST_TEMPLATE.md, ruleset/branch-protection surface untouched.",
+    "Form YAMLs contain no GitHub Actions ${{ }} expressions and no script/iframe/javascript markers; rendering occurs in GitHub's issue UI (not Actions runtime).",
+    "No support widening, production platform claim, live adapter execution, admin merge bypass, branch protection mutation, secret material, or guard flag flip is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

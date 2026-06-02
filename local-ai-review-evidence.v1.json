@@ -1,30 +1,41 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "NIST-CSF-allowlist-test-remove",
+  "work_package": "EPIC-P0-5-ISSUE-FORMS",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/fix/nist-csf-allowlist-test-remove",
+    "head_ref": "refs/heads/codex/epic-p0-5-issue-forms",
     "changed_files": [
-      "tests/test_nist_csf_mapping.py",
-      "ao-ma-10-high-risk-reviews/NIST-CSF-allowlist-test-remove/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/NIST-CSF-allowlist-test-remove/anthropic.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json"
+      ".claude/plans/EPIC-P0-5-ISSUE-FORMS.md",
+      ".github/ISSUE_TEMPLATE/config.yml",
+      ".github/ISSUE_TEMPLATE/governance-bug.yml",
+      ".github/ISSUE_TEMPLATE/v5-gate.yml",
+      ".github/ISSUE_TEMPLATE/v5-slice.yml",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_issue_forms_shape.py"
     ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
-    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "ruff_lint", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" }
+    { "name": "diff_scope_boundary", "status": "pass" },
+    { "name": "expression_injection_scan", "status": "pass" },
+    { "name": "high_risk_supersession_evidence_pair", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Identical anti-pattern fix to PR #832 (PCI-DSS allowlist remove). PR #812 (NIST CSF E-6-3e) introduced same hardcoded ALLOWED_CHANGED_FILES cross-slice diff assertion. Every non-NIST-CSF PR fails this test → another mass pipeline blocker.",
-    "Removal: tests/test_nist_csf_mapping.py loses ALLOWED_CHANGED_FILES frozenset (lines ~30) + def test_allowlist_diff_no_other_files() function. Per-slice zero-touch siblings (test_e63e_*_zero_touch) + schema validity + drift checks preserved (53 tests still passing).",
-    "Cross-AI: implementer claude (anthropic) != reviewer codex (openai). HARD RULE Uzun Vadeli Kalıcı Çözüm: anti-pattern removal (not skip)."
+    "V5 Epic P0 E-P0-5 GitHub Issue forms slice (high-risk .github/ path; supersession evidence pair). 3 forms (v5-slice + v5-gate + governance-bug) + config.yml. 23 invariant tests pass + ruff clean.",
+    "Cross-AI: Codex MCP plan-time thread 019e8775 AGREE (with hardening note: risk_class_source CI-drift enforcement deferred to follow-up slice) + independent Anthropic Plan sub-agent AGREE (claude-opus-reviewer, distinct session, cited specific line numbers + 0 expression-injection scan + 0 script markers + 9 evidence class options + 6 violation_kind enum).",
+    "7 mandatory anchor fields in every form (spm_anchor, ao_authority_artifact, artifact_sha256, plan_digest, slice_id, risk_class_source, evidence_classes) marked validations.required:true. risk_class_source carries (COMPUTED) UX label.",
+    "ZERO TOUCH: only .github/ISSUE_TEMPLATE/ touched under .github/; 3 invariant tests enforce no .github/workflows/, no CODEOWNERS, no PULL_REQUEST_TEMPLATE.md, no REPO-GOVERNANCE.md, no ruleset/branch-protection mutation.",
+    "Forms purely declarative (input/dropdown/textarea/checkboxes/markdown); 0 GitHub Actions ${{ }} expressions; rendered by GitHub issue UI, not Actions context. No expression-injection surface.",
+    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, secret material, or guard flag flip introduced; authority remains in repo artifacts + final operator-bound supersession PR."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

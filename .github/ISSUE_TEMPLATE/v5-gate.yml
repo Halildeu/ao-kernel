@@ -1,0 +1,95 @@
+name: V5 Exit Gate
+description: Track a V5 exit decision / promotion gate (production_platform_claim / support_widening / live_adapter_execution flag-flip authority gate).
+title: "[V5-GATE] <gate-id>: <one-line title>"
+labels: ["v5", "gate", "operator-bound"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **Operator-bound supersession.** This issue tracks a flag-flip
+        > gate. The flip itself ONLY lands via an operator-bound
+        > supersession PR with `register_authority: evidence_record_only`
+        > violated + explicit operator approval + cross-AI peer review.
+        > **No individual epic or slice** can flip these flags.
+        >
+        > **Risk class is COMPUTED**; manual downgrade is forbidden.
+  - type: input
+    id: spm_anchor
+    attributes:
+      label: spm_anchor
+      description: Pointer into the V5 roadmap (gate location).
+      placeholder: ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md#epic-2"
+    validations:
+      required: true
+  - type: input
+    id: ao_authority_artifact
+    attributes:
+      label: ao_authority_artifact
+      description: Path to the gate's canonical authority artifact.
+      placeholder: ".claude/plans/EPIC-2-..."
+    validations:
+      required: true
+  - type: input
+    id: artifact_sha256
+    attributes:
+      label: artifact_sha256
+      placeholder: "sha256:..."
+    validations:
+      required: true
+  - type: input
+    id: plan_digest
+    attributes:
+      label: plan_digest
+      placeholder: "plan-digest:..."
+    validations:
+      required: true
+  - type: input
+    id: slice_id
+    attributes:
+      label: slice_id (gate identifier)
+      placeholder: "E-2-1 / E-3-1 / FINAL-SUPERSESSION"
+    validations:
+      required: true
+  - type: input
+    id: risk_class_source
+    attributes:
+      label: risk_class_source (COMPUTED)
+      description: Computed risk class artifact pointer. NOT operator-set.
+      placeholder: ".claude/plans/...#risk-classifier-line-N"
+    validations:
+      required: true
+  - type: dropdown
+    id: guard_flag_to_flip
+    attributes:
+      label: Guard flag being flipped (declared, not yet flipped)
+      options:
+        - support_widening
+        - production_platform_claim
+        - live_adapter_execution
+        - none_yet_pending_evidence
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence_classes
+    attributes:
+      label: evidence_classes (multi-select)
+      multiple: true
+      options:
+        - public_support_matrix
+        - real_provider_live_calls
+        - cost_rate_circuit_breaker_evidence
+        - observability_prod_tunables
+        - security_sbom_license_scan
+        - install_deploy_lifecycle_smoke
+        - multi_tenancy_isolation
+        - docs_runbooks
+        - ao_release_gate_clean_trail
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Gate scope + what evidence must be assembled before the flag flip.
+    validations:
+      required: true

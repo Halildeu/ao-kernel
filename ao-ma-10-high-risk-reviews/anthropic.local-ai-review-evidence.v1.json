@@ -1,68 +1,50 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10h-multi-work-package-migration",
+  "work_package": "EPIC-P0-5-ISSUE-FORMS",
   "implementer": {
-    "agent": "claude-opus-4-7-1m",
+    "agent": "claude",
     "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-opus-4-7-1m-adversarial-self-review",
+    "agent": "claude-opus-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
+    "head_ref": "refs/heads/codex/epic-p0-5-issue-forms",
     "changed_files": [
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/EPIC-P0-5-ISSUE-FORMS.md",
+      ".github/ISSUE_TEMPLATE/config.yml",
+      ".github/ISSUE_TEMPLATE/governance-bug.yml",
+      ".github/ISSUE_TEMPLATE/v5-gate.yml",
+      ".github/ISSUE_TEMPLATE/v5-slice.yml",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/test_ao_ma10h_multi_work_package_schema.py",
-      "tests/test_ao_release_gate.py"
+      "tests/test_issue_forms_shape.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "adversarial-self-review",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "issue_forms_shape_invariants", "status": "pass" },
+    { "name": "diff_scope_boundary", "status": "pass" },
+    { "name": "expression_injection_scan", "status": "pass" }
   ],
   "findings": [
-    "Anthropic adversarial reviewer (Claude Opus 4.7 1M) AGREE on the AO-MA-10h multi-work-package migration. Because implementer + adversarial reviewer share the Anthropic provider, this verdict counts as the SECONDARY adversarial signal; primary cross-provider distinctness comes from OpenAI (Codex MCP thread 019e88c9) plus the documented MiniMax fallback. 2-of-3 distinct-provider AGREE policy applies per HARD RULE Cross-AI Peer Review (2026-05-14).",
-    "Diff line-by-line re-read of schema: const AO-MA-10h removed, pattern + minLength + maxLength added, description rewritten. No other property touched; required[], guard_flags[], reviewer_providers[], required_reviewer_providers[], consensus_status, release_authority, ai_output_release_authority, secrets_recorded, mutations_performed, freshness, $defs.context_binding, $defs.provider_verdict byte-identical to pre-migration.",
-    "Diff line-by-line re-read of scripts/ao_ma10_high_risk_supersession_evidence.py: import re added, three module constants (WORK_PACKAGE_PATTERN, MIN_LEN, MAX_LEN), _validate_work_package function with three failure modes, single pre-check call in builder, emit-dict work_package field swapped from hardcoded literal to dynamic variable. No other emit-dict field is touched.",
-    "Diff line-by-line re-read of tests/test_ao_release_gate.py: only the _high_risk_supersession_evidence helper gains a work_package=AO-MA-10h default keyword argument; one string literal replaced with variable reference. 16 existing call sites unchanged via default.",
-    "New test file tests/test_ao_ma10h_multi_work_package_schema.py: 36 invariants across 7 categories. Every const, every required field, every guard flag, every provider distinctness rule pinned. test_builder_source_no_longer_hardcodes_ao_ma_10h_work_package is a static-source regression guard.",
-    "Substitution attack walked: imagined PR with work_package EVIL-WP-1 — workflow accepts the regex, builder emits it, schema validates it, BUT the artifact still needs to (a) pair-present openai+anthropic raw reviewer files on PR head, (b) match live PR head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths, (c) all guard flags false, (d) release_authority+github-ruleset, (e) freshness within window. EVIL-WP-1 alone defeats no defense.",
-    "Stale rebinding walked: imagined PR reusing old generated artifact - freshness check fails (max_age_seconds vs old generated_at); separately, ao_release_gate.py compares artifact context_binding.head_sha to current PR head_sha (mismatch -> deny_untrusted_context).",
-    "Guard flag audit: grep -n support_widening|production_platform_claim|live_adapter_execution across all changed files; every occurrence stays const false. Plan doc, evidence JSON, new tests, cross-AI evidence files all consistent.",
-    "Workflow zero-touch: .github/workflows/test.yml unchanged; already reads --review-work-package dynamically; regex already matches new schema pattern.",
-    "ao_release_gate.py zero-touch: business logic unchanged; gate validates against the widened schema and live context binding.",
-    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, codeowners mutation, ao-release-gate runtime mutation, gpp_status mutation, or auto-merge execution is performed; all seven AO-MA-10h current_slice_forbidden_actions remain forbidden."
+    "Anthropic reviewer verdict AGREE on V5 Epic P0 E-P0-5 GitHub Issue forms patch. Independent Anthropic Plan sub-agent (claude-opus-reviewer, distinct session from implementer Claude).",
+    "pytest tests/test_issue_forms_shape.py -v: 23 passed in 1.80s, covering form presence, required-field contract, COMPUTED label on risk_class_source, multi-select evidence_classes with all 9 V5 §2 dimensions, slice const-false checklist, gate flip dropdown, governance-bug violation_kind enum, and three diff-scope zero-touch invariants.",
+    "All three forms (v5-slice.yml, v5-gate.yml, governance-bug.yml) carry the seven mandatory anchor fields (spm_anchor, ao_authority_artifact, artifact_sha256, plan_digest, slice_id, risk_class_source, evidence_classes) each marked validations.required:true.",
+    "risk_class_source field label is suffixed '(COMPUTED)' in all three forms, signaling classifier-output authority. UX-layer downward-edit prohibition is the slice scope; CI-layer classifier-drift enforcement is deferred to a follow-up slice (acknowledged in plan doc §6).",
+    "v5-slice.yml guard_flags_const_false checkboxes enumerate all three V5 guard flags with required:true; the form's markdown header reaffirms 'remain const false' and that promotion authority lives in the final operator-bound supersession PR.",
+    "v5-gate.yml guard_flag_to_flip dropdown enumerates all three V5 guard flags plus 'none_yet_pending_evidence' safety option; the form's markdown body explicitly states 'No individual epic or slice can flip these flags' — declaration scope only, no flip execution.",
+    "governance-bug.yml violation_kind dropdown covers all six HARD RULE categories: fake_work (HARD RULE 2026-04-25), cross_ai_peer_review_violation (ADR-0004), admin_merge_bypass (HARD RULE 2026-05-05), ci_red_merge (HARD RULE 2026-05-17), evidence_chain_integrity (ADR-0002), guard_flag_unauthorized_flip, plus 'other' fallback.",
+    "evidence_classes dropdown in all three forms exposes the same 9-option superset matching V5 §2 invariant matrix; configured dropdown + multiple:true.",
+    "config.yml sets blank_issues_enabled:false to enforce form usage; exposes two contact_links at canonical V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md and CLAUDE.md (HARD RULE catalog).",
+    "Working-tree diff is confined to .github/ISSUE_TEMPLATE/ (4 YAML files) plus tests/test_issue_forms_shape.py plus plan doc + evidence files; no .github/workflows/, no CODEOWNERS, no REPO-GOVERNANCE.md, no PULL_REQUEST_TEMPLATE.md, no branch protection / ruleset change.",
+    "Expression-injection scan: 0 GitHub Actions ${{ }} expressions and 0 <script>/<iframe>/javascript: markers across all 4 YAML files. Forms are purely declarative; GitHub renders via issue UI (not Actions context) — no untrusted-input sink.",
+    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, secret material, or guard flag flip is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: V5 Roadmap
+    url: https://github.com/Halildeu/ao-kernel/blob/main/.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md
+    about: Read the V5 promotion roadmap before opening a slice/gate issue.
+  - name: HARD RULE catalog
+    url: https://github.com/Halildeu/ao-kernel/blob/main/CLAUDE.md
+    about: Read the HARD RULE catalog before reporting a governance bug.
