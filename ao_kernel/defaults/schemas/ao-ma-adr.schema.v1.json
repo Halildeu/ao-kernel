@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ao:ao-ma-adr:v1",
   "title": "AO-MA ADR Front-matter",
-  "description": "Schema for the YAML front-matter block of an Architecture Decision Record (Markdown body). The body itself is free-form prose so human decision rationale stays human-readable; only the machine-readable front-matter is validated. AO-MA-11G-1 introduces this contract under the SPM Quality Profile Hardening slice (CNS-20260601-002 Codex thread 019e8050 AGREE). No support widening, no production platform claim, no live adapter execution, no GitHub write authority — ADRs are evidence records that document decisions; release authority remains with the ao-release-gate required check + branch ruleset + non-author approval.",
+  "description": "Schema for the YAML front-matter block of an Architecture Decision Record (Markdown body). The body itself is free-form prose so human decision rationale stays human-readable; only the machine-readable front-matter is validated. AO-MA-11G-1 introduces this contract under the SPM Quality Profile Hardening slice (CNS-20260601-002 Codex thread 019e8050 AGREE). V5 Epic 1 E-1-6 extends the contract with a cross_ai_revalidation block + two additional review_status enum values (cross_ai_revalidation_revise_required, cross_ai_revalidation_red_blocked) so retrospective ADRs can record per-provider verdicts (Codex thread 019e874f AGREE on the format). No support widening, no production platform claim, no live adapter execution, no GitHub write authority — ADRs are evidence records that document decisions; release authority remains with the ao-release-gate required check + branch ruleset + non-author approval.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -68,14 +68,52 @@
       "enum": [
         "original",
         "back_populated_pending_cross_ai_revalidation",
-        "cross_ai_validated"
+        "cross_ai_validated",
+        "cross_ai_revalidation_revise_required",
+        "cross_ai_revalidation_red_blocked"
       ],
-      "description": "Provenance of the decision record. 'original' = born in an ADR; 'back_populated_pending_cross_ai_revalidation' = retro, awaits a separate cross-AI consensus pass; 'cross_ai_validated' = retro and re-confirmed by another provider."
+      "description": "Provenance of the decision record. 'original' = born in an ADR; 'back_populated_pending_cross_ai_revalidation' = retro, awaits a separate cross-AI consensus pass; 'cross_ai_validated' = retro and re-confirmed by another provider; 'cross_ai_revalidation_revise_required' = retro revalidation surfaced REVISE from at least one reviewer; 'cross_ai_revalidation_red_blocked' = retro revalidation surfaced RED from at least one reviewer."
     },
     "back_populated_at": {
       "type": "string",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
       "description": "RFC3339 UTC timestamp of the back-population (when the retro ADR was written, not when the underlying decision was taken)."
+    },
+    "cross_ai_revalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "revalidated_at",
+        "scope",
+        "decision_mutation",
+        "reviewers",
+        "consensus"
+      ],
+      "properties": {
+        "schema_version": { "const": "ao-ma-adr-cross-ai-revalidation.v1" },
+        "revalidated_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        "scope": { "const": "retrospective_attestation_only" },
+        "decision_mutation": { "const": false },
+        "reviewers": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cross_ai_reviewer" }
+        },
+        "consensus": {
+          "type": "string",
+          "enum": [
+            "cross_ai_validated",
+            "cross_ai_revalidation_revise_required",
+            "cross_ai_revalidation_red_blocked"
+          ],
+          "description": "Derived from per-reviewer verdicts. Implementations MUST recompute and not trust this field (fail-closed per ADR-0002)."
+        }
+      }
     },
     "guard_flags": {
       "type": "object",
@@ -96,6 +134,25 @@
       "const": false
     }
   },
+  "$defs": {
+    "cross_ai_reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "agent", "reviewed_at", "verdict", "rationale"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "agent": { "type": "string", "minLength": 1 },
+        "reviewed_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        "verdict": { "enum": ["AGREE", "REVISE", "RED"] },
+        "rationale": { "type": "string", "minLength": 20 },
+        "thread_ref": { "type": "string", "minLength": 1 },
+        "evidence_ref": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
   "allOf": [
     {
       "if": { "properties": { "retrospective": { "const": true } }, "required": ["retrospective"] },
@@ -105,7 +162,9 @@
           "review_status": {
             "enum": [
               "back_populated_pending_cross_ai_revalidation",
-              "cross_ai_validated"
+              "cross_ai_validated",
+              "cross_ai_revalidation_revise_required",
+              "cross_ai_revalidation_red_blocked"
             ]
           }
         }
@@ -119,6 +178,35 @@
         },
         "not": { "required": ["back_populated_at"] }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "review_status": {
+            "enum": [
+              "cross_ai_validated",
+              "cross_ai_revalidation_revise_required",
+              "cross_ai_revalidation_red_blocked"
+            ]
+          }
+        },
+        "required": ["review_status"]
+      },
+      "then": { "required": ["cross_ai_revalidation"] }
+    },
+    {
+      "if": {
+        "properties": {
+          "review_status": {
+            "enum": [
+              "original",
+              "back_populated_pending_cross_ai_revalidation"
+            ]
+          }
+        },
+        "required": ["review_status"]
+      },
+      "then": { "not": { "required": ["cross_ai_revalidation"] } }
     },
     {
       "if": { "properties": { "status": { "const": "superseded" } }, "required": ["status"] },

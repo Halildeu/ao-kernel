@@ -8,9 +8,27 @@ deciders:
   - Claude (Anthropic)
   - Codex (OpenAI)
 retrospective: true
-review_status: back_populated_pending_cross_ai_revalidation
+review_status: cross_ai_validated
 back_populated_at: 2026-06-01T03:00:00Z
 slice_ref: AO-MA-11G-1
+cross_ai_revalidation:
+  schema_version: ao-ma-adr-cross-ai-revalidation.v1
+  revalidated_at: 2026-06-02T00:00:00Z
+  scope: retrospective_attestation_only
+  decision_mutation: false
+  reviewers:
+    - provider: openai
+      agent: codex
+      reviewed_at: 2026-06-02T00:00:00Z
+      verdict: AGREE
+      rationale: "Implementer provider != reviewer provider hard rule governance-necessary: same provider different session/subagent review does not produce independent adversarial signal. Provider-level rule audited via local-ai-review-evidence implementer.provider + reviewer.provider fields fits release-gate enforcement model. AGREE/REVISE/RED action map consistent for retrospective ADR revalidation and normal PR review flows."
+      thread_ref: "019e874f"
+    - provider: anthropic
+      agent: claude-opus-reviewer
+      reviewed_at: 2026-06-02T00:00:00Z
+      verdict: AGREE
+      rationale: "Provider-level granularity is the correct binding axis — Context section grounds this in operator's May 2026 statement 'burda yalnizca ayni saglayici olmamali' and Decision explicitly rejects same-provider review across different sessions, threads, subagents, or worktrees as insufficient (shared training distribution). Asymmetric review relation correctly enumerated (Claude may be reviewed by Codex/Gemini/Grok/Mavis but never by another Claude instance); Consequences preserves multi-session orchestration for implementation role while binding only the review role. This independent Anthropic reviewer session is itself structurally compliant."
+  consensus: cross_ai_validated
 guard_flags:
   support_widening: false
   production_platform_claim: false

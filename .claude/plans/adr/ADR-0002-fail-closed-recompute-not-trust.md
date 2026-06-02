@@ -7,9 +7,27 @@ deciders:
   - Claude (Anthropic)
   - Codex (OpenAI; threads 019e7d6d, 019e7e2b, 019e7fce, 019e8028)
 retrospective: true
-review_status: back_populated_pending_cross_ai_revalidation
+review_status: cross_ai_validated
 back_populated_at: 2026-06-01T03:00:00Z
 slice_ref: AO-MA-11G-1
+cross_ai_revalidation:
+  schema_version: ao-ma-adr-cross-ai-revalidation.v1
+  revalidated_at: 2026-06-02T00:00:00Z
+  scope: retrospective_attestation_only
+  decision_mutation: false
+  reviewers:
+    - provider: openai
+      agent: codex
+      reviewed_at: 2026-06-02T00:00:00Z
+      verdict: AGREE
+      rationale: "Fail-closed + recompute-not-trust correct security base: trusting artifact producer claims (valid/all_passed/slice_passed) is replaced with consumer-side recompute. Decision pulls SHA256 + schema re-validation + cross-ref binding + governance redecide under one invariant; aligned with AO-MA evidence-chain model; complexity cost acceptable, lower than fail-open boundary risk."
+      thread_ref: "019e874f"
+    - provider: anthropic
+      agent: claude-opus-reviewer
+      reviewed_at: 2026-06-02T00:00:00Z
+      verdict: AGREE
+      rationale: "Two-rule invariant (fail-closed + recompute-not-trust) addresses the threat class surfaced across four independent Codex threads (019e7d6d, 019e7e2b, 019e7fce, 019e8028) — single forged producer flag clearing a gate. Decision correctly distinguishes gate path (deny on incomplete inputs) from opt-in subsystems (session resume, telemetry may degrade gracefully); defense-in-depth pin (schema const false + runtime module-layer re-assertion) anticipates schema-only relaxation attack."
+  consensus: cross_ai_validated
 guard_flags:
   support_widening: false
   production_platform_claim: false

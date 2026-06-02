@@ -329,6 +329,22 @@ def parse_adr(
         normalized["date"] = _normalize_date(normalized["date"])
     if "back_populated_at" in normalized and normalized["back_populated_at"] is not None:
         normalized["back_populated_at"] = _normalize_back_populated_at(normalized["back_populated_at"])
+    if "cross_ai_revalidation" in normalized and isinstance(normalized["cross_ai_revalidation"], dict):
+        revalidation = dict(normalized["cross_ai_revalidation"])
+        if "revalidated_at" in revalidation and revalidation["revalidated_at"] is not None:
+            revalidation["revalidated_at"] = _normalize_back_populated_at(revalidation["revalidated_at"])
+        reviewers = revalidation.get("reviewers")
+        if isinstance(reviewers, list):
+            new_reviewers: list[Any] = []
+            for reviewer in reviewers:
+                if isinstance(reviewer, dict) and reviewer.get("reviewed_at") is not None:
+                    new_reviewer = dict(reviewer)
+                    new_reviewer["reviewed_at"] = _normalize_back_populated_at(reviewer["reviewed_at"])
+                    new_reviewers.append(new_reviewer)
+                else:
+                    new_reviewers.append(reviewer)
+            revalidation["reviewers"] = new_reviewers
+        normalized["cross_ai_revalidation"] = revalidation
 
     validator = Draft202012Validator(adr_schema)
     errors = sorted(validator.iter_errors(normalized), key=lambda e: e.absolute_path)
