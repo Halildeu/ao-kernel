@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/project-sync-label-migration-report.v1.json",
+  "title": "Label migration report (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "dry_run",
+    "summary",
+    "entries",
+    "skipped",
+    "warnings",
+    "guard_flags",
+    "register_authority",
+    "github_write_authorized"
+  ],
+  "properties": {
+    "schema_version": {"const": "project-sync-label-migration-report.v1"},
+    "command": {"const": "label-cleanup"},
+    "dry_run": {"type": "boolean"},
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["issues_scanned", "entries", "dropped", "skipped"],
+      "properties": {
+        "issues_scanned": {"type": "integer", "minimum": 0},
+        "entries": {"type": "integer", "minimum": 0},
+        "dropped": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0}
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": ["issue_number", "label", "target_field", "target_value", "dropped"],
+        "properties": {
+          "issue_number": {"type": "integer", "minimum": 1},
+          "label": {"type": "string", "minLength": 1},
+          "target_field": {"type": "string", "minLength": 1},
+          "target_value": {"type": "string"},
+          "dropped": {"type": "boolean"}
+        }
+      }
+    },
+    "skipped": {"type": "array", "items": {"type": "string"}},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["live_adapter_execution", "support_widening", "production_platform_claim"],
+      "properties": {
+        "live_adapter_execution": {"const": false},
+        "support_widening": {"const": false},
+        "production_platform_claim": {"const": false}
+      }
+    },
+    "register_authority": {"const": "evidence_record_only"},
+    "github_write_authorized": {"const": true}
+  }
+}

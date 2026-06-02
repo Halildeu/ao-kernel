@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/project-sync-drift-report.v1.json",
+  "title": "Project sync drift report (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "summary",
+    "findings",
+    "healed",
+    "warnings",
+    "guard_flags",
+    "register_authority",
+    "github_write_authorized"
+  ],
+  "properties": {
+    "schema_version": {"const": "project-sync-drift-report.v1"},
+    "command": {"enum": ["drift", "sync"]},
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["issues_scanned", "findings", "healed", "warnings"],
+      "properties": {
+        "issues_scanned": {"type": "integer", "minimum": 0},
+        "findings": {"type": "integer", "minimum": 0},
+        "healed": {"type": "integer", "minimum": 0},
+        "warnings": {"type": "integer", "minimum": 0}
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": ["issue_number", "field_name", "expected", "actual", "kind"],
+        "properties": {
+          "issue_number": {"type": "integer", "minimum": 1},
+          "field_name": {"type": "string", "minLength": 1},
+          "expected": {"type": "string"},
+          "actual": {"type": "string"},
+          "kind": {"enum": ["missing", "mismatch", "extra"]}
+        }
+      }
+    },
+    "healed": {
+      "type": "array",
+      "items": {"$ref": "#/properties/findings/items"}
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["live_adapter_execution", "support_widening", "production_platform_claim"],
+      "properties": {
+        "live_adapter_execution": {"const": false},
+        "support_widening": {"const": false},
+        "production_platform_claim": {"const": false}
+      }
+    },
+    "register_authority": {"const": "evidence_record_only"},
+    "github_write_authorized": {"const": true}
+  }
+}

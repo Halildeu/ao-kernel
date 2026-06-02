@@ -1,0 +1,43 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "slice_id": "AO-MA-11E-2c",
+  "review_kind": "cross_ai_2_way_module_only",
+  "implementer": {
+    "provider": "anthropic",
+    "agent": "claude-opus-4.7-1m",
+    "session_kind": "claude-code-cli"
+  },
+  "reviewer": {
+    "provider": "openai",
+    "agent": "codex",
+    "thread_id": null,
+    "verdict": "pending",
+    "iter_count": 0,
+    "verdict_payload_ref": null
+  },
+  "review_artifacts": {
+    "plan_doc": ".claude/plans/AO-MA-11E-2c-PROJECT-SYNC-MODULE.md",
+    "slice_evidence": ".claude/plans/AO-MA-11E-2c-PROJECT-SYNC-MODULE.v1.json"
+  },
+  "review_scope": {
+    "module_files": 10,
+    "schema_files": 4,
+    "test_files": 7,
+    "test_count": 46,
+    "workflow_files_touched": 0
+  },
+  "review_constraints": {
+    "cross_ai_provider_diversity_enforced": true,
+    "implementer_reviewer_distinct_providers": true,
+    "two_way_consensus_sufficient_for_module_only_slice": true,
+    "three_way_reserved_for_workflow_slice": true
+  },
+  "guard_flags": {
+    "live_adapter_execution": false,
+    "support_widening": false,
+    "production_platform_claim": false
+  },
+  "register_authority": "evidence_record_only",
+  "github_write_authorized": false,
+  "github_write_rationale": "evidence record; module slice does not itself authorize external writes — module enforcement applies at project_sync runtime, not at this audit artifact."
+}

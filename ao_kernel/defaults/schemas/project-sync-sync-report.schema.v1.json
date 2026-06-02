@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/project-sync-sync-report.v1.json",
+  "title": "Project sync run report (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "summary",
+    "manifest_digest",
+    "guard_flags",
+    "register_authority",
+    "github_write_authorized"
+  ],
+  "properties": {
+    "schema_version": {"const": "project-sync-sync-report.v1"},
+    "command": {"const": "sync"},
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["issues_scanned", "fields_set", "items_added", "items_existing"],
+      "properties": {
+        "issues_scanned": {"type": "integer", "minimum": 0},
+        "fields_set": {"type": "integer", "minimum": 0},
+        "items_added": {"type": "integer", "minimum": 0},
+        "items_existing": {"type": "integer", "minimum": 0}
+      }
+    },
+    "manifest_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["live_adapter_execution", "support_widening", "production_platform_claim"],
+      "properties": {
+        "live_adapter_execution": {"const": false},
+        "support_widening": {"const": false},
+        "production_platform_claim": {"const": false}
+      }
+    },
+    "register_authority": {"const": "evidence_record_only"},
+    "github_write_authorized": {"const": true}
+  }
+}

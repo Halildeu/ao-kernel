@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/project-sync-add-slice-request.v1.json",
+  "title": "Add-slice request (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "epic",
+    "slice_id",
+    "title",
+    "risk",
+    "plan_ref",
+    "consensus",
+    "guard",
+    "depends_on",
+    "guard_flags",
+    "register_authority",
+    "github_write_authorized"
+  ],
+  "properties": {
+    "schema_version": {"const": "project-sync-add-slice-request.v1"},
+    "epic": {
+      "type": "string",
+      "pattern": "^(P0|p0|[0-9]+)$"
+    },
+    "slice_id": {
+      "type": "string",
+      "pattern": "^[A-Z]+-[A-Za-z0-9-]+$"
+    },
+    "title": {"type": "string", "minLength": 1},
+    "risk": {"enum": ["low", "normal", "high", "critical"]},
+    "plan_ref": {"type": "string", "minLength": 1},
+    "consensus": {"enum": ["2-way", "3-way", "pending", "AGREE-merged"]},
+    "guard": {"enum": ["live_adapter", "support_widening", "production_platform_claim", "none"]},
+    "depends_on": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "estimate_days": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "body_extra": {"type": "string"},
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["live_adapter_execution", "support_widening", "production_platform_claim"],
+      "properties": {
+        "live_adapter_execution": {"const": false},
+        "support_widening": {"const": false},
+        "production_platform_claim": {"const": false}
+      }
+    },
+    "register_authority": {"const": "evidence_record_only"},
+    "github_write_authorized": {"const": true}
+  }
+}

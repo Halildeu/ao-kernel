@@ -1570,6 +1570,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
     add_quality_subparser(sub)
 
+    # AO-MA-11E-2c project sync subcommand (manifest <-> GitHub Projects v2).
+    from ao_kernel.project_sync.cli import add_project_subparser
+
+    add_project_subparser(sub)
+
     # Policy-sim subcommand (PR-B4)
     policy_sim_p = sub.add_parser(
         "policy-sim",
@@ -2177,6 +2182,11 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
+
+    if cmd == "project":
+        from ao_kernel.project_sync.cli import dispatch as _project_dispatch
+
+        return _project_dispatch(args)
 
     if cmd == "quality":
         from ao_kernel.orchestration.quality_handlers import (
