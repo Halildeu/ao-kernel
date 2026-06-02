@@ -1,46 +1,32 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-7X-CI-PROMOTION-TRACK",
+  "work_package": "EPIC-P0-4-README-V5-ROADMAP-BADGE",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-7x-ci-promotion-track",
+    "head_ref": "refs/heads/codex/epic-p0-4-readme-badge",
     "changed_files": [
-      ".claude/plans/EPIC-7X-CI-PROMOTION-TRACK.md",
-      "ao_kernel/_internal/scorecard/regression.py",
-      "ao_kernel/defaults/schemas/regression-comparison-result.schema.v1.json",
+      ".claude/plans/EPIC-P0-4-README-V5-ROADMAP-BADGE.md",
+      "README.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/regression_gate.py",
-      "tests/test_regression_gate.py"
+      "tests/test_readme_v5_roadmap_badge.py"
     ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" },
     { "name": "ruff_lint", "status": "pass" },
-    { "name": "mypy_strict", "status": "pass" },
-    { "name": "visibility_not_authority", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
-    { "name": "no_github_write_in_this_pr", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "compare_py_zero_touch", "status": "pass" }
+    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 7x CI required-check promotion track: tooling for future advisory -> manual_block -> ci_block_candidate enforcement promotion. E-7x-1 + E-7x-2 scope (policy-aware regression comparison module + thin CLI gate); E-7x-3 workflow flip ayrı governance PR.",
-    "Codex plan-time thread 019e84b7 2-iter chain (REVISE -> AGREE). iter-1 5 BLOCKER: F1 checkout_drift (impl deferred until PR #805 merge; resolved 2026-06-01); F2 exit_semantics policy-driven (advisory/manual_block/ci_block_candidate + --strict-mode operator-local override + banner); F3 metric_direction (higher_is_worse/lower_is_worse + 8 skip reason codes); F4 schema replay/audit fields; F5 module_boundary (regression.py reuses compare.py).",
-    "iter-2 AGREE + ready_for_impl:false_until_805_merged + must_close_findings:[]. 2 impl-time pins enforced: unknown enforcement_mode ValueError fail-closed; skip_reason single canonical nullable enum.",
-    "Implementation kickoff gate cleared 2026-06-01: PR #805 (E-7a) MERGED (main commit 505885b); E-7x worktree fresh rebase; E-7a artifacts visible.",
-    "Schema regression-comparison-result.schema.v1.json: Draft 2020-12 + additionalProperties:false everywhere; const pins; guard_flags 3 const false; claim_boundary 4 const true (not_sla + not_required_check_yet + single_run_candidate_baseline + advisory_warn_default); compared_from 12 fields (4 SHA256 + benchmark_mode + enforcement_mode_resolved + cli_override_applied + generated_at); overall_status 4-enum + counts 4 integer + scenarios + observed_extra_scenarios.",
-    "Skip reason enum 8 codes: missing_baseline/missing_head/advisory_only/mode_mismatch/baseline_zero/missing_baseline_value/unit_mismatch/invalid_metric_type.",
-    "Module regression.py (~280 line): policy-aware wrapper reusing compare.py; ComparisonInputs dataclass; build_comparison_result catalog-filtered (mode + policy_threshold); direction-aware pct_change; edge case fail-closed skip; determine_exit_code policy-driven + override; ValueError unknown mode (iter-2 pin); canonical_json deterministic.",
-    "CLI scripts/regression_gate.py (~85 line thin): argparse + mutex --advisory-mode/--strict-mode; --generated-at required; --strict-mode stderr banner 'operator-local only NOT CI evidence'; imports facade only.",
-    "33 invariant test pass local: 6 schema validity + 3 negative + 5 comparison logic (warn 25% + hard 40% + improvement -25% + missing_head skip + observed_extra non-gate) + 4 exit semantics + 2 fail-closed enforcement (ValueError) + 3 catalog filter + 3 module boundary + 3 provenance + 2 CLI E2E (strict banner + exit 1 warn) + 2 governance. ruff clean.",
-    "Public claim discipline + ZERO TOUCH: PR HICBIR guard flag flip; HICBIR .github/workflows mutation; HICBIR compare.py mutation (read-only reuse + git diff invariant); HICBIR scorecard schema mutation; HICBIR E-7a artifact mutation. claim_boundary 4 const true; no production claim; no CI required-check promotion claim (deferred E-7x-3).",
-    "Risk class: conservative low-risk (schemas + module + script + tests; no runtime; no workflows; no governance escalation).",
-    "Out-of-scope follow-up slices (5): E-7x-3 workflow continue-on-error flip (governance PR; required-check) + E-7x-4 enforcement transition gate + E-7x-5 compare.py >= vs > fix + E-7x-6 PR comment poster + E-7x-7 multi-baseline trend.",
-    "Cross-AI peer review trail (HARD RULE 2026-05-05 + 2026-05-14): implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e84b7 (2-iter REVISE -> AGREE + ready_for_impl:false_until_805_merged + must_close_findings:[])."
+    "V5 Epic P0 E-P0-4 README badge + roadmap link slice (low-risk docs-only). Three Shields.io badges surface roadmap as transparent program plan.",
+    "Roadmap status disclaimer banner uses qualified language: 'transparent program plan', 'operator-bound supersession PR', 'final'. Three guard flags listed const false.",
+    "10 invariants: 3 badge + 2 link target + 2 disclaimer banner + 2 no production-ready creep + 1 ZERO TOUCH workflows.",
+    "ZERO TOUCH: no .github/workflows/ mutation, no ao-release-gate mutation, no branch protection mutation, no guard flag flip, no production-ready badge."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
