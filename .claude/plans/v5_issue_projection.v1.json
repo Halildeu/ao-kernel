@@ -778,7 +778,7 @@
       "node_id": "PVT_kwHOCx7tY84BZW65",
       "title": "Roadmap v5.0.0",
       "url": "https://github.com/users/Halildeu/projects/3",
-      "items_count": 13
+      "items_count": 71
     },
     "labels_created_count": 23,
     "issues_created": {
@@ -796,7 +796,7 @@
       "P0-GATE-2": 784,
       "P0-GATE-3": 785
     },
-    "issues_count": 13,
+    "issues_count": 71,
     "issue_anchor_pin": {
       "artifact_sha256_at_issue_creation": "sha256:0643c2bbf8874577d8ce964f71e4c71bd865c9b238fd44cd2b31fdf011327398",
       "plan_digest_at_issue_creation": "sha256:b5d5609f2eafe8885589442a89d48fb70f14dd3e568a6aaef704bb388f2b3c79",
@@ -820,6 +820,94 @@
       },
       "issue_number_range": "834-895",
       "created_at": "2026-06-02"
+    },
+    "board_field_setup": {
+      "_description": "Phase-2 (custom fields) + Phase-3 (item add) + Phase-4 (field value set) results. Authority remains projection manifest; this captures observed state for AO-MA-11E-2 drift reconciliation.",
+      "setup_pr": "codex/v5-project-board-setup-mirror",
+      "setup_timestamp": "2026-06-02T11:42:54.613345+00:00",
+      "mirror_digest_at_setup": "sha256:322a866c7ad23e026dd0d4bd645688504207ebbc256b5f4ee772c03e1f39e6a5",
+      "fields_created": 9,
+      "created_field_ids": {
+        "Epic": "PVTSSF_lAHOCx7tY84BZW65zhUd0lo",
+        "Risk": "PVTSSF_lAHOCx7tY84BZW65zhUd0pI",
+        "Guard": "PVTSSF_lAHOCx7tY84BZW65zhUd0q0",
+        "Dependency": "PVTF_lAHOCx7tY84BZW65zhUd0q4",
+        "Estimate": "PVTF_lAHOCx7tY84BZW65zhUd0q8",
+        "Consensus": "PVTSSF_lAHOCx7tY84BZW65zhUd0ss",
+        "Evidence": "PVTF_lAHOCx7tY84BZW65zhUd0sw",
+        "Mirror digest": "PVTF_lAHOCx7tY84BZW65zhUd0us",
+        "Release impact": "PVTSSF_lAHOCx7tY84BZW65zhUd0vE"
+      },
+      "created_field_option_ids": {
+        "Epic": {
+          "P0": "278295a1",
+          "1": "3ac9beba",
+          "2": "1d6a0c8f",
+          "3": "26b8a950",
+          "4": "0e5be4c4",
+          "5": "9da2b558",
+          "6": "eb2b4442",
+          "7": "c4b088f9",
+          "8": "767f9161",
+          "9": "c9c454b3"
+        },
+        "Risk": {
+          "critical": "d96d8e68",
+          "high": "afe50ba1",
+          "normal": "3576a479",
+          "low": "f639a5c7"
+        },
+        "Guard": {
+          "live_adapter": "f5eece9d",
+          "support_widening": "63c5ed54",
+          "production_platform_claim": "231151e8",
+          "none": "73405079"
+        },
+        "Consensus": {
+          "2-way (Codex)": "57c52065",
+          "3-way (Codex+Mavis)": "c9727c79",
+          "pending": "e8ac3d1e",
+          "AGREE-merged": "b3ea3c3c"
+        },
+        "Release impact": {
+          "low": "f1298e1c",
+          "medium": "fc5d28dc",
+          "high": "38bb39d1",
+          "critical": "53e8844e"
+        }
+      },
+      "items_added_phase_3": 58,
+      "items_total_in_board": 71,
+      "field_value_mutations_total": 639,
+      "field_value_mutations_succeeded": 639,
+      "field_value_mutations_failed": 0,
+      "sub_issues_with_full_field_values": 58,
+      "parent_issues_with_full_field_values": 13,
+      "value_derivation_rules": {
+        "Epic": "from epic-{N} label",
+        "Risk": "from risk:{level} label",
+        "Guard": "from guard-flip:{flag} label (or none)",
+        "Dependency": "epic-level narrative (see DEPENDENCY map in setup script)",
+        "Estimate": "by risk (critical=5, high=3, normal=2, low=1)",
+        "Consensus": "AGREE-merged if status:done, else 3-way for E-2-1/E-2-5/E-2-7/E-3-5/E-3-6/E-4-2b, else 2-way",
+        "Evidence": "epic-level plan doc path heuristic",
+        "Mirror digest": "sha256 of projection manifest at setup time",
+        "Release impact": "risk -> impact (critical->critical, high->high, normal->medium, low->low)"
+      },
+      "three_way_consensus_slices": [
+        "E-2-1",
+        "E-2-5",
+        "E-2-7",
+        "E-3-5",
+        "E-3-6",
+        "E-4-2b"
+      ],
+      "notes": [
+        "All 71 milestone issues (13 parent + 58 sub) have all 9 custom fields populated.",
+        "Dependency and Evidence values are epic-level narratives; per-slice refinements can be done in AO-MA-11E-2 mirror sync.",
+        "Mirror digest captured at setup; manifest write-back changes digest, so drift checker MUST recompute on every reconciliation pass.",
+        "No --admin used. No workflow modified. No source modified. No guard flag flipped."
+      ]
     }
   }
 }
