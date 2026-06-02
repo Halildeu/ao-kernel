@@ -30,6 +30,23 @@
 
 > **Tek cümle non-goal contract:** "No slice in this epic flips the `live_adapter_execution` guard flag; the flip is gated by an operator-bound supersession PR with evidence pack + cost ceiling + safety review."
 
+### HARD STOP — V5 Roadmap §3 Epic 2 Amend Dependency (F7)
+
+**Implementation slices E-2-1..E-2-7 BAŞLAYAMAZ** aşağıdaki koşul karşılanana kadar:
+
+- **`V5-ROADMAP-EPIC-2-AMEND` ayrı work item / PR merged** — V5 roadmap §3 Epic 2 satırı şu şekilde yeniden yazılmış olmalı: _"Epic 2 — Live Adapter Execution **Infrastructure** (envelope + audit + cost ceiling + dry-run + secret discipline + opt-in advisory CI workflow + pre-supersession checklist artifact); flip gerçekleştirilmez. `live_adapter_execution` flag flip Epic 9 PR-Xfinal operator-bound supersession PR'ında yapılır."_
+
+**Bu plan PR'ında V5 roadmap dosyası DEĞİŞTİRİLMEZ.** Roadmap amend ayrı slice + ayrı PR; bu plan PR'ı yalnız dependency'yi **DECLARE** eder.
+
+**Doğrulama gate'i:** E-2-1 envelope schema slice'ı açılmadan önce automation veya manual check:
+
+```bash
+gh pr list --repo Halildeu/ao-kernel --state merged --search "V5-ROADMAP-EPIC-2-AMEND in:title"
+# Must return ≥1 merged PR before E-2-1 work begins.
+```
+
+Bu HARD STOP CLAUDE.md HARD RULE Uzun Vadeli Kalıcı Çözüm (2026-05-27) + SSOT drift engelleme disiplini uygulamasıdır.
+
 ---
 
 ## 2. Slice Breakdown (7 slice — hepsi additive + opt-in + flag-preserving)
@@ -78,25 +95,87 @@
 
 **Risk:** medium · **Scope:** `ao_kernel/_internal/cost_ceiling.py` + public facade `ao_kernel.cost.CostCeiling` + tests + ADR `ADR-0005-cost-ceiling.md`.
 
-**API (pure module, no I/O at call sites):**
+**API (pure module, no I/O at call sites except workspace-mode lock acquire):**
 
 ```python
+from decimal import Decimal
+from typing import Literal
+
+BreachState = Literal["ok", "soft_breached", "hard_breached"]
+
 class CostCeiling:
-    def __init__(self, soft_usd: Decimal, hard_usd: Decimal): ...
-    def record_call(self, cost_usd: Decimal) -> None: ...
+    def __init__(self, soft_usd: Decimal, hard_usd: Decimal, *, session_id: str | None = None): ...
+    def record_call(self, cost_usd: Decimal) -> BreachState:
+        """Record a cost; return explicit breach state.
+
+        Validation (fail-closed):
+        - cost_usd < 0 → ValueError
+        - not cost_usd.is_finite() (NaN, Inf, -Inf) → ValueError
+        - cost_usd == 0 AND live-mode AND status='ok' AND tokens>0 AND price>0 → ValueError
+          (zero-cost is suspicious in real provider call; allowed only in stub/dry_run)
+
+        Concurrency:
+        - workspace mode: file-lock on `cost_ledger.lock` per session (fcntl LOCK_EX)
+        - library mode: single-process contract documented (no cross-process safety)
+
+        Hard breach:
+        - on hard_usd breach → raise CostCeilingExceeded (fail-closed; this method does
+          NOT return on hard breach)
+
+        Soft breach:
+        - on soft_usd breach → return "soft_breached" (caller decides continue/stop;
+          caller MUST record decision into per-call audit `cost_breach_handling` field)
+        """
+        ...
     def remaining_usd(self) -> Decimal: ...
-    def breach_state(self) -> Literal["ok", "soft_breached", "hard_breached"]: ...
+    def breach_state(self) -> BreachState: ...
     def assert_under_hard(self) -> None:  # raises CostCeilingExceeded
+        ...
+    def reserve(self, estimated_usd: Decimal) -> "Reservation":
+        """Pre-reservation pattern alternative for concurrent callers.
+
+        Reserves estimated cost upfront; settle later with actual cost via
+        reservation.settle(actual_usd). Prevents read-modify-write race when
+        many callers race against the same ceiling concurrently.
+        """
         ...
 ```
 
 **Behavior:**
 
-- **soft_usd breach** → `telemetry.span("cost.soft_breach")` + return `"soft_breached"` (continue, ama caller karar verir)
-- **hard_usd breach** → `raise CostCeilingExceeded` (fail-closed)
-- Decimal arithmetic ile floating-point drift YOK
+- **soft_usd breach** → `telemetry.span("cost.soft_breach")` + return `"soft_breached"` (caller karar verir; karar audit'e `cost_breach_handling` alanına ZORUNLU kayıt — "continued" | "stopped" | "deferred")
+- **hard_usd breach** → `raise CostCeilingExceeded` (fail-closed; method return etmez)
+- Decimal arithmetic ile floating-point drift YOK; tüm cost field'lar `Decimal` (8 dp granularity)
 - Pricing source SHA-256 ile pin'lenir (BC-10 pattern)
-- Library mode'da CostCeiling instance per-call yaratılabilir; workspace mode'da ek olarak JSONL `cost_ceiling_state.jsonl` append-only.
+- Library mode: in-memory state + **single-process contract** (module docstring'de explicit; multi-process kullanım caller sorumluluğu)
+- Workspace mode: in-memory state + JSONL `cost_ceiling_state.jsonl` append-only + **file-lock on `cost_ledger.lock` per session** (fcntl LOCK_EX) — concurrent record_call atomic
+- Alternative: **pre-reservation pattern** (`reserve()` + `Reservation.settle()`) — read-modify-write race'i tamamen önler
+
+**Validation (fail-closed):**
+
+| Input | Davranış |
+|---|---|
+| `cost_usd < 0` | `raise ValueError("cost_usd must be non-negative")` |
+| `cost_usd.is_nan() or not cost_usd.is_finite()` | `raise ValueError("cost_usd must be finite")` |
+| `cost_usd == 0` AND live-mode AND status=`"ok"` AND tokens>0 AND price>0 | `raise ValueError("zero-cost suspicious in real provider call")` |
+| `cost_usd == 0` AND mode ∈ {"stub", "dry_run"} | OK (zero-cost expected) |
+
+**Audit-write contract (soft breach handling):**
+
+Soft breach durumunda caller mutlaka per-call audit kaydında şu alanı doldurur:
+
+```json
+{
+  "cost_breach_handling": {
+    "state": "soft_breached",
+    "decision": "continued" | "stopped" | "deferred",
+    "decided_by": "operator" | "policy_default" | "caller_module",
+    "decided_at": "RFC3339"
+  }
+}
+```
+
+Per-call audit schema (E-2-2) bu alanı `if status == soft_breached then cost_breach_handling required` allOf koşulu ile zorunlu kılar.
 
 **Configuration:**
 
@@ -105,66 +184,259 @@ class CostCeiling:
 
 ### E-2-4 — Dry-Run Harness
 
-**Risk:** low · **Scope:** `scripts/run_live_adapter_dryrun.py` + invariant tests + runbook stub.
+**Risk:** medium (revised from low; F4 absorption) · **Scope:** `scripts/run_live_adapter_dryrun.py` + invariant tests + runbook stub + `tests/test_dryrun_killswitch_bypass.py`.
 
 **Behavior:**
 
 - Reads policy + envelope schema, **emits** valid envelope artifact, **stub response** (fixed text + zero cost + status `"dry_run_emitted"`).
 - Library mode by default (no `.ao/` required).
-- **No network call** — runtime kill-switches active (E-2-7 invariant `no_live_network_call`).
+- **No network call** — comprehensive runtime kill-switches active (see "Kill-switch coverage" below).
 - CLI: `python3 scripts/run_live_adapter_dryrun.py --provider openai --model gpt-4o-mini --intent FAST_TEXT --output evidence/dryrun-${ts}.envelope.v1.json`
 - Output passes E-2-1 schema strict + E-2-2 per-call audit emit.
 - Exit code 0 on success, 1 on schema fail, 2 on cost ceiling breach (E-2-3 integration).
 
+**Kill-switch coverage (F4 — comprehensive bypass prevention):**
+
+Tüm aşağıdaki bypass path'leri kapatılır (test ile kanıtlanır):
+
+| Kategori | Patched targets |
+|---|---|
+| **Raw socket** | `socket.socket`, `socket.create_connection`, `socket.socket.connect` |
+| **subprocess (full family)** | `subprocess.Popen.__init__`, `subprocess.run`, `subprocess.call`, `subprocess.check_output`, `subprocess.check_call` |
+| **os shell exec** | `os.system`, `os.popen`, `os.spawnv*` family |
+| **httpx (sync + async)** | `httpx.Client.send`, `httpx.AsyncClient.send`, `httpx.stream` |
+| **urllib stack** | `urllib.request.urlopen`, `urllib3.connectionpool.HTTPConnectionPool._make_request` |
+| **requests** | `requests.api.request` (if installed) |
+| **aiohttp** | `aiohttp.ClientSession._request` (if installed) |
+| **http.client** | `http.client.HTTPConnection.request`, `http.client.HTTPSConnection.request` |
+| **Native libs (static denylist)** | `ctypes.CDLL("libcurl")` reject; `cffi.FFI` usage scan in imports |
+
+**Bypass fixture tests (`test_dryrun_killswitch_bypass.py`):**
+
+Her kill-switch için ayrı negative test — bypass denemesi yapılır, exception raise edilmesi assert edilir:
+
+```python
+@pytest.mark.parametrize("bypass_attempt", [
+    lambda: socket.create_connection(("1.1.1.1", 80)),
+    lambda: subprocess.Popen(["curl", "https://example.com"]),
+    lambda: subprocess.check_output(["wget", "https://example.com"]),
+    lambda: os.system("curl https://example.com"),
+    lambda: os.popen("wget https://example.com"),
+    lambda: httpx.Client().send(httpx.Request("GET", "https://example.com")),
+    # ... (full list per table above)
+])
+def test_killswitch_blocks_bypass(install_killswitches, bypass_attempt):
+    with pytest.raises(RuntimeError, match="network call attempted"):
+        bypass_attempt()
+```
+
+**Static import scan:**
+
+`tests/test_dryrun_import_denylist.py` AST-based scan: dry-run harness import graph'ında `ctypes.CDLL("libcurl")` veya `cffi.FFI()` çağrısı bulursa fail. Bu native-lib bypass'ını commit-time'da yakalar.
+
 ### E-2-5 — Secret Resolution Discipline Module
 
-**Risk:** medium · **Scope:** `ao_kernel/_internal/secrets/discipline.py` + tests + audit doc + ADR `ADR-0006-secret-discipline.md`.
+**Risk:** medium · **Scope:** `ao_kernel/_internal/secrets/discipline.py` + `ao_kernel/_internal/secrets/taint.py` + tests + audit doc + ADR `ADR-0006-secret-discipline.md`.
+
+**Primary invariant (F5 — value-based taint tracking):**
+
+> "**Resolve edilen secret değeri serialized output'ta GÖRÜNMEZ.**"
+
+Regex redaction **defense-in-depth**'tir (false-negative riski); primary mekanizma value-based taint set:
+
+```python
+class SecretTaintSet:
+    """In-memory set of resolved secret values; checked before any serialization."""
+
+    def add(self, provider_id: str, value: str) -> None: ...
+    def scan_and_redact(self, payload: str | dict | list) -> str | dict | list:
+        """Walk payload recursively; replace any taint value with [REDACTED:provider=X]."""
+        ...
+    def contains(self, value: str) -> bool: ...
+```
+
+**Serialization pipeline (mandatory):**
+
+```
+LLM call → response normalize → envelope build → SecretTaintSet.scan_and_redact() → JSONL write
+                                                  per-call audit ─┘
+                                                  log line ──────┘
+                                                  telemetry span ┘
+```
+
+Hiçbir serialized output `scan_and_redact()` çağrısı OLMADAN diske / log'a / telemetry'ye gitmez. Lint rule + test enforce.
 
 **Contract (CLAUDE.md değişmez #3):**
 
 - Secret = env-var-only resolution (`os.environ`).
 - MCP parametre olarak secret YASAK (D11 mevcut; bu modül enforcement).
-- Log redaction: secret value asla log'a düşmez; redaction regex (`AKIA[0-9A-Z]{16}`, `sk-[A-Za-z0-9]{20,}`, `xoxb-`, `glpat-`, `gho_`, `eyJ` JWT-like) **emit öncesi** envelope/audit/log payload üzerinde çalıştırılır.
+- **Taint tracking (PRIMARY):** secret resolve edildiği an `taint_set.add(provider_id, value)`. Sonraki tüm serialize işlemleri `scan_and_redact()` üzerinden geçer.
+- **Regex redaction (DEFENSE-IN-DEPTH):** taint set'in yakalayamayacağı durumlar için (örn. external library log'u, third-party hata mesajı) regex pattern set:
+  - `AKIA[0-9A-Z]{16}` (AWS access key)
+  - `sk-[A-Za-z0-9_\-]{20,}` (generic sk- prefix)
+  - `sk-ant-[A-Za-z0-9_\-]{20,}` (Anthropic)
+  - `sk-proj-[A-Za-z0-9_\-]{20,}` (OpenAI project key)
+  - `xoxb-[A-Za-z0-9\-]{10,}` (Slack bot token)
+  - `glpat-[A-Za-z0-9_\-]{20}` (GitLab PAT)
+  - `gho_[A-Za-z0-9]{36}` (GitHub OAuth)
+  - `ghp_[A-Za-z0-9]{36}` (GitHub PAT classic)
+  - `github_pat_[A-Za-z0-9_]{82}` (GitHub fine-grained PAT)
+  - `ghs_[A-Za-z0-9]{36}` (GitHub server token)
+  - `ghu_[A-Za-z0-9]{36}` (GitHub user-to-server token)
+  - `eyJ[A-Za-z0-9_\-]{20,}\.` (JWT prefix)
+  - `https://[a-z0-9.\-]+\.webhook\.office\.com/webhookb2/[A-Za-z0-9@/\-]+` (Teams webhook URL)
 - False-positive boundary: redaction yalnızca string field'larda; integer/decimal cost field'ları üstünde **çalışmaz** (drift engelleme).
 - Circuit breaker integration: secret resolution fail → CB state'i `OPEN` değişmez (secret eksikliği "provider failure" değil, "config failure"); ayrı exception sınıfı `SecretResolutionError`.
 - Vault stub safe path: `vault_stub_provider.py` mevcut; bu modül onu **default fallback** olarak kullanmaz — vault yokluğu → `SecretResolutionError` (fail-closed).
-- Hot-reload: secret rotation runtime'da `discipline.invalidate(provider_id)` ile cache temizlenir; eski secret cache'te kalmaz.
+- Hot-reload: secret rotation runtime'da `discipline.invalidate(provider_id)` ile cache + taint set temizlenir; eski secret cache/taint'te kalmaz.
+
+**Test invariants (E-2-5):**
+
+1. **Taint absence test (PRIMARY):** mock `taint_set.add("openai", "sk-test-12345...")` → call full pipeline (envelope build + audit write + log emit) → assert string `"sk-test-12345..."` not in any serialized output.
+2. **Regex defense test (SECONDARY):** her regex pattern için negative+positive case: pattern matched → redacted; non-matching string → unchanged.
+3. **Serialization gate test:** every serialize call path (envelope, audit, log, telemetry) MUST go through `scan_and_redact()` — AST-based test scans codepaths and fails if any direct `json.dumps` / `open().write` bypasses redaction.
 
 ### E-2-6 — Opt-In Live Adapter Evidence CI Workflow
 
-**Risk:** low · **Scope:** `.github/workflows/live-adapter-evidence-emit.yml` + scripts/`live_adapter_evidence_workflow_runner.py`.
+**Risk:** medium (revised from low; F2 absorption) · **Scope:** `.github/workflows/live-adapter-evidence-emit.yml` + `.github/workflows/live-adapter-evidence-notify.yml` (separate trusted notify workflow if Path B chosen) + scripts/`live_adapter_evidence_workflow_runner.py`.
 
-**Trigger:** `pull_request_target.types: [labeled]` — yalnızca `live-adapter-evidence` label eklendiğinde + `workflow_dispatch` (manuel test).
+#### Path A (DEFAULT — recommended, safer)
+
+**Trigger:** `pull_request` (NOT `pull_request_target`) + `workflow_dispatch` (manual test).
 
 **Behavior:**
 
 - **Advisory** (not required check) — branch protection ruleset'inde required değil.
 - Library mode dry-run harness'ı (E-2-4) koşar.
-- Envelope + per-call audit artifact'ları PR comment'e attach (collapsible markdown).
-- Provider HTTP call **YOK** — `no_live_network_call` invariant runtime kill-switches aktif (socket / urllib / requests / httpx / http.client / subprocess raise on call).
-- `live_adapter_execution: false` envelope içinde + workflow yorum içinde + audit içinde — 3 yerde pin (recompute audit).
+- Envelope + per-call audit **artifact-only output** — `actions/upload-artifact` ile workflow artifact olarak yayımlanır.
+- **PR comment write YOK** — reviewer artifact'ı PR Checks UI'dan indirir.
+- **No secrets injected** — `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `TEAMS_WEBHOOK_URL` workflow env scope'unda YOK.
+- **Teams notification YOK Path A'da** — secret gerektirir; failure görünürlüğü PR Checks status'unda.
+- Provider HTTP call **YOK** — comprehensive kill-switches aktif (E-2-4 listesi).
+- `live_adapter_execution: false` envelope + audit içinde — 2 yerde pin (recompute audit).
 
-**Permissions:** `contents: read` only. No secrets injected. No `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` env scope.
+**Permissions:**
 
-**Teams notification:** Workflow başarısız olursa Microsoft Teams Power Automate webhook'una alert (E-2 §9). Slack workflow YOK (HARD RULE 2026-05-27 — bizim için Slack yok; multi-tenant gelecek için runbook'ta dormant snippet).
+```yaml
+permissions:
+  contents: read
+  # NO pull-requests: write (PR comment yok)
+  # NO actions: write
+  # NO id-token: write
+  # NO secrets: ... (env scope YOK)
+```
+
+**Trigger semantics:** `pull_request` head SHA'sından code çalıştırır; bu güvenlidir çünkü secret YOK ve write permission YOK. Worst-case attacker: malicious PR + dry-run harness'ı çalıştırır + artifact'ı upload eder. Hiçbir secret leak edemez, hiçbir write işlemi yapamaz.
+
+#### Path B (ADVANCED — explicit upgrade with own threat model)
+
+Path B yalnızca aşağıdaki koşullardan biri zorunluysa açılır:
+
+- Label-based trigger gerek (PR'a `live-adapter-evidence` label eklendiğinde tetiklenir)
+- PR comment write gerek (reviewer artifact indirmek yerine inline gormek isterse)
+- Teams notification gerek (failure'da operator chat post)
+
+**Path B threat model (separate dedicated section required in workflow YAML comment header):**
+
+```yaml
+# THREAT MODEL — pull_request_target.types: [labeled]
+# 1. Trigger: pull_request_target fires on label add (NOT on PR push); secret-bearing.
+# 2. Trusted actor check: first step asserts label-add actor IN {Halildeu};
+#    untrusted actor → exit 0 (no-op).
+# 3. Base-only checkout: actions/checkout@v4 with ref=${{ github.event.pull_request.base.sha }}
+#    NEVER ref=${{ github.event.pull_request.head.sha }}; HEAD code is UNTRUSTED.
+# 4. No head code execution: pip install -e . disallowed; only invoke base-branch scripts.
+# 5. Minimal write permission: contents: read + actions: write (artifact only); NO pull-requests: write
+#    in PR-triggered workflow. PR comment write moved to separate workflow_run workflow.
+# 6. Teams notification: SEPARATE workflow `live-adapter-evidence-notify.yml` triggered by
+#    workflow_run completion event; runs on `main` (trusted code path); Teams secret accessed here.
+# 7. Secret scope: TEAMS_WEBHOOK_URL exposed ONLY in notify workflow, NEVER in PR-triggered workflow.
+# 8. Label authorization: label add by non-trusted actor immediately removes label + comments warning.
+```
+
+**Trigger (Path B):**
+
+```yaml
+on:
+  pull_request_target:
+    types: [labeled]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  emit-evidence:
+    if: github.event.label.name == 'live-adapter-evidence' && github.event.sender.login == 'Halildeu'
+    permissions:
+      contents: read
+      actions: write   # artifact upload only
+      pull-requests: read   # explicitly NOT write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}   # BASE only, never HEAD
+      - run: python3 scripts/run_live_adapter_dryrun.py ...
+      - uses: actions/upload-artifact@v4
+```
+
+**Separate notify workflow (Path B):**
+
+```yaml
+# live-adapter-evidence-notify.yml — runs on main (trusted code), secret-bearing
+name: live-adapter-evidence-notify
+on:
+  workflow_run:
+    workflows: [live-adapter-evidence-emit]
+    types: [completed]
+
+jobs:
+  notify-on-failure:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - run: curl -X POST -H "Content-Type: application/json" -d @payload.json ${{ secrets.TEAMS_WEBHOOK_URL }}
+```
+
+**Default choice for this epic:** Path A. Path B aktivasyonu ayrı PR + ayrı threat model review + Codex 3-way consensus (§4 protocol update).
 
 ### E-2-7 — Pre-Supersession-PR Checklist (artifact only)
 
 **Risk:** low · **Scope:** `.claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md` (stub doc) + `ao_kernel/defaults/schemas/pre_supersession_checklist.schema.v1.json`.
 
-**Purpose:** Epic 9 PR-Xfinal'in flag flip'i meşru sayması için zorunlu **dokuz koşul** listesi. Bu epic bu dokümanı **yazar**, ama Epic 9 PR-X final onu **kullanır**.
+**Purpose:** Epic 9 PR-Xfinal'in flag flip'i meşru sayması için zorunlu **on sekiz koşul** listesi (F6 extension). Bu epic bu dokümanı **yazar**, ama Epic 9 PR-Xfinal onu **kullanır**.
 
-**Zorunlu evidence sıralaması** (Epic 9 PR-Xfinal squash mesajında pin'lenir):
+**`proposed_state` field namespacing (F6 — anti-drift):**
 
-1. Operator authority block (explicit "I authorize the `live_adapter_execution=true` flip" — PR commit/comment)
-2. Cross-AI consensus 2-way minimum: Codex (OpenAI) + Mavis (MiniMax) ayrı sağlayıcı (ADR-0004 + HARD RULE Cross-AI Peer Review)
-3. 7-day live test window: bounded operator dispatch (BC-10 pattern), per-call audit aggregate, cost evidence pinned
-4. Cost ceiling enforced + breach evidence + rollback path (cumulative_cost_usd_after ≤ ceiling proof; soft/hard breach handling proven)
-5. All required CI green (no advisory red either — HARD RULE CI Kırmızıyken Merge YASAK)
-6. Public claim language sync (badge update + README + project board) — deferred until flip confirmed
-7. Operator-bound rollback procedure: tag revert path documented, pause workflow ready
-8. Secret rotation completion (her provider için fresh API key + audit log)
-9. Pricing source freshness (≤ 30 gün; operator-pinned snapshot SHA-256 in supersession entry)
+E-2-7 schema'sında **`live_adapter_execution_proposed_state` const true DİREKT ROOT'TA TAŞINMAZ.** İki çözüm seçeneği:
+
+- **Option A (recommended):** Field tamamen Epic 9 supersession schema'sına TAŞINIR. E-2-7 schema'sı sadece koşul listesini içerir; flip proposal Epic 9 PR-Xfinal'in kendi schema'sında belirir.
+- **Option B (compromise):** Field strict namespace altında `epic_9_proposal_only.live_adapter_execution_proposed_state: const true` (explicit comment field: `"_comment": "this field is consumed ONLY by Epic 9 PR-Xfinal validator; Epic 2 scanners ignore this namespace"`).
+
+**Default choice:** Option A — Epic 2 artifact `live_adapter_execution_proposed_state` field'ını HİÇ TAŞIMAZ. Bu, no-guard-flip scanner'ın Epic 2 artifact'larında `live_adapter_execution: true` literal'ını ASLA görmemesini garanti eder.
+
+**Zorunlu evidence sıralaması (18 koşul; Epic 9 PR-Xfinal squash mesajında pin'lenir):**
+
+1. **Operator authority block** — explicit "I authorize the `live_adapter_execution=true` flip" PR commit/comment (exact string match)
+2. **Cross-AI consensus 2-way minimum** — Codex (OpenAI) + Mavis (MiniMax) ayrı sağlayıcı AGREE
+3. **7-day live test window** — bounded operator dispatch (BC-10 pattern), per-call audit aggregate, cost evidence pinned
+4. **Cost ceiling enforced + breach evidence + rollback path** — soft/hard breach handling proven
+5. **All required CI green** — no advisory red either (HARD RULE CI Kırmızıyken Merge YASAK)
+6. **Public claim language sync** — badge/README/project board: deferred until flip confirmed
+7. **Operator-bound rollback procedure** — tag revert path documented, pause workflow ready
+8. **Secret rotation completion** — her provider için fresh API key + audit log
+9. **Pricing source freshness** — ≤30 gün, operator-pinned snapshot SHA-256
+10. **Workflow content SHA pin + base SHA + head SHA** — supersession PR'da kullanılan tüm workflow YAML'larının content hash'i ve trigger commit base/head SHA'ları squash mesajında ve evidence artifact'ında pin'li
+11. **Protected environment reviewer proof** — GitHub Environment `live-adapter-flip` protected reviewer (Halildeu) approval evidence; environment secret scope listesi
+12. **Provider/model allowlist** — flip sırasında kullanılabilecek provider+model çiftleri explicit allowlist; allowlist dışı çağrı fail-closed
+13. **Provider SLA/ToS/data-retention/region policy proof** — her allowlisted provider için: SLA URL + ToS URL + data-retention policy + data-region (EU/US) snapshot SHA-256
+14. **Budget overrun → auto-create follow-up issue** — hard breach OR cumulative cost > 80% ceiling tetiklediğinde GitHub Actions otomatik issue açar (template: `live-adapter-budget-overrun.yml`)
+15. **Branch-protection ruleset source-pin drift check** — supersession PR merge öncesi ruleset SHA-256 alındı + post-merge drift check passes
+16. **Required-check name/source collision check** — yeni required check ismi mevcut check listesi ile çakışmıyor; supersession sonrası check name unique
+17. **Post-window deauthorization + secret scope removal** — 7-day window bittiğinde otomatik deauth workflow (operator authority block expires; secret env scope removed)
+18. **Audit retention + tamper evidence** — per-call audit JSONL en az 90 gün retain; her satır SHA-256 chain ile linked (önceki satır digest = sonraki satır prev_digest); tamper detect script `verify_audit_chain.py`
+
+**Bu 18 koşul birden meet olmadan Epic 9 PR-Xfinal merge edilmez. Eksik koşul → operator-bound supersession kapanır, yeni supersession entry açılır.**
 
 ---
 
@@ -195,8 +467,23 @@ ADR-0004 + HARD RULE Cross-AI Peer Review (2026-05-05) uygulaması. Implementer 
 | E-2-3 Cost ceiling | Claude (Anthropic) | Codex (OpenAI) | 2-way |
 | E-2-4 Dry-run harness | Claude (Anthropic) | Codex (OpenAI) | 2-way |
 | E-2-5 Secret discipline | Claude (Anthropic) | **Codex + Mavis** (3-way) | Security-critical |
-| E-2-6 CI workflow | Claude (Anthropic) | Codex (OpenAI) | 2-way |
-| E-2-7 Pre-supersession checklist | Claude (Anthropic) | Codex (OpenAI) | 2-way (Epic 9 PR-Xfinal kendi 3-way consensus'unu ayrıca çeker) |
+| E-2-6 CI workflow (Path A) | Claude (Anthropic) | Codex (OpenAI) | 2-way (no secrets, no write permission, no pull_request_target) |
+| E-2-6 CI workflow (Path B upgrade) | Claude (Anthropic) | **Codex + Mavis** (3-way) | Security-critical: `pull_request_target` OR secrets-injected OR write permission |
+| E-2-7 Pre-supersession checklist | Claude (Anthropic) | **Codex + Mavis** (3-way) | Critical flip-gate spec; Epic 9 PR-Xfinal authority window defined here |
+
+**F8 absorption — 3-way consensus condition matrix:**
+
+E-2-6 default Path A → 2-way. **Path B trigger conditions** (3-way required if any TRUE):
+
+| Condition | If TRUE → 3-way required |
+|---|---|
+| Trigger contains `pull_request_target` | YES |
+| Any secret injected into workflow env | YES |
+| Workflow permission includes `pull-requests: write` OR `contents: write` OR `id-token: write` | YES |
+| Trigger label-based with non-owner authorization | YES (extra: explicit threat model section) |
+| Workflow callable from external PR head SHA without trusted-actor gate | YES |
+
+E-2-7 → 3-way **always** (flip-gate spec is critical; single-reviewer blind spot unacceptable).
 
 **Verdict → aksiyon:**
 
@@ -304,6 +591,60 @@ Cost / usage / latency / status field'ları envelope içinden alınmaz; raw inpu
 
 Her slice'ta minimum 1 recompute test (envelope'ı parse et, raw inputs'tan yeniden hesapla, eşitlik assert).
 
+### inv-8: `killswitch_bypass_negative_tests` (F4 — E-2-4)
+
+Her kill-switch path için bypass denemesi yapılır + RuntimeError raise edilmesi assert edilir (full list E-2-4 §"Kill-switch coverage" tablosunda). Parametrize fixture; her hatlı bypass için ayrı test (socket / subprocess full family / os.system+popen / httpx sync+async / urllib3 / requests / aiohttp / http.client). Plus AST import scan: `ctypes.CDLL("libcurl")` ve `cffi.FFI` import edilmiyor.
+
+### inv-9: `value_based_taint_absence` (F5 — E-2-5)
+
+Primary invariant. Test pattern:
+
+```python
+def test_taint_value_absent_in_serialized_output(monkeypatch, tmp_path):
+    test_secret = "sk-test-FAKE-VALUE-FOR-TAINT-12345"
+    monkeypatch.setenv("OPENAI_API_KEY", test_secret)
+
+    # Trigger full pipeline (envelope build + audit write + log emit)
+    discipline = SecretResolutionDiscipline()
+    secret = discipline.resolve("openai")
+    envelope = build_envelope(provider="openai", ...)
+    audit_path = tmp_path / "audit.jsonl"
+    write_audit(envelope, audit_path)
+
+    # Assert taint value absent in EVERY serialized surface
+    audit_text = audit_path.read_text()
+    assert test_secret not in audit_text
+    assert test_secret not in json.dumps(envelope)
+    # If logging captured: assert test_secret not in caplog.text
+```
+
+Bonus: each regex pattern test (positive + negative) — `tests/test_secret_redaction_regex.py` parametrize.
+
+### inv-10: `cost_ceiling_concurrency_safe` (F3 — E-2-3)
+
+Workspace mode concurrent record_call atomic test:
+
+```python
+def test_cost_ceiling_concurrent_record_call_atomic(tmp_path):
+    ceiling = CostCeiling(soft_usd=Decimal("0.05"), hard_usd=Decimal("1.00"), session_id="test-sess")
+
+    def worker():
+        try:
+            ceiling.record_call(Decimal("0.01000000"))
+        except CostCeilingExceeded:
+            pass
+
+    threads = [threading.Thread(target=worker) for _ in range(100)]
+    for t in threads: t.start()
+    for t in threads: t.join()
+
+    # 100 calls × $0.01 = $1.00; should hit hard breach
+    # Total recorded must equal sum of accepted calls (no double-count, no lost update)
+    assert ceiling.total_recorded_usd() <= Decimal("1.00")
+```
+
+Bonus: validation tests for negative / NaN / Inf / suspicious-zero inputs (each raises ValueError).
+
 ---
 
 ## 7. Schema Design Notes
@@ -357,27 +698,39 @@ Aynı strict closure + recompute pattern. Ek olarak:
 
 ### pre_supersession_checklist.schema.v1.json (E-2-7)
 
-- `checklist` array of 9 items, her item: `{name, status: enum["unmet"|"met"], evidence_ref: uri|null, attestor: string|null}`
-- `live_adapter_execution_proposed_state` const `true` (bu schema sadece Epic 9 PR-Xfinal tarafından kullanılır; flip proposal)
-- `live_adapter_execution_current_state` const `false` (gözlem) — recompute-not-trust ile runtime'da fiili state ile kıyaslanır
+- `checklist` array of **18 items** (F6 extension), her item: `{name, status: enum["unmet"|"met"], evidence_ref: uri|null, attestor: string|null}`
+- **`live_adapter_execution_current_state` const `false`** (gözlem) — recompute-not-trust ile runtime'da fiili state ile kıyaslanır
+- **`live_adapter_execution_proposed_state` field DEĞİL** — Option A applied: bu field Epic 9 supersession schema'sına taşındı. Epic 2 artifact'ı `proposed_state: true` literal'ını ASLA içermez. No-guard-flip scanner Epic 2 artifact'larında `live_adapter_execution: true` ile karşılaşmaz. (F6 absorption.)
+- Epic 9 supersession schema (ayrı dosya `epic_9_supersession_proposal.schema.v1.json`) `live_adapter_execution_proposed_state: const true` taşır; Epic 9 PR-Xfinal validator bu schema'yı kullanır; Epic 2 scanner'lar bu schema'yı IGNORE eder.
 
 ---
 
 ## 8. Pre-Supersession-PR Gate Checklist (Epic 9 PR-Xfinal için)
 
-E-2-7 doc + schema, Epic 9 PR-Xfinal'in flag flip'i meşru sayması için zorunlu **dokuz koşul** listesi:
+E-2-7 doc + schema, Epic 9 PR-Xfinal'in flag flip'i meşru sayması için zorunlu **on sekiz koşul** (F6 absorption — extended from 9 to 18). Tam liste E-2-7 slice tanımında ve `pre_supersession_checklist.schema.v1.json` items array'inde tek yerde yaşar; bu §8 onların SSOT mirror'ıdır:
 
-1. **Operator authority block** — explicit "I authorize the `live_adapter_execution=true` flip" PR commit/comment (typo değil; exact string match enforced)
-2. **Cross-AI consensus 2-way minimum** — Codex (OpenAI) + Mavis (MiniMax) ayrı sağlayıcı AGREE; her ikisi de PR comment / consultation response olarak kayıtlı
-3. **7-day live test window** — bounded operator dispatch (BC-10 pattern); per-call audit aggregate; cumulative_cost_usd_after evidence dosyası; window içinde minimum N=10 real provider call
-4. **Cost ceiling enforced + breach evidence + rollback path** — soft breach scenario + hard breach scenario evidence; rollback `git revert <flag-flip-commit>` doğrulandı (rehearsal)
-5. **All required CI green** — `gh pr checks` zero red, zero advisory red (HARD RULE CI Kırmızıyken Merge YASAK)
-6. **Public claim language sync** — README badge `production-ready` ÇIKARILMADI bu PR'a kadar; final PR'da yeni badge metni hazır; project board "Done" karta retargeted
-7. **Operator-bound rollback procedure** — tag revert path documented; pause workflow ready (`gh workflow disable live-adapter-bc1-attestation` benzeri komut runbook'ta)
-8. **Secret rotation completion** — her provider için fresh API key (Anthropic + OpenAI + Mavis); rotation timestamp PR'da; eski key invalidated
-9. **Pricing source freshness** — operator-pinned snapshot SHA-256 ≤ 30 gün eski; pricing_source.v1.json'da `effective_from` date; bu PR'da fresh re-pin
+| # | Koşul | Evidence ref türü |
+|---|---|---|
+| 1 | Operator authority block (exact string match) | PR commit/comment text |
+| 2 | Cross-AI consensus 2-way minimum (Codex + Mavis ayrı provider AGREE) | Codex thread + Mavis session refs |
+| 3 | 7-day live test window (bounded operator dispatch, ≥10 real calls) | Per-call audit JSONL aggregate |
+| 4 | Cost ceiling enforced + soft/hard breach evidence + rollback rehearsal | Cost ceiling state JSONL + revert dry-run log |
+| 5 | All required CI green (advisory red dahil zero) | `gh pr checks` snapshot |
+| 6 | Public claim language sync (badge/README/project board ÇIKARILMADI bu PR'a kadar) | Diff inspection |
+| 7 | Operator-bound rollback procedure (tag revert + pause workflow ready) | Runbook MD + workflow disable command snippet |
+| 8 | Secret rotation completion (her provider fresh API key + audit) | Rotation timestamp ledger + revoke audit |
+| 9 | Pricing source freshness (≤30 gün, snapshot SHA-256 pin) | pricing_source.v1.json `effective_from` date |
+| 10 | **Workflow content SHA + base SHA + head SHA pin** (F6 add) | Squash mesajı + evidence artifact `workflow_sha_pin` field |
+| 11 | **Protected environment reviewer proof** (GitHub Environment `live-adapter-flip` approval) | GitHub Environment approval log |
+| 12 | **Provider/model allowlist** (flip sırasında kullanılabilecek çiftler) | Allowlist JSON + fail-closed test |
+| 13 | **Provider SLA/ToS/data-retention/region policy proof** | Per-provider URL + snapshot SHA-256 |
+| 14 | **Budget overrun → auto-create follow-up issue** (workflow template) | `.github/workflows/live-adapter-budget-overrun.yml` exists + smoke run |
+| 15 | **Branch-protection ruleset source-pin drift check** | Pre+post SHA-256 comparison |
+| 16 | **Required-check name/source collision check** | Check listing diff |
+| 17 | **Post-window deauthorization + secret scope removal** (otomatik 7-day deauth) | Deauth workflow log + scope diff |
+| 18 | **Audit retention + tamper evidence** (≥90 gün + SHA-256 chain) | `verify_audit_chain.py` output |
 
-**Bu 9 koşul birden meet olmadan Epic 9 PR-Xfinal merge edilmez. Eksik koşul → operator-bound supersession kapanır, yeni supersession entry açılır.**
+**Bu 18 koşul birden meet olmadan Epic 9 PR-Xfinal merge edilmez. Eksik koşul → operator-bound supersession kapanır, yeni supersession entry açılır.**
 
 ---
 
@@ -516,3 +869,24 @@ Her slice için:
 ---
 
 PLAN-READY: EPIC-2 7 slices, all flag-preserving.
+
+---
+
+## 13. Iter-2 Absorb Summary (Codex thread 019e87b6 iter-1 → revision)
+
+Codex iter-1 verdict: **REVISE**, `ready_for_impl: false`. 7 blocker (F1-F7) + 1 non-blocker (F8). Bu revision tüm finding'leri absorb eder.
+
+| Finding | Severity | Section(s) revised | Summary of fix |
+|---|---|---|---|
+| **F1** Evidence reviewer.verdict='AGREE' pre-recorded before Codex review (No Fake Work ihlali) | blocker/high | `local-ai-review-evidence.v1.json` (önceki commit) | Evidence reviewer.verdict reverted to `"REVISE"`; F1-F8 findings list + iter-2 pending status recorded; iter-2 verdict gerçek Codex AGREE alınmadan AGREE'ye GEÇMEZ. |
+| **F2** E-2-6 `pull_request_target` permission/secret çelişkisi | blocker/high | §2 E-2-6 | **Path A default** (pull_request, no secrets, artifact-only, no PR comment); **Path B advanced** (pull_request_target with explicit threat model: base-only checkout, trusted-actor check, separate notify workflow, minimal write). |
+| **F3** Cost ceiling API/concurrency inconsistencies | blocker/high | §2 E-2-3 | API: `record_call() -> BreachState` (explicit); validation: reject negative/non-finite/suspicious-zero; concurrency: file-lock per session OR `reserve()`+`settle()` pre-reservation; hard breach raises `CostCeilingExceeded` (no return); soft breach mandates `cost_breach_handling` audit field. |
+| **F4** Dry-run kill-switch coverage incomplete | blocker/medium | §2 E-2-4, §6 inv-8 | Expanded: subprocess full family, os.system/popen, httpx async, urllib3, aiohttp, ctypes/cffi/libcurl static denylist. Bypass fixture tests added (parametrize per kill-switch); AST import scan. |
+| **F5** Secret redaction regex false-negative | blocker/medium | §2 E-2-5, §6 inv-9 | **Value-based taint tracking PRIMARY** (resolve secret → add to taint set → scan_and_redact before every serialize); regex defense-in-depth (extended: ghp_/github_pat_/ghs_/ghu_/sk-ant-/sk-proj-/Teams webhook URL); serialization gate AST test. |
+| **F6** E-2-7 checklist eksik koşullar + `proposed_state` namespacing | blocker/medium | §2 E-2-7, §7, §8 | Extended 9 → 18 conditions (workflow SHA pin, env reviewer, allowlist, provider SLA, budget overrun follow-up, ruleset drift, check collision, deauth, audit chain). `live_adapter_execution_proposed_state` field Option A applied: completely moved to Epic 9 supersession schema; Epic 2 artifact NEVER carries `proposed_state: true`. |
+| **F7** V5 roadmap §3 Epic 2 semantics drift | blocker/medium | §1 HARD STOP added | `V5-ROADMAP-EPIC-2-AMEND` ayrı work item / PR declared as hard dependency. E-2-1..E-2-7 implementation BAŞLAYAMAZ until roadmap amend PR merged. This plan PR does NOT touch V5 roadmap. |
+| **F8** Cross-AI 3-way insufficient for E-2-6 + E-2-7 | non-blocker/medium | §4 | E-2-6 default Path A = 2-way; **Path B trigger conditions table** specifies when 3-way required (pull_request_target, secrets, write permission). E-2-7 **3-way always** (flip-gate spec critical). |
+
+**Plan PR scope (unchanged):** plan-only PR; runtime code yok, workflow değişikliği yok, guard flag flip yok. Plan PR'ı merge edildikten sonra V5 roadmap amend PR'ı bir sonraki sıradadır; E-2-1 implementation slice'ı roadmap amend merge edildikten SONRA başlar.
+
+**Iter-2 expected outcome:** Codex iter-2 → AGREE → V5 roadmap amend PR opens → roadmap amend merge → E-2-1 envelope schema slice opens (separate worktree per CLAUDE.md §17 + §19).
