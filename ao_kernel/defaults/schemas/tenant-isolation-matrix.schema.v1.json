@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/tenant-isolation-matrix.v1.json",
+  "title": "V5 Epic 4 multi-tenant isolation matrix (advisory)",
+  "description": "Strict (additionalProperties:false + unevaluatedProperties:false) schema for the multi-tenant isolation advisory matrix. The matrix declares 7 dimensions of multi-tenant boundary pattern. ALL entries are advisory (runtime_enforced=false) and ALL operator-side validation deferred (live_validated=false). Used by both E-4-2a (early advisory contract; entry_status='placeholder') and E-4-2b (late final seal; entry_status='filled'). ao-kernel runtime does NOT enforce any of these boundaries; they are operator-installable Kubernetes-native patterns.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "epic_id",
+    "matrix_status",
+    "advisory_only",
+    "runtime_enforced_global",
+    "live_validated_global",
+    "dimensions"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "tenant-isolation-matrix.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "multi-tenant-isolation-advisory-matrix"
+    },
+    "epic_id": {
+      "type": "string",
+      "const": "EPIC-4"
+    },
+    "matrix_status": {
+      "type": "string",
+      "enum": ["e_4_2a_contract_placeholder", "e_4_2b_final_seal"],
+      "description": "Lifecycle marker. E-4-2a populates matrix with all 7 entries in 'placeholder' state; E-4-2b promotes to 'filled' after E-4-3/E-4-4/E-4-5 evidence is landed."
+    },
+    "advisory_only": {
+      "const": true,
+      "description": "Pinned true: this matrix is advisory; ao-kernel runtime does NOT enforce any dimension."
+    },
+    "runtime_enforced_global": {
+      "const": false,
+      "description": "Pinned false: the runtime layer of ao-kernel does NOT enforce isolation. Kubernetes-native mechanisms (RBAC, NetworkPolicy, namespace) DO the enforcement, operator-installed."
+    },
+    "live_validated_global": {
+      "const": false,
+      "description": "Pinned false: no live cross-tenant attack test has run in Epic 4. Live validation is deferred to Epic 9 operator-bound supersession."
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/dimension_entry"
+      },
+      "description": "Exactly 7 entries, one per isolation dimension. Order is fixed by the dimension enum."
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Each of the 7 dimension enum values MUST appear exactly once in the dimensions array (allOf+contains pattern).",
+      "allOf": [
+        {
+          "properties": {
+            "dimensions": {
+              "contains": { "properties": { "dimension": { "const": "namespace_isolation" } }, "required": ["dimension"] },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "dimensions": {
+              "contains": { "properties": { "dimension": { "const": "rbac_scope" } }, "required": ["dimension"] },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "dimensions": {
+              "contains": { "properties": { "dimension": { "const": "secret_isolation" } }, "required": ["dimension"] },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "dimensions": {
+              "contains": { "properties": { "dimension": { "const": "network_policy" } }, "required": ["dimension"] },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "dimensions": {
+              "contains": { "properties": { "dimension": { "const": "resource_quota" } }, "required": ["dimension"] },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "dimensions": {
+              "contains": { "properties": { "dimension": { "const": "audit_boundary" } }, "required": ["dimension"] },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "dimensions": {
+              "contains": { "properties": { "dimension": { "const": "cost_tracking_advisory" } }, "required": ["dimension"] },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "$defs": {
+    "dimension_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "dimension",
+        "runtime_enforced",
+        "operator_enforceable",
+        "operator_action_required",
+        "live_validated",
+        "enforcement_mechanism",
+        "operator_runbook_section",
+        "entry_status"
+      ],
+      "properties": {
+        "dimension": {
+          "type": "string",
+          "enum": [
+            "namespace_isolation",
+            "rbac_scope",
+            "secret_isolation",
+            "network_policy",
+            "resource_quota",
+            "audit_boundary",
+            "cost_tracking_advisory"
+          ]
+        },
+        "runtime_enforced": {
+          "const": false,
+          "description": "Pinned false: ao-kernel runtime does NOT enforce this dimension. Advisory only (Codex iter-1 F4 absorb: avoid 'operator_enforced:true' overclaim)."
+        },
+        "operator_enforceable": {
+          "type": "boolean",
+          "description": "Whether Kubernetes-native primitives (Namespace + RBAC + NetworkPolicy + ResourceQuota + audit log destination) CAN enforce this dimension if the operator installs the chart correctly."
+        },
+        "operator_action_required": {
+          "type": "boolean",
+          "description": "Whether the operator must execute a runbook step (apply RBAC, create Namespace, set ResourceQuota, etc.) for the dimension to take effect."
+        },
+        "live_validated": {
+          "const": false,
+          "description": "Pinned false: no live cross-tenant attack test has confirmed this boundary holds in a real cluster. Live validation deferred to Epic 9 operator-bound PR."
+        },
+        "enforcement_mechanism": {
+          "type": "string",
+          "minLength": 10,
+          "description": "Short prose describing the Kubernetes-native mechanism that enforces this dimension (e.g. 'Namespace + RoleBinding scope', 'NetworkPolicy default-deny ingress + egress allowlist')."
+        },
+        "operator_runbook_section": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Anchor or section reference in docs/MULTI-TENANT-DEPLOYMENT.md (e.g. '#namespace-isolation', '#rbac-scope') for the operator runbook step."
+        },
+        "entry_status": {
+          "type": "string",
+          "enum": ["placeholder", "filled"],
+          "description": "Lifecycle marker. E-4-2a contract uses 'placeholder'; E-4-2b final seal promotes to 'filled' after downstream slice evidence references are wired."
+        },
+        "downstream_evidence_ref": {
+          "type": ["string", "null"],
+          "description": "Optional reference to downstream slice evidence (E-4-3/E-4-4/E-4-5) that supplies the live enforcement template. Populated in E-4-2b; null in E-4-2a."
+        }
+      }
+    }
+  }
+}
