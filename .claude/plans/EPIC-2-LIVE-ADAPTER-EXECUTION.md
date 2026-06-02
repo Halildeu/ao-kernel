@@ -15,7 +15,7 @@
 - Cost ceiling enforcement module — operator-configurable per-session / per-run budget; soft-stop (warn) + hard-abort (raise).
 - Dry-run harness (`scripts/run_live_adapter_dryrun.py`) — envelope is real shape, response is stub; emits evidence; **never** opens a network socket.
 - Secret resolution discipline module — env-var only (CLAUDE.md değişmez #3); circuit-breaker integration; vault-stub safe path; no MCP parameter passthrough (D11).
-- Opt-in CI workflow `live-adapter-evidence-emit.yml` — advisory (not required), PR-comment triggered, generates envelope evidence under dry-run.
+- Opt-in CI workflow `live-adapter-evidence-emit.yml` — advisory (not required); Path A default (pull_request, no secrets, artifact-only) OR Path B advanced upgrade (pull_request_target.types:[labeled] with explicit threat model + separate notify workflow); generates envelope evidence under dry-run.
 - (Optional) Pre-supersession-PR checklist artifact for Epic 9 PR-Xfinal.
 
 ### NON-GOAL (explicit) — bu epic'te YASAK
@@ -83,9 +83,39 @@ Bu HARD STOP CLAUDE.md HARD RULE Uzun Vadeli Kalıcı Çözüm (2026-05-27) + SS
 - `input_tokens`, `output_tokens`, `total_tokens` (integer ≥ 0; required)
 - `actual_cost_usd` (decimal string, 8 dp; **required — yokluğu = schema invalid**)
 - `latency_ms` (integer ≥ 0)
-- `status` enum `["ok", "error", "stub_emitted", "dry_run_emitted"]`
+- `status` enum `["ok", "error", "stub_emitted", "dry_run_emitted"]` — **provider call lifecycle status** (NOT a breach state — F10 disambiguation)
+- `cost_breach_state` enum `["ok", "soft_breached", "hard_breached", "not_applicable"]` — **separate from `status`; tracks whether this call's cost recording crossed soft/hard ceiling thresholds** (F10 absorption — Codex iter-2 disambiguation)
+  - `"ok"` — call recorded under soft threshold; no breach
+  - `"soft_breached"` — call recording crossed soft threshold; caller continued/stopped/deferred
+  - `"hard_breached"` — call recording crossed hard threshold; module raised `CostCeilingExceeded` (see hard-breach audit-writing path below)
+  - `"not_applicable"` — stub/dry-run mode where cost ceiling does not apply
+- `cost_breach_handling` (object; conditionally required) — populated only when `cost_breach_state == "soft_breached"`; see "Soft breach audit contract" in E-2-3
 - `live_adapter_execution` const `false`
 - `recorded_at` (RFC3339)
+
+**Schema conditional (allOf):**
+
+```json
+{
+  "allOf": [
+    {
+      "if": { "properties": { "cost_breach_state": { "const": "soft_breached" } } },
+      "then": { "required": ["cost_breach_handling"] }
+    }
+  ]
+}
+```
+
+`cost_breach_state == "soft_breached"` → `cost_breach_handling` field zorunlu (caller decision audit).
+
+**Hard-breach audit-writing path (F10 — explicit):**
+
+`cost_breach_state == "hard_breached"` durumu için audit writing dar bir akış izler çünkü `record_call()` exception raise eder ve normal serialize path'i tamamlanmaz:
+
+- Module hard breach detect ettiğinde önce **fail-closed audit row** yazar (try-finally pattern) sonra `raise CostCeilingExceeded`.
+- Fail-closed audit row schema: `cost_breach_state: "hard_breached"`, `status: "error"`, `actual_cost_usd: <cost that triggered breach>`, `cost_breach_handling: null` (caller decision yok; hard breach unconditional).
+- Bu satır ayrı failure artifact path'inde tutulur: workspace mode `evidence/cost_hard_breach.jsonl` + ana `per_call_audit.jsonl` ikisine de yazılır (cross-reference için).
+- Library mode: in-memory log + raise; persistence yok (single-process contract).
 
 **Fail-closed rule:** cost field yoksa → schema validation fail → audit write REJECTED → fail-closed module raise. (CLAUDE.md değişmez #1 — fail-closed scope policy/evidence path.)
 
@@ -162,12 +192,13 @@ class CostCeiling:
 
 **Audit-write contract (soft breach handling):**
 
-Soft breach durumunda caller mutlaka per-call audit kaydında şu alanı doldurur:
+Soft breach durumunda caller mutlaka per-call audit kaydında **iki alan** doldurur (F10 disambiguation — `status` provider call lifecycle için, `cost_breach_state` breach durumu için):
 
 ```json
 {
+  "status": "ok",
+  "cost_breach_state": "soft_breached",
   "cost_breach_handling": {
-    "state": "soft_breached",
     "decision": "continued" | "stopped" | "deferred",
     "decided_by": "operator" | "policy_default" | "caller_module",
     "decided_at": "RFC3339"
@@ -175,7 +206,9 @@ Soft breach durumunda caller mutlaka per-call audit kaydında şu alanı dolduru
 }
 ```
 
-Per-call audit schema (E-2-2) bu alanı `if status == soft_breached then cost_breach_handling required` allOf koşulu ile zorunlu kılar.
+Per-call audit schema (E-2-2) bu alanı `if cost_breach_state == "soft_breached" then cost_breach_handling required` allOf koşulu ile zorunlu kılar. `status` field'ı provider call lifecycle (`ok`/`error`/`stub_emitted`/`dry_run_emitted`) için; `cost_breach_state` cost ceiling breach durumu için — iki ayrı boyut, ayrı enum.
+
+Hard breach audit-write (yukarıda E-2-2 §"Hard-breach audit-writing path" detayında): `cost_breach_state: "hard_breached"`, `status: "error"`, `cost_breach_handling: null`. Bu satır hem ana audit JSONL hem ayrı `cost_hard_breach.jsonl` failure artifact'ına yazılır.
 
 **Configuration:**
 
@@ -446,11 +479,11 @@ E-2-7 schema'sında **`live_adapter_execution_proposed_state` const true DİREKT
 |---|---|---|
 | E-2-1 Envelope schema | low | Schema-only; const-pinned; runtime mutation YOK |
 | E-2-2 Per-call audit | low | Append-only writer; fail-closed cost field requirement; library/workspace mode safe |
-| E-2-3 Cost ceiling | medium | Decimal arithmetic + breach semantics; soft vs hard yanlış konfig riski |
-| E-2-4 Dry-run harness | low | Library mode + kill-switch invariants; envelope schema garantili |
-| E-2-5 Secret discipline | medium | Redaction regex false-negative riski; vault fallback semantics; cross-cutting impact |
-| E-2-6 CI workflow | low | Advisory + opt-in label trigger; secret scope YOK |
-| E-2-7 Pre-supersession checklist | low | Doc + schema; runtime impact YOK |
+| E-2-3 Cost ceiling | medium | Decimal arithmetic + breach semantics; soft vs hard yanlış konfig riski; concurrent record_call atomicity |
+| **E-2-4 Dry-run harness** | **medium** (F4 absorption — F11 alignment) | Comprehensive kill-switch coverage zorunlu (socket / subprocess full family / os.system+popen / httpx async / urllib3 / aiohttp / ctypes/cffi); bypass fixture tests + AST import scan |
+| E-2-5 Secret discipline | medium | Value-based taint primary; regex defense-in-depth; cross-cutting impact tüm serialize path'lerine |
+| **E-2-6 CI workflow (Path A default)** | **medium** (F2 absorption — F11 alignment) | Even Path A advisory: pull_request trigger semantics + artifact upload + no PR comment write disiplini; Path B upgrade additional risk (pull_request_target + secret + trusted-actor) — ayrı 3-way review |
+| E-2-7 Pre-supersession checklist | low | Doc + 18-condition schema; runtime impact YOK; Epic 9 PR-Xfinal authority window spec'i |
 
 **Epic-aggregate risk = CRITICAL.** Sebep: bu slice'lar Epic 9 PR-Xfinal flag flip'inin runway'idir. Bireysel slice low/medium ama epic toplamı flip authority'sine giden köprü — bu yüzden cross-AI consensus disiplini Epic 6 (security) seviyesinde sıkı tutulur.
 
@@ -535,9 +568,11 @@ Her slice şu 7 invariant kategorisinde **en az bir** test içerir:
 - Schema reload → `const False` korunduğu doğrulanır
 - Workflow output'unda key absence (regex `\blive_adapter_execution\s*:\s*true\b` MUST NOT MATCH)
 
-### inv-2: `no_live_network_call`
+### inv-2: `no_live_network_call` (baseline; full matrix in inv-8)
 
-Runtime kill-switches per Epic 3 F3 pattern (referans). Test başlangıcında monkeypatch:
+Baseline kill-switches per Epic 3 F3 pattern (referans). Bu invariant **baseline coverage**'dır; **comprehensive bypass matrix inv-8 altındadır** (F11 alignment — Codex iter-2). E-2-4 dry-run harness slice'ı inv-8'i ZORUNLU içerir; diğer slice'lar minimum inv-2 baseline ile yetinebilir.
+
+Test başlangıcında monkeypatch:
 
 ```python
 def _no_net(*a, **kw): raise RuntimeError("network call attempted in dry-run/stub mode")
@@ -551,22 +586,35 @@ monkeypatch.setattr("subprocess.run", _no_net)         # CLI kapsama
 
 Slice run → ASSERT no RuntimeError raised. Yani: hiçbir codepath bu kill-switch'lere dokunmamış.
 
-### inv-3: `no_secret_in_envelope`
+**Full bypass matrix:** inv-8 (`killswitch_bypass_negative_tests`) — E-2-4 zorunlu; subprocess full family + os.system+popen + httpx async + urllib3 + aiohttp + ctypes/cffi/libcurl static denylist + bypass fixture tests.
 
-Serialized envelope/audit/log payload regex scan:
+### inv-3: `no_secret_in_envelope` (regex defense-in-depth; primary invariant in inv-9)
+
+Bu invariant **defense-in-depth** kategorisindedir; **primary value-based taint absence invariant inv-9 altındadır** (F11 alignment — Codex iter-2). E-2-5 secret discipline slice'ı inv-9'u ZORUNLU içerir (primary); diğer slice'lar inv-3 regex baseline ile defense-in-depth ekler.
+
+Serialized envelope/audit/log payload regex scan (extended pattern set — full list E-2-5 §"Regex redaction" altında; özet:):
 
 ```python
 SECRET_PATTERNS = [
-    r"AKIA[0-9A-Z]{16}",        # AWS access key
-    r"sk-[A-Za-z0-9_\-]{20,}",   # OpenAI / Anthropic style
-    r"xoxb-[A-Za-z0-9\-]{10,}",  # Slack bot token
-    r"glpat-[A-Za-z0-9_\-]{20}",  # GitLab PAT
-    r"gho_[A-Za-z0-9]{36}",       # GitHub OAuth
-    r"eyJ[A-Za-z0-9_\-]{20,}\.",  # JWT prefix
+    r"AKIA[0-9A-Z]{16}",                            # AWS access key
+    r"sk-[A-Za-z0-9_\-]{20,}",                       # generic sk- prefix
+    r"sk-ant-[A-Za-z0-9_\-]{20,}",                   # Anthropic
+    r"sk-proj-[A-Za-z0-9_\-]{20,}",                  # OpenAI project key
+    r"xoxb-[A-Za-z0-9\-]{10,}",                     # Slack bot token
+    r"glpat-[A-Za-z0-9_\-]{20}",                     # GitLab PAT
+    r"gho_[A-Za-z0-9]{36}",                          # GitHub OAuth
+    r"ghp_[A-Za-z0-9]{36}",                          # GitHub PAT classic
+    r"github_pat_[A-Za-z0-9_]{82}",                  # GitHub fine-grained PAT
+    r"ghs_[A-Za-z0-9]{36}",                          # GitHub server token
+    r"ghu_[A-Za-z0-9]{36}",                          # GitHub user-to-server token
+    r"eyJ[A-Za-z0-9_\-]{20,}\.",                     # JWT prefix
+    r"https://[a-z0-9.\-]+\.webhook\.office\.com/webhookb2/[A-Za-z0-9@/\-]+",  # Teams webhook URL
 ]
 for pat in SECRET_PATTERNS:
     assert not re.search(pat, payload_str), f"secret pattern {pat} leaked"
 ```
+
+**Primary invariant:** inv-9 (`value_based_taint_absence`) — E-2-5 zorunlu; resolved secret value asla serialized output'ta görünmez.
 
 ### inv-4: `cost_field_required`
 
@@ -741,19 +789,36 @@ HARD RULE 2026-05-27 uygulaması:
 - **Alert delivery default = Microsoft Teams** Power Automate workflow + Adaptive Card pattern (ADR-0027 + ADR-0029 mühürlü)
 - **Slack pattern asset-preserved başka tenants için**; bizim için active webhook config YOK
 
-### E-2-6 CI workflow notification scope
+### E-2-6 CI workflow notification scope (F9 absorption — Path-aligned)
 
-`live-adapter-evidence-emit.yml` workflow başarısız olursa (örn. schema validation fail, kill-switch raise):
+`live-adapter-evidence-emit.yml` workflow başarısız olursa (örn. schema validation fail, kill-switch raise) notification kanalı Path seçimine **kesinlikle** bağlıdır. **§2 E-2-6 ile çelişen herhangi bir Teams secret ifadesi bu sürümde KALDIRILDI** (önceki sürümde §9 emit workflow içinde `TEAMS_WEBHOOK_URL` inject + HTTP POST tarif ediyordu; bu F2'nin "no secrets in PR-triggered emit workflow" sınırını ihlal ediyordu — Codex F9).
 
-- **Active path:** Vault `TEAMS_WEBHOOK_URL` env-var'a inject → workflow step'inde HTTP POST → Power Automate flow → Adaptive Card chat post
-- **Dormant snippet (runbook):** RB `live-adapter-evidence-slack-reactivation-chain.md` (template) — multi-tenant Slack demand-driven reactivation için; bizim için aktif değil
-- **Ayrı ExternalSecret manifest** (Teams active + Slack dormant) — tek manifest 2 required key YASAK (Ready=False chain)
+#### Path A (DEFAULT)
 
-### Webhook secret discipline (E-2-5 ile kesişim)
+- **Teams notification YOK.** Emit workflow secret-free; `TEAMS_WEBHOOK_URL` env scope'unda **bulunmaz**, workflow step'inde **HTTP POST yapılmaz**.
+- **Failure görünürlüğü:** PR Checks UI status (`failure` / `success` / `cancelled`). Reviewer artifact'ı PR Checks status'undan indirir.
+- Operator manuel takip: GitHub watch / e-mail / GitHub mobile push.
+
+#### Path B (ADVANCED upgrade — opsiyonel, ayrı PR + threat model)
+
+- **Teams notification ayrı `live-adapter-evidence-notify.yml` workflow_run-triggered workflow'unda**; PR-triggered emit workflow'unda **DEĞİL**.
+- Notify workflow:
+  - Trigger: `workflow_run` (emit workflow tamamlandığında) — runs on `main` branch (trusted code path)
+  - Permission: `contents: read` only
+  - Secret: `${{ secrets.TEAMS_WEBHOOK_URL }}` **YALNIZCA notify workflow scope'unda** erişilir
+  - Emit workflow YAML'ı bu secret'ı **referans etmez**; emit ve notify iki ayrı workflow file ve iki ayrı secret-scope sınırı
+- Active path (Path B only): Notify workflow → `curl -X POST https://*.webhook.office.com/...` → Power Automate flow → Adaptive Card chat post
+- Dormant snippet (runbook): RB `live-adapter-evidence-slack-reactivation-chain.md` — multi-tenant Slack demand-driven reactivation; bizim için aktif değil
+- Ayrı ExternalSecret manifest (Teams active + Slack dormant) — tek manifest 2 required key YASAK (Ready=False chain)
+
+### Webhook secret discipline (E-2-5 ile kesişim — Path B only)
+
+Aşağıdaki kurallar **yalnız Path B** notify workflow'unda geçerlidir (Path A'da Teams secret hiç tanımlanmaz):
 
 - `TEAMS_WEBHOOK_URL` env-var-only (D11 — MCP parametre değil)
-- Workflow YAML'da raw webhook URL YOK; `${{ secrets.TEAMS_WEBHOOK_URL }}` syntax
-- Webhook URL audit log'a düşmez (E-2-5 redaction regex `https://.*webhook` opt-in pattern olarak eklenebilir; default kapalı — false-positive engelleme)
+- Notify workflow YAML'da raw webhook URL YOK; `${{ secrets.TEAMS_WEBHOOK_URL }}` syntax
+- Webhook URL audit log'a düşmez (E-2-5 redaction regex Teams webhook pattern `https://[a-z0-9.\-]+\.webhook\.office\.com/webhookb2/...` zaten default açık)
+- Notify workflow secret-bearing olduğu için tek `pull_request_target` veya `pull_request` etkisinde değildir (`workflow_run` trigger only); attacker PR'ı bu workflow'u tetikleyemez (workflow_run security model)
 
 ---
 
@@ -889,4 +954,17 @@ Codex iter-1 verdict: **REVISE**, `ready_for_impl: false`. 7 blocker (F1-F7) + 1
 
 **Plan PR scope (unchanged):** plan-only PR; runtime code yok, workflow değişikliği yok, guard flag flip yok. Plan PR'ı merge edildikten sonra V5 roadmap amend PR'ı bir sonraki sıradadır; E-2-1 implementation slice'ı roadmap amend merge edildikten SONRA başlar.
 
-**Iter-2 expected outcome:** Codex iter-2 → AGREE → V5 roadmap amend PR opens → roadmap amend merge → E-2-1 envelope schema slice opens (separate worktree per CLAUDE.md §17 + §19).
+---
+
+## 14. Iter-3 Absorb Summary (Codex thread 019e87b6 iter-2 → revision)
+
+Codex iter-2 verdict: **REVISE**, `ready_for_impl: false`. 2 blocker (F9-F10) + 2 non-blocker (F11-F12). Bu revision tüm finding'leri absorb eder. (Iter-1 F1-F8 zaten §13'te kapatıldı.)
+
+| Finding | Severity | Section(s) revised | Summary of fix |
+|---|---|---|---|
+| **F9** §9 Teams notification metni F2 sınırını yeniden açıyordu (emit workflow içinde `TEAMS_WEBHOOK_URL` inject + HTTP POST) | blocker/high | §1 in-scope, §9 | §9 tam yeniden yazıldı: Path A'da Teams notification YOK (emit workflow secret-free); Path B'de Teams notification AYRI `live-adapter-evidence-notify.yml` `workflow_run`-triggered workflow'unda (main/trusted code path); emit workflow secret-bearing OLMAZ; webhook secret iki workflow file arasında scope-isolated. §1 in-scope satırında da Path A/Path B notasyonu eklendi. |
+| **F10** Cost ceiling soft-breach audit schema koşulu yanlış alanı (status enum) kullanıyordu; `soft_breached` provider call status değil breach state | blocker/medium | §2 E-2-2, §2 E-2-3 | Per-call audit schema'sına ayrı `cost_breach_state` enum eklendi (`ok|soft_breached|hard_breached|not_applicable`); `status` provider call lifecycle için ayrı boyut. AllOf koşulu `if cost_breach_state == soft_breached then cost_breach_handling required` olarak güncellendi. Hard-breach audit-writing path explicit dokümante: fail-closed audit row (try-finally) → ana `per_call_audit.jsonl` + ayrı `cost_hard_breach.jsonl` failure artifact'ına yazılır; sonra `raise CostCeilingExceeded`. |
+| **F11** Risk table E-2-4 ve E-2-6 hâlâ "low" iken slice başlıkları "medium"; inv-2/inv-3 eski dar kill-switch ve regex listelerini tekrar ediyordu | non-blocker/medium | §3 risk table, §6 inv-2, §6 inv-3 | Risk table E-2-4 medium, E-2-6 Path A medium olarak güncellendi (sebep kolonlarıyla). inv-2 "baseline" + cross-ref inv-8 (full bypass matrix); inv-3 "regex defense-in-depth" + cross-ref inv-9 (primary value-based taint absence). |
+| **F12** PR #827 body iter-1 PENDING/9-condition/eski 3-way kapsam özetini gösteriyordu (plan dosyası güncel, PR surface stale) | non-blocker/low | PR #827 body | `gh pr edit 827 --body` ile body iter-2 state'e güncellendi: 18-condition checklist, E-2-6 Path A default/Path B gated, E-2-7 always 3-way, V5 amend hard-stop, current iter sequence (iter-1 REVISE F1-F8 absorbed, iter-2 REVISE F9-F12 absorbed, iter-3 PENDING). |
+
+**Iter-3 expected outcome:** Codex iter-3 → AGREE (F9-F10 closure plus F11-F12 hygiene) → V5 roadmap amend PR opens → roadmap amend merge → E-2-1 envelope schema slice opens (separate worktree per CLAUDE.md §17 + §19).
