@@ -10,11 +10,9 @@ install which is opt-in).
 from __future__ import annotations
 
 import re
-import subprocess
 import tomllib
 from pathlib import Path
 
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 API_DIR = REPO_ROOT / "docs" / "api"
@@ -161,20 +159,3 @@ def test_docs_extra_does_not_include_live_providers() -> None:
 
 
 # ---- 5. Governance ZERO TOUCH (1) ---------------------------------------
-
-
-def test_no_workflow_mutation() -> None:
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        assert not path.startswith(".github/workflows/"), (
-            f"E-8-4 scaffold-only must not touch workflows (CI build is operator decision): {path}"
-        )

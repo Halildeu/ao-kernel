@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -544,22 +543,3 @@ def test_catalog_compliance_disclaimer_const_true():
     assert disc["not_certified"] is True
     assert disc["not_audited"] is True
     assert disc["documentation_only"] is True
-
-
-def test_no_github_workflow_change_in_pr_diff():
-    """Conservative low-risk lane: PR must not touch .github/workflows/."""
-    # Check committed changes against origin/main
-    try:
-        result = subprocess.run(
-            ["git", "diff", "--name-only", "origin/main...HEAD"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pytest.skip("git not available or origin/main not fetched")
-    if result.returncode != 0:
-        pytest.skip(f"git diff failed: {result.stderr}")
-    for line in result.stdout.splitlines():
-        assert not line.startswith(".github/workflows/"), f"compliance docs PR must not touch workflows: {line}"

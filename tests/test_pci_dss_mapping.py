@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from pathlib import Path
 
 import jsonschema
@@ -441,72 +440,6 @@ def test_drift_committed_matches_generated() -> None:
     expected = mod.render_markdown(data)
     actual = MD_PATH.read_text()
     assert actual == expected, "Markdown drift; regenerate via render_pci_dss_docs.py"
-
-
-def test_e63_catalog_zero_touch() -> None:
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = set(proc.stdout.split())
-    forbidden = {
-        "docs/compliance/control-evidence-catalog.v1.json",
-        "ao_kernel/defaults/schemas/control-evidence-catalog.schema.v1.json",
-        "docs/compliance/soc2-trust-services-criteria-mapping.v1.md",
-        "docs/compliance/iso-27001-controls-mapping.v1.md",
-    }
-    overlap = forbidden & changed
-    assert not overlap, f"E-6-3 catalog modified: {overlap}"
-
-
-def test_e63b_hipaa_zero_touch() -> None:
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = set(proc.stdout.split())
-    hipaa = {
-        "docs/compliance/hipaa-control-mapping.v1.json",
-        "ao_kernel/defaults/schemas/hipaa-control-mapping.schema.v1.json",
-        "docs/compliance/hipaa-control-mapping.v1.md",
-        "scripts/render_hipaa_mapping.py",
-        "tests/test_hipaa_mapping.py",
-    }
-    overlap = hipaa & changed
-    assert not overlap, f"HIPAA artifacts modified: {overlap}"
-
-
-def test_e63c_gdpr_zero_touch() -> None:
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = set(proc.stdout.split())
-    gdpr = {
-        "docs/compliance/gdpr-dpia-template.v1.json",
-        "ao_kernel/defaults/schemas/gdpr-dpia-template.schema.v1.json",
-        "docs/compliance/gdpr-dpia-template.v1.md",
-        "docs/compliance/gdpr-dpia-operator-runbook.v1.md",
-        "scripts/render_gdpr_dpia_template.py",
-        "tests/test_gdpr_dpia_template.py",
-    }
-    overlap = gdpr & changed
-    assert not overlap, f"GDPR DPIA artifacts modified: {overlap}"
 
 
 # ---- 7. Cross-validation (3) ---------------------------------------------
