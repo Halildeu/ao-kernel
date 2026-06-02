@@ -457,14 +457,61 @@ def test_drift_committed_matches_generated() -> None:
     assert actual == expected, "Markdown drift; regenerate via render_pci_dss_docs.py"
 
 
+# PCI-DSS slice marker set — files whose modification triggers the allowlist
+# invariant. Distinct from ALLOWED_CHANGED_FILES (which is the slice's full
+# write-set) because some entries are SHARED across slices:
+# - local-ai-review-evidence.v1.json: cross-AI evidence touched by every slice
+# - docs/compliance/README.md: shared compliance index (HIPAA, GDPR, NIST,
+#   PCI-DSS all add sections to this single file)
+# Marker set = ALLOWED minus those two shared files (F3 absorb).
+_PCI_SLICE_MARKERS_EXACT = ALLOWED_CHANGED_FILES - {
+    "local-ai-review-evidence.v1.json",
+    "docs/compliance/README.md",
+}
+
+# PCI-specific path prefix patterns — catches PCI-DSS extension files that
+# may be added in future without matching an existing exact entry (F4 absorb).
+# Any future PR adding `docs/compliance/pci-dss-*`, `tests/test_pci_dss_*`,
+# `scripts/*pci_dss*`, or PCI-DSS schemas counts as touching the slice.
+_PCI_SLICE_MARKER_PREFIXES = (
+    "docs/compliance/pci-dss-",
+    "docs/compliance/pci_dss_",
+    "tests/test_pci_dss_",
+    "scripts/render_pci_dss_",
+    "ao_kernel/defaults/schemas/pci-dss-",
+    "ao_kernel/defaults/schemas/pci_dss_",
+    ".claude/plans/EPIC-6-E6-3D-PCI-DSS",
+)
+
+
+def _pr_touches_pci_slice(changed: set[str]) -> bool:
+    """Return True if any changed file is a PCI-DSS slice file.
+
+    Detection combines exact-set membership (existing PCI-DSS files) with
+    prefix patterns (future PCI-DSS extensions). False negatives are guarded
+    by the prefix patterns; false positives are guarded by excluding shared
+    compliance files (README, evidence) from the marker set.
+    """
+    if changed & _PCI_SLICE_MARKERS_EXACT:
+        return True
+    return any(path.startswith(prefix) for path in changed for prefix in _PCI_SLICE_MARKER_PREFIXES)
+
+
 def test_allowlist_diff_no_other_files() -> None:
     """H7: When this PR touches PCI-DSS slice files, it MUST NOT touch other files.
 
-    Conditional scope: this invariant applies ONLY to PRs that modify at least one
-    file inside the PCI-DSS slice's write-set (ALLOWED_CHANGED_FILES). PRs that do
-    not touch the slice are out of scope and the test skips — otherwise this test
-    would fail on every PR in the repo since the merged PR #811 (HARD RULE Uzun
-    Vadeli Kalıcı Çözüm).
+    Conditional scope: this invariant applies ONLY to PRs that modify at least
+    one file inside the PCI-DSS slice (marker set = exact ALLOWED_CHANGED_FILES
+    minus shared `local-ai-review-evidence.v1.json` + `docs/compliance/README.md`,
+    UNION PCI-DSS path prefix patterns). PRs that do not touch the slice are out
+    of scope and the test skips — otherwise this test would fail on every PR in
+    the repo since the merged PR #811 (HARD RULE Uzun Vadeli Kalıcı Çözüm).
+
+    Marker discipline (Codex iter-1 F3/F4 absorb):
+    - Shared compliance files (README + cross-AI evidence) excluded from marker
+      to prevent false positives on non-PCI compliance PRs (HIPAA, GDPR, NIST).
+    - Prefix patterns added to prevent false negatives on future PCI-DSS
+      extension files that may be added without matching an existing exact entry.
     """
     proc = subprocess.run(
         ["git", "diff", "--name-only", "origin/main", "HEAD"],
@@ -476,16 +523,10 @@ def test_allowlist_diff_no_other_files() -> None:
     if proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
     changed = set(proc.stdout.split())
-    # Conditional scope: only run when PR overlaps PCI-DSS slice files.
-    # local-ai-review-evidence.v1.json is shared cross-AI evidence (touched by
-    # every slice) — exclude it from the slice-detection key so we do not treat
-    # every PR as a PCI-DSS PR.
-    pci_slice_keys = ALLOWED_CHANGED_FILES - {"local-ai-review-evidence.v1.json"}
-    pci_files_in_diff = changed & pci_slice_keys
-    if not pci_files_in_diff:
+    if not _pr_touches_pci_slice(changed):
         pytest.skip(
             "PR does not touch PCI-DSS slice files; allowlist scope does not apply "
-            "(this test is slice-scoped, not repo-wide)"
+            "(this test is slice-scoped, not repo-wide; see _pr_touches_pci_slice)"
         )
     extras = changed - ALLOWED_CHANGED_FILES
     assert not extras, f"PCI-DSS slice PR changes files outside allowlist: {extras}"
