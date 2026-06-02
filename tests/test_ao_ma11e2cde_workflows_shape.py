@@ -57,6 +57,21 @@ def _read_text(path: Path) -> str:
 def _read_executable_text(path: Path) -> str:
     """Return the workflow source with comment-only lines stripped.
 
+    Forbidden-pattern checks (``pull_request_target``, ``git push origin
+    main``, ``--admin``) must apply to the *executable* surface of the
+    workflow, NOT to documentation comments that explain what the workflow
+    does or does NOT do. A line is treated as a "comment-only" line if its
+    first non-whitespace character is ``#``.
+    """
+    return (
+        "\n".join(line for line in path.read_text(encoding="utf-8").splitlines() if not line.lstrip().startswith("#"))
+        + "\n"
+    )
+
+
+def _read_executable_text(path: Path) -> str:
+    """Return the workflow source with comment-only lines stripped.
+
     Forbidden-pattern checks (``pull_request_target``, ``git push origin main``,
     ``--admin``) must apply to the *executable* surface of the workflow, NOT
     to documentation comments that explain what the workflow does or does NOT
@@ -159,9 +174,9 @@ def test_06_2e_dispatch_only():
         f"11e-2e triggers must be ONLY workflow_dispatch, got {list(on.keys())}"
     )
 
-    text = _read_text(WF_2E)
+    text = _read_executable_text(WF_2E)
     for forbidden in ("push:", "pull_request:", "schedule:"):
-        assert forbidden not in text, f"11e-2e contains forbidden trigger keyword '{forbidden}'"
+        assert forbidden not in text, f"11e-2e executable surface contains forbidden trigger keyword '{forbidden}'"
 
 
 def test_07_2e_confirmation_required():
@@ -179,22 +194,24 @@ def test_07_2e_confirmation_required():
 
 
 def test_08_2c_no_direct_push_to_main():
-    """11e-2c must NOT contain direct git push to main."""
-    text = _read_text(WF_2C)
+    """11e-2c must NOT contain direct git push to main in the executable surface."""
+    text = _read_executable_text(WF_2C)
     forbidden_patterns = [
         r"git\s+push\s+origin\s+main",
         r"git\s+push\s+.*\srefs/heads/main",
         r"git\s+push\s+--force\s+origin\s+main",
     ]
     for pattern in forbidden_patterns:
-        assert not re.search(pattern, text), f"11e-2c contains forbidden direct push pattern: {pattern}"
+        assert not re.search(pattern, text), (
+            f"11e-2c executable surface contains forbidden direct push pattern: {pattern}"
+        )
 
 
 def test_09_all_no_admin():
-    """No --admin flag in any workflow body."""
+    """No --admin flag in any workflow executable surface."""
     for path in ALL_WORKFLOW_PATHS:
-        text = _read_text(path)
-        assert "--admin" not in text, f"{path.name} contains forbidden --admin flag"
+        text = _read_executable_text(path)
+        assert "--admin" not in text, f"{path.name} executable surface contains forbidden --admin flag"
 
 
 def test_10_all_no_admin_via_workflow_id():

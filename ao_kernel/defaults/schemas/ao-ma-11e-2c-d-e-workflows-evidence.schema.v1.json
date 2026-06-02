@@ -66,7 +66,7 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "pattern": "^[^.][^/]*(/[^.][^/]*)*$"
+        "pattern": "^[A-Za-z0-9_.][A-Za-z0-9_./-]*$"
       },
       "contains": {
         "type": "string",
