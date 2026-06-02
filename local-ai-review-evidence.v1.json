@@ -1,40 +1,37 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "CI-FAST-SUITE",
+  "work_package": "CI-UV-INSTALLER",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ci-fast-suite",
+    "head_ref": "refs/heads/codex/ci-uv-installer",
     "changed_files": [
       ".github/workflows/test.yml",
-      ".gitignore",
-      "local-ai-review-evidence.v1.json",
-      "pyproject.toml",
-      "tests/test_workflow_state_machine.py"
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
-    { "name": "tests", "status": "pass" },
-    { "name": "ruff_lint", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" },
-    { "name": "xdist_determinism", "status": "pass" },
-    { "name": "coverage_gate_parity", "status": "pass" },
+    { "name": "yaml_valid", "status": "pass" },
+    { "name": "uv_extras_resolve_smoke", "status": "pass" },
+    { "name": "no_bare_pip_install_leftover", "status": "pass" },
     { "name": "required_check_names_preserved", "status": "pass" },
-    { "name": "workflow_mutation_reviewed", "status": "pass" },
+    { "name": "matrix_preserved", "status": "pass" },
+    { "name": "coverage_topology_preserved", "status": "pass" },
+    { "name": "no_new_action_supply_chain", "status": "pass" },
+    { "name": "retry_guard_preserved_all_sites", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
-    { "name": "no_runtime_module_change", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "CI-perf change: the Test workflow re-ran the full ~6k-test suite up to 4x (3-version matrix each with coverage instrumentation + a separate `coverage` job re-running the whole suite) serially with no pip cache and no workflow-level concurrency. Measured a clean run at ~9m20s wall-clock with frequent 17-27m cancelled-run pileups. This PR parallelizes + dedups without weakening any gate.",
-    "Change set (4 functional files + this evidence): (1) pyproject [dev] += pytest-xdist; (2) test matrix runs `-n auto`, drops `-v`, runs coverage instrumentation only on the 3.13 leg (3.11/3.12 functional-only) -- the 3.13 leg stages combined `.coverage` as `coverage.data` and uploads it + `coverage.xml`; (3) the `coverage` required-check becomes a fail-closed sentinel (needs:[event-gate,test] + always(); fails closed if the test matrix did not succeed or the artifact is missing) that runs `coverage report --fail-under=85` on the consumed artifact with NO suite rerun; (4) top-level concurrency supersedes stale in-progress runs per ref; (5) pip caching on setup-python; (6) determinism fix in tests/test_workflow_state_machine.py.",
-    "Determinism fix (xdist prerequisite): TestValidateTransitionMatrix.test_allowed_transitions parametrized over a frozenset (`for n in allowed`); frozenset iteration is PYTHONHASHSEED-dependent so xdist worker processes collected a different parametrize order -> 'Different tests were collected between gw*' collection abort. Fixed with `sorted(allowed)` (the correct collection-determinism fix, NOT a PYTHONHASHSEED pin which would mask latent non-determinism). Verified seed-robust across PYTHONHASHSEED=1/42/12345.",
-    "Required-check semantics preserved (#764): the matrix job names `test (3.11)`/`test (3.12)`/`test (3.13)` and the `coverage` job name are unchanged, so the ao-release-gate `--required-check` allowlist and the test_ao_release_gate_enforce_job invariant remain valid and were NOT modified. Top-level concurrency carves out `main` (post-merge scorecard-main baseline must complete) and all `pull_request: edited` events (a non-retarget title/body edit is skipped by event-gate, so cancelling would shadow-cancel an in-progress real required-check run).",
-    "PoC evidence (isolated /tmp venv, pytest-xdist 3.8.0 + pytest-cov 7.1.0): serial+cov 192s/6132 pass/85% -> `-n4`+cov 97s/6132 pass/85.21% (2x, coverage parity) -> `-n4` no-cov 59s (3.3x). Re-validated post-revival on rebased base @c98cbdf (which now includes #903 whole-diff anti-pattern removal + #904 BLK-005 gate): EXACT 3.13 leg `-n auto`+cov+--cov-fail-under=85 -> exit 0, 57s (serial baseline 156s on the same base, ~2.7x), 6166 passed/86 skipped, 85.21% >= 85%, no collection divergence; BLK-005 does NOT block this PR (test.yml is not a tests/ Python test function, so the conftest collection-gate at tests/conftest.py never scans it; full collection 6252 tests, gate clean); sentinel simulation (coverage.data -> coverage report --fail-under=85) -> exit 0, 85%; ruff clean.",
-    "Cross-AI review: Codex thread 019e88cc. Plan-time: REVISE (xdist determinism doubt + coverage-job-delete -> sentinel) -> AGREE ready_for_impl. Post-impl: iter-1 BLOCK (concurrency could shadow-cancel pull_request:edited required runs; coverage.data left dirty; branch behind origin/main) -> all absorbed (edited carve-out added, coverage.data removed + gitignored, ff-rebased to 46121bb + re-validated) -> iter-2 AGREE ready_for_merge. Revival re-confirm on rebased base @c98cbdf (BLK-005 now live): Codex thread 019e89e6 -> AGREE, explicitly confirming (a) BLK-005 non-conflict, (b) coverage fail-closed sentinel correctness (no path to mask a failing test matrix and still go green), (c) the pull_request:edited cancel carve-out leaves no CI gap on retarget, (d) no other post-rebase risk. Reviewer verdict is one evidence layer for this high-risk workflow diff; merge authority remains the repo-owned ao-release-gate required check + GitHub ruleset.",
-    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime module change, no defaults/ change, no scripts/ change, no .ao/ workspace write, no secret material. Diff is workflow + CI-dep + one test-determinism line + .gitignore + this evidence file."
+    "CI-perf change (PR-0 of the queue-relief program): swap every pip-based dependency install in the Test workflow to a uv-bootstrapped `uv pip install --system` form. Goal is faster dependency resolution/install across all jobs (uv resolver + parallel downloads) -> lower per-job setup time + total compute + queue occupancy in the ~45-parallel-worktree model. No test execution path, no coverage gate, no required-check names change.",
+    "Change set (1 file: .github/workflows/test.yml; +27/-12). 9 install sites converted by a count-asserted transform: lint (ruff), test matrix 3.11/3.12/3.13 (.[dev,llm,metrics]), coverage (coverage), packaging-smoke (build), typecheck + benchmark-fast + scorecard (.[dev,llm,mcp,metrics] x3), extras-install (pip_install() helper), ao-release-gate (.[mcp]). Each site follows one pattern: `python -m pip install uv || (sleep 5 && ...)` bootstrap then `uv pip install --system <args> || (sleep 5 && ...)` -- the v3.8 H6 2-try retry guard is preserved at every site including the ao-release-gate merge-authority job (Codex post-impl REVISE absorb: the gate install initially lost its retry; re-added so a transient PyPI/uv flake cannot break the merge gate).",
+    "Deliberately NO new third-party action: uv is obtained via `python -m pip install uv` inside each run block rather than astral-sh/setup-uv. This keeps the supply-chain delta at zero (no new `uses:` surface, nothing to SHA-pin/review), which matters for the ao-release-gate job that is the merge authority. The ~3-5s per-job uv bootstrap is off the critical path (only test (3.13)=248s is the long pole; uv affects the install portion, not the ~6k-test execution).",
+    "Local smoke (uv 0.11.18, dry-run resolution against .venv): .[dev,llm,metrics], .[dev,llm,mcp,metrics], .[mcp], and .[policy-service] all resolve cleanly with the expected packages (starlette/uvicorn/typing-inspection/pyjwt/pycparser); no resolution error. YAML parses (yaml.safe_load); `git diff --check` clean; a grep guard confirms zero leftover bare `pip install <package>` (only the `python -m pip install uv` bootstrap remains). The canonical install + full-suite validation is this workflow PR's own GitHub Actions run.",
+    "Invariants preserved (verified): job names (test (3.11)/(3.12)/(3.13), coverage, lint, typecheck, packaging-smoke, ...) unchanged; matrix still [\"3.11\",\"3.12\",\"3.13\"]; coverage instrumentation still only on the 3.13 leg, coverage-data artifact + fail-closed `coverage` sentinel unchanged; ao-release-gate `--required-check` allowlist still includes test (3.11)/(3.12)/(3.13); `cache: pip` left in place (uv uses its own cache; pip cache stays harmless, no cache-topology change in this PR); 2 pip-specific comments neutralized to installer-neutral wording (doc-drift hygiene).",
+    "Cross-AI review: Codex thread 019e8a1b. Plan-time (program design): REVISE -> AGREE on the staged uv-only-first sequence. Post-impl iter-1: REVISE (ao-release-gate install dropped the retry guard) -> absorbed (retry re-added) -> iter-2 AGREE. Reviewer verdict is one evidence layer; merge authority remains the repo-owned ao-release-gate required check + GitHub ruleset.",
+    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime change, no defaults/ change, no scripts/ change, no .ao/ workspace write, no branch-protection mutation, no secret material. Diff is workflow installer-swap only."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

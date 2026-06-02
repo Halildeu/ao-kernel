@@ -105,8 +105,10 @@ jobs:
       - name: Install ruff
         # v3.8 H6: 2-try retry guard for transient PyPI/TLS flakes
         # (one-off `SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC` observed
-        # on v3.7 release CI; cheap insurance across all pip installs).
-        run: pip install ruff || (sleep 5 && pip install ruff)
+        # on v3.7 release CI; cheap insurance across all installer calls).
+        run: |
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
+          uv pip install --system ruff || (sleep 5 && uv pip install --system ruff)
       - name: Ruff check
         run: ruff check ao_kernel/ tests/
 
@@ -129,7 +131,9 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
-        run: pip install -e ".[dev,llm,metrics]" || (sleep 5 && pip install -e ".[dev,llm,metrics]")
+        run: |
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
+          uv pip install --system -e ".[dev,llm,metrics]" || (sleep 5 && uv pip install --system -e ".[dev,llm,metrics]")
       - name: Run tests
         # CI-FAST (Codex 019e88cc): `-n auto` parallelizes the ~6k-test suite
         # across runner cores (PoC: serial 192s -> -n4 97s with coverage, 85%
@@ -180,7 +184,9 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install coverage tool
-        run: pip install coverage || (sleep 5 && pip install coverage)
+        run: |
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
+          uv pip install --system coverage || (sleep 5 && uv pip install --system coverage)
       - name: Download coverage data from the 3.13 test leg
         uses: actions/download-artifact@v8
         with:
@@ -212,7 +218,9 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install build tool
-        run: pip install build || (sleep 5 && pip install build)
+        run: |
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
+          uv pip install --system build || (sleep 5 && uv pip install --system build)
       - name: Build wheel and run packaging smoke
         run: python scripts/packaging_smoke.py
 
@@ -274,7 +282,9 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
-        run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
+        run: |
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
+          uv pip install --system -e ".[dev,llm,mcp,metrics]" || (sleep 5 && uv pip install --system -e ".[dev,llm,mcp,metrics]")
       - name: Mypy
         run: mypy ao_kernel/
 
@@ -292,7 +302,9 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
-        run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
+        run: |
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
+          uv pip install --system -e ".[dev,llm,mcp,metrics]" || (sleep 5 && uv pip install --system -e ".[dev,llm,mcp,metrics]")
       - name: Run PR-B7 benchmarks (fast mode) + emit scorecard
         env:
           AO_SCORECARD_OUTPUT: benchmark_scorecard.v1.json
@@ -331,7 +343,9 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
-        run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
+        run: |
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
+          uv pip install --system -e ".[dev,llm,mcp,metrics]" || (sleep 5 && uv pip install --system -e ".[dev,llm,mcp,metrics]")
       - name: Download head scorecard
         uses: actions/download-artifact@v8
         with:
@@ -376,10 +390,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install and smoke-import each extra
-        # v3.8 H6: tiny inline retry helper — retry once on pip flake.
+        # v3.8 H6: tiny inline retry helper — retry once on installer flake.
         run: |
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
           pip_install() {
-            pip install "$@" || (sleep 5 && pip install "$@")
+            uv pip install --system "$@" || (sleep 5 && uv pip install --system "$@")
           }
           pip_install -e ".[llm]"      && python -c "import tenacity, tiktoken; print('llm OK')"
           pip_install -e ".[otel]"     && python -c "import opentelemetry; print('otel OK')"
@@ -510,8 +525,8 @@ jobs:
       - name: Install base-ref ao-kernel
         working-directory: base
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[mcp]"
+          python -m pip install uv || (sleep 5 && python -m pip install uv)
+          uv pip install --system -e ".[mcp]" || (sleep 5 && uv pip install --system -e ".[mcp]")
 
       - name: Fetch PR data and check-runs via GitHub API
         working-directory: base
