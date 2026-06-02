@@ -90,7 +90,22 @@ operator and auditor responsibility.
 See full per-control detail in
 [`soc2-trust-services-criteria-mapping.v1.md`](soc2-trust-services-criteria-mapping.v1.md).
 
-<<<<<<< HEAD
+### 3.5 HIPAA Mapping Reference (E-6-3b extension)
+
+A separate HIPAA control-reference mapping lives at
+[`hipaa-control-mapping.v1.json`](hipaa-control-mapping.v1.json) (rendered
+as [`hipaa-control-mapping.v1.md`](hipaa-control-mapping.v1.md)).
+
+The HIPAA mapping enumerates 5 sections (Administrative + Physical +
+Technical Safeguards + Privacy Rule + Breach Notification). ao-kernel
+does NOT process PHI; Privacy Rule and Breach Notification are
+`section_status: "not_applicable"`. Technical Safeguards are
+`out_of_scope` because ePHI controls are operator-owned.
+
+The mapping ships its own schema, prohibited-claims scanner, and PHI/BAA
+scanner; it is **not** an extension of the SOC2/ISO catalog and does
+NOT modify any E-6-3 contract.
+
 ### 3.6 GDPR DPIA Operator Template Reference (E-6-3c extension)
 
 A separate GDPR DPIA operator template lives at
@@ -113,23 +128,6 @@ any E-6-3 contract. This template does NOT determine lawful basis,
 controller/processor role, transfer mechanism, DPA filing need, or
 data subject notice content; Article 36 prior consultation
 determination remains operator + DPO/counsel responsibility.
-=======
-### 3.5 HIPAA Mapping Reference (E-6-3b extension)
-
-A separate HIPAA control-reference mapping lives at
-[`hipaa-control-mapping.v1.json`](hipaa-control-mapping.v1.json) (rendered
-as [`hipaa-control-mapping.v1.md`](hipaa-control-mapping.v1.md)).
-
-The HIPAA mapping enumerates 5 sections (Administrative + Physical +
-Technical Safeguards + Privacy Rule + Breach Notification). ao-kernel
-does NOT process PHI; Privacy Rule and Breach Notification are
-`section_status: "not_applicable"`. Technical Safeguards are
-`out_of_scope` because ePHI controls are operator-owned.
-
-The mapping ships its own schema, prohibited-claims scanner, and PHI/BAA
-scanner; it is **not** an extension of the SOC2/ISO catalog and does
-NOT modify any E-6-3 contract.
->>>>>>> c3f0cde (feat(epic-6-e6-3b): HIPAA control mapping (V5))
 
 ## 4. ISO 27001 Annex A Coverage Summary (14 areas)
 
