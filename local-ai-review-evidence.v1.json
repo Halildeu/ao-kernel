@@ -1,42 +1,33 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "CI-CODEX-PUSH-DEDUP",
+  "work_package": "EPIC-3-SUPPORT-WIDENING-MATRIX-PLAN",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ci-codex-push-dedup",
+    "head_ref": "refs/heads/codex/epic-3-support-widening-plan",
     "changed_files": [
-      ".github/workflows/test.yml",
-      "CLAUDE.md",
+      ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
-    { "name": "tests", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" },
-    { "name": "yaml_valid", "status": "pass" },
-    { "name": "actionlint_clean", "status": "pass" },
-    { "name": "bash_syntax_clean", "status": "pass" },
-    { "name": "required_check_names_preserved", "status": "pass" },
-    { "name": "matrix_preserved", "status": "pass" },
-    { "name": "ao_release_gate_allowlist_preserved", "status": "pass" },
-    { "name": "ao_ma10n_classic_ci_requirements_intact", "status": "pass" },
-    { "name": "no_branch_protection_mutation", "status": "pass" },
-    { "name": "no_ruleset_mutation", "status": "pass" },
+    { "name": "plan_only_no_runtime_change", "status": "pass" },
+    { "name": "no_workflow_mutation", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
-    { "name": "downstream_workflow_run_unaffected", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" }
+    { "name": "v1_v2_separation_disciplined", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" }
   ],
   "findings": [
-    "CI-perf change (PR-1 of the queue-relief program after #901 + #906): remove `codex/**` from .github/workflows/test.yml on.push.branches. Goal is to eliminate the same-SHA push-run + PR-run double-trigger on every codex/* branch update -- the concurrency key is `github.ref`, so push and PR live in separate concurrency groups and BOTH run all 9+ required checks against the same commit. In the ~45-parallel-worktree model this duplication was the dominant queue saturator. The PR run remains the canonical required-check source-of-truth; semantics do not change.",
-    "Change set (3 files; small surgical edits + one workflow line + 2 docs):\n(1) .github/workflows/test.yml: a single line removed from on.push.branches -- `- \"codex/**\"` deleted. push.branches is now `[main]` (single element, valid YAML). pull_request / pull_request_review / workflow_dispatch triggers + concurrency + matrix + every job + every required-check job name are unchanged.\n(2) CLAUDE.md §19 'CI kurali' paragraph rewritten so the documented model matches the new behavior: test.yml push trigger is main-only; pre-PR signal has two paths depending on PR base type. For base=`main` PRs, opening the PR (draft or ready) auto-triggers the workflow (canonical signal). For base=`codex/**` upper-stacked PRs, automatic trigger does NOT fire (since pull_request.branches: [main]); pre-retarget signal there requires the workflow_dispatch fallback (.claude/scripts/trigger-test-workflow.sh). A required-check honesty sentence was added: even if pre-PR branch CI ran, the same-SHA PR run will run again; the required check's source-of-truth is always the PR run.\n(3) .claude/scripts/trigger-test-workflow.sh: file header comment updated. It no longer claims 'codex/* push normally produces CI'; it now lists three honest use cases (pre-PR branch CI, base=codex/** upper-stacked PR pre-retarget signal, post-retarget recovery). The script body itself was not touched.",
-    "AO-MA-10N hard-stop ('No removal of classic CI requirements.', pinned by test_ao_ma10n_live_enforcement_cutover.py:45 + test_ao_ma10o_cc9_no_human_bootstrap_supersession.py:146 + .claude/plans/AO-MA-10N-LIVE-ENFORCEMENT-CUTOVER.md:182 + AO-MA-10O-CC9-NO-HUMAN-BOOTSTRAP-SUPERSESSION.md:137) is INTACT: no required-check is removed or renamed, branch protection / ruleset is NOT mutated, matrix python-version list still [\"3.11\",\"3.12\",\"3.13\"], AO-MA-10O CLASSIC_CI_CHECKS tuple unchanged, ao-release-gate `--required-check` allowlist (lint, typecheck, test (3.11)/(3.12)/(3.13), coverage, packaging-smoke, policy-container-smoke, release-gate-container-smoke) unchanged, enforce_job invariant test (test_ao_release_gate_enforce_job.py:478) untouched. The matrix-reduction path was deliberately abandoned earlier this session precisely because it would have collided with this hard-stop; this PR uses Codex thread 019e8a1b's plan-time AGREE alternative.",
-    "Deliberately out-of-scope: ao-release-gate-container-publish.yml still runs on codex/** push (separate concern -- container publish, not a required check, on a different workflow_run chain that the ao-autonomous-merge-executor only triggers when head_branch=main + event!=pull_request). That workflow is intact. Downstream workflow_run consumers (ao-autonomous-merge-executor.yml: only triggers on pull_request workflow_run success; deploy workflows: only on head_branch=main) are unaffected by removing codex/** push from test.yml.",
-    "Validation: YAML parses (yaml.safe_load, push.branches==[\"main\"], pull_request.branches==[\"main\"]); actionlint clean on test.yml; bash -n clean on trigger-test-workflow.sh; git diff --check clean; no invariant test pins `codex/**` in on.push.branches (taraytion sonucu: only agent='codex' string references in test_ao_ma10_high_risk_raw_review_producer.py, irrelevant). Quantitative queue-relief impact is observable post-merge via GitHub Actions run count per branch update.",
-    "Cross-AI review: Codex plan-time (thread 019e8a1b, previous session): REVISE -> AGREE on the queue-relief sequence (PR-0 uv done as #906, PR-1 now). Post-impl (thread 019e8c07): REVISE iter-1 found two documentation-side gaps -- (a) the 'open PR early -> canonical signal' sentence was scope-incorrect for upper-stacked PRs because pull_request.branches=[main] excludes base=codex/** PRs, (b) trigger-test-workflow.sh header comment still claimed codex push produces CI which is no longer true. Both absorbed in this revision: CLAUDE.md §19 now splits pre-PR signal by base type and marks workflow_dispatch fallback as mandatory for base=codex/**; script header rewritten with three honest use cases. iter-2 AGREE.",
-    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime change, no defaults/ change, no scripts/*.py change (only the bash header comment), no .ao/ workspace write, no branch protection mutation, no ruleset mutation, no secret material. Diff is one workflow line + two documentation surfaces."
+    "V5 Epic 3 Support Widening Matrix INFRASTRUCTURE plan (PROPOSED). 6 slice: E-3-1 (evidence schema v1 low-risk) + E-3-2 (smoke harness scaffolding low/medium) + E-3-3 (advisory CI matrix opt-in medium) + E-3-4 (surface inventory doc low) + E-3-5 (supersession consensus protocol low) + E-3-6 (recompute validator low). Plan-only PR; runtime'a etki YOK.",
+    "EPIC-AGGREGATE RISK = CRITICAL (eventual support_widening flag flip), AMA INDIVIDUAL SLICE RISK = low/medium (additive, opt-in, flag-preserving). Flag flip Epic 9 PR-Xfinal operator-bound supersession PR'da — bu epic'in HİÇBİR slice'ı flip etmez.",
+    "v1 vs v2 separation: 'support_widening_evidence.v1.json' const false; legitimately emit support_widening=true sadece v2 schema (Epic 9 supersession) ile. Schema separation = structural enforcement (process-dependent değil).",
+    "Her artifact 3 guard flag const false + register_authority='evidence_record_only' + github_write_authorized=false + simulated_only=true + live_call_made=false korur. ADR-0002 recompute-not-trust pattern: module-level re-assertion at runtime (producer claim trust YOK).",
+    "E-3-3 yeni workflow support-matrix-smoke.yml: opt-in pull_request label='support-matrix-smoke' + workflow_dispatch; NO required status; NO push trigger; NO repository_dispatch; permissions minimum (contents:read + pull-requests:write); continue-on-error per matrix cell; per-class artifact upload. Existing required workflows ZERO TOUCH (13 critical workflow git diff guard).",
+    "Cross-AI peer review trail: implementer claude (anthropic) != reviewer codex (openai); provider-level granularity HARD RULE 2026-05-14. Codex plan-time review thread <pending>; AGREE bekleniyor.",
+    "Plan doc PR squash sonrası implementation order: E-3-1 (schema) → (E-3-2 ∥ E-3-4 ∥ E-3-5 paralel) → E-3-3 (CI matrix) → E-3-6 (validator; checklist consume). Her slice cross-AI plan-time AGREE + post-impl review AGREE; admin bypass YASAK."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
