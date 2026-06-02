@@ -45,7 +45,10 @@
     },
     "work_package": {
       "type": "string",
-      "const": "AO-MA-10h"
+      "minLength": 3,
+      "maxLength": 80,
+      "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*$",
+      "description": "Reviewed work-package identifier for this high-risk supersession evidence. Bound at runtime by the trusted-base workflow from the root local-ai-review-evidence.v1 file's work_package field; passed to the script via --review-work-package and stamped into this artifact. Multi-work-package (governance migration 2026-06-02): any well-formed identifier matching the workflow canonical regex is accepted; per-PR authority is enforced by the live context binding (head_sha, diff_digest, changed_files, refs, repo, high_risk_changed_paths), provider distinctness, unanimous AGREE, freshness, and guard-flag closure — not by an allowlist on this field. Pattern matches .github/workflows/test.yml reviewed_wp regex so identifiers round-trip between root reviewer evidence, payload.reviewed_slice, and this artifact."
     },
     "planning_only": {
       "type": "boolean",

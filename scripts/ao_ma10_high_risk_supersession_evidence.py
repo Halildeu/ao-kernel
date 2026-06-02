@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -58,6 +59,39 @@ RAW_REVIEW_SCHEMA = "local-ai-review-evidence.schema.v1.json"
 HIGH_RISK_SUPERSESSION_SCHEMA = "ao-ma-10-high-risk-supersession-evidence.schema.v1.json"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
 REQUIRED_PROVIDER_IDS = ("openai", "anthropic")
+
+# Canonical work_package regex shared with the trusted-base workflow's
+# reviewed_wp step (.github/workflows/test.yml line ~634) and the schema's
+# work_package pattern (ao-ma-10-high-risk-supersession-evidence.schema.v1.json).
+# Defense-in-depth: validate the --review-work-package argument here too so a
+# malformed identifier cannot reach jsonschema validation as an opaque string.
+WORK_PACKAGE_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*$")
+WORK_PACKAGE_MIN_LEN = 3
+WORK_PACKAGE_MAX_LEN = 80
+
+
+def _validate_work_package(value: str) -> None:
+    """Fail-closed regex/length check on the supplied --review-work-package.
+
+    Mirrors the canonical workflow regex + schema pattern + length bounds.
+    Raises ``ValueError`` on any drift so a malformed identifier never reaches
+    the generated artifact (the schema would catch it via jsonschema, but a
+    pre-check produces an actionable error pointing at the input argument).
+    """
+
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("--review-work-package must be a non-empty string")
+    stripped = value.strip()
+    if len(stripped) < WORK_PACKAGE_MIN_LEN or len(stripped) > WORK_PACKAGE_MAX_LEN:
+        raise ValueError(
+            f"--review-work-package length out of range: must be "
+            f"{WORK_PACKAGE_MIN_LEN}..{WORK_PACKAGE_MAX_LEN} chars"
+        )
+    if not WORK_PACKAGE_PATTERN.fullmatch(stripped):
+        raise ValueError(
+            "--review-work-package does not match canonical pattern "
+            f"{WORK_PACKAGE_PATTERN.pattern}"
+        )
 
 # Fixed repo-relative allowlist for raw reviewer evidence paths. The workflow
 # invokes this script from `base/` with raw paths passed as `../head/...`, so
@@ -323,6 +357,7 @@ def build_high_risk_supersession_evidence(
     round_index: int,
     generated_at: str,
 ) -> dict[str, Any]:
+    _validate_work_package(review_work_package)
     changed_files = _changed_files(repo_root, diff_base_ref, diff_head_ref)
     if not changed_files:
         raise ValueError("changed-files set is empty; high-risk evidence cannot be built")
@@ -368,7 +403,19 @@ def build_high_risk_supersession_evidence(
         "artifact_kind": "ao_ma_10_high_risk_supersession_evidence",
         "generated_at": generated_at,
         "repo": repository,
-        "work_package": "AO-MA-10h",
+        # Multi-work-package migration (2026-06-02): emit the
+        # review-bound work_package supplied by the trusted-base
+        # workflow (resolved from the root reviewer evidence file's
+        # work_package field, which the workflow validates with the
+        # canonical [A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*
+        # regex). Previously hardcoded to "AO-MA-10h", which blocked
+        # every other high-risk PR from producing conforming evidence.
+        # The schema's work_package pattern matches the same regex so
+        # identifiers round-trip without drift. Per-PR authority is
+        # enforced by context_binding (head_sha, diff_digest, etc.),
+        # provider distinctness, unanimous AGREE, freshness, and
+        # guard-flag closure — not by an allowlist on this field.
+        "work_package": review_work_package,
         "planning_only": True,
         "release_authority": RELEASE_AUTHORITY,
         "ai_output_release_authority": False,

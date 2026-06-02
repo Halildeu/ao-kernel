@@ -1,26 +1,32 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10Y-AUTONOMOUS-MERGE-EXECUTOR",
+  "work_package": "AO-MA-10h-multi-work-package-migration",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude-opus-4-7-1m",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "codex-reviewer-dewey",
+    "agent": "codex-mcp-thread-019e88c9",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-auto-merge-executor",
+    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
     "changed_files": [
-      ".github/workflows/ao-autonomous-merge-executor.yml",
+      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
+      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_autonomous_pr_merge_executor.py",
-      "tests/test_ao_autonomous_pr_merge_executor.py"
+      "scripts/ao_ma10_high_risk_supersession_evidence.py",
+      "tests/test_ao_ma10h_multi_work_package_schema.py",
+      "tests/test_ao_release_gate.py"
     ]
   },
   "checks_considered": [
@@ -41,18 +47,19 @@
       "status": "pass"
     },
     {
-      "name": "actionlint",
+      "name": "design-adversarial-review",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI reviewer verdict AGREE after adversarial review of the autonomous merge executor patch.",
-    "The prior expression-injection, unpinned-checkout, stale-head, noop masking, and concurrency payload findings are absorbed.",
-    "The workflow routes untrusted values through env vars, pins checkout to the default branch, and validates PR number plus optional event_head_sha before invoking the executor.",
-    "The executor requires GitHub Actions actor identity, write permission, current main-base open PR, clean merge state, successful required checks, and source-pinned ao-release-gate checks.",
-    "The merge mutation is limited to gh api PUT /pulls/{number}/merge with squash and sha=headRefOid; branch delete is best-effort and never uses --admin.",
-    "Focused validation passed: actionlint, ruff, mypy, pytest -q tests/test_ao_autonomous_pr_merge_executor.py, and combined merge-agent/release-gate regression subset.",
-    "No branch protection mutation, admin bypass, support widening, production platform claim, live adapter execution, or secret material is introduced."
+    "OpenAI (Codex MCP thread 019e88c9-27ec-7b53-af2d-b91b46128e0e) reviewer verdict AGREE on the AO-MA-10h multi-work-package governance migration. Plan-time adversarial review concluded that Option B (lenient schema with canonical pattern) is the right design and Option A (multi-file active index) is rejected because it adds new drift/rebase coordination without new defensive value.",
+    "work_package field analysis: work_package is a per-PR review/evidence identifier, not a release authority or permission boundary. The const 'AO-MA-10h' was not providing security value; it was only blocking dynamic-WP PRs from producing conforming high-risk supersession evidence (21 open PRs affected as deny_missing_evidence).",
+    "Authority chain preserved fail-closed after migration: release_authority+github-ruleset, context binding (head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths), path allowlist, provider distinctness (openai+anthropic pair required), unanimous AGREE, freshness window, three guard flags const false (support_widening, production_platform_claim, live_adapter_execution), secrets_recorded const false, mutations_performed const false.",
+    "Substitution attack: a malicious PR with work_package EVIL-WP would still need (a) pair-present openai+anthropic raw reviewer evidence on PR head, (b) live PR head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths match, (c) all guard flags false, (d) release_authority+github-ruleset, (e) freshness within window. The string EVIL-WP alone defeats none of these.",
+    "Stale evidence rebinding: blocked by freshness window plus live PR context binding plus the binding_mode (added/modified/unchanged) discipline. An old artifact cannot be reattached to a new PR.",
+    "Schema regex round-trips with workflow regex verbatim (test_work_package_regex_matches_workflow_canonical_regex pins source-line equality with .github/workflows/test.yml::reviewed_wp).",
+    "ZERO TOUCH on .github/workflows/, ao_kernel/ao_release_gate.py business logic, ruleset, branch protection, codeowners; the change is scoped to schema field + builder dynamic emission + new invariant tests.",
+    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, codeowners mutation, ao-release-gate runtime mutation, gpp_status mutation, or auto-merge execution is performed; all forbidden actions remain forbidden."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

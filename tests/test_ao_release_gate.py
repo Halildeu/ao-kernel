@@ -173,11 +173,15 @@ def _high_risk_supersession_evidence(
     consensus_status: str = "AGREE",
     provider_verdict: str = "AGREE",
     binding_mode: str = "added",
+    work_package: str = "AO-MA-10h",
 ) -> dict[str, object]:
-    """Build accepting AO-MA-10h high-risk supersession evidence.
+    """Build accepting high-risk supersession evidence.
 
     Defaults bind to ``_allow_payload()`` with no human review. Refs use
-    local-style spellings to pin runtime ref normalization.
+    local-style spellings to pin runtime ref normalization. The
+    ``work_package`` default keeps backward-compat for legacy tests; the
+    multi-work-package migration (2026-06-02) widened the schema to accept
+    any identifier matching the canonical regex.
     """
 
     paths = list(changed_paths) if changed_paths is not None else list(_ALLOW_CHANGED_PATHS)
@@ -227,7 +231,7 @@ def _high_risk_supersession_evidence(
         "artifact_kind": "ao_ma_10_high_risk_supersession_evidence",
         "generated_at": generated_at if generated_at is not None else utc_timestamp(),
         "repo": "Halildeu/ao-kernel",
-        "work_package": "AO-MA-10h",
+        "work_package": work_package,
         "planning_only": True,
         "release_authority": "ao-release-gate+github-ruleset",
         "ai_output_release_authority": False,
