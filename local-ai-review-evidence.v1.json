@@ -1,30 +1,33 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "NIST-CSF-allowlist-test-remove",
+  "work_package": "EPIC-8-3-OPERATOR-RUNBOOK",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/fix/nist-csf-allowlist-test-remove",
+    "head_ref": "refs/heads/codex/epic-8-3-operator-runbook",
     "changed_files": [
-      "tests/test_nist_csf_mapping.py",
-      "ao-ma-10-high-risk-reviews/NIST-CSF-allowlist-test-remove/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/NIST-CSF-allowlist-test-remove/anthropic.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json"
+      ".claude/plans/EPIC-8-3-OPERATOR-RUNBOOK.md",
+      "docs/OPERATOR-RUNBOOK.md",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_operator_runbook.py"
     ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
-    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "ruff_lint", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" }
+    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Identical anti-pattern fix to PR #832 (PCI-DSS allowlist remove). PR #812 (NIST CSF E-6-3e) introduced same hardcoded ALLOWED_CHANGED_FILES cross-slice diff assertion. Every non-NIST-CSF PR fails this test → another mass pipeline blocker.",
-    "Removal: tests/test_nist_csf_mapping.py loses ALLOWED_CHANGED_FILES frozenset (lines ~30) + def test_allowlist_diff_no_other_files() function. Per-slice zero-touch siblings (test_e63e_*_zero_touch) + schema validity + drift checks preserved (53 tests still passing).",
-    "Cross-AI: implementer claude (anthropic) != reviewer codex (openai). HARD RULE Uzun Vadeli Kalıcı Çözüm: anti-pattern removal (not skip)."
+    "V5 Epic 8 E-8-3 operator runbook slice (low-risk docs-only). 5 scenarios documented (rollback + tag revert + pause + emergency stop + incident triage tree) for three deployment patterns (standalone + Docker + k8s).",
+    "Runbook is descriptive, not executable: ao-kernel does not perform credential rotation, customer notification, postmortem, or vendor escalation on operator's behalf. Operator-owned scenarios listed explicitly.",
+    "Disclaimer uses qualified language: 'Documentation only', 'Operator-owned playbook', 'No production-ready posture is established'. Three V5 guard flags listed const false. Promotion authority pointed at final operator-bound supersession PR.",
+    "15 invariants: 6 presence/structure (runbook + 5 scenarios + triage tree) + 4 claim discipline (3 guard flags + no positive claim + supersession + no flag flip) + 4 cross references (E-6-6 + E-5-2/3/4 + operator-owned + deployment guide link) + 1 ZERO TOUCH workflows.",
+    "ZERO TOUCH: no .github/workflows/ mutation, no ao-release-gate mutation, no E-6-6 playbook content modification, no E-6-6b vendor escalation matrix modification, no guard flag flip."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
