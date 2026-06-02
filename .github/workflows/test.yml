@@ -25,6 +25,17 @@ on:
         required: false
         type: string
 
+concurrency:
+  # CI-FAST: supersede stale in-progress runs per branch/PR to stop the
+  # cancelled-run pileup. Two carve-outs preserve required-check semantics
+  # (#764): never cancel `main` (its post-merge run uploads the scorecard-main
+  # baseline), and never cancel any `pull_request: edited` event — a
+  # non-retarget edit (title/body) is skipped by `event-gate`, so cancelling
+  # would shadow-cancel an in-progress real required-check run for the same
+  # ref. Retarget edits are excluded too; conservatively cheap.
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !(github.event_name == 'pull_request' && github.event.action == 'edited') }}
+
 jobs:
   event-gate:
     name: event-gate
@@ -89,6 +100,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install ruff
         # v3.8 H6: 2-try retry guard for transient PyPI/TLS flakes
         # (one-off `SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC` observed
@@ -112,28 +125,73 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
         run: pip install -e ".[dev,llm,metrics]" || (sleep 5 && pip install -e ".[dev,llm,metrics]")
       - name: Run tests
-        run: pytest tests/ --ignore=tests/benchmarks -v --cov=ao_kernel --cov-branch --cov-report=term-missing
+        # CI-FAST (Codex 019e88cc): `-n auto` parallelizes the ~6k-test suite
+        # across runner cores (PoC: serial 192s -> -n4 97s with coverage, 85%
+        # parity). Coverage instrumentation runs only on the 3.13 leg, whose
+        # artifact the `coverage` required-check consumes; 3.11/3.12 are
+        # functional-only. `-v` dropped to cut log I/O.
+        run: |
+          if [ "${{ matrix.python-version }}" = "3.13" ]; then
+            pytest tests/ --ignore=tests/benchmarks -q -n auto \
+              --cov=ao_kernel --cov-branch --cov-report=term-missing \
+              --cov-report=xml --cov-fail-under=85
+            cp .coverage coverage.data
+          else
+            pytest tests/ --ignore=tests/benchmarks -q -n auto
+          fi
+      - name: Upload coverage data (3.13 leg only)
+        if: matrix.python-version == '3.13'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-data
+          path: |
+            coverage.data
+            coverage.xml
+          if-no-files-found: error
 
   coverage:
+    # CI-FAST sentinel (Codex 019e88cc): the suite is no longer re-run here.
+    # The 3.13 `test` leg produces the coverage data; this job consumes that
+    # artifact and enforces the gate under the reserved required-check name
+    # `coverage` (kept identical so the ao-release-gate allowlist + the
+    # test_ao_release_gate_enforce_job invariant stay valid). Fail-closed: a
+    # failed `test` matrix or a missing artifact => failure, never a silent
+    # skipped required check.
     name: coverage
     runs-on: ubuntu-latest
-    needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    needs: [event-gate, test]
+    if: always() && needs.event-gate.outputs.should_run == 'true'
     steps:
       - uses: actions/checkout@v6
+      - name: Fail closed if the test matrix did not succeed
+        if: needs.test.result != 'success'
+        run: |
+          echo "::error::coverage gate fail-closed: the test matrix (incl. the 3.13 coverage leg) did not succeed (result=${{ needs.test.result }})"
+          exit 1
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - name: Install dependencies
-        # v3.8 H6 retry guard (see lint job note).
-        run: pip install -e ".[dev,llm,metrics]" || (sleep 5 && pip install -e ".[dev,llm,metrics]")
-      - name: Run tests with coverage gate
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install coverage tool
+        run: pip install coverage || (sleep 5 && pip install coverage)
+      - name: Download coverage data from the 3.13 test leg
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-data
+      - name: Enforce coverage gate (no suite rerun)
         run: |
-          pytest tests/ --ignore=tests/benchmarks --cov=ao_kernel --cov-branch --cov-report=xml --cov-report=term-missing
+          if [ ! -f coverage.data ]; then
+            echo "::error::coverage gate fail-closed: coverage.data artifact missing from the 3.13 test leg"
+            exit 1
+          fi
+          cp coverage.data .coverage
           coverage report --fail-under=85
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v7
@@ -151,6 +209,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install build tool
         run: pip install build || (sleep 5 && pip install build)
       - name: Build wheel and run packaging smoke
@@ -166,6 +226,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Build and health-check policy service container
         run: |
           python scripts/live_adapter_gate_policy_container_smoke.py \
@@ -183,6 +245,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Build and health-check ao-release-gate service container
         run: |
           python scripts/ao_release_gate_container_smoke.py \
@@ -206,6 +270,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
         run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
@@ -222,6 +288,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
         run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
@@ -259,6 +327,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
         run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
@@ -303,6 +373,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install and smoke-import each extra
         # v3.8 H6: tiny inline retry helper — retry once on pip flake.
         run: |

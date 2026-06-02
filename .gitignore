@@ -48,6 +48,9 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+# CI-FAST: the 3.13 test leg stages combined coverage as coverage.data for the
+# coverage sentinel job to consume; it is a CI artifact, never checked in.
+coverage.data
 *.cover
 *.py.cover
 .hypothesis/

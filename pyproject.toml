@@ -38,6 +38,7 @@ llm = [
 dev = [
     "pytest",
     "pytest-cov",
+    "pytest-xdist",
     "ruff",
     "mypy",
     "build",

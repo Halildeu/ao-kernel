@@ -1,66 +1,40 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10h-multi-work-package-migration",
-  "implementer": {
-    "agent": "claude-opus-4-7-1m",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex-mcp-thread-019e88c9",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
+  "work_package": "CI-FAST-SUITE",
+  "implementer": { "agent": "claude", "provider": "anthropic" },
+  "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
+    "head_ref": "refs/heads/codex/ci-fast-suite",
     "changed_files": [
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
+      ".github/workflows/test.yml",
+      ".gitignore",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/test_ao_ma10h_multi_work_package_schema.py",
-      "tests/test_ao_release_gate.py"
+      "pyproject.toml",
+      "tests/test_workflow_state_machine.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "design-adversarial-review",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "ruff_lint", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
+    { "name": "xdist_determinism", "status": "pass" },
+    { "name": "coverage_gate_parity", "status": "pass" },
+    { "name": "required_check_names_preserved", "status": "pass" },
+    { "name": "workflow_mutation_reviewed", "status": "pass" },
+    { "name": "no_guard_flip", "status": "pass" },
+    { "name": "no_runtime_module_change", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Root reviewer evidence for AO-MA-10h multi-work-package governance migration (2026-06-02). Cross-AI implementer-reviewer pair: Anthropic Claude Opus 4.7 1M (implementer) + OpenAI Codex MCP thread 019e88c9-27ec-7b53-af2d-b91b46128e0e (reviewer); distinct providers per HARD RULE Cross-AI Peer Review (2026-05-14 clarification).",
-    "Codex verdict AGREE: 'Option B doğru tasarım. work_package burada release authority veya permission boundary değil; PR'e bağlanan review/evidence kimliği. Mevcut authority zinciri ao-release-gate+github-ruleset, context binding, path allowlist, provider distinctness, unanimous AGREE, freshness ve guard flag const false kontrolleriyle kapanıyor.'",
-    "Schema widened: ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json::properties.work_package changes from const 'AO-MA-10h' to pattern '^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*$' with minLength 3 and maxLength 80. Aligned with .github/workflows/test.yml::reviewed_wp regex verbatim (round-trip test pinned).",
-    "Builder dynamic: scripts/ao_ma10_high_risk_supersession_evidence.py emits work_package from --review-work-package CLI arg (supplied by trusted-base workflow per-PR); removed hardcoded 'AO-MA-10h' literal. Defense-in-depth: _validate_work_package pre-check enforces same regex + length bounds.",
-    "Authority surface preserved unchanged: release_authority+github-ruleset, ai_output_release_authority=false, all three guard_flags const false (support_widening, production_platform_claim, live_adapter_execution), secrets_recorded=false, mutations_performed=false, consensus_status=AGREE const, reviewer_providers distinct pair (openai+anthropic), context_binding (head_sha, diff_digest, changed_files_count, refs, repo, high_risk_changed_paths), freshness window.",
-    "36 new invariants in tests/test_ao_ma10h_multi_work_package_schema.py pin every const, every required field, every guard flag, provider distinctness, regex parity with workflow, builder source-guard against re-hardcoding 'AO-MA-10h'. test_builder_source_no_longer_hardcodes_ao_ma_10h_work_package is a static-source guard.",
-    "Full test suite: 6191 tests passed, 79 skipped, 0 failed (python3 -m pytest tests/). Lint: ruff clean. Typecheck: mypy clean (273 source files in ao_kernel/).",
-    "ZERO TOUCH on .github/workflows/, ao_kernel/ao_release_gate.py, ruleset, branch protection, codeowners, gpp_status.v1.json. Only widened the schema field; preserved every authority boundary.",
-    "Operator follow-up after this PR merges: 21 currently-blocked PRs (#824-#899) can have CI re-triggered; the trusted-base workflow will now generate conforming high-risk supersession evidence per each PR's own work_package."
+    "CI-perf change: the Test workflow re-ran the full ~6k-test suite up to 4x (3-version matrix each with coverage instrumentation + a separate `coverage` job re-running the whole suite) serially with no pip cache and no workflow-level concurrency. Measured a clean run at ~9m20s wall-clock with frequent 17-27m cancelled-run pileups. This PR parallelizes + dedups without weakening any gate.",
+    "Change set (4 functional files + this evidence): (1) pyproject [dev] += pytest-xdist; (2) test matrix runs `-n auto`, drops `-v`, runs coverage instrumentation only on the 3.13 leg (3.11/3.12 functional-only) -- the 3.13 leg stages combined `.coverage` as `coverage.data` and uploads it + `coverage.xml`; (3) the `coverage` required-check becomes a fail-closed sentinel (needs:[event-gate,test] + always(); fails closed if the test matrix did not succeed or the artifact is missing) that runs `coverage report --fail-under=85` on the consumed artifact with NO suite rerun; (4) top-level concurrency supersedes stale in-progress runs per ref; (5) pip caching on setup-python; (6) determinism fix in tests/test_workflow_state_machine.py.",
+    "Determinism fix (xdist prerequisite): TestValidateTransitionMatrix.test_allowed_transitions parametrized over a frozenset (`for n in allowed`); frozenset iteration is PYTHONHASHSEED-dependent so xdist worker processes collected a different parametrize order -> 'Different tests were collected between gw*' collection abort. Fixed with `sorted(allowed)` (the correct collection-determinism fix, NOT a PYTHONHASHSEED pin which would mask latent non-determinism). Verified seed-robust across PYTHONHASHSEED=1/42/12345.",
+    "Required-check semantics preserved (#764): the matrix job names `test (3.11)`/`test (3.12)`/`test (3.13)` and the `coverage` job name are unchanged, so the ao-release-gate `--required-check` allowlist and the test_ao_release_gate_enforce_job invariant remain valid and were NOT modified. Top-level concurrency carves out `main` (post-merge scorecard-main baseline must complete) and all `pull_request: edited` events (a non-retarget title/body edit is skipped by event-gate, so cancelling would shadow-cancel an in-progress real required-check run).",
+    "PoC evidence (isolated /tmp venv, pytest-xdist 3.8.0 + pytest-cov 7.1.0): serial+cov 192s/6132 pass/85% -> `-n4`+cov 97s/6132 pass/85.21% (2x, coverage parity) -> `-n4` no-cov 59s (3.3x). Re-validated on rebased base @46121bb: EXACT 3.13 leg `-n auto`+cov+--cov-fail-under=85 -> exit 0, 63s, 6168 passed/86 skipped, 85.21% >= 85%, no collection divergence with the 36 tests origin/main added; sentinel simulation (coverage.data -> coverage report --fail-under=85) -> exit 0, 85%; ruff clean; 279 workflow-structure invariant tests pass.",
+    "Cross-AI review: Codex thread 019e88cc. Plan-time: REVISE (xdist determinism doubt + coverage-job-delete -> sentinel) -> AGREE ready_for_impl. Post-impl: iter-1 BLOCK (concurrency could shadow-cancel pull_request:edited required runs; coverage.data left dirty; branch behind origin/main) -> all absorbed (edited carve-out added, coverage.data removed + gitignored, ff-rebased to 46121bb + re-validated) -> iter-2 AGREE ready_for_merge. Reviewer verdict is one evidence layer for this high-risk workflow diff; merge authority remains the repo-owned ao-release-gate required check + GitHub ruleset.",
+    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime module change, no defaults/ change, no scripts/ change, no .ao/ workspace write, no secret material. Diff is workflow + CI-dep + one test-determinism line + .gitignore + this evidence file."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
