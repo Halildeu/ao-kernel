@@ -129,6 +129,25 @@ controller/processor role, transfer mechanism, DPA filing need, or
 data subject notice content; Article 36 prior consultation
 determination remains operator + DPO/counsel responsibility.
 
+### 3.7 PCI-DSS Control Reference Mapping (E-6-3d extension)
+
+A separate PCI-DSS v4.0.1 control reference mapping lives at
+[`pci-dss-control-mapping.v1.json`](pci-dss-control-mapping.v1.json)
+(rendered as
+[`pci-dss-control-mapping.v1.md`](pci-dss-control-mapping.v1.md)),
+with the operator scope/QSA engagement runbook in
+[`pci-dss-operator-scope-and-qsa-engagement-runbook.v1.md`](pci-dss-operator-scope-and-qsa-engagement-runbook.v1.md).
+
+The mapping enumerates 12 requirements (Req 1-12). ao-kernel does
+NOT process cardholder data (CHD), does NOT process sensitive
+authentication data (SAD), has NO PAN in this repo, has NO CDE in
+this repo, and is NOT in PCI-DSS scope at the repo level. The
+mapping ships its own schema, prohibited-claims scanner, and PAN/SAD
+sample scanner; it is **not** an extension of the SOC2/ISO catalog
+and does NOT modify any E-6-3 contract. This mapping is NOT an AOC,
+NOT a ROC, NOT a SAQ, NOT an ASV scan report, and NOT a pen-test
+report.
+
 ## 4. ISO 27001 Annex A Coverage Summary (14 areas)
 
 | Annex A area | Status |

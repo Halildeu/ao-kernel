@@ -1,0 +1,185 @@
+{
+  "schema_version": "pci-dss-control-mapping.v1",
+  "artifact_kind": "pci-dss-control-reference-mapping",
+  "service": "ao-kernel",
+  "operator_owned": true,
+  "is_contractual_sla": false,
+  "framework_version": "PCI-DSS-v4.0.1",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false,
+    "cde_claim_allowed": false,
+    "qsa_assessment_claim_allowed": false,
+    "saq_filing_claim_allowed": false
+  },
+  "pci_disclaimer": {
+    "not_pci_certified": true,
+    "not_aoc_holder": true,
+    "not_roc_holder": true,
+    "not_saq_filed": true,
+    "not_asv_scanned": true,
+    "documentation_only": true,
+    "operator_qsa_engagement_required": true
+  },
+  "chd_handling_disclosure": {
+    "ao_kernel_processes_chd": false,
+    "ao_kernel_processes_sad": false,
+    "no_pan_in_repo": true,
+    "no_cde_in_repo": true,
+    "operator_cde_decision": true
+  },
+  "saq_applicability": {
+    "repo_baseline_saq": "none",
+    "operator_determines": true,
+    "available_saq_types": [
+      {"type_slug": "saq_a", "display_label": "SAQ A"},
+      {"type_slug": "saq_a_ep", "display_label": "SAQ A-EP"},
+      {"type_slug": "saq_b", "display_label": "SAQ B"},
+      {"type_slug": "saq_b_ip", "display_label": "SAQ B-IP"},
+      {"type_slug": "saq_c", "display_label": "SAQ C"},
+      {"type_slug": "saq_c_vt", "display_label": "SAQ C-VT"},
+      {"type_slug": "saq_d_merchant", "display_label": "SAQ D for Merchants"},
+      {"type_slug": "saq_d_service_provider", "display_label": "SAQ D for Service Providers"},
+      {"type_slug": "saq_p2pe", "display_label": "SAQ P2PE"}
+    ]
+  },
+  "prohibited_claims": [
+    "PCI-compliant",
+    "PCI compliant",
+    "PCI-DSS compliant",
+    "PCI DSS compliant",
+    "PCI-DSS-compliant",
+    "PCI certified",
+    "PCI-certified",
+    "PCI-DSS certified",
+    "PCI-DSS-certified",
+    "PCI validated",
+    "PCI-validated",
+    "PCI-DSS validated",
+    "fully PCI-DSS",
+    "fully PCI",
+    "we comply with PCI-DSS",
+    "we comply with PCI",
+    "PCI compliance",
+    "PCI-DSS compliance",
+    "PCI-DSS Level 1",
+    "PCI-DSS Level 2",
+    "PCI-DSS-approved",
+    "PA-DSS compliant",
+    "QSA-approved",
+    "QSA validated",
+    "AOC-ready",
+    "ROC-ready",
+    "SAQ-A ready",
+    "SAQ-D ready",
+    "SAQ eligible",
+    "eligible for SAQ A",
+    "PCI ready",
+    "PCI-ready"
+  ],
+  "requirements": [
+    {
+      "req_id": "1",
+      "req_title": "Install and Maintain Network Security Controls",
+      "req_status": "out_of_scope",
+      "req_rationale": "Network security controls (firewalls, segmentation) are operator infrastructure responsibility. ao-kernel ships no network-layer surface; no repo evidence of CDE segmentation, firewall ruleset, or network monitoring.",
+      "operator_boundary": "Operator owns CDE network architecture, segmentation testing, firewall ruleset review cadence, and change control for all PCI-DSS Req 1 sub-requirements.",
+      "evidence_refs": []
+    },
+    {
+      "req_id": "2",
+      "req_title": "Apply Secure Configurations to All System Components",
+      "req_status": "out_of_scope",
+      "req_rationale": "Secure baseline configurations for CDE system components are operator infrastructure responsibility. ao-kernel ships application code; OS hardening, vendor default removal, and CIS benchmark adherence are operator-owned.",
+      "operator_boundary": "Operator owns system component inventory, hardened baseline definition, vendor default removal, and configuration drift detection for all PCI-DSS Req 2 sub-requirements.",
+      "evidence_refs": []
+    },
+    {
+      "req_id": "3",
+      "req_title": "Protect Stored Account Data",
+      "req_status": "not_applicable",
+      "req_rationale": "ao-kernel does not store cardholder data (CHD) or sensitive authentication data (SAD). The repo has no_pan_in_repo and no_cde_in_repo per chd_handling_disclosure. Operator deployment determines whether any CDE storage exists.",
+      "operator_boundary": "Operator owns all CHD/SAD storage architecture, encryption at rest, key management, retention, and secure deletion for all PCI-DSS Req 3 sub-requirements.",
+      "evidence_refs": []
+    },
+    {
+      "req_id": "4",
+      "req_title": "Protect Cardholder Data with Strong Cryptography During Transmission",
+      "req_status": "not_applicable",
+      "req_rationale": "ao-kernel does not transmit cardholder data over open public networks. The repo has no_pan_in_repo and no CHD transmission surface. Operator deployment determines whether any CHD transmission occurs.",
+      "operator_boundary": "Operator owns TLS configuration, cipher suite policy, certificate management, and end-to-end CHD transmission protections for all PCI-DSS Req 4 sub-requirements.",
+      "evidence_refs": []
+    },
+    {
+      "req_id": "5",
+      "req_title": "Protect All Systems and Networks from Malicious Software",
+      "req_status": "out_of_scope",
+      "req_rationale": "Anti-malware solution selection, deployment, and signature update cadence are operator OS-layer responsibility. ao-kernel ships no anti-malware surface and makes no AV/EDR evidence claim.",
+      "operator_boundary": "Operator owns OS-layer anti-malware deployment, signature update cadence, and exception management for all PCI-DSS Req 5 sub-requirements.",
+      "evidence_refs": []
+    },
+    {
+      "req_id": "6",
+      "req_title": "Develop and Maintain Secure Systems and Software",
+      "req_status": "partial",
+      "req_rationale": "Repo evidence surface for secure software development practices: dependency vulnerability scanning (E-6-2 Dependabot/Trivy/Snyk), SAST (E-6-5 CodeQL), and software bill of materials (E-6-1 SBOM). This is NOT a CDE secure SDLC claim, NOT a change management attestation, and NOT a PCI control operation. Operator owns CDE-specific SDLC, change approval workflow, code review for CDE components, and PCI-DSS Req 6 compliance.",
+      "operator_boundary": "Operator owns CDE-specific secure SDLC processes, change management for PCI-scoped systems, and Req 6 control operation; ao-kernel artifacts are advisory evidence surface only.",
+      "evidence_refs": [
+        {"type": "doc", "ref": "docs/compliance/control-evidence-catalog.v1.json", "description": "E-6-3 evidence catalog (SOC2 CC8 change management overlap)"}
+      ]
+    },
+    {
+      "req_id": "7",
+      "req_title": "Restrict Access to System Components and Cardholder Data by Business Need to Know",
+      "req_status": "out_of_scope",
+      "req_rationale": "Role-based access control for CDE system components and cardholder data is operator IAM responsibility. ao-kernel ships no IAM surface and makes no access-policy claim for any operator deployment.",
+      "operator_boundary": "Operator owns IAM design, role definitions, access reviews, joiner-mover-leaver workflow, and least-privilege enforcement for all PCI-DSS Req 7 sub-requirements.",
+      "evidence_refs": []
+    },
+    {
+      "req_id": "8",
+      "req_title": "Identify Users and Authenticate Access to System Components",
+      "req_status": "out_of_scope",
+      "req_rationale": "User identification, authentication (MFA), credential lifecycle, and session management are operator IAM responsibility. ao-kernel ships no authentication surface.",
+      "operator_boundary": "Operator owns identity provider selection, MFA enforcement, credential rotation, session timeout policy, and shared-account elimination for all PCI-DSS Req 8 sub-requirements.",
+      "evidence_refs": []
+    },
+    {
+      "req_id": "9",
+      "req_title": "Restrict Physical Access to Cardholder Data",
+      "req_status": "out_of_scope",
+      "req_rationale": "Physical access controls for facilities housing CDE systems are operator facility responsibility. ao-kernel ships no physical-security surface.",
+      "operator_boundary": "Operator owns physical access policy, badge management, visitor logs, media handling, and on-site media destruction for all PCI-DSS Req 9 sub-requirements.",
+      "evidence_refs": []
+    },
+    {
+      "req_id": "10",
+      "req_title": "Log and Monitor All Access to System Components and Cardholder Data",
+      "req_status": "partial",
+      "req_rationale": "Repo evidence surface for application-level observability (E-5-3 distributed tracing + E-5-3b consultation tracing). This is NOT CDE logging, NOT cardholder data access audit, NOT a PCI control operation. Operator owns CDE logging architecture, log retention, SIEM, audit trail integrity, and time-sync per PCI-DSS Req 10.",
+      "operator_boundary": "Operator owns CDE log source enumeration, retention duration policy, SIEM correlation rules, audit trail integrity controls, and time synchronization per PCI-DSS Req 10 sub-requirements.",
+      "evidence_refs": [
+        {"type": "doc", "ref": "docs/sli-catalog.v1.json", "description": "E-5-4 SLI catalog (application-layer observability index)"}
+      ]
+    },
+    {
+      "req_id": "11",
+      "req_title": "Test Security of Systems and Networks Regularly",
+      "req_status": "partial",
+      "req_rationale": "Repo evidence surface for application-layer security testing (E-6-2 Dependabot/Trivy/Snyk + E-6-5 CodeQL SAST). This is NOT ASV scan, NOT penetration test, NOT segmentation test, NOT a PCI control operation. Operator owns ASV engagement, quarterly external scans, internal vulnerability management, segmentation testing, and pen-test cadence per PCI-DSS Req 11.",
+      "operator_boundary": "Operator owns ASV vendor engagement, external scan cadence, internal vuln remediation workflow, segmentation testing, and pen-test scope/cadence per PCI-DSS Req 11 sub-requirements.",
+      "evidence_refs": [
+        {"type": "doc", "ref": "docs/compliance/control-evidence-catalog.v1.json", "description": "E-6-3 evidence catalog (SOC2 CC7 system operations overlap)"}
+      ]
+    },
+    {
+      "req_id": "12",
+      "req_title": "Support Information Security with Organizational Policies and Programs",
+      "req_status": "out_of_scope",
+      "req_rationale": "Organizational information security policy, risk assessment, incident response plan, and security awareness training are operator program responsibility. ao-kernel ships no organizational policy surface.",
+      "operator_boundary": "Operator owns information security policy framework, annual risk assessment, security awareness training, incident response plan, and third-party management for all PCI-DSS Req 12 sub-requirements.",
+      "evidence_refs": []
+    }
+  ]
+}
