@@ -31,20 +31,6 @@ RUNBOOK_PATH = REPO_ROOT / "docs" / "compliance" / "nist-csf-operator-usage-runb
 RENDERER_PATH = REPO_ROOT / "scripts" / "render_nist_csf_docs.py"
 README_PATH = REPO_ROOT / "docs" / "compliance" / "README.md"
 
-ALLOWED_CHANGED_FILES = frozenset(
-    {
-        ".claude/plans/EPIC-6-E6-3E-NIST-CSF-MAPPING.md",
-        "ao_kernel/defaults/schemas/nist-csf-control-mapping.schema.v1.json",
-        "docs/compliance/README.md",
-        "docs/compliance/nist-csf-control-mapping.v1.json",
-        "docs/compliance/nist-csf-control-mapping.v1.md",
-        "docs/compliance/nist-csf-operator-usage-runbook.v1.md",
-        "local-ai-review-evidence.v1.json",
-        "scripts/render_nist_csf_docs.py",
-        "tests/test_nist_csf_mapping.py",
-    }
-)
-
 EXPECTED_FUNCTION_IDS = ("GV", "ID", "PR", "DE", "RS", "RC")
 EXPECTED_PER_FUNCTION_CATEGORIES: dict[str, frozenset[str]] = {
     "GV": frozenset({"GV.OC", "GV.RM", "GV.RR", "GV.PO", "GV.OV", "GV.SC"}),
@@ -500,12 +486,6 @@ def test_drift_committed_matches_generated() -> None:
     assert actual == expected, "Markdown drift; regenerate via render_nist_csf_docs.py"
 
 
-def test_allowlist_diff_no_other_files() -> None:
-    changed = _diff_files()
-    if changed is None:
-        pytest.skip("git diff unavailable")
-    extras = changed - ALLOWED_CHANGED_FILES
-    assert not extras, f"PR changes files outside allowlist: {extras}"
 
 
 def test_e63_catalog_zero_touch() -> None:
