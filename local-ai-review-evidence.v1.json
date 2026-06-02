@@ -1,17 +1,17 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-7-2-STRESS-SESSION-HARNESS",
+  "work_package": "EPIC-P0-4-README-V5-ROADMAP-BADGE",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-7-2-stress-test",
+    "head_ref": "refs/heads/codex/epic-p0-4-readme-badge",
     "changed_files": [
-      ".claude/plans/EPIC-7-2-STRESS-SESSION-HARNESS.md",
+      ".claude/plans/EPIC-P0-4-README-V5-ROADMAP-BADGE.md",
+      "README.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/run_stress_session.py",
-      "tests/test_stress_session_harness.py"
+      "tests/test_readme_v5_roadmap_badge.py"
     ]
   },
   "checks_considered": [
@@ -20,15 +20,13 @@
     { "name": "secret_scan", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
     { "name": "no_workflow_mutation", "status": "pass" },
-    { "name": "no_live_provider_import", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 7 E-7-2 long-running session stress harness (library mode + stub LLM only). CLI exposes --iterations + --duration-seconds + --json-out. Default 50 iter (CI-safe). 24h+ operator profile invoked manually; never scheduled.",
-    "Run report schema-pinned: stress-session-report.v1 with iterations_requested + iterations_completed + duration budget/actual + rss_kib_start/end/delta + python_version + platform + pid + 3 guard flags const false.",
-    "RSS measured via resource.getrusage (POSIX-portable; macOS bytes/Linux KiB normalized to KiB). No mprof dependency (E-7-3 future slice).",
-    "13 invariants: 4 harness presence + module structure (file + --help + import + docstring constraints) + 6 run report contract (small iter + RSS/duration + 3 guard flags + file output + duration short-circuit + invalid iter exit 2) + 3 CI safety (default iter 50 + no anthropic/openai/requests import + ZERO TOUCH workflows).",
-    "ZERO TOUCH: no .github/workflows/ mutation (24h+ scheduled run is future operator decision), no live provider client imports, no .ao/ workspace write, no guard flag flip."
+    "V5 Epic P0 E-P0-4 README badge + roadmap link slice (low-risk docs-only). Three Shields.io badges surface roadmap as transparent program plan.",
+    "Roadmap status disclaimer banner uses qualified language: 'transparent program plan', 'operator-bound supersession PR', 'final'. Three guard flags listed const false.",
+    "10 invariants: 3 badge + 2 link target + 2 disclaimer banner + 2 no production-ready creep + 1 ZERO TOUCH workflows.",
+    "ZERO TOUCH: no .github/workflows/ mutation, no ao-release-gate mutation, no branch protection mutation, no guard flag flip, no production-ready badge."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
