@@ -1,34 +1,33 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-7-2-STRESS-SESSION-HARNESS",
+  "work_package": "FIX-PCI-DSS-ALLOWLIST-CONDITIONAL-SCOPE",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-7-2-stress-test",
+    "head_ref": "refs/heads/fix/pci-allowlist-test-conditional",
     "changed_files": [
-      ".claude/plans/EPIC-7-2-STRESS-SESSION-HARNESS.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/run_stress_session.py",
-      "tests/test_stress_session_harness.py"
+      "tests/test_pci_dss_mapping.py"
     ]
   },
   "checks_considered": [
-    { "name": "tests", "status": "pass" },
-    { "name": "ruff_lint", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" },
-    { "name": "no_guard_flip", "status": "pass" },
+    { "name": "tests_self_pass", "status": "pass" },
     { "name": "no_workflow_mutation", "status": "pass" },
-    { "name": "no_live_provider_import", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" }
+    { "name": "no_guard_flip", "status": "pass" },
+    { "name": "scope_minimal", "status": "pass" },
+    { "name": "long_term_durable_solution", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 7 E-7-2 long-running session stress harness (library mode + stub LLM only). CLI exposes --iterations + --duration-seconds + --json-out. Default 50 iter (CI-safe). 24h+ operator profile invoked manually; never scheduled.",
-    "Run report schema-pinned: stress-session-report.v1 with iterations_requested + iterations_completed + duration budget/actual + rss_kib_start/end/delta + python_version + platform + pid + 3 guard flags const false.",
-    "RSS measured via resource.getrusage (POSIX-portable; macOS bytes/Linux KiB normalized to KiB). No mprof dependency (E-7-3 future slice).",
-    "13 invariants: 4 harness presence + module structure (file + --help + import + docstring constraints) + 6 run report contract (small iter + RSS/duration + 3 guard flags + file output + duration short-circuit + invalid iter exit 2) + 3 CI safety (default iter 50 + no anthropic/openai/requests import + ZERO TOUCH workflows).",
-    "ZERO TOUCH: no .github/workflows/ mutation (24h+ scheduled run is future operator decision), no live provider client imports, no .ao/ workspace write, no guard flag flip."
+    "CRITICAL BUG FIX: test_pci_dss_mapping.py::test_allowlist_diff_no_other_files PR #811'den hardcoded ALLOWED_CHANGED_FILES frozenset bıraktı; her non-PCI-DSS PR'da fail ediyor → pipeline'da 20 PR aynı anda BLOCKED.",
+    "Test scope: PR PCI-DSS slice file'larına dokunduğunda → allowlist invariant aktif (orijinal davranış); aksi halde skip ('PR does not touch PCI-DSS slice files; allowlist scope does not apply').",
+    "local-ai-review-evidence.v1.json shared cross-AI evidence olduğu için slice-detection key'inden hariç tutuldu (her slice tarafından yazılır; PCI-DSS marker değil).",
+    "Fix kalıcı (HARD RULE Uzun Vadeli Kalıcı Çözüm): test'i suppress etmek/skip globally değil; conditional scope ile orijinal invariant PCI-DSS PR'ı için korunuyor.",
+    "Local pytest: test başarıyla skip ediyor (PCI-DSS dosyası touch edilmediği için). Self-test pass.",
+    "Bu fix MERGE edilince 20+ PR'da CI yeşillenir; auto-merge zinciri tetiklenir; major pipeline unblock."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
