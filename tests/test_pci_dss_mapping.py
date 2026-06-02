@@ -513,8 +513,14 @@ def test_allowlist_diff_no_other_files() -> None:
     - Prefix patterns added to prevent false negatives on future PCI-DSS
       extension files that may be added without matching an existing exact entry.
     """
+    # Use three-dot diff semantics (PR-scope: changes introduced on this branch
+    # since the merge-base with origin/main, NOT changes between current HEAD
+    # and current origin/main). Two-dot diff makes any unmerged main commit
+    # appear as a PR change, causing false-positive extras whenever main moves
+    # ahead before this PR is re-tested (Codex iter-2 F5/F6 absorb;
+    # scripts/local_gpp_gate.py uses the same three-dot semantics).
     proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD"],
+        ["git", "diff", "--name-only", "origin/main...HEAD"],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
