@@ -112,7 +112,7 @@ Harness output never contains a `live_call_made: true` or equivalent claim. The 
   - Output: per-class evidence artifact attached to the run + a top-level summary comment on the PR (advisory, non-fatal).
 - `tests/test_support_matrix_smoke_workflow.py` — YAML invariants per iter-2 absorb F4:
   - Trigger uses `pull_request: types: [opened, labeled, synchronize, reopened]` + `workflow_dispatch` ONLY; no `push`, no `repository_dispatch`, no `schedule`.
-  - Job has `if: contains(github.event.pull_request.labels.*.name, 'support-matrix-smoke')` gate (label filter at job level, NOT trigger level).
+  - Job has `if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'support-matrix-smoke')` combined gate (label filter at job level, NOT trigger level; workflow_dispatch path allowed since manual dispatch has no `github.event.pull_request` context — per iter-3 F4' and iter-4 F3''). Test simulates both event types (BLK-job-label-gate + BLK-workflow-dispatch-path-runs in §6).
   - No `secrets:` keys referenced; no `environment:` binding.
   - **Workflow / job / check-run name collision invariant (corrected):** previous "no required-check status published" was inaccurate — every workflow run inevitably produces a check-run on the PR. The correct invariant is:
     1. The workflow `name:` field MUST NOT equal any name in the required-contexts set of any branch protection ruleset (CI reads the ruleset list via `gh api repos/{owner}/{repo}/rulesets` + per-ruleset detail; asserts `support-matrix-smoke` and any job-id-derived check name absent from `required_status_checks.contexts[]`).
@@ -178,7 +178,7 @@ Harness output never contains a `live_call_made: true` or equivalent claim. The 
     - `created_at` falls inside `time_window_boundaries`
     Any mismatch rejects with specific reason code. Every `artifacts[].run_id` MUST appear in `workflow_run_ids[]` (no orphan artifact).
 
-    Rich `provider_verdicts[]` records (per iter-3 F2' — closes "reviewer hash recomputed from raw verdict; verdict bound to final diff/head SHA"):
+    Rich `provider_verdicts[]` records (per iter-3/iter-4 F2'/F2'' — closes "reviewer hash recomputed from raw verdict; verdict bound to final diff/head SHA; verdict bound to raw transcript artifact to defeat tampering"):
     ```json
     "provider_verdicts": [
       {
@@ -189,15 +189,47 @@ Harness output never contains a `live_call_made: true` or equivalent claim. The 
         "plan_digest": "<64-hex>",
         "final_diff_digest": "<64-hex>",
         "pr_head_sha": "<40-hex>",
-        "raw_verdict_sha256": "<sha256 of canonicalized verdict payload>"
+        "raw_verdict_sha256": "<sha256 of canonicalized verdict record EXCLUDING this field>",
+        "raw_verdict_artifact_digest": "<sha256 of out-of-band raw transcript artifact>",
+        "raw_verdict_artifact_ref": "<artifacts[i].artifact_id of the stored raw transcript>"
       }
     ]
     ```
+
+    **Canonical payload definition (per iter-4 F2'' — closes self-referential hash ambiguity):**
+
+    `raw_verdict_sha256` is computed over the verdict record EXCLUDING the `raw_verdict_sha256` field itself (self-reference removed; otherwise contract is impossible). Canonicalization rules:
+    - JSON serialization with sorted object keys (recursive at every depth).
+    - UTF-8 encoding, no BOM.
+    - Compact separators: `(",", ":")` (no whitespace).
+    - Field exclusion: `raw_verdict_sha256` removed before hashing.
+    - All numbers represented in shortest unambiguous form (no trailing zeros for integers).
+    - No `null` field elision; all fields preserved as-is except the excluded one.
+
+    Reference Python implementation (informative; spec is the canonicalization rules above):
+    ```python
+    import hashlib, json
+    def canonical_verdict_sha256(verdict_record: dict) -> str:
+        payload = {k: v for k, v in verdict_record.items() if k != "raw_verdict_sha256"}
+        canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    ```
+
+    **Anti-tamper cross-binding (per iter-4 F2'' — self-hash alone insufficient against full record rewrite):**
+
+    Producer cannot evade tampering detection just by recomputing `raw_verdict_sha256` after editing the record, because of the additional independent binding to `raw_verdict_artifact_digest`:
+    - The raw Codex/MCP thread transcript (or equivalent verdict source artifact) MUST be stored as an entry in the top-level `artifacts[]` manifest (the transcript IS an artifact with its own `run_id`/`artifact_id`/`sha256`/`produced_at`/`head_sha`).
+    - `raw_verdict_artifact_digest` MUST equal `artifacts[i].sha256` where `i` is identified by `raw_verdict_artifact_ref == artifacts[i].artifact_id`.
+    - Validator dereferences the artifact, re-hashes from the artifact bytes (`artifacts[i].sha256` recompute), and asserts `raw_verdict_artifact_digest == recomputed sha256`.
+    - To rewrite a verdict and still pass, an attacker would need to: (a) modify the verdict record, (b) regenerate `raw_verdict_sha256` over canonicalized new content, (c) ALSO produce a forged raw transcript artifact whose SHA256 matches the modified content's natural derivative — which requires either retroactive GitHub Actions artifact upload (blocked by `workflow_run_ids[]` provenance + `pr_head_sha` time-window) or pre-image attack on SHA256.
+
     Validator asserts:
     - Each `provider_verdicts[i].plan_digest` equals top-level `plan_digest` (verdict pinned to plan).
     - Each `provider_verdicts[i].final_diff_digest` equals top-level `final_diff_digest` (verdict pinned to final diff).
     - Each `provider_verdicts[i].pr_head_sha` equals top-level `pr_head_sha`.
-    - Each `provider_verdicts[i].raw_verdict_sha256` is the SHA256 of the canonicalized JSON of that verdict record (the entry self-witnesses; tampering changes the hash).
+    - Each `provider_verdicts[i].raw_verdict_sha256` recomputed from canonical payload (field-excluded) matches declared value (tampering of verdict fields detected).
+    - Each `provider_verdicts[i].raw_verdict_artifact_digest` equals `artifacts[j].sha256` where `j` is found by `raw_verdict_artifact_ref` lookup (transcript-to-verdict cross-binding).
+    - Negative tests in §6 E-3-5 cover: hash field included in canonicalization (impossible/reject), full-record rewrite (raw_verdict_artifact_digest mismatch reject), forged transcript artifact (workflow_run_ids provenance reject), missing transcript artifact (raw_verdict_artifact_ref dangling reject).
 
     `reviewer_identity_hashes[]` (per F5 + iter-3 F2' — recomputed from raw verdict records, not self-reported):
     Validator recomputes each entry from `provider_verdicts[i]` as `SHA256(provider || "|" || github_login || "|" || thread_id)`; producer-supplied hash MUST match recomputed value. Asserts pairwise distinct (no duplicate identity); duplicate reviewer identity rejects.
@@ -228,7 +260,7 @@ Harness output never contains a `live_call_made: true` or equivalent claim. The 
 - `scripts/validate_widening_evidence.py --evidence <path> [--strict]`. CLI thin wrapper. **Epic 3 scope: v1-only** (per iter-2 absorb F1 — no v2 acceptance path in Epic 3).
 - `ao_kernel/_internal/support_widening/validator.py` — pure module: given a v1 evidence artifact, re-derive every `consensus_*` field from raw inputs (per-call records, per-test outcomes, per-provider verdicts), assert `support_widening: false` literal, and reject any drift.
   - **v1-only fail-closed (per iter-2 absorb F1):** this Epic 3 validator module REJECTS any v2 input with reason `unsupported_future_schema_in_epic_3`. There is **no `widening_authorized: true` acceptance path** in this module, latent or otherwise. The v2 schema + the validator extension that accepts `widening_authorized: true` is built as a **separate module** (`ao_kernel/_internal/support_widening/validator_v2.py`) introduced **only** by the Epic 9 operator-bound supersession PR, behind the operator authority gate. Epic 3 module + Epic 9 module are physically separate files; Epic 3 cannot accidentally call into v2 acceptance because the v2 module does not exist in the Epic 3 codebase.
-  - **Bind-field verification (per iter-2 absorb F5):** for v1 artifacts, validator recomputes `plan_digest` from the referenced plan doc HEAD blob, `artifact_sha256[]` from disk reads, and rejects any drift; v1 artifacts that lack the bind fields are accepted (v1 evidence is *infrastructure*, not authorization), but any v1 artifact that *does* carry bind fields must satisfy them.
+  - **Bind-field verification (per iter-2/iter-3/iter-4 absorb F5/F2'/F1''):** for v1 artifacts, validator recomputes `plan_digest` from the referenced plan doc HEAD blob, recomputes `artifacts[i].sha256` from disk reads of referenced artifact files, and rejects any drift; v1 artifacts that lack the bind fields are accepted (v1 evidence is *infrastructure*, not authorization), but any v1 artifact that *does* carry bind fields must satisfy them. The canonical bind-field surface is the **rich `artifacts[]` manifest** (`{run_id, artifact_id, sha256, produced_at, head_sha}`) per §2 E-3-5; legacy flat `artifact_sha256[]` field name is REJECTED by schema `additionalProperties: false` (iter-4 F1'' alignment). Validator BLK-legacy-artifact-sha-array-rejected covers this.
   - **Self-review prevention (per iter-2 absorb F6):** for any artifact carrying `operator_authority`, `implementer_provider`, `reviewer_providers`, validator asserts the three fields are pairwise disjoint at the `github_login` level AND `reviewer_providers[]` entries are pairwise distinct at the `provider` level AND `implementer_provider.provider` is not in `reviewer_providers[].provider`. Any violation rejects.
 - `ao_kernel/_internal/support_widening/validator_v2.py` — **explicitly absent in Epic 3 codebase**. Created only by Epic 9 supersession PR with operator authority gate, distinct schema (`support_widening_evidence.schema.v2.json`), and separate import path. Epic 3 CI invariant test asserts `validator_v2.py` does not exist in the tree.
 - `tests/test_widening_evidence_validator.py` — invariants per iter-2 absorb:
@@ -240,7 +272,7 @@ Harness output never contains a `live_call_made: true` or equivalent claim. The 
   - Self-review prevention: artifact with `implementer_provider.github_login` in `reviewer_providers[].github_login` rejects (F6).
   - Duplicate reviewer provider: artifact with `reviewer_providers: [{provider: "anthropic", ...}, {provider: "anthropic", ...}]` rejects (F6).
   - Bind-field drift: artifact with `plan_digest` not matching recomputed plan doc SHA256 rejects (F5).
-  - Bind-field drift: artifact with `artifact_sha256[i]` not matching on-disk SHA256 of referenced artifact rejects (F5).
+  - Bind-field drift: artifact with `artifacts[i].sha256` not matching on-disk SHA256 of referenced artifact rejects (F5/F2'); legacy flat `artifact_sha256[]` rejected by schema additionalProperties:false (F1'').
 - Plan doc record at `.claude/plans/EPIC-3-E-3-6-RECOMPUTE-VALIDATOR.md`.
 
 **Validator anti-patterns it rejects** (ADR-0002 informed):
@@ -392,7 +424,8 @@ This three-layer separation is the structural reason no Epic 3 slice — includi
 - BLK-cross-ai-distinct-provider: checklist assertion list requires `reviewer_providers[]` to satisfy ADR-0004 distinct-provider rule.
 - BLK-evidence-class-live: checklist assertion list requires `evidence_class: live` for every surface widening (NOT `simulated`).
 - BLK-recompute-strategy-present: every assertion in the list has an explicit `recompute_strategy` field; validator test rejects checklist with any assertion missing this field.
-- BLK-bind-fields-required (F5): every assertion in the list MUST also have a `bind_fields[]` field naming which evidence-pack bind fields (`plan_digest`, `final_diff_digest`, `pr_head_sha`, `workflow_run_ids`, `artifact_sha256`, `time_window_boundaries`, `reviewer_identity_hashes`, `verdict_completeness_proof`) the assertion depends on. Empty `bind_fields` rejected.
+- BLK-bind-fields-required (F5 + iter-4 F1''): every assertion in the list MUST also have a `bind_fields[]` field naming which evidence-pack bind fields the assertion depends on, using canonical dot-path names: `plan_digest`, `final_diff_digest`, `pr_head_sha`, `workflow_run_ids`, `artifacts[].run_id`, `artifacts[].artifact_id`, `artifacts[].sha256`, `artifacts[].produced_at`, `artifacts[].head_sha`, `time_window_boundaries`, `reviewer_identity_hashes`, `verdict_completeness_proof`, `provider_verdicts[].plan_digest`, `provider_verdicts[].final_diff_digest`, `provider_verdicts[].pr_head_sha`, `provider_verdicts[].raw_verdict_sha256`. Empty `bind_fields` rejected. Legacy alias `artifact_sha256` (flat array) REJECTED by additionalProperties:false at checklist schema layer.
+- BLK-legacy-artifact-sha-array-rejected (iter-4 F1''): negative test — checklist containing legacy `artifact_sha256` flat array field in `bind_fields[]` or as a top-level evidence-pack field MUST be rejected by schema validation AND by validator runtime check. Tests cover both detection paths.
 - BLK-stale-replay-rejected (F5, negative test): test feeds the checklist a synthetic evidence pack whose `time_window_boundaries.end` is older than `now - 90 days`; assertion list MUST trigger reject (stale-replay closure).
 - BLK-duplicate-reviewer-identity-rejected (F5, negative test): test feeds synthetic pack where two entries in `reviewer_identity_hashes[]` are equal; checklist MUST trigger reject.
 - BLK-filtered-negative-verdict-rejected (F5, negative test): test feeds pack with `verdict_completeness_proof.negative_verdicts_present: true` but `provider_verdicts[]` carries only `agree` entries; checklist MUST trigger reject.
@@ -405,7 +438,11 @@ This three-layer separation is the structural reason no Epic 3 slice — includi
 - BLK-artifact-not-in-run-rejected (F2' iter-3, negative test): pack with `artifacts[i].artifact_id` not present in API-fetched `/actions/runs/{run_id}/artifacts` list → reject.
 - BLK-reviewer-hash-recomputation-mismatch-rejected (F2' iter-3, negative test): pack with `reviewer_identity_hashes[i]` not matching `SHA256(provider || "|" || github_login || "|" || thread_id)` of corresponding `provider_verdicts[i]` → reject (producer-supplied hash must match recomputed; cannot fabricate).
 - BLK-verdict-binding-drift-rejected (F2' iter-3, negative test): pack with any `provider_verdicts[i].plan_digest != top.plan_digest` OR `final_diff_digest != top.final_diff_digest` OR `pr_head_sha != top.pr_head_sha` → reject (verdict not pinned to current plan/diff/head).
-- BLK-raw-verdict-sha-mismatch-rejected (F2' iter-3, negative test): pack with `provider_verdicts[i].raw_verdict_sha256` not matching SHA256 of canonicalized JSON of that verdict record → reject (tampered verdict).
+- BLK-raw-verdict-sha-mismatch-rejected (F2' iter-3, negative test): pack with `provider_verdicts[i].raw_verdict_sha256` not matching SHA256 of canonicalized JSON of that verdict record (with field-exclusion rule per F2'') → reject (tampered verdict fields).
+- BLK-raw-verdict-canonical-self-reference-rejected (F2'' iter-4, negative test): pack with `raw_verdict_sha256` computed over a payload that INCLUDES the `raw_verdict_sha256` field itself → reject (self-referential hash impossible; schema/validator rejects payload).
+- BLK-raw-verdict-artifact-digest-mismatch-rejected (F2'' iter-4, negative test): pack with `provider_verdicts[i].raw_verdict_artifact_digest` not matching the SHA256 of the referenced `artifacts[j]` (lookup via `raw_verdict_artifact_ref`) → reject (full-record rewrite caught by transcript cross-binding).
+- BLK-raw-verdict-artifact-ref-dangling-rejected (F2'' iter-4, negative test): pack with `provider_verdicts[i].raw_verdict_artifact_ref` pointing to a non-existent `artifacts[].artifact_id` → reject (missing transcript artifact).
+- BLK-raw-verdict-artifact-provenance-rejected (F2'' iter-4, negative test): pack where the referenced raw transcript artifact's `run_id` is not in `workflow_run_ids[]` or whose `head_sha != pr_head_sha` → reject (forged transcript blocked by provenance chain).
 - BLK-disjoint-identities-required (F6): checklist requires `operator_authority.github_login`, `implementer_provider.github_login`, and every `reviewer_providers[].github_login` to be pairwise distinct; same-login overlap rejects.
 - BLK-disjoint-providers-required (F6): checklist requires `reviewer_providers[].provider` entries pairwise distinct AND `implementer_provider.provider` not in `reviewer_providers[].provider`; overlap rejects.
 
@@ -430,7 +467,10 @@ This three-layer separation is the structural reason no Epic 3 slice — includi
 - BLK-orphan-artifact-rejected-validator (F2' iter-3): validator rejects any `artifacts[i].run_id` not in `workflow_run_ids[]`.
 - BLK-reviewer-hash-recomputation-validator (F2' iter-3): validator recomputes each `reviewer_identity_hashes[i]` from `provider_verdicts[i]`; mismatch rejects.
 - BLK-verdict-binding-validator (F2' iter-3): validator asserts every `provider_verdicts[i]` `plan_digest`/`final_diff_digest`/`pr_head_sha` matches top-level values; mismatch rejects.
-- BLK-raw-verdict-sha-validator (F2' iter-3): validator recomputes `provider_verdicts[i].raw_verdict_sha256` from canonicalized JSON of the entry; mismatch rejects.
+- BLK-raw-verdict-sha-validator (F2' iter-3 + F2'' iter-4): validator recomputes `provider_verdicts[i].raw_verdict_sha256` from canonicalized JSON of the entry with `raw_verdict_sha256` field EXCLUDED (sorted keys, UTF-8, compact separators); mismatch rejects.
+- BLK-raw-verdict-artifact-cross-binding-validator (F2'' iter-4): validator dereferences `provider_verdicts[i].raw_verdict_artifact_ref` to find matching `artifacts[j].artifact_id`, recomputes `artifacts[j].sha256` from on-disk/downloaded bytes, asserts equals `provider_verdicts[i].raw_verdict_artifact_digest`; any drift rejects (full-record rewrite defeated).
+- BLK-raw-verdict-artifact-ref-dangling-validator (F2'' iter-4): validator rejects if `raw_verdict_artifact_ref` does not resolve to any entry in `artifacts[]`.
+- BLK-legacy-artifact-sha-array-rejected-validator (F1'' iter-4): validator rejects v1 or v2 artifact carrying legacy flat `artifact_sha256[]` field at any level (top-level OR inside `recompute_inputs` OR inside `provider_verdicts[]`); canonical surface is rich `artifacts[]` manifest only.
 
 Per CLAUDE.md test-quality gate (conftest AST-based BLK rules): assertions are concrete (no `assert callable(x)`, no `assert True`); negative cases use `pytest.raises(SupportWideningError)` not bare `except: pass`.
 
@@ -540,15 +580,16 @@ This is the *future* checklist that the operator-bound Epic 9 supersession PR wi
 
 3. **Evidence pack** (uses v2 schema; v1 insufficient; iter-2 absorb F5 bind-fields required)
    - For *each* surface class being widened in this supersession: a v2 evidence artifact backed by `evidence_class: live` (NOT `simulated`).
-   - **Evidence-pack bind fields (F5, ALL required):**
+   - **Evidence-pack bind fields (F5 + iter-3/iter-4 F2'/F1'' rich manifest, ALL required):**
      - `plan_digest` — SHA256 of the supersession PR's plan doc at plan-time (validator recomputes from HEAD blob; mismatch rejects).
      - `final_diff_digest` — SHA256 of the merged diff at post-impl (validator recomputes from `git diff <base>..<merge-commit>`; mismatch rejects).
      - `pr_head_sha` — 40-hex commit SHA matched to GitHub API `/pulls/{n}.head.sha`; mismatch rejects.
-     - `workflow_run_ids[]` — array of GitHub Actions run IDs (validator queries `/actions/runs/{id}`, verifies status=completed, conclusion=success, head_sha matches).
-     - `artifact_sha256[]` — per-artifact SHA256 array (validator re-hashes downloaded artifact bytes; drift rejects).
-     - `time_window_boundaries` — `{start, end}` ISO-8601 (validator verifies length >= 7 days, end <= now, no artifact timestamped outside window).
-     - `reviewer_identity_hashes[]` — per reviewer SHA256 of `{provider, github_login, thread_id}` (validator asserts pairwise distinct; duplicate identity rejects).
-     - `verdict_completeness_proof` — `{verdicts_received_total, verdicts_claimed_in_consensus, negative_verdicts_present}` (validator asserts denominator integrity AND, if `negative_verdicts_present=true`, the negative entry is explicitly present in `provider_verdicts[]`).
+     - `workflow_run_ids[]` — array of GitHub Actions run IDs (validator queries `/actions/runs/{id}`, verifies status=completed, conclusion=success, head_sha matches `pr_head_sha`).
+     - `artifacts[]` — **rich manifest** (replaces legacy flat `artifact_sha256[]` per F2'/F1''): each entry is `{run_id, artifact_id, sha256, produced_at, head_sha}`. Validator queries `/actions/runs/{run_id}/artifacts`; asserts artifact_id present, downloaded bytes SHA256 matches declared `sha256`, `produced_at` matches API value, `head_sha == pr_head_sha`. Every `artifacts[].run_id` MUST appear in `workflow_run_ids[]` (no orphan artifact). Legacy `artifact_sha256[]` REJECTED by schema additionalProperties:false.
+     - `time_window_boundaries` — `{start, end}` ISO-8601 (validator verifies length >= 7 days, end <= now, no `artifacts[].produced_at` timestamped outside window).
+     - `reviewer_identity_hashes[]` — per reviewer SHA256 of `{provider, github_login, thread_id}` (validator recomputes from `provider_verdicts[]`; producer-supplied hash must match; pairwise distinct; duplicate identity rejects).
+     - `provider_verdicts[]` — **rich verdict records** with `{provider, github_login, thread_id, verdict, plan_digest, final_diff_digest, pr_head_sha, raw_verdict_sha256}`. Validator asserts each entry's `plan_digest`/`final_diff_digest`/`pr_head_sha` match top-level (verdict pinned to current plan/diff/head); `raw_verdict_sha256` recomputed from canonicalized JSON of the entry excluding the `raw_verdict_sha256` field itself (sorted-key UTF-8 JSON with fixed separators); additionally cross-bound to an out-of-band `raw_verdict_artifact_digest` field (per iter-4 F2'') derived from the raw Codex/MCP thread transcript stored as an evidence artifact — producer cannot rewrite a verdict and re-hash because the raw transcript artifact's SHA256 won't match.
+     - `verdict_completeness_proof` — `{verdicts_received_total, verdicts_claimed_in_consensus, negative_verdicts_present}` (validator asserts `verdicts_received_total == len(provider_verdicts)`; `verdicts_claimed_in_consensus == count of AGREE entries`; if `negative_verdicts_present=true`, at least one entry's `verdict` MUST be `REVISE`/`RED`; if `false`, none may be).
    - Per-class minimum thresholds:
      - `provider`: 3+ live integration tests across 7 consecutive days; per-call usage/cost evidence aggregated.
      - `python_version`: full pytest matrix green on 3.11/3.12/3.13 + any added version.
@@ -669,7 +710,7 @@ This section maps each Codex iter-1 finding (F1..F7) to the specific sections up
 | **F2** — v1 schema strictness root-only; bypass via `allOf`/`if/then`/`$ref`/nested/`recompute_inputs` | blocker (high) | schema recursive closure | §7 Schema Design Notes (recursive closure section: `additionalProperties:false` + `unevaluatedProperties:false` at every node; remote `$ref` FORBIDDEN; `recompute_inputs` shadow-widening guard); §6 E-3-1 test invariants (BLK-schema-strict-recursive, BLK-schema-no-remote-ref, BLK-recompute-inputs-no-shadow-widening) |
 | **F3** — Smoke harness stub purity relies on AST scan + flag trust; runtime bypass possible | blocker (high) | runtime kill-switch | §2 E-3-2 stub adapter discipline (three-layer: static AST, runtime kill-switch dominant, runtime declaration); §6 E-3-2 test invariants (BLK-runtime-kill-switch-network, BLK-runtime-kill-switch-subprocess, BLK-runtime-kill-switch-secrets, BLK-runtime-kill-switch-dynamic-import) |
 | **F4** — `support-matrix-smoke.yml` label trigger semantics wrong; "no required-check published" incorrect | blocker (medium) | workflow + collision invariant | §2 E-3-3 (correct trigger `pull_request: types: [opened, labeled, synchronize, reopened]` + `workflow_dispatch`; job-level `if: contains(...)` gate; workflow/job name collision invariant replaces incorrect "no required-check status" claim); §6 E-3-3 test invariants (BLK-trigger-correct, BLK-job-label-gate, BLK-no-ruleset-collision, BLK-no-ruleset-mutation, BLK-no-job-name-collision) |
-| **F5** — Recompute validator + checklist do not cover replay/stale/TOCTOU/identity drift/denominator | blocker (high) | evidence-pack bind fields | §2 E-3-5 (evidence-pack bind block with 8 bind fields: `plan_digest`, `final_diff_digest`, `pr_head_sha`, `workflow_run_ids[]`, `artifact_sha256[]`, `time_window_boundaries`, `reviewer_identity_hashes[]`, `verdict_completeness_proof`); §2 E-3-6 (bind-field verification module); §6 E-3-5 negative tests (BLK-stale-replay-rejected, BLK-duplicate-reviewer-identity-rejected, BLK-filtered-negative-verdict-rejected, BLK-denominator-manipulation-rejected, BLK-7day-window-race-rejected); §6 E-3-6 test invariants (BLK-plan-digest-drift-rejected, BLK-artifact-sha-drift-rejected); §8 Pre-supersession-PR Gate Checklist evidence-pack bind fields section |
+| **F5** — Recompute validator + checklist do not cover replay/stale/TOCTOU/identity drift/denominator | blocker (high) | evidence-pack bind fields | §2 E-3-5 (evidence-pack bind block with 8 bind fields: `plan_digest`, `final_diff_digest`, `pr_head_sha`, `workflow_run_ids[]`, rich `artifacts[]` manifest superseding legacy `artifact_sha256[]` per F1''/iter-4, `time_window_boundaries`, `reviewer_identity_hashes[]`, `verdict_completeness_proof`); §2 E-3-6 (bind-field verification module); §6 E-3-5 negative tests (BLK-stale-replay-rejected, BLK-duplicate-reviewer-identity-rejected, BLK-filtered-negative-verdict-rejected, BLK-denominator-manipulation-rejected, BLK-7day-window-race-rejected); §6 E-3-6 test invariants (BLK-plan-digest-drift-rejected, BLK-artifact-sha-drift-rejected); §8 Pre-supersession-PR Gate Checklist evidence-pack bind fields section |
 | **F6** — Operator self-review prevention not machine-checkable | blocker (medium) | disjoint identity invariants | §2 E-3-5 (operator authority block + cross-AI consensus block; disjointness requirements); §2 E-3-6 (self-review prevention module); §7 Schema Design Notes (disjoint-identity invariants section: 6 `allOf` invariants); §6 E-3-5 test invariants (BLK-disjoint-identities-required, BLK-disjoint-providers-required); §6 E-3-6 test invariants (BLK-same-provider-rejected, BLK-implementer-in-reviewer-rejected, BLK-operator-login-collision-rejected); §8 Pre-supersession-PR Gate Checklist self-review prevention items |
 | **F7** — Surface inventory forbidden-language regex too narrow | non-blocker (medium) | expanded language regex | §6 E-3-4 test invariants (BLK-no_guard_flip-1 expanded to 12-variant regex set: production-ready / production safe / production certified / production grade / fully supported / GA / generally available / officially supported / stable support / beta exit / supported today / ready for production) |
 
@@ -709,6 +750,25 @@ Iter-2 absorb addressed F1..F7 from iter-1, but Codex iter-2 review identified r
 5. **Defense-in-depth env access (F3')** — sanitized allowlist mapping replaces `os.environ` for harness duration; defense-in-depth kill-switches on all alternative paths catch any escape.
 6. **Workflow event-aware gating (F4')** — `if:` expression branches on `github.event_name` so workflow_dispatch path remains viable without requiring `github.event.pull_request` context.
 
-**Iter-3 verdict (next):** awaiting Codex iter-3 review. If AGREE + `ready_for_impl=true`, E-3-1 evidence schema slice may open. If REVISE, absorb iter-4 and continue.
+**Iter-3 verdict (received):** Codex iter-3 review (thread `019e87b2-457f-78c3-a550-6925c322c466`): **REVISE**, `ready_for_impl=false`. 2 blocker (F1'', F2'') + 1 non-blocker (F3'') residual findings.
 
-**No-Fake-Work attestation (HARD RULE 2026-04-25):** iter-1 verdict was real REVISE (Codex MCP); iter-2 absorb addressed F1..F7; iter-2 verdict was real REVISE (Codex thread `019e87b2-...`); iter-3 absorb addresses F1'..F4'; iter-3 verdict will be recorded as real Codex output. No aspirational AGREE fabrication.
+---
+
+## Iter-4 Absorb Summary (Codex iter-3 verdict)
+
+| Iter-4 Finding | Severity | Category | Sections updated in iter-4 |
+|---|---|---|---|
+| **F1''** — Bind-field contract split-brain: rich `artifacts[]` manifest declared in §2 E-3-5 but §2 E-3-6 + §6 E-3-6 + §6 E-3-5 + §8 still carried legacy flat `artifact_sha256[]` contract | blocker (high) | normative contract alignment | §2 E-3-6 bind-field verification text (now references rich `artifacts[]` + legacy alias rejection); §2 E-3-6 validator anti-patterns (artifacts[i].sha256 canonical); §6 E-3-5 BLK-bind-fields-required (expanded with canonical dot-path names including `artifacts[].run_id/.artifact_id/.sha256/.produced_at/.head_sha` and `provider_verdicts[].plan_digest/.final_diff_digest/.pr_head_sha/.raw_verdict_sha256`; legacy `artifact_sha256` rejected); §6 E-3-5 new BLK-legacy-artifact-sha-array-rejected; §6 E-3-6 new BLK-legacy-artifact-sha-array-rejected-validator; §8 evidence-pack bind fields section restructured with rich manifest + verdict pinning + legacy rejection notes |
+| **F2''** — `raw_verdict_sha256` canonicalization ambiguous (self-referential if hash field included); self-hash alone insufficient against full-record rewrite | blocker (high) | anti-tamper cross-binding | §2 E-3-5 evidence-pack bind block: explicit canonical payload definition (sorted-key UTF-8 JSON, compact separators, `raw_verdict_sha256` field EXCLUDED); reference Python implementation; new `raw_verdict_artifact_digest` + `raw_verdict_artifact_ref` fields cross-bind the verdict to an out-of-band raw transcript artifact stored in `artifacts[]`; pre-image attack required to rewrite a verdict. §6 E-3-5 new BLKs (BLK-raw-verdict-canonical-self-reference-rejected, BLK-raw-verdict-artifact-digest-mismatch-rejected, BLK-raw-verdict-artifact-ref-dangling-rejected, BLK-raw-verdict-artifact-provenance-rejected); §6 E-3-6 updated BLK-raw-verdict-sha-validator (explicit field-exclusion rule) + new BLK-raw-verdict-artifact-cross-binding-validator + BLK-raw-verdict-artifact-ref-dangling-validator |
+| **F3''** — §2 E-3-3 deliverables test bullet still carried iter-2 PR-only label gate expression (stale relative to iter-3 §6/example fix) | non-blocker (medium) | YAML invariants alignment | §2 E-3-3 deliverables test bullet updated to combined `github.event_name == 'workflow_dispatch' || contains(...)` expression with explicit reference to BLK-workflow-dispatch-path-runs |
+
+**Iter-4 absorb principles (extending iter-3):**
+
+7. **Normative contract single-anchor (F1'')** — when a structural change supersedes legacy contract, ALL normative sections (deliverables, validator anti-patterns, test invariants per slice, pre-supersession-PR gate checklist) must reflect the new contract; legacy alias rejection must appear at schema (`additionalProperties: false`) AND validator runtime check.
+8. **Self-witness AND cross-witness for tamper resistance (F2'')** — single-record hash (self-witness) catches field-level tampering but not full-record rewrite; cross-binding to an independent, externally-provenanced artifact (transcript stored in `artifacts[]` with `workflow_run_ids[]` provenance + `pr_head_sha` time-window) makes full rewrite require either retroactive GitHub Actions upload or pre-image attack on SHA256. Both layers required.
+9. **Canonical payload definition explicit and reproducible (F2'')** — when self-hash is required, define canonicalization rules (sort order, encoding, separators, field exclusion) precisely AND ship a reference implementation snippet; ambiguity makes the contract impossible to enforce machine-consistently across implementations.
+10. **Stale-text sweep after structural change (F3'')** — after a contract update, grep the entire plan doc for the OLD contract terms (in this case `artifact_sha256` and PR-only `if:` expression) and update every stale occurrence; one missed bullet creates implementer ambiguity.
+
+**Iter-4 verdict (next):** awaiting Codex iter-4 review. If AGREE + `ready_for_impl=true`, E-3-1 evidence schema slice may open. If REVISE, absorb iter-5 and continue.
+
+**No-Fake-Work attestation (HARD RULE 2026-04-25):** iter-1 + iter-2 + iter-3 verdicts all real REVISE (Codex MCP); iter-4 absorb addresses F1''..F3''; iter-4 verdict will be recorded as real Codex output. No aspirational AGREE fabrication.
