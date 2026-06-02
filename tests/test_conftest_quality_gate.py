@@ -5,6 +5,7 @@ Validates the scanner contract:
     - BLK-002 (assert True) — blocking
     - BLK-003 (except: pass in test) — blocking
     - BLK-004 (mock-return direct-echo tautology) — blocking
+    - BLK-005 (whole-diff '.github/workflows/' mutation guard) — blocking
     - ADV-001 (no assertions) — advisory
     - ADV-002 (sole 'is not None') — advisory
     - ADV-003 (BLK-004 downgraded by behavioral signal) — advisory
@@ -479,6 +480,126 @@ def test_blk004_zero_hits_in_current_suite() -> None:
         "BLK-004 violations introduced in current tests/ tree: "
         f"{blk004_hits}. Either fix the test or extend the rule deliberately."
     )
+
+
+# ── BLK-005: whole-diff '.github/workflows/' mutation guard ─────────────
+
+
+def test_blk005_positive_straggler_pattern(tmp_path: Path) -> None:
+    # The exact anti-pattern PR #903 removed and #816 reintroduced.
+    source = (
+        "import subprocess\n"
+        "def test_no_workflow_mutation():\n"
+        "    proc = subprocess.run(['git', 'diff', '--name-only', 'origin/main...HEAD'])\n"
+        "    for path in proc.stdout.split():\n"
+        "        assert not path.startswith('.github/workflows/')\n"
+    )
+    assert "BLK-005" in _rules(_scan_source(tmp_path, source))
+
+
+def test_blk005_positive_wrapper_form(tmp_path: Path) -> None:
+    # Wrapper that drops the leading 'git' token: _git(['diff', ...]).
+    source = (
+        "def test_x():\n"
+        "    out = _git(['diff', '--name-only', 'origin/main...HEAD'])\n"
+        "    for p in out:\n"
+        "        assert not p.startswith('.github/workflows/')\n"
+    )
+    assert "BLK-005" in _rules(_scan_source(tmp_path, source))
+
+
+def test_blk005_positive_tuple_prefix(tmp_path: Path) -> None:
+    # startswith((".github/workflows/", ...)) literal-tuple form.
+    source = (
+        "import subprocess\n"
+        "def test_x():\n"
+        "    proc = subprocess.run(['git', 'diff', '--name-only', 'origin/main...HEAD'])\n"
+        "    for p in proc.stdout.split():\n"
+        "        assert not p.startswith(('.github/workflows/', 'docs/'))\n"
+    )
+    assert "BLK-005" in _rules(_scan_source(tmp_path, source))
+
+
+def test_blk005_negative_path_filtered_diff(tmp_path: Path) -> None:
+    # ADR-style path-filtered diff (-- .claude/plans/adr/): scoped → exempt.
+    source = (
+        "import subprocess\n"
+        "def test_x():\n"
+        "    proc = subprocess.run(['git', 'diff', 'origin/main...HEAD', '--', '.claude/plans/adr/'])\n"
+        "    for p in proc.stdout.split():\n"
+        "        assert not p.startswith('.github/workflows/')\n"
+    )
+    assert "BLK-005" not in _rules(_scan_source(tmp_path, source))
+
+
+def test_blk005_negative_dynamic_surface_startswith(tmp_path: Path) -> None:
+    # RI/AO-MA self-gate form: f.startswith(surface) (dynamic, not literal).
+    source = (
+        "import subprocess\n"
+        "def test_x():\n"
+        "    proc = subprocess.run(['git', 'diff', '--name-only', 'origin/main...HEAD'])\n"
+        "    surface = '.github/workflows/'\n"
+        "    for f in proc.stdout.split():\n"
+        "        assert not f.startswith(surface)\n"
+    )
+    assert "BLK-005" not in _rules(_scan_source(tmp_path, source))
+
+
+def test_blk005_negative_changed_and_introducer(tmp_path: Path) -> None:
+    # changed & introducer_signature detection, no workflow-prefix assert.
+    source = (
+        "import subprocess\n"
+        "def test_x():\n"
+        "    proc = subprocess.run(['git', 'diff', '--name-only', 'origin/main...HEAD'])\n"
+        "    changed = set(proc.stdout.split())\n"
+        "    if not (changed & {'tests/test_x.py'}):\n"
+        "        return\n"
+        "    assert 'docs/x.md' in changed\n"
+    )
+    assert "BLK-005" not in _rules(_scan_source(tmp_path, source))
+
+
+def test_blk005_negative_whole_diff_non_workflow_assert(tmp_path: Path) -> None:
+    # whole-diff but asserts on a non-workflow surface → not BLK-005.
+    source = (
+        "import subprocess\n"
+        "def test_x():\n"
+        "    proc = subprocess.run(['git', 'diff', '--name-only', 'origin/main...HEAD'])\n"
+        "    for p in proc.stdout.split():\n"
+        "        assert not p.startswith('docs/secret/')\n"
+    )
+    assert "BLK-005" not in _rules(_scan_source(tmp_path, source))
+
+
+def test_blk005_negative_workflow_assert_no_git_diff(tmp_path: Path) -> None:
+    # workflow startswith but no git diff at all → not BLK-005.
+    source = (
+        "def test_x():\n"
+        "    paths = ['ao_kernel/x.py']\n"
+        "    for p in paths:\n"
+        "        assert not p.startswith('.github/workflows/')\n"
+    )
+    assert "BLK-005" not in _rules(_scan_source(tmp_path, source))
+
+
+def test_blk005_zero_hits_in_current_suite() -> None:
+    """Lock-in: BLK-005 must have 0 hits in the current tests/ tree.
+
+    After the straggler removal (#816's test_operator_runbook.py guard), no test
+    should match the whole-diff workflow-mutation anti-pattern. A future PR that
+    reintroduces it fails here first. Self-skip uses ``Path.resolve()`` so this
+    file's string fixtures are excluded.
+    """
+    self_path = Path(__file__).resolve()
+    tests_dir = self_path.parent.parent / "tests"
+    hits: list[str] = []
+    for p in sorted(tests_dir.rglob("test_*.py")):
+        if p.resolve() == self_path:
+            continue
+        for v in _scan_test_file(p):
+            if v.rule == "BLK-005":
+                hits.append(f"{p.name}::{v.func}")
+    assert hits == [], f"BLK-005 reintroduced in tests/ tree: {hits}"
 
 
 # ── Negative: ensure self-fixtures don't leak into the rest of the suite ──

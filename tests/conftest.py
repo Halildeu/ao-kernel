@@ -18,6 +18,15 @@ Rules:
              patch.object, mocker.patch, AsyncMock, side_effect, service
              pass-through (assert service.f(mock) == VALUE), and attribute
              projection (assert result.id == VALUE). Future PRs.
+    BLK-005: Whole-diff '.github/workflows/' mutation guard. A test that runs
+             a whole-repo ``git diff`` (no ``-- <pathspec>``) AND asserts
+             ``path.startswith(".github/workflows/")`` blocks every unrelated
+             workflow-maintenance PR (the cross-slice anti-pattern PR #903
+             removed and #816 reintroduced). Workflow-change risk belongs in
+             the repo-level ao-release-gate / RiskClassifier, not a per-slice
+             pytest scan. Path-filtered diffs (``git diff ... -- <path>``) and
+             introducer-scoped self-gates (dynamic ``startswith(<var>)``) are
+             exempt by construction.
     ADV-001: Test function with 0 assert statements — warning
     ADV-002: sole assertion is 'is not None' — weak behavioral signal
 """
@@ -322,6 +331,121 @@ def _blk004_scan(
             _process(sub)
 
 
+# ── BLK-005: whole-diff '.github/workflows/' mutation guard ─────────────
+
+
+_BLK005_WORKFLOW_PREFIX = ".github/workflows/"
+
+
+def _call_static_argv(call: ast.Call) -> list[str] | None:
+    """Return the static string argv of a call whose first positional arg is a
+    list/tuple of string constants (``subprocess.run(["git", "diff", ...])`` or
+    a wrapper ``_git(["diff", ...])``). Returns ``None`` for dynamic argv — the
+    rule only acts on statically-decidable invocations.
+    """
+    if not call.args:
+        return None
+    first = call.args[0]
+    if not isinstance(first, (ast.List, ast.Tuple)):
+        return None
+    argv: list[str] = []
+    for el in first.elts:
+        if isinstance(el, ast.Constant) and isinstance(el.value, str):
+            argv.append(el.value)
+        else:
+            return None
+    return argv
+
+
+def _argv_is_git_diff_without_pathspec(argv: list[str]) -> bool:
+    """True iff ``argv`` is a ``git diff`` / ``diff`` invocation with NO pathspec
+    after a ``--`` separator (a *whole-repo* diff). Accepts wrapper forms that
+    drop the leading ``git`` token. A path-filtered diff such as
+    ``["git", "diff", "origin/main...HEAD", "--", ".claude/plans/adr/"]`` returns
+    False (the ``--`` separator is the only reliable boundary; no path heuristics).
+    """
+    if not argv:
+        return False
+    toks = argv[1:] if argv[0] == "git" else argv
+    if not toks or toks[0] != "diff":
+        return False
+    if "--" not in toks:
+        return True
+    # "--" present: whole-diff iff it is the last token (no pathspec follows).
+    return toks.index("--") == len(toks) - 1
+
+
+def _assert_has_direct_workflow_prefix(assert_node: ast.Assert) -> bool:
+    """True iff the assert subtree contains a direct *literal*
+    ``<x>.startswith(".github/workflows/")`` (or a literal tuple/list arg that
+    contains that prefix). Dynamic args (``f.startswith(surface)``,
+    ``startswith(forbidden_prefixes)``) are NOT matched — this is what keeps the
+    RI/AO-MA introducer-scoped self-gates exempt.
+    """
+    for sub in ast.walk(assert_node):
+        if not (
+            isinstance(sub, ast.Call)
+            and isinstance(sub.func, ast.Attribute)
+            and sub.func.attr == "startswith"
+            and sub.args
+        ):
+            continue
+        arg0 = sub.args[0]
+        if isinstance(arg0, ast.Constant) and arg0.value == _BLK005_WORKFLOW_PREFIX:
+            return True
+        if isinstance(arg0, (ast.Tuple, ast.List)):
+            for el in arg0.elts:
+                if isinstance(el, ast.Constant) and el.value == _BLK005_WORKFLOW_PREFIX:
+                    return True
+    return False
+
+
+def _blk005_scan(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    fname: str,
+    func_name: str,
+    violations: list[_TestQualityViolation],
+) -> None:
+    """Detect BLK-005: a whole-repo ``git diff`` paired with a direct
+    ``.github/workflows/`` prefix assertion in the same test function.
+
+    This is the cross-slice workflow-mutation guard anti-pattern (PR #903 removed
+    13 instances; #816 reintroduced one in tests/test_operator_runbook.py).
+    Because it scans the WHOLE PR diff (not the authoring slice's own write-set),
+    it blocks every unrelated workflow-maintenance PR. Workflow-change risk is
+    enforced at the repo level (ao-release-gate / RiskClassifier), not a
+    per-slice pytest scan.
+
+    Narrow boundary (Codex thread 019e89a3): requires BOTH a static
+    git-diff-without-pathspec argv AND a direct-literal workflow-prefix
+    ``startswith``. Nested helper scopes are pruned (same precision boundary as
+    BLK-004).
+    """
+    has_whole_diff = False
+    for sub in _walk_outside_nested_scopes(node):
+        if isinstance(sub, ast.Call):
+            argv = _call_static_argv(sub)
+            if argv is not None and _argv_is_git_diff_without_pathspec(argv):
+                has_whole_diff = True
+                break
+    if not has_whole_diff:
+        return
+    for sub in _walk_outside_nested_scopes(node):
+        if isinstance(sub, ast.Assert) and _assert_has_direct_workflow_prefix(sub):
+            violations.append(
+                _TestQualityViolation(
+                    fname,
+                    func_name,
+                    "BLK-005",
+                    "whole-diff '.github/workflows/' mutation guard blocks unrelated "
+                    "workflow-maintenance PRs; use a path-filtered diff "
+                    "(git diff ... -- <path>) or an introducer-scoped state-at-landing "
+                    "guard. Workflow risk is enforced by ao-release-gate / RiskClassifier.",
+                )
+            )
+            return
+
+
 # ── Test Quality Gate (Scanner Entrypoint) ──────────────────────────────
 
 
@@ -398,6 +522,9 @@ def _scan_test_file(filepath: Path) -> list[_TestQualityViolation]:
         # Out of scope: patch/patch.object/mocker.patch, AsyncMock, side_effect,
         # service pass-through, attribute projection. Future PRs.
         _blk004_scan(node, fname, func_name, violations)
+
+        # BLK-005: whole-diff '.github/workflows/' mutation guard (anti-pattern)
+        _blk005_scan(node, fname, func_name, violations)
 
         # ADV-002: Weak single assertion (is not None, isinstance, len > 0)
         # Only triggers when it's the SOLE meaningful assertion in the test

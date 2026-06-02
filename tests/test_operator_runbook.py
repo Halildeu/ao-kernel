@@ -12,10 +12,8 @@ Docs-only slice. The runbook MUST:
 from __future__ import annotations
 
 import re
-import subprocess
 from pathlib import Path
 
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNBOOK_PATH = REPO_ROOT / "docs" / "OPERATOR-RUNBOOK.md"
@@ -173,21 +171,3 @@ def test_runbook_lists_operator_owned_scenarios() -> None:
 def test_runbook_links_deployment_guide() -> None:
     text = RUNBOOK_PATH.read_text()
     assert "PRODUCTION-DEPLOYMENT-GUIDE.md" in text
-
-
-# ---- 4. Governance ZERO TOUCH (1) ----------------------------------------
-
-
-def test_no_workflow_mutation() -> None:
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        assert not path.startswith(".github/workflows/"), f"E-8-3 must not touch workflows: {path}"
