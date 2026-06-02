@@ -1,17 +1,15 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-7-2-STRESS-SESSION-HARNESS",
+  "work_package": "FIX-PCI-ALLOWLIST-TEST-REMOVE",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-7-2-stress-test",
+    "head_ref": "refs/heads/fix/pci-allowlist-test-remove",
     "changed_files": [
-      ".claude/plans/EPIC-7-2-STRESS-SESSION-HARNESS.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/run_stress_session.py",
-      "tests/test_stress_session_harness.py"
+      "tests/test_pci_dss_mapping.py"
     ]
   },
   "checks_considered": [
@@ -21,14 +19,15 @@
     { "name": "no_guard_flip", "status": "pass" },
     { "name": "no_workflow_mutation", "status": "pass" },
     { "name": "no_live_provider_import", "status": "pass" },
+    { "name": "no_runtime_module_change", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 7 E-7-2 long-running session stress harness (library mode + stub LLM only). CLI exposes --iterations + --duration-seconds + --json-out. Default 50 iter (CI-safe). 24h+ operator profile invoked manually; never scheduled.",
-    "Run report schema-pinned: stress-session-report.v1 with iterations_requested + iterations_completed + duration budget/actual + rss_kib_start/end/delta + python_version + platform + pid + 3 guard flags const false.",
-    "RSS measured via resource.getrusage (POSIX-portable; macOS bytes/Linux KiB normalized to KiB). No mprof dependency (E-7-3 future slice).",
-    "13 invariants: 4 harness presence + module structure (file + --help + import + docstring constraints) + 6 run report contract (small iter + RSS/duration + 3 guard flags + file output + duration short-circuit + invalid iter exit 2) + 3 CI safety (default iter 50 + no anthropic/openai/requests import + ZERO TOUCH workflows).",
-    "ZERO TOUCH: no .github/workflows/ mutation (24h+ scheduled run is future operator decision), no live provider client imports, no .ao/ workspace write, no guard flag flip."
+    "Bug fix: PR #811 (E-6-3d PCI-DSS slice) introduced tests/test_pci_dss_mapping.py::test_allowlist_diff_no_other_files with a hardcoded ALLOWED_CHANGED_FILES frozenset listing only E-6-3d artefacts. The test ran `git diff --name-only origin/main HEAD` and asserted every changed file was in the allowlist, so every subsequent PR adding files outside the E-6-3d write-set (E-4-1, E-4-2a, all future V5 slices) fails CI on main. Confirmed blocking 20+ open V5 PRs.",
+    "Fix: Option 2 (remove the test + ALLOWED_CHANGED_FILES constant entirely) per HARD RULE Uzun Vadeli Kalıcı Çözüm. Cross-slice write-set allowlists asserted on main are an anti-pattern; per-slice write-set invariants are owned locally by each slice (V5 Epic 4 plan §6 tests/test_epic_4_*_write_set_invariant.py pattern). The other 54 tests in the file (schema validation, mapping shape, PAN/SAD scanners, drift checks, sibling zero-touch invariants) continue to guard the slice. Section header comment also updated from (5) to (4) to reflect the count.",
+    "Supersedes PR #831 which patched the same bug via Option 1 (conditional skip). #831 kept the cross-slice allowlist test in tree as a no-op for non-PCI-DSS PRs, preserving the anti-pattern. Option 2 removes the anti-pattern entirely; user direction selected this approach. PR #831 closed and branch deleted.",
+    "Cross-AI review: Codex thread 019e87f5-87b3-7d93-8bf6-e59c8e98b113, verdict AGREE, must_close_findings=[], rationale: \"Option 2 stale cross-slice allowlist anti-patternini canlı CI'dan kaldırıyor; kalan 54 test PCI-DSS artifact semantiklerini koruyor ve yerel doğrulama temiz.\" Codex independently re-ran pytest (54 passed), ruff (clean), and verified no other ALLOWED_CHANGED_FILES references remain.",
+    "ZERO TOUCH: no .github/workflows/ mutation, no ao_kernel/ runtime module change, no .ao/ workspace write, no defaults/ change, no scripts/ change, no guard flag flip. Diff is 31 lines deletion + 1 line edit in tests/test_pci_dss_mapping.py + this evidence file."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
