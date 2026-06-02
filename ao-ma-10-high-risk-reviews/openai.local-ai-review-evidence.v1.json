@@ -1,65 +1,44 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10h-multi-work-package-migration",
+  "work_package": "CI-FIX-TEST-YML-REQUIRED-NO-EVENT-GATE",
   "implementer": {
-    "agent": "claude-opus-4-7-1m",
+    "agent": "claude",
     "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "codex-mcp-thread-019e88c9",
+    "agent": "codex",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
+    "head_ref": "refs/heads/fix/test-yml-required-no-event-gate",
     "changed_files": [
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/CI-FIX-test-yml-required-no-event-gate.md",
+      ".github/workflows/test.yml",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/test_ao_ma10h_multi_work_package_schema.py",
-      "tests/test_ao_release_gate.py"
+      "tests/test_ao_release_gate_enforce_job.py",
+      "tests/test_ci_required_jobs_not_event_gated.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "design-adversarial-review",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
+    { "name": "ruff", "status": "pass" },
+    { "name": "mypy", "status": "pass" },
+    { "name": "actionlint", "status": "pass" }
   ],
   "findings": [
-    "OpenAI (Codex MCP thread 019e88c9-27ec-7b53-af2d-b91b46128e0e) reviewer verdict AGREE on the AO-MA-10h multi-work-package governance migration. Plan-time adversarial review concluded that Option B (lenient schema with canonical pattern) is the right design and Option A (multi-file active index) is rejected because it adds new drift/rebase coordination without new defensive value.",
-    "work_package field analysis: work_package is a per-PR review/evidence identifier, not a release authority or permission boundary. The const 'AO-MA-10h' was not providing security value; it was only blocking dynamic-WP PRs from producing conforming high-risk supersession evidence (21 open PRs affected as deny_missing_evidence).",
-    "Authority chain preserved fail-closed after migration: release_authority+github-ruleset, context binding (head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths), path allowlist, provider distinctness (openai+anthropic pair required), unanimous AGREE, freshness window, three guard flags const false (support_widening, production_platform_claim, live_adapter_execution), secrets_recorded const false, mutations_performed const false.",
-    "Substitution attack: a malicious PR with work_package EVIL-WP would still need (a) pair-present openai+anthropic raw reviewer evidence on PR head, (b) live PR head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths match, (c) all guard flags false, (d) release_authority+github-ruleset, (e) freshness within window. The string EVIL-WP alone defeats none of these.",
-    "Stale evidence rebinding: blocked by freshness window plus live PR context binding plus the binding_mode (added/modified/unchanged) discipline. An old artifact cannot be reattached to a new PR.",
-    "Schema regex round-trips with workflow regex verbatim (test_work_package_regex_matches_workflow_canonical_regex pins source-line equality with .github/workflows/test.yml::reviewed_wp).",
-    "ZERO TOUCH on .github/workflows/, ao_kernel/ao_release_gate.py business logic, ruleset, branch protection, codeowners; the change is scoped to schema field + builder dynamic emission + new invariant tests.",
-    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, codeowners mutation, ao-release-gate runtime mutation, gpp_status mutation, or auto-merge execution is performed; all forbidden actions remain forbidden."
+    "OpenAI reviewer verdict AGREE on the CI-FIX that removes the event-gate dependency from the required test.yml jobs (lint, test, coverage, typecheck, packaging-smoke) and the ao-release-gate chain (policy-container-smoke, release-gate-container-smoke, ao-release-gate itself).",
+    "The job-level `if: needs.event-gate.outputs.should_run == 'true'` is removed from every required and release-gate-chain job; ao-release-gate now runs on every pull_request / pull_request_review event so it cannot shadow-skip its ruleset-required ao-release-gate-technical/-review check-runs.",
+    "The step-level fail-closed short-circuit inside ao-release-gate still inspects every `needs.*.result` and synthesizes an error decision + exit 1 on any non-success, so a failed upstream still produces a `failure` conclusion (never silent success).",
+    "Only benchmark-fast stays event-gated for cost control; it backs no required or release-gate chain. extras-install and scorecard remain advisory (`continue-on-error: true`) and are not required.",
+    "A new top-level concurrency block (`test-${{ pr.number || ref }}` with `cancel-in-progress: true`) prevents stale/skipped check-runs from a superseded run shadowing the winner on the same head SHA.",
+    "No branch protection mutation, admin bypass, support widening, production platform claim, live adapter execution, or secret material is introduced; permissions blocks (scorecard pull-requests:write; ao-release-gate contents:read + checks:write + pull-requests:read) are unchanged.",
+    "Self-attestation: the invariant test (tests/test_ci_required_jobs_not_event_gated.py, 10/10 passing) asserts required jobs ungated, no fail-open on required jobs, packaging-smoke chain preserved, ao-release-gate not should_run-gated but keeps always() + needs chain + fail-closed step, concurrency present, retarget guard preserved, only benchmark-fast still gated."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

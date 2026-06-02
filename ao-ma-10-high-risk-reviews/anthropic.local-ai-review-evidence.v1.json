@@ -1,68 +1,44 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10h-multi-work-package-migration",
+  "work_package": "CI-FIX-TEST-YML-REQUIRED-NO-EVENT-GATE",
   "implementer": {
-    "agent": "claude-opus-4-7-1m",
+    "agent": "claude",
     "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-opus-4-7-1m-adversarial-self-review",
+    "agent": "claude-opus-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
+    "head_ref": "refs/heads/fix/test-yml-required-no-event-gate",
     "changed_files": [
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/CI-FIX-test-yml-required-no-event-gate.md",
+      ".github/workflows/test.yml",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/test_ao_ma10h_multi_work_package_schema.py",
-      "tests/test_ao_release_gate.py"
+      "tests/test_ao_release_gate_enforce_job.py",
+      "tests/test_ci_required_jobs_not_event_gated.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "adversarial-self-review",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
+    { "name": "ruff", "status": "pass" },
+    { "name": "mypy", "status": "pass" },
+    { "name": "actionlint", "status": "pass" }
   ],
   "findings": [
-    "Anthropic adversarial reviewer (Claude Opus 4.7 1M) AGREE on the AO-MA-10h multi-work-package migration. Because implementer + adversarial reviewer share the Anthropic provider, this verdict counts as the SECONDARY adversarial signal; primary cross-provider distinctness comes from OpenAI (Codex MCP thread 019e88c9) plus the documented MiniMax fallback. 2-of-3 distinct-provider AGREE policy applies per HARD RULE Cross-AI Peer Review (2026-05-14).",
-    "Diff line-by-line re-read of schema: const AO-MA-10h removed, pattern + minLength + maxLength added, description rewritten. No other property touched; required[], guard_flags[], reviewer_providers[], required_reviewer_providers[], consensus_status, release_authority, ai_output_release_authority, secrets_recorded, mutations_performed, freshness, $defs.context_binding, $defs.provider_verdict byte-identical to pre-migration.",
-    "Diff line-by-line re-read of scripts/ao_ma10_high_risk_supersession_evidence.py: import re added, three module constants (WORK_PACKAGE_PATTERN, MIN_LEN, MAX_LEN), _validate_work_package function with three failure modes, single pre-check call in builder, emit-dict work_package field swapped from hardcoded literal to dynamic variable. No other emit-dict field is touched.",
-    "Diff line-by-line re-read of tests/test_ao_release_gate.py: only the _high_risk_supersession_evidence helper gains a work_package=AO-MA-10h default keyword argument; one string literal replaced with variable reference. 16 existing call sites unchanged via default.",
-    "New test file tests/test_ao_ma10h_multi_work_package_schema.py: 36 invariants across 7 categories. Every const, every required field, every guard flag, every provider distinctness rule pinned. test_builder_source_no_longer_hardcodes_ao_ma_10h_work_package is a static-source regression guard.",
-    "Substitution attack walked: imagined PR with work_package EVIL-WP-1 — workflow accepts the regex, builder emits it, schema validates it, BUT the artifact still needs to (a) pair-present openai+anthropic raw reviewer files on PR head, (b) match live PR head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths, (c) all guard flags false, (d) release_authority+github-ruleset, (e) freshness within window. EVIL-WP-1 alone defeats no defense.",
-    "Stale rebinding walked: imagined PR reusing old generated artifact - freshness check fails (max_age_seconds vs old generated_at); separately, ao_release_gate.py compares artifact context_binding.head_sha to current PR head_sha (mismatch -> deny_untrusted_context).",
-    "Guard flag audit: grep -n support_widening|production_platform_claim|live_adapter_execution across all changed files; every occurrence stays const false. Plan doc, evidence JSON, new tests, cross-AI evidence files all consistent.",
-    "Workflow zero-touch: .github/workflows/test.yml unchanged; already reads --review-work-package dynamically; regex already matches new schema pattern.",
-    "ao_release_gate.py zero-touch: business logic unchanged; gate validates against the widened schema and live context binding.",
-    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, codeowners mutation, ao-release-gate runtime mutation, gpp_status mutation, or auto-merge execution is performed; all seven AO-MA-10h current_slice_forbidden_actions remain forbidden."
+    "Independent Anthropic reviewer verdict AGREE: the patch removes `needs: [event-gate]` and `if: needs.event-gate.outputs.should_run == 'true'` from lint, test, coverage, typecheck, packaging-smoke, policy-container-smoke, release-gate-container-smoke, and drops the `should_run` clause from ao-release-gate's job-level if; the structural shadow-skip vector for cosmetic `edited` PR events on the same head SHA is closed.",
+    "Sequencing is intact: packaging-smoke retains `needs: [test, coverage, lint, typecheck]`; ao-release-gate retains all eight upstream `needs:` and the step-level fail-closed guard still inspects every `needs.*.result != 'success'` and exits 1 with a synthesized error decision, so a failed upstream cannot silently pass through.",
+    "No fork-PR token-escalation surface introduced: the workflow uses `pull_request` (not `pull_request_target`), so fork PRs continue to run with read-only fork-scoped GITHUB_TOKEN; permissions blocks (scorecard pull-requests:write; ao-release-gate contents:read + checks:write + pull-requests:read) are unchanged in this diff.",
+    "Guard flags and risk surfaces unchanged: no branch protection mutation, no admin/--admin merge flag, no support widening, no production platform claim, no live adapter execution, no secret material; four const-false root fields preserved (verified in local-ai-review-evidence.v1.json on this branch).",
+    "Self-attestation verified: ran pytest tests/test_ci_required_jobs_not_event_gated.py -v -> 10/10 passed; ran pytest tests/test_ao_release_gate_enforce_job.py -v -> 22/22 passed. The invariant test's _is_event_gated correctly detects both the should_run if-clause pattern and the event-gate needs-list pattern; the ao-release-gate-specific assertion (should_run not in cond) correctly distinguishes the needs-list presence (intentional for fail-closed contract) from the if-gate (which is the bug being removed).",
+    "Concurrency analysis: the new top-level concurrency group (`test-${{ pr.number || ref }}` with cancel-in-progress: true) prevents two runs from racing on the same head SHA; cancelled runs record conclusion=cancelled (not skipped/success), so strict branch protection will hold the PR until the live run completes - the desired single-truth contract. No second top-level concurrency block (the inner ao-release-gate one is job-scoped under a different key).",
+    "Fail-open analysis: every always() usage was inspected. ao-release-gate's outer if uses always() so the fail-closed step can run after an upstream failure; the publish/synthesize/upload steps use always() only to surface audit artifacts. None of these paths lets a not-run required job report success - the required-context conclusion is always anchored to a real run or a failure/cancelled from the actual execution."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
