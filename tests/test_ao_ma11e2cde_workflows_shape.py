@@ -54,6 +54,26 @@ def _read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _read_executable_text(path: Path) -> str:
+    """Return the workflow source with comment-only lines stripped.
+
+    Forbidden-pattern checks (``pull_request_target``, ``git push origin main``,
+    ``--admin``) must apply to the *executable* surface of the workflow, NOT
+    to documentation comments that explain what the workflow does or does NOT
+    do. A line is treated as a "comment-only" line if its first non-whitespace
+    character is ``#``. We do not try to strip trailing inline comments —
+    those are extremely rare in GHA YAML and false-positives there are still a
+    legitimate signal.
+    """
+    out_lines = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            continue
+        out_lines.append(line)
+    return "\n".join(out_lines) + "\n"
+
+
 def _yaml_top_on(doc: dict) -> dict:
     """PyYAML maps the GHA ``on`` key to Python ``True`` because YAML 1.1
     interprets the bareword ``on`` as a boolean. Normalise so tests can write
@@ -125,9 +145,9 @@ def test_05_2d_uses_pull_request_NOT_target():
     missing = required_types - set(types)
     assert not missing, f"11e-2d pull_request types missing: {missing}"
 
-    text = _read_text(WF_2D)
+    text = _read_executable_text(WF_2D)
     assert "pull_request_target" not in text, (
-        "11e-2d source contains literal 'pull_request_target' — security violation"
+        "11e-2d executable surface contains literal 'pull_request_target' — security violation"
     )
 
 
