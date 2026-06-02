@@ -35,12 +35,23 @@ jobs:
   deploy-ao-release-gate:
     name: deploy-ao-release-gate
     runs-on: ubuntu-latest
+    # Pre-cutover false-red guard: the automatic workflow_run deploy lane runs only
+    # when the operator has explicitly opted in via repository variable
+    # CLOUD_RUN_AUTO_DEPLOY_ENABLED == 'true'. Unset/default => this deploy job is
+    # skipped (non-failure, not red on main), so a main push that only touches
+    # pyproject.toml / ao_kernel/** still publishes the container but does NOT turn
+    # the deploy surface red while Cloud Run is intentionally pre-cutover. The flag
+    # being 'true' is NOT a production-platform claim or live-adapter execution grant;
+    # it only enables the automatic deploy lane. The manual workflow_dispatch lane
+    # stays flag-independent (operator intent), and "Validate trusted deploy
+    # configuration" still hard-fails if the lane is enabled with incomplete config.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (
         github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_branch == 'main' &&
-        github.event.workflow_run.event != 'pull_request'
+        github.event.workflow_run.event != 'pull_request' &&
+        vars.CLOUD_RUN_AUTO_DEPLOY_ENABLED == 'true'
       )
     steps:
       - uses: actions/checkout@v6

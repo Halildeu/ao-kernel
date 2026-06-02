@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 
@@ -32,8 +33,8 @@ def test_policy_service_deploy_workflow_uses_published_image_and_health_evidence
 
     assert "ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service" in text
     assert "sha-${source_sha}" in text
-    assert "docker pull \"${{ steps.images.outputs.ghcr_image }}\"" in text
-    assert "docker push \"${{ steps.images.outputs.gar_image }}\"" in text
+    assert 'docker pull "${{ steps.images.outputs.ghcr_image }}"' in text
+    assert 'docker push "${{ steps.images.outputs.gar_image }}"' in text
     assert "$service_url/healthz" in text
     assert "policy-service-deploy-evidence/healthz.json" in text
     assert "policy-service-deploy-evidence/policy-service-deploy.v1.json" in text
@@ -59,3 +60,26 @@ def test_policy_service_deploy_workflow_keeps_prs_and_live_credentials_closed() 
     assert "gcloud secrets versions access" not in text
     assert "AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET=${{ env.AO_POLICY_SERVICE_WEBHOOK_SECRET_NAME }}" in text
     assert "AO_GITHUB_APP_PRIVATE_KEY_PEM=${{ env.AO_GITHUB_APP_PRIVATE_KEY_SECRET_NAME }}" in text
+
+
+def test_policy_service_deploy_workflow_auto_deploy_lane_is_operator_flag_gated() -> None:
+    """Automatic (workflow_run) deploy lane is gated behind an explicit operator
+    opt-in repository variable, so a pre-cutover main push publishes the container
+    but the deploy job is skipped (non-failure / not red) until the operator opts in.
+    The manual workflow_dispatch lane stays flag-independent (operator intent)."""
+    text = _workflow_text()
+    # Indentation-insensitive: collapse whitespace runs so the boolean-group
+    # assertions hold regardless of YAML line wrapping.
+    normalized = re.sub(r"\s+", " ", text)
+
+    # The flag gates the workflow_run lane specifically: it sits in the same AND-group,
+    # immediately after the non-PR guard (not on the manual dispatch lane).
+    assert (
+        "github.event.workflow_run.event != 'pull_request' && vars.CLOUD_RUN_AUTO_DEPLOY_ENABLED == 'true'"
+    ) in normalized
+    # The manual workflow_dispatch lane is a standalone OR clause, NOT flag-gated.
+    assert "github.event_name == 'workflow_dispatch' ||" in normalized
+    # The gate is a repository variable (vars.*), never a secret (secrets.* is banned
+    # by test_*_keeps_prs_and_live_credentials_closed); reaffirm the flag handle here.
+    assert "vars.CLOUD_RUN_AUTO_DEPLOY_ENABLED" in text
+    assert "secrets.CLOUD_RUN_AUTO_DEPLOY_ENABLED" not in text
