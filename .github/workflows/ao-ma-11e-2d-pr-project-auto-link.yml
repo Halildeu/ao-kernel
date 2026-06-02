@@ -1,0 +1,117 @@
+# AO-MA-11E-2d — Auto-link PRs to project + populate custom fields
+#
+# Purpose: For every pull request lifecycle event, derive AO-MA programme slice
+# metadata from PR title/body/labels and add the PR to the GitHub Project v2
+# with all 9 custom field values set (epic, risk, guard-flip surface, status,
+# slice, executor lane, review consensus, evidence pointer, runtime claim).
+#
+# Why pull_request (NOT pull_request_target):
+#   - HARDER SECURITY: forks cannot exfiltrate secrets via head-ref code exec.
+#   - This workflow does NOT need fork-PR secret access; it only reads PR
+#     metadata via gh API and writes project item + field values.
+#
+# Trigger surface:
+#   - pull_request: types: [opened, edited, synchronize, ready_for_review, labeled, unlabeled]
+#
+# Permissions (minimum sufficient):
+#   - contents: read              # checkout (informational)
+#   - pull-requests: read         # read PR title/body/labels
+#   - repository-projects: write  # add to project + set field values
+#
+# Hard invariants (enforced by tests/test_ao_ma11e2cde_workflows_shape.py):
+#   - Uses `pull_request` (NOT `pull_request_target`)
+#   - No `actions: write`, no `id-token: write`, no `packages: write`
+#   - No `--admin` flag
+#   - No PR comment write (`pull-requests: write` is intentionally absent —
+#     advisory-only; field values populate the project board)
+#   - Idempotent: re-run on same PR sets same values; module dedupes add
+#
+# Guard flags (3 const false invariants):
+#   - support_widening: false
+#   - production_platform_claim: false
+#   - live_adapter_execution: false
+
+name: ao-ma-11e-2d-pr-project-auto-link
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - ready_for_review
+      - labeled
+      - unlabeled
+
+permissions:
+  contents: read
+  pull-requests: read
+  repository-projects: write
+
+concurrency:
+  group: ao-ma-11e-2d-auto-link-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-link:
+    name: Auto-link PR to project
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Skip on closed PRs to avoid noisy runs after merge.
+    if: github.event.pull_request.state != 'closed'
+    steps:
+      - name: Checkout (PR head, read-only)
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          # No persist-credentials false needed: pull_request trigger does NOT
+          # expose write tokens for forks. For same-repo PRs, default RO is fine.
+          persist-credentials: false
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install ao-kernel
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Verify CLI present
+        run: |
+          ao-kernel --version
+          ao-kernel project --help
+
+      - name: Auto-link PR to project (derive 9 custom fields)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          ao-kernel project from-pr "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --output json \
+            > project-link-report.json
+
+      - name: Render link report into job summary
+        if: always()
+        run: |
+          if [ -f project-link-report.json ]; then
+            {
+              echo "## AO-MA-11E-2d PR auto-link report"
+              echo ""
+              echo '```json'
+              cat project-link-report.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload link report artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: project-link-report-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: project-link-report.json
+          if-no-files-found: ignore
+          retention-days: 30

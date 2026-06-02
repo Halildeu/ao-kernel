@@ -1,0 +1,35 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "artifact_kind": "local-ai-review-evidence",
+  "review_target": "ao-ma-11e-2c-d-e-workflows",
+  "review_target_paths": [
+    ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+    ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
+    ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+    ".claude/plans/AO-MA-11E-2c-d-e-WORKFLOWS.md",
+    ".claude/plans/AO-MA-11E-2c-d-e-WORKFLOWS.v1.json",
+    "ao_kernel/defaults/schemas/ao-ma-11e-2c-d-e-workflows-evidence.schema.v1.json",
+    "tests/test_ao_ma11e2cde_workflows_shape.py"
+  ],
+  "provider": "minimax",
+  "reviewer": "mavis-cli",
+  "review_method": "Attempted: mavis communication peers + send per HARD RULE Mavis CLI (2026-05-29). Local mavis binary was not discoverable on PATH or under standard install prefixes (~/.local/bin, /usr/local/bin, /opt/homebrew/bin, ~/.cargo/bin, ~/go/bin, $HOME hierarchy). The CLAUDE.md HARD RULE Tam Otonom Önerme + Plan Consensus Autonomy fallback protocol applies: 2-of-3 distinct-provider AGREE with explicit audit note + scheduled-callback marker.",
+  "verdict": "fallback_unreachable",
+  "ready_to_merge": false,
+  "verdict_rationale": "Mavis CLI not installed in this environment; cannot submit prompt to MiniMax peer. Per HARD RULE Tam Otonom Önerme + Plan Consensus Autonomy, the merge gate is met by 2-of-3 distinct-provider AGREE (openai codex AGREE + anthropic adversarial AGREE) with this evidence record documenting the unreachable state.",
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "risk_lane": "high",
+  "high_risk_reason": ".github/workflows/ surface mutation requires 3-way distinct provider AGREE; minimax (Mavis) is the third distinct provider and was unreachable in this session.",
+  "branch": "codex/ao-ma-11e-2c-d-e-workflows",
+  "depends_on_slice_a": true,
+  "slice_a_module_path": "ao_kernel/project_sync/",
+  "fallback_protocol": {
+    "if_unreachable": "Mark verdict=fallback_unreachable; 2-of-3 distinct-provider AGREE (openai + anthropic) proceeds per Plan Consensus Autonomy; scheduled-callback intent documented for next session.",
+    "callback_issue_url": "tracked-via-pr-comment"
+  },
+  "audit_note": "Per HARD RULE Mavis CLI (2026-05-29): mavis communication peers + send is the canonical lokal IPC channel. Environment limitation: mavis binary not installed. Per HARD RULE Tam Otonom Önerme: agent organizes fallback path autonomously — does NOT yield merge gate to operator.",
+  "created_at": "2026-06-02T00:00:00Z",
+  "updated_at": "2026-06-02T00:00:00Z"
+}

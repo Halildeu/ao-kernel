@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ao-ma-11e-2c-d-e-workflows-evidence.schema.v1.json",
+  "title": "AO-MA 11E-2c/2d/2e Workflows Evidence (Slice B)",
+  "description": "Evidence schema for the high-risk workflow surface that calls ao-kernel project CLI (Slice A). Pins guard flags const false, enumerates write-set, and binds 3-way cross-AI review providers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "epic",
+    "slice",
+    "depends_on_slice_a",
+    "slice_a_module_path",
+    "branch",
+    "worktree",
+    "risk_lane",
+    "cross_ai_required_providers",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "write_set",
+    "workflows",
+    "cross_ai_review",
+    "merge_protocol",
+    "operator_next_steps"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-11e-2c-d-e-workflows-evidence.schema.v1.json"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "ao-ma-11e-2c-d-e-workflows-evidence"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "implemented_pending_3way_review",
+        "implemented_3way_agree",
+        "implemented_2of3_agree_minimax_fallback",
+        "revised",
+        "blocked"
+      ]
+    },
+    "epic": { "type": "string", "minLength": 1 },
+    "slice": { "type": "string", "minLength": 1 },
+    "depends_on_slice_a": { "type": "boolean", "const": true },
+    "slice_a_module_path": {
+      "type": "string",
+      "const": "ao_kernel/project_sync/"
+    },
+    "branch": { "type": "string", "minLength": 1 },
+    "worktree": { "type": "string", "minLength": 1 },
+    "risk_lane": { "type": "string", "const": "high" },
+    "cross_ai_required_providers": { "type": "integer", "const": 3 },
+    "support_widening": { "type": "boolean", "const": false },
+    "production_platform_claim": { "type": "boolean", "const": false },
+    "live_adapter_execution": { "type": "boolean", "const": false },
+    "write_set": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[^.][^/]*(/[^.][^/]*)*$"
+      },
+      "contains": {
+        "type": "string",
+        "pattern": "^\\.github/workflows/ao-ma-11e-2c-project-mirror-full-sync\\.yml$"
+      },
+      "minContains": 1,
+      "maxContains": 11
+    },
+    "workflows": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "path",
+          "name",
+          "purpose",
+          "triggers",
+          "permissions",
+          "cli_calls",
+          "artifacts",
+          "hard_invariants"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["11e-2c", "11e-2d", "11e-2e"]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^\\.github/workflows/ao-ma-11e-2[cde]-[a-z0-9-]+\\.yml$"
+          },
+          "name": { "type": "string", "minLength": 1 },
+          "purpose": { "type": "string", "minLength": 10 },
+          "triggers": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string" }
+          },
+          "uses_pull_request_target": { "type": "boolean", "const": false },
+          "dispatch_only": { "type": "boolean" },
+          "confirmation_required": { "type": "boolean" },
+          "confirmation_phrase": {
+            "type": "string",
+            "const": "LABEL-CLEANUP-CONFIRM"
+          },
+          "dry_run_default": { "type": "boolean" },
+          "permissions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": ["read", "write", "none"]
+            }
+          },
+          "cli_calls": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^ao-kernel project "
+            }
+          },
+          "artifacts": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string" }
+          },
+          "hard_invariants": {
+            "type": "array",
+            "minItems": 3,
+            "uniqueItems": true,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "cross_ai_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_distinct_providers",
+        "providers",
+        "fallback_2_of_3_allowed",
+        "fallback_condition"
+      ],
+      "properties": {
+        "required_distinct_providers": { "type": "integer", "const": 3 },
+        "providers": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["provider", "reviewer", "evidence_path", "verdict"],
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": ["openai", "anthropic", "minimax"]
+              },
+              "reviewer": { "type": "string", "minLength": 1 },
+              "evidence_path": {
+                "type": "string",
+                "pattern": "^ao-ma-10-high-risk-reviews/[A-Za-z0-9._-]+/(openai|anthropic|minimax)\\.local-ai-review-evidence\\.v1\\.json$"
+              },
+              "verdict": {
+                "type": "string",
+                "enum": ["pending", "agree", "revise", "blocked", "fallback_unreachable"]
+              }
+            }
+          }
+        },
+        "fallback_2_of_3_allowed": { "type": "boolean", "const": true },
+        "fallback_condition": { "type": "string", "minLength": 10 }
+      }
+    },
+    "merge_protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "admin_bypass",
+        "ci_must_be_green",
+        "depends_on_slice_a_merge"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "squash --auto --delete-branch"
+        },
+        "admin_bypass": { "type": "boolean", "const": false },
+        "ci_must_be_green": { "type": "boolean", "const": true },
+        "depends_on_slice_a_merge": { "type": "boolean", "const": true }
+      }
+    },
+    "operator_next_steps": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 5 }
+    }
+  }
+}

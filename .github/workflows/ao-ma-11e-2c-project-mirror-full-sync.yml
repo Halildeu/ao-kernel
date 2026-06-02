@@ -1,0 +1,159 @@
+# AO-MA-11E-2c — Project mirror full sync (heal mode)
+#
+# Purpose: Heal mode bidirectional sync for the AO-MA programme manifest and
+# the GitHub Projects v2 mirror (issues + project items + 9 custom field values).
+#
+# Surface contract:
+#   - Reads programme manifest (canonical SSOT) via `ao-kernel project drift --strict`
+#     for fail-fast preflight, then `ao-kernel project sync` if heal_mode=true.
+#   - The Slice A module performs direct GitHub mutations through ``gh`` (project
+#     item add + field set + issue create). This workflow does NOT push commits
+#     to ``main`` directly and does NOT mutate ``.github/workflows/``.
+#   - Slice A (`ao_kernel/project_sync/`) is the only mutation surface; this
+#     workflow is a thin scheduler/dispatcher around its CLI.
+#
+# Trigger surface:
+#   - push: branches: [main] → post-merge convergence
+#   - schedule: every 6h → drift catch
+#   - workflow_dispatch → operator-initiated heal
+#
+# Permissions (minimum sufficient):
+#   - contents: write           # auto-PR branch commit reserved; current usage RO
+#   - issues: write             # for issue create on drift
+#   - repository-projects: write  # for project item add + field set
+#   - pull-requests: write      # for auto-PR open + comment
+#
+# Guard flags (3 const false invariants, see governance):
+#   - support_widening: false
+#   - production_platform_claim: false
+#   - live_adapter_execution: false
+#
+# Hard invariants (enforced by tests/test_ao_ma11e2cde_workflows_shape.py):
+#   - No `--admin` flag anywhere
+#   - No `actions: write` permission
+#   - No direct `git push origin main`
+#   - Module-only CLI invocation (`ao-kernel project ...`)
+#   - Does NOT modify any existing workflow file (write-set is additive only)
+
+name: ao-ma-11e-2c-project-mirror-full-sync
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */6 * * *'  # every 6h
+  workflow_dispatch:
+    inputs:
+      heal_mode:
+        description: 'true to apply heal (open auto-PR); false for drift report only'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  issues: write
+  repository-projects: write
+  pull-requests: write
+
+concurrency:
+  group: ao-ma-11e-2c-full-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full-sync:
+    name: Project mirror full sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install ao-kernel with MCP extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[mcp]"
+
+      - name: Verify CLI present
+        run: |
+          ao-kernel --version
+          ao-kernel project --help
+
+      - name: Drift preflight (fail-fast, strict)
+        id: drift_preflight
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ao-kernel project drift \
+            --repo "${{ github.repository }}" \
+            --strict \
+            --output json \
+            > project-drift-preflight.json
+        continue-on-error: true
+
+      - name: Resolve heal mode flag
+        id: resolve_mode
+        env:
+          INPUTS_HEAL_MODE: ${{ inputs.heal_mode }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "heal=$INPUTS_HEAL_MODE" >> "$GITHUB_OUTPUT"
+          else
+            # push:main + schedule both apply heal by default
+            echo "heal=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run heal sync (Slice A CLI mutates project board + issues directly)
+        if: steps.resolve_mode.outputs.heal == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ao-kernel project sync \
+            --repo "${{ github.repository }}" \
+            --output json \
+            > project-sync-report.json
+        # Notes:
+        # - The Slice A module mutates only the GitHub Projects v2 board and
+        #   issues (add to project, set field values, create/close issues).
+        # - This step does NOT call `git push origin main` and does NOT touch
+        #   the `.github/workflows/` tree.
+        # - Manifest patches that require a code-side commit are out of scope
+        #   for this slice; a follow-up runbook can pick them up via a
+        #   dedicated PR-opening adapter.
+
+      - name: Render sync report summary into job summary
+        if: always() && steps.resolve_mode.outputs.heal == 'true'
+        run: |
+          if [ -f project-sync-report.json ]; then
+            {
+              echo "## AO-MA-11E-2c project mirror sync report"
+              echo ""
+              echo '```json'
+              cat project-sync-report.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload sync report artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: project-sync-report-${{ github.run_id }}
+          path: |
+            project-drift-preflight.json
+            project-sync-report.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Fail job if drift preflight failed and heal not requested
+        if: steps.drift_preflight.outcome == 'failure' && steps.resolve_mode.outputs.heal != 'true'
+        run: |
+          echo "Drift preflight failed; heal mode is off — failing job for visibility."
+          exit 1

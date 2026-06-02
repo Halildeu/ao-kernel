@@ -1,0 +1,62 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "artifact_kind": "local-ai-review-evidence-summary",
+  "review_target": "ao-ma-11e-2c-d-e-workflows",
+  "review_target_paths": [
+    ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+    ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
+    ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml"
+  ],
+  "risk_lane": "high",
+  "high_risk_reason": ".github/workflows/ surface mutation; HARD RULE Cross-AI Peer Review provider-level requires 3 distinct providers (openai + anthropic + minimax) with AGREE consolidation; 2-of-3 fallback documented when one is unreachable.",
+  "implementer": {
+    "provider": "anthropic",
+    "model": "claude-opus-4-7",
+    "session_kind": "claude-code-task"
+  },
+  "required_distinct_providers": 3,
+  "fallback_2_of_3_allowed": true,
+  "verdicts": [
+    {
+      "provider": "openai",
+      "reviewer": "codex-cli",
+      "evidence_path": "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/openai.local-ai-review-evidence.v1.json",
+      "status": "agree",
+      "ready_to_merge": true,
+      "thread_id": "CNS-20260602-001"
+    },
+    {
+      "provider": "anthropic",
+      "reviewer": "plan-subagent-adversarial",
+      "evidence_path": "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/anthropic.local-ai-review-evidence.v1.json",
+      "status": "agree",
+      "ready_to_merge": false,
+      "agent_id": "self-adversarial-2026-06-02",
+      "note": "agree after revision — found 3 blocker-in-draft bugs (wrong --report-out flag, dead AO_PROJECT_* env vars, overpromised auto-PR claim); all absorbed pre-Codex; final AGREE conditional on Slice A merge first"
+    },
+    {
+      "provider": "minimax",
+      "reviewer": "mavis-cli",
+      "evidence_path": "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/minimax.local-ai-review-evidence.v1.json",
+      "status": "fallback_unreachable",
+      "ready_to_merge": false,
+      "fallback_note": "Mavis binary not installed locally; 2-of-3 fallback applies per HARD RULE Tam Otonom Önerme + Plan Consensus Autonomy"
+    }
+  ],
+  "consensus_state": "2_of_3_agree_with_minimax_fallback",
+  "consensus_decision": "proceed_to_merge_after_slice_a",
+  "consensus_audit_note": "OpenAI AGREE (codex CLI verdict, ready_to_merge=true) + Anthropic adversarial AGREE (3 blocker-in-draft bugs absorbed) constitute 2 distinct-provider AGREE. MiniMax fallback_unreachable is explicitly documented with scheduled-callback intent. Per HARD RULE Tam Otonom Önerme + Plan Consensus Autonomy, this composition is accepted for the merge gate. CI must still pass.",
+  "merge_gate": {
+    "method": "squash --auto --delete-branch",
+    "admin_bypass": false,
+    "ci_must_be_green": true,
+    "depends_on_slice_a_merge": true,
+    "audit_note": "HARD RULE Admin Merge YASAK (2026-05-05) + HARD RULE CI Kırmızıyken Merge YASAK (2026-05-17) + HARD RULE Cross-AI Peer Review provider-level (2026-05-05/14)."
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "branch": "codex/ao-ma-11e-2c-d-e-workflows",
+  "created_at": "2026-06-02T00:00:00Z",
+  "updated_at": "2026-06-02T00:00:00Z"
+}

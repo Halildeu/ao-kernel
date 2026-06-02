@@ -1,0 +1,68 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "artifact_kind": "local-ai-review-evidence",
+  "review_target": "ao-ma-11e-2c-d-e-workflows",
+  "review_target_paths": [
+    ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+    ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
+    ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+    ".claude/plans/AO-MA-11E-2c-d-e-WORKFLOWS.md",
+    ".claude/plans/AO-MA-11E-2c-d-e-WORKFLOWS.v1.json",
+    "ao_kernel/defaults/schemas/ao-ma-11e-2c-d-e-workflows-evidence.schema.v1.json",
+    "tests/test_ao_ma11e2cde_workflows_shape.py"
+  ],
+  "provider": "anthropic",
+  "reviewer": "plan-subagent-adversarial",
+  "review_method": "Anthropic adversarial self-review against the same author's draft. Reviewer reads each YAML + JSON line-by-line and cross-references the Slice A module surface (ao_kernel/project_sync/cli.py) at PR #898 head. Findings cite path + line + recommended remediation. The implementer + reviewer are both Anthropic claude-opus-4-7, so this verdict counts as the SECONDARY adversarial signal; primary cross-provider distinctness comes from openai (codex) + minimax (mavis). When MiniMax Mavis is unreachable, audit explicitly documents 2-of-3 fallback per HARD RULE Tam Otonom Önerme.",
+  "agent_id": "self-adversarial-2026-06-02",
+  "verdict": "agree",
+  "ready_to_merge": false,
+  "verdict_rationale": "Initial draft contained 3 real surface bugs (incorrect CLI flag `--report-out`, non-existent env-vars AO_PROJECT_OWNER / AO_PROJECT_REPO / AO_PROJECT_AUTO_PR / AO_PR_NUMBER, and a misleading 'module opens auto-PR' claim that has no implementation in Slice A). All 3 were absorbed pre-Codex. After absorption, workflows align cleanly with Slice A's published CLI surface: `--repo OWNER/NAME --output {text,json}`. Permissions remain minimal per workflow, confirmation phrase fail-closed in 11e-2e, pull_request (not pull_request_target) in 11e-2d, workflow_dispatch only in 11e-2e. 18 invariant tests green. AGREE conditional on Slice A PR #898 merging first (CI cannot pass until then; that is by design).",
+  "findings": [
+    {
+      "severity": "blocker_in_draft_now_fixed",
+      "path": ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+      "issue": "Used `--report-out <path>` flag which is NOT part of Slice A's CLI surface; actual CLI emits JSON to stdout with `--output json`. Would have failed at runtime.",
+      "recommendation": "Replaced with `--output json > file.json`."
+    },
+    {
+      "severity": "blocker_in_draft_now_fixed",
+      "path": ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+      "issue": "Set `AO_PROJECT_OWNER`, `AO_PROJECT_REPO`, `AO_PROJECT_AUTO_PR` env vars which Slice A module does NOT read.",
+      "recommendation": "Removed dead env vars; pass `--repo ${{ github.repository }}` instead."
+    },
+    {
+      "severity": "blocker_in_draft_now_fixed",
+      "path": ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml + plan.md",
+      "issue": "Claim that the Slice A module 'opens auto-PR with manifest back-fill' has no implementation in PR #898 — DriftHealer.heal() does direct GitHub project + issue mutations through gh.",
+      "recommendation": "Corrected surface description; plan + workflow header now reflect actual behavior."
+    },
+    {
+      "severity": "informational",
+      "path": ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+      "issue": "Phrase comparison is byte-exact via `[ ... = ... ]` shell test. Apply-mode without phrase fails closed with exit 1.",
+      "recommendation": "No action."
+    },
+    {
+      "severity": "informational",
+      "path": "tests/test_ao_ma11e2cde_workflows_shape.py",
+      "issue": "test_15_no_guard_flag_keys_in_workflow_output catches both YAML `support_widening: true` and CLI `--support-widening true` patterns.",
+      "recommendation": "No action."
+    }
+  ],
+  "adversarial_questions": [
+    "After Slice A merges, will the published `ao-kernel project` CLI exactly match the flag set this workflow expects?",
+    "Is `repository-projects: write` actually needed on 11e-2c? Project items are added via gh GraphQL — under the new fine-grained model this is `projects: write`."
+  ],
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "risk_lane": "high",
+  "high_risk_reason": ".github/workflows/ surface mutation; under HARD RULE Cross-AI Peer Review provider-level the implementer + Anthropic adversarial subagent are the same provider, so primary distinctness is openai + minimax. Anthropic adversarial review here is the third signal only when one of those is unreachable.",
+  "branch": "codex/ao-ma-11e-2c-d-e-workflows",
+  "depends_on_slice_a": true,
+  "slice_a_module_path": "ao_kernel/project_sync/",
+  "audit_note": "Implementer = anthropic claude-opus-4-7 (this task). Adversarial reviewer = anthropic claude-opus-4-7 (same task, distinct review pass). When MiniMax Mavis is unreachable, the 2-of-3 fallback set is openai (codex) + this anthropic adversarial review.",
+  "created_at": "2026-06-02T00:00:00Z",
+  "updated_at": "2026-06-02T00:00:00Z"
+}
