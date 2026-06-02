@@ -13,6 +13,8 @@
     ]
   },
   "checks_considered": [
+    { "name": "tests", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
     { "name": "yaml_valid", "status": "pass" },
     { "name": "uv_extras_resolve_smoke", "status": "pass" },
     { "name": "no_bare_pip_install_leftover", "status": "pass" },
