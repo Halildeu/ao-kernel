@@ -801,6 +801,25 @@
       "artifact_sha256_at_issue_creation": "sha256:0643c2bbf8874577d8ce964f71e4c71bd865c9b238fd44cd2b31fdf011327398",
       "plan_digest_at_issue_creation": "sha256:b5d5609f2eafe8885589442a89d48fb70f14dd3e568a6aaef704bb388f2b3c79",
       "master_plan_sha256_at_issue_creation": "sha256:a769f3183d0b753bef5ba79a37d302fc664a63db119baa46b1fc72084acd2fb9"
+    },
+    "sub_issues_mirror_ref": {
+      "_description": "Reference to v5_subissues_mirror.v1.json (full retro sub-slice mirror created 2026-06-02; 62 sub-issues #834-#895)",
+      "mirror_manifest_path": ".claude/plans/v5_subissues_mirror.v1.json",
+      "created_count": 62,
+      "parent_to_sub_count": {
+        "epic_p0": 5,
+        "epic_1": 7,
+        "epic_2": 7,
+        "epic_3": 6,
+        "epic_4": 7,
+        "epic_5": 6,
+        "epic_6": 11,
+        "epic_7": 6,
+        "epic_8": 6,
+        "epic_9": 1
+      },
+      "issue_number_range": "834-895",
+      "created_at": "2026-06-02"
     }
   }
 }
