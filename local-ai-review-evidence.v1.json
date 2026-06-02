@@ -8,6 +8,9 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/fix/pci-allowlist-test-remove",
     "changed_files": [
+      ".claude/plans/EPIC-6-E6-3D-PCI-DSS-MAPPING.md",
+      "ao-ma-10-high-risk-reviews/PCI-allowlist-test-remove/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/PCI-allowlist-test-remove/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
       "tests/test_pci_dss_mapping.py"
     ]
@@ -27,7 +30,7 @@
     "Fix: Option 2 (remove the test + ALLOWED_CHANGED_FILES constant entirely) per HARD RULE Uzun Vadeli Kalıcı Çözüm. Cross-slice write-set allowlists asserted on main are an anti-pattern; per-slice write-set invariants are owned locally by each slice (V5 Epic 4 plan §6 tests/test_epic_4_*_write_set_invariant.py pattern). The other 54 tests in the file (schema validation, mapping shape, PAN/SAD scanners, drift checks, sibling zero-touch invariants) continue to guard the slice. Section header comment also updated from (5) to (4) to reflect the count.",
     "Supersedes PR #831 which patched the same bug via Option 1 (conditional skip). #831 kept the cross-slice allowlist test in tree as a no-op for non-PCI-DSS PRs, preserving the anti-pattern. Option 2 removes the anti-pattern entirely; user direction selected this approach. PR #831 closed and branch deleted.",
     "Cross-AI review: Codex thread 019e87f5-87b3-7d93-8bf6-e59c8e98b113, verdict AGREE, must_close_findings=[], rationale: \"Option 2 stale cross-slice allowlist anti-patternini canlı CI'dan kaldırıyor; kalan 54 test PCI-DSS artifact semantiklerini koruyor ve yerel doğrulama temiz.\" Codex independently re-ran pytest (54 passed), ruff (clean), and verified no other ALLOWED_CHANGED_FILES references remain.",
-    "ZERO TOUCH: no .github/workflows/ mutation, no ao_kernel/ runtime module change, no .ao/ workspace write, no defaults/ change, no scripts/ change, no guard flag flip. Diff is 31 lines deletion + 1 line edit in tests/test_pci_dss_mapping.py + this evidence file."
+    "ZERO TOUCH: no .github/workflows/ mutation, no ao_kernel/ runtime module change, no .ao/ workspace write, no defaults/ change, no scripts/ change, no guard flag flip. Diff is 31 lines deletion + 1 line edit in tests/test_pci_dss_mapping.py + this evidence file + a 1-newline append to .claude/plans/EPIC-6-E6-3D-PCI-DSS-MAPPING.md (operator-pushed re-trigger) + per-provider dual-AI review evidence files added by the operator under ao-ma-10-high-risk-reviews/PCI-allowlist-test-remove/ (anthropic + openai)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
