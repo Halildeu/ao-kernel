@@ -181,3 +181,17 @@ def test_drift_heal_brings_state_into_line_idempotently(tmp_path: Path) -> None:
     assert len(first.healed) >= 3
     second = healer.check(_issues())
     assert second.findings == []
+
+
+def test_drift_values_match_does_not_numeric_coerce_text_fields() -> None:
+    """Type-aware: 'high' vs '1' on a SINGLE_SELECT must stay mismatch.
+
+    Earlier _values_match coerced via float() unconditionally, so two
+    string values that happened to parse as numbers would be treated as
+    equal even on a SINGLE_SELECT or TEXT field. The fix only coerces
+    when the field is NUMBER.
+    """
+    assert DriftHealer._values_match("high", "1", data_type="SINGLE_SELECT") is False
+    assert DriftHealer._values_match("1", "1.0", data_type="NUMBER") is True
+    assert DriftHealer._values_match("1.5", "2", data_type="NUMBER") is False
+    assert DriftHealer._values_match("alpha", "alpha", data_type="TEXT") is True

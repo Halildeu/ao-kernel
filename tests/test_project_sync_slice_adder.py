@@ -124,6 +124,7 @@ class StubProjectV2Client:
         self.fields_calls: list[str] = []
         self.add_calls: list[tuple[str, str]] = []
         self.set_calls: list[tuple[str, str, str, Any]] = []
+        self.delete_calls: list[tuple[str, str]] = []
         self.fail_on_set = fail_on_set
         self._next_item = 1
         self._fields_map = _fields_map()
@@ -152,6 +153,9 @@ class StubProjectV2Client:
         if self.fail_on_set and field.name == "Estimate":
             raise ProjectV2APIError("simulated set failure")
         self.set_calls.append((project_node_id, item_id, field.name, value))
+
+    def delete_item(self, project_node_id: str, item_id: ProjectItemId) -> None:
+        self.delete_calls.append((project_node_id, item_id))
 
 
 class StubIssueClient:
@@ -245,6 +249,23 @@ def test_add_slice_rollback_closes_issue_on_set_failure(tmp_path: Path) -> None:
     assert any(args[:2] == ["issue", "close"] for args in issues_client.run_calls)
 
 
+def test_add_slice_rollback_deletes_board_item_on_set_failure(tmp_path: Path) -> None:
+    """Rollback also removes the partially-set board item (no lingering half-state)."""
+    issues_client = StubIssueClient()
+    project_client = StubProjectV2Client(fail_on_set=True)
+    adder = SliceAdder(
+        issue_client=issues_client,
+        project_client=project_client,
+        manifest=_manifest(tmp_path),
+    )
+    with pytest.raises(ProjectV2APIError):
+        adder.add(_request())
+    assert len(project_client.delete_calls) == 1
+    project_id, item_id = project_client.delete_calls[0]
+    assert project_id == "PVT_kwHOCx7tY84BZW65"
+    assert item_id.startswith("item_")
+
+
 def test_add_slice_refuses_when_manifest_lacks_project(tmp_path: Path) -> None:
     """No project_board node_id -> immediate ProjectSyncError."""
     manifest = ProjectionManifest(path=tmp_path / "m.json", payload={})
@@ -279,3 +300,27 @@ def test_add_slice_uses_estimate_override(tmp_path: Path) -> None:
     adder.add(request)
     estimate_calls = [v for *_, name, v in project_client.set_calls if name == "Estimate"]
     assert estimate_calls == [7.5]
+
+
+def test_add_slice_body_depends_round_trips_through_deriver(tmp_path: Path) -> None:
+    """Body emitted by AddSliceRequest.to_body() parses back into the deriver.
+
+    The earlier regex assumed plain ``Depends on #N`` and missed the
+    markdown bold + comma-list format the body actually emits. This test
+    pins the round-trip so a future format tweak cannot silently break
+    dependency derivation.
+    """
+    from ao_kernel.project_sync import FieldDeriver
+
+    request = AddSliceRequest(
+        epic="1",
+        slice_id="E-1-3",
+        title="t",
+        risk="normal",
+        plan_ref="x",
+        consensus="2-way",
+        depends_on=[774, 775],
+    )
+    body = request.to_body()
+    deriver = FieldDeriver()
+    assert deriver.derive_dependency(body) == "#774,#775"

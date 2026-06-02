@@ -160,6 +160,16 @@ class LabelMigrator:
                     )
                 )
                 continue
+            # Re-fetch right before the destructive call to close the
+            # TOCTOU window: another agent could have unset the field
+            # between the initial fetch above and this point. Operators
+            # asked for "verify before drop" — verify is right here.
+            if item_id is not None:
+                fresh = self._project.fetch_field_values(project_node_id, item_id)
+                fresh_current = fresh.get(target_field)
+                if fresh_current is None or not self._values_match(fresh_current, target_value):
+                    skipped.append(f"{issue.number}:{label}:field_unset_at_drop_time")
+                    continue
             try:
                 self._issues.remove_label(issue.number, label)
             except Exception as exc:  # noqa: BLE001 - per-label rollback friendly

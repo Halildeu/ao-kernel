@@ -151,9 +151,15 @@ class ProjectV2Client:
         """Locate the existing board item for a given issue, if any.
 
         Returns ``None`` when the issue is not yet on the board.
+
+        Note: we cannot filter by the issue id directly in the GraphQL
+        ``items()`` connection (no `where`-by-content-id filter exists),
+        so we walk up to 100 items and match client-side. Only
+        ``$projectId`` is bound — listing every declared variable in the
+        operation but unused fails GraphQL validation.
         """
         query = (
-            "query($projectId: ID!, $issueId: ID!) {"
+            "query($projectId: ID!) {"
             "  node(id: $projectId) {"
             "    ... on ProjectV2 {"
             "      items(first: 100) {"
@@ -165,7 +171,7 @@ class ProjectV2Client:
             "  }"
             "}"
         )
-        data = self._graphql(query, {"projectId": project_node_id, "issueId": issue_node_id})
+        data = self._graphql(query, {"projectId": project_node_id})
         nodes_raw = data.get("data", {}).get("node", {}).get("items", {}).get("nodes", [])
         if not isinstance(nodes_raw, list):
             return None
@@ -197,6 +203,21 @@ class ProjectV2Client:
         if not isinstance(item_id, str):
             raise ProjectV2APIError("addProjectV2ItemById returned no item id")
         return ProjectItemId(item_id)
+
+    def delete_item(self, project_node_id: str, item_id: ProjectItemId) -> None:
+        """Remove a board item; used by SliceAdder rollback.
+
+        Returns silently on best-effort; callers should already be in an
+        error path when this is invoked.
+        """
+        mutation = (
+            "mutation($projectId: ID!, $itemId: ID!) {"
+            "  deleteProjectV2Item(input: {projectId: $projectId, itemId: $itemId}) {"
+            "    deletedItemId"
+            "  }"
+            "}"
+        )
+        self._graphql(mutation, {"projectId": project_node_id, "itemId": item_id})
 
     def set_field_value(
         self,
@@ -278,8 +299,11 @@ class ProjectV2Client:
         Used by the drift healer to compare expected vs actual without
         re-fetching every field individually.
         """
+        # GraphQL does not let us filter ``items()`` by item id directly;
+        # we walk the page and match client-side. Only ``$projectId`` is
+        # bound — declaring an unused operation variable fails validation.
         query = (
-            "query($projectId: ID!, $itemId: ID!) {"
+            "query($projectId: ID!) {"
             "  node(id: $projectId) {"
             "    ... on ProjectV2 {"
             "      items(first: 100) {"
@@ -304,7 +328,7 @@ class ProjectV2Client:
             "  }"
             "}"
         )
-        data = self._graphql(query, {"projectId": project_node_id, "itemId": item_id})
+        data = self._graphql(query, {"projectId": project_node_id})
         items_raw = data.get("data", {}).get("node", {}).get("items", {}).get("nodes", [])
         if not isinstance(items_raw, list):
             return {}

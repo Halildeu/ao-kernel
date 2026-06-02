@@ -142,7 +142,14 @@ def _cmd_sync(args: argparse.Namespace) -> int:
         manifest=manifest,
     )
     report = healer.heal(fetched)
-    _emit(args, _drift_payload("sync", report, scanned=len(fetched)))
+    _emit(
+        args,
+        _sync_payload(
+            report,
+            scanned=len(fetched),
+            manifest_digest=manifest.digest(),
+        ),
+    )
     return 0
 
 
@@ -157,6 +164,23 @@ def _cmd_drift(args: argparse.Namespace) -> int:
     report = healer.check(fetched, strict=args.strict)
     _emit(args, _drift_payload("drift", report, scanned=len(fetched)))
     return 1 if (args.strict and report.has_drift) else 0
+
+
+def _const_pinned_envelope() -> dict[str, Any]:
+    """Schema-required envelope (guard flags, register authority, write flag).
+
+    Every report this module emits ships the same const-pinned envelope
+    so the matching schema can validate without per-command branching.
+    """
+    return {
+        "guard_flags": {
+            "live_adapter_execution": False,
+            "support_widening": False,
+            "production_platform_claim": False,
+        },
+        "register_authority": "evidence_record_only",
+        "github_write_authorized": True,
+    }
 
 
 def _cmd_add_slice(args: argparse.Namespace) -> int:
@@ -278,7 +302,8 @@ def _cmd_from_pr(args: argparse.Namespace) -> int:
 
 
 def _drift_payload(command: str, report: DriftReport, *, scanned: int) -> dict[str, Any]:
-    return {
+    payload: dict[str, Any] = {
+        "schema_version": "project-sync-drift-report.v1",
         "command": command,
         "summary": {
             "issues_scanned": scanned,
@@ -290,10 +315,32 @@ def _drift_payload(command: str, report: DriftReport, *, scanned: int) -> dict[s
         "healed": [asdict(f) for f in report.healed],
         "warnings": report.warnings,
     }
+    payload.update(_const_pinned_envelope())
+    return payload
+
+
+def _sync_payload(report: DriftReport, *, scanned: int, manifest_digest: str) -> dict[str, Any]:
+    """Schema-bound payload for ``ao-kernel project sync`` (sync-report.v1)."""
+    items_added = sum(1 for f in report.healed if f.kind == "missing")
+    items_existing = max(scanned - items_added, 0)
+    payload: dict[str, Any] = {
+        "schema_version": "project-sync-sync-report.v1",
+        "command": "sync",
+        "summary": {
+            "issues_scanned": scanned,
+            "fields_set": len(report.healed),
+            "items_added": items_added,
+            "items_existing": items_existing,
+        },
+        "manifest_digest": manifest_digest,
+    }
+    payload.update(_const_pinned_envelope())
+    return payload
 
 
 def _migration_payload(report: MigrationReport, *, dry_run: bool, scanned: int) -> dict[str, Any]:
-    return {
+    payload: dict[str, Any] = {
+        "schema_version": "project-sync-label-migration-report.v1",
         "command": "label-cleanup",
         "dry_run": dry_run,
         "summary": {
@@ -306,3 +353,5 @@ def _migration_payload(report: MigrationReport, *, dry_run: bool, scanned: int) 
         "skipped": report.skipped,
         "warnings": report.warnings,
     }
+    payload.update(_const_pinned_envelope())
+    return payload

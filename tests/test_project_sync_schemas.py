@@ -141,3 +141,42 @@ def test_sync_report_schema_pins_manifest_digest_pattern() -> None:
     }
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.Draft202012Validator(schema).validate(payload)
+
+
+def test_cli_drift_payload_validates_against_drift_schema() -> None:
+    """The CLI's actual ``_drift_payload`` output must validate.
+
+    Regression guard for the Codex finding that the CLI emitted a
+    payload missing ``schema_version`` / ``guard_flags`` / etc., so a
+    workflow consuming the artifact via the schema would fail.
+    """
+    from ao_kernel.project_sync.cli import _drift_payload
+    from ao_kernel.project_sync.drift_healer import DriftReport
+
+    payload = _drift_payload("drift", DriftReport(), scanned=0)
+    schema = _load_schema("project-sync-drift-report.schema.v1.json")
+    jsonschema.Draft202012Validator(schema).validate(payload)
+
+
+def test_cli_sync_payload_validates_against_sync_schema() -> None:
+    """CLI ``_sync_payload`` round-trips through sync-report.v1 schema."""
+    from ao_kernel.project_sync.cli import _sync_payload
+    from ao_kernel.project_sync.drift_healer import DriftReport
+
+    payload = _sync_payload(
+        DriftReport(),
+        scanned=0,
+        manifest_digest="sha256:" + "0" * 64,
+    )
+    schema = _load_schema("project-sync-sync-report.schema.v1.json")
+    jsonschema.Draft202012Validator(schema).validate(payload)
+
+
+def test_cli_label_migration_payload_validates_against_schema() -> None:
+    """CLI ``_migration_payload`` round-trips through label-migration schema."""
+    from ao_kernel.project_sync.cli import _migration_payload
+    from ao_kernel.project_sync.label_migrator import MigrationReport
+
+    payload = _migration_payload(MigrationReport(), dry_run=True, scanned=0)
+    schema = _load_schema("project-sync-label-migration-report.schema.v1.json")
+    jsonschema.Draft202012Validator(schema).validate(payload)

@@ -22,7 +22,14 @@ _GUARD_LABEL_RE = re.compile(
     re.IGNORECASE,
 )
 _STATUS_LABEL_RE = re.compile(r"^status:(?P<name>planned|in_progress|review|blocked|done)$", re.IGNORECASE)
-_DEPENDS_RE = re.compile(r"(?:depends on|blocked by)\s+#(?P<num>\d+)", re.IGNORECASE)
+# Regex tolerates markdown-bold anchors (``**Depends on**``), trailing
+# colons, and comma-separated lists. We first find an anchor, then sweep
+# the trailing text up to the next sentence boundary for ``#N`` refs.
+_DEPENDS_ANCHOR_RE = re.compile(
+    r"(?:\*{1,2})?(?:depends on|blocked by)(?:\*{1,2})?\s*:?\s*(?P<tail>[^\n.;]*)",
+    re.IGNORECASE,
+)
+_HASH_REF_RE = re.compile(r"#(?P<num>\d+)")
 _RISK_TO_ESTIMATE = {
     "low": 1.0,
     "normal": 2.0,
@@ -106,17 +113,24 @@ class FieldDeriver:
         return _STATUS_TO_KANBAN.get(status)
 
     def derive_dependency(self, body: str) -> str | None:
-        matches = _DEPENDS_RE.findall(body or "")
-        if not matches:
+        """Collect ``#N`` refs following any ``Depends on`` / ``Blocked by`` anchor.
+
+        Handles markdown bold (``**Depends on** #1, #2``), trailing colon
+        (``Blocked by: #3``), and comma/space-separated lists. Each anchor
+        contributes every ``#N`` it sees up to the next sentence break;
+        duplicates are removed while preserving repo-side ordering.
+        """
+        if not body:
             return None
-        # Preserve repo-side ordering (first occurrence wins per slice); the
-        # text field stores a comma-joined list so the project surface keeps
-        # the full picture.
         seen: list[str] = []
-        for num in matches:
-            ref = f"#{num}"
-            if ref not in seen:
-                seen.append(ref)
+        for anchor in _DEPENDS_ANCHOR_RE.finditer(body):
+            tail = anchor.group("tail") or ""
+            for ref_match in _HASH_REF_RE.finditer(tail):
+                ref = f"#{ref_match.group('num')}"
+                if ref not in seen:
+                    seen.append(ref)
+        if not seen:
+            return None
         return ",".join(seen)
 
     def derive_estimate(self, risk: str | None) -> float | None:

@@ -204,28 +204,34 @@ class DriftHealer:
                         kind="missing",
                     )
                 )
-            elif not self._values_match(current, value):
-                findings.append(
-                    DriftFinding(
-                        issue_number=issue.number,
-                        field_name=name,
-                        expected=value,
-                        actual=current,
-                        kind="mismatch",
+            else:
+                field_obj = fields_map.get(name)
+                data_type = field_obj.data_type.upper() if field_obj is not None else "TEXT"
+                if not self._values_match(current, value, data_type=data_type):
+                    findings.append(
+                        DriftFinding(
+                            issue_number=issue.number,
+                            field_name=name,
+                            expected=value,
+                            actual=current,
+                            kind="mismatch",
+                        )
                     )
-                )
         return findings
 
     @staticmethod
-    def _values_match(actual: str, expected: str) -> bool:
-        """Loose comparison for numeric/string fields.
+    def _values_match(actual: str, expected: str, *, data_type: str = "TEXT") -> bool:
+        """Type-aware comparison.
 
-        Numbers come back as ``"1.0"`` while expected is often ``"1"``;
-        coerce both to float when both parse.
+        Only NUMBER fields coerce via ``float`` — coercing every field
+        would mask string-vs-numeric drift on TEXT or SINGLE_SELECT
+        fields whose option name happens to parse as a number.
         """
         if actual == expected:
             return True
-        try:
-            return float(actual) == float(expected)
-        except (TypeError, ValueError):
-            return False
+        if data_type == "NUMBER":
+            try:
+                return float(actual) == float(expected)
+            except (TypeError, ValueError):
+                return False
+        return False

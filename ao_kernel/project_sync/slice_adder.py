@@ -141,6 +141,7 @@ class SliceAdder:
             milestone=self._milestone_title(),
         )
         derived = derive_all_fields(issue, deriver=FieldDeriver())
+        item_id: ProjectItemId | None = None
         try:
             item_id = self._project.add_issue_to_project(project_node_id, issue.node_id)
             fields_set = self._apply_fields(
@@ -151,7 +152,12 @@ class SliceAdder:
                 request=request,
             )
         except (ProjectV2APIError, ProjectSyncError) as exc:
-            self._rollback(issue, reason=str(exc))
+            self._rollback(
+                issue,
+                project_node_id=project_node_id,
+                item_id=item_id,
+                reason=str(exc),
+            )
             raise
         return AddSliceResult(
             issue=issue,
@@ -226,13 +232,38 @@ class SliceAdder:
             applied.append(name)
         return applied
 
-    def _rollback(self, issue: IssueRecord, *, reason: str) -> None:
+    def _rollback(
+        self,
+        issue: IssueRecord,
+        *,
+        project_node_id: str,
+        item_id: ProjectItemId | None,
+        reason: str,
+    ) -> None:
         """Best-effort rollback after a partial failure.
 
-        Closes the freshly created issue with a comment pointing at the
-        failure reason. Leaving the issue open would make follow-up runs
-        attempt to re-create it; closing keeps the audit trail intact.
+        Two ordered steps so the board never lingers in a half-set state:
+
+        1. If the board item was created before the failure, delete it
+           via ``deleteProjectV2Item`` so partially-applied field values
+           do not linger on the project.
+        2. Close the freshly created issue with a comment pointing at the
+           failure reason. Leaving the issue open would make follow-up
+           runs attempt to re-create it; closing keeps the audit trail
+           intact.
+
+        Each step is wrapped in its own try/except — a failure in step 1
+        must not prevent step 2 from running, and any rollback exception
+        is swallowed so the caller still surfaces the original error.
         """
+        if item_id is not None:
+            try:
+                self._project.delete_item(project_node_id, item_id)
+            except (ProjectV2APIError, Exception):  # noqa: BLE001 - rollback is best-effort
+                # Item deletion failure surfaces only as audit noise; the
+                # original add-slice error is still propagated by the
+                # caller.
+                pass
         try:
             self._issues._run(
                 [

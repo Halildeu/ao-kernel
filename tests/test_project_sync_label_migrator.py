@@ -54,8 +54,15 @@ def _fields() -> dict[str, ProjectField]:
 
 
 class StubProjectClient:
-    def __init__(self, *, actual: dict[str, str]) -> None:
-        self._actual = actual
+    def __init__(
+        self,
+        *,
+        actual: dict[str, str],
+        on_fetch_clear: set[str] | None = None,
+    ) -> None:
+        self._actual = dict(actual)
+        self._on_fetch_clear = on_fetch_clear or set()
+        self._fetch_calls = 0
 
     def fetch_fields(self, project_node_id: str) -> dict[str, ProjectField]:
         return _fields()
@@ -64,7 +71,15 @@ class StubProjectClient:
         return ProjectItemId("item_1")
 
     def fetch_field_values(self, project_node_id: str, item_id: ProjectItemId) -> dict[str, str]:
-        return dict(self._actual)
+        self._fetch_calls += 1
+        snapshot = dict(self._actual)
+        # Simulate concurrent mutation between the first fetch (used for
+        # planning) and the second fetch (TOCTOU re-verify): on call N>=2
+        # the named fields disappear from the actual state.
+        if self._fetch_calls >= 2:
+            for name in self._on_fetch_clear:
+                self._actual.pop(name, None)
+        return snapshot if self._fetch_calls == 1 else dict(self._actual)
 
     def set_field_value(self, *, project_node_id: str, item_id: ProjectItemId, field: ProjectField, value: Any) -> None:
         # Migrator should not invoke this — fields are already verified set.
@@ -175,3 +190,33 @@ def test_label_cleanup_no_migratable_labels_returns_empty_report(tmp_path: Path)
     report = migrator.migrate([issue], dry_run=False)
     assert report.entries == []
     assert report.skipped == []
+
+
+def test_label_cleanup_refuses_drop_when_field_cleared_at_toctou(tmp_path: Path) -> None:
+    """If the field disappears between planning and drop, skip the label.
+
+    The migrator's TOCTOU re-verify must catch the case where another
+    agent unsets the field between the first fetch (planning) and the
+    second fetch (right before remove_label). Without that re-verify,
+    the label would be dropped while the field is gone — silent data
+    loss.
+    """
+    project_client = StubProjectClient(
+        actual={
+            "Epic": "1",
+            "Risk": "high",
+            "Guard": "live_adapter",
+            "Status": "in_progress",
+        },
+        on_fetch_clear={"Risk"},  # Risk vanishes on the second fetch.
+    )
+    issues_client = StubIssueClient()
+    migrator = LabelMigrator(
+        issue_client=issues_client,
+        project_client=project_client,
+        manifest=_manifest(tmp_path),
+    )
+    report = migrator.migrate([_issue()], dry_run=False)
+    removed_labels = {label for _, label in issues_client.removed}
+    assert "risk:high" not in removed_labels
+    assert any("field_unset_at_drop_time" in entry for entry in report.skipped)
