@@ -26,6 +26,7 @@ import json
 import re
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from jsonschema import Draft202012Validator
 
@@ -103,8 +104,10 @@ def _changed_files_against_origin_main() -> list[str]:
     return files
 
 
-def _load_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+def _load_json(path: Path) -> dict[str, Any]:
+    data: Any = json.loads(path.read_text(encoding="utf-8"))
+    assert isinstance(data, dict), f"expected JSON object at {path}; got {type(data).__name__}"
+    return data
 
 
 # ── 1. shape ───────────────────────────────────────────────────────────

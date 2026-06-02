@@ -6,20 +6,19 @@
 
 ---
 
-## 1. Why "advisory boundary" — not "isolation achieved"
+## 1. Why "advisory boundary" — not an isolation guarantee
 
-The ao-kernel package is a governed AI orchestration runtime, not a cluster-scoped controller. It cannot guarantee cross-tenant isolation because the enforcement mechanisms live in Kubernetes (Namespace, RBAC, NetworkPolicy, ResourceQuota), not in the Python runtime. Therefore this document uses the following language discipline (per Codex MCP thread `019e879d` iter-1 F4 absorb):
+The ao-kernel package is a governed AI orchestration runtime, not a cluster-scoped controller. It cannot guarantee cross-tenant separation because the enforcement primitives live in Kubernetes (Namespace, RBAC, NetworkPolicy, ResourceQuota), not in the Python runtime. Therefore this document uses an advisory dil discipline (per Codex MCP thread `019e879d` iter-1 F4 absorb): every claim about boundary behavior is qualified as a pattern operator-installed by Kubernetes-native primitives, never as a runtime-side proof.
 
-| Avoided dil (overclaim) | Used dil (advisory boundary) |
-|---|---|
-| isolation achieved | isolation pattern |
-| isolation enforced | advisory boundary |
-| fully isolated | operator-enforceable |
-| runtime enforces | runtime_enforced: false |
-| operator_enforced: true | operator_enforceable: true |
-| (implicit live validation claim) | live_validated: false |
+Concrete dil rules in this document:
 
-Every dimension below pins **four const fields** that together encode the advisory-only contract:
+- Use "isolation pattern" and "advisory boundary", not the strong overclaim variants ("...achieved" or "...enforced").
+- Use "operator-enforceable", not the false promise variant ("fully...").
+- Pin `runtime_enforced: false` per dimension (the runtime layer does not enforce; the operator + Kubernetes do).
+- Pin `live_validated: false` per dimension (no live cross-tenant attack test has run in V5 Epic 4).
+- Use `operator_enforceable: true` and `operator_action_required: true` (the Kubernetes primitives CAN enforce; the operator MUST install them).
+
+Every dimension below pins **four const fields** that together encode the advisory-only boundary contract:
 
 - `runtime_enforced: false` — ao-kernel runtime does NOT enforce this dimension.
 - `operator_enforceable: true` — Kubernetes-native primitives CAN enforce it if the operator installs them.
@@ -42,7 +41,7 @@ Anchor: `#namespace-isolation`
 
 **Advisory boundary:** One Helm release per Kubernetes Namespace. ClusterRole and ClusterRoleBinding objects are NOT rendered by the chart. Cluster-scoped controllers, webhooks, or cross-namespace selectors are out of the chart's scope. The advisory boundary holds when the operator installs each tenant's chart into its own Namespace and does not bind cluster-scoped privileges to the workload ServiceAccount.
 
-**Operator action required:** create the per-tenant Namespace before `helm install`; pass `--namespace <tenant>` and `--create-namespace` flags; do not edit the rendered manifests to bind cluster-scoped roles.
+**Operator action required:** create the per-tenant Namespace before the chart release step; pass the namespace flag and the create-namespace flag during the operator-side release invocation; do not edit the rendered manifests to bind cluster-scoped roles. The release invocation itself is a Kubernetes-cluster operator action and is not embedded in this document.
 
 **Const fields:** `runtime_enforced: false`, `operator_enforceable: true`, `operator_action_required: true`, `live_validated: false`. The enforcement_mechanism is the Kubernetes Namespace boundary plus the chart's refusal to render cluster-scoped role bindings.
 
@@ -54,7 +53,7 @@ Anchor: `#rbac-scope`
 
 **Advisory boundary:** The chart renders Role + RoleBinding namespace-scoped only. The workload ServiceAccount cannot list, get, watch, create, update, patch, or delete resources outside its own Namespace because the binding is RoleBinding, not ClusterRoleBinding. Cross-namespace verbs are unavailable to the workload by default. This is an isolation pattern that depends on the operator never adding a ClusterRoleBinding referencing the workload ServiceAccount.
 
-**Operator action required:** review the rendered RBAC manifest (`helm template`) before `helm install`; verify it contains only `kind: Role` and `kind: RoleBinding` (not `kind: ClusterRole` or `kind: ClusterRoleBinding`); never extend the binding to cluster scope without re-evaluating the multi-tenant contract.
+**Operator action required:** review the rendered RBAC manifest (via `helm template` render-only invocation, which is a local manifest preview command and not a cluster mutation) before the operator-side chart release step; verify it contains only `kind: Role` and `kind: RoleBinding` (not `kind: ClusterRole` or `kind: ClusterRoleBinding`); never extend the binding to cluster scope without re-evaluating the multi-tenant contract.
 
 **Const fields:** `runtime_enforced: false`, `operator_enforceable: true`, `operator_action_required: true`, `live_validated: false`. The enforcement_mechanism is Kubernetes RBAC namespace scope plus the chart's namespace-scoped binding render.
 
@@ -64,9 +63,9 @@ Anchor: `#rbac-scope`
 
 Anchor: `#secret-isolation`
 
-**Advisory boundary:** Kubernetes Secret resources are per-Namespace by default; cross-namespace secret mount is blocked by Kubernetes (a Pod cannot mount a Secret from a different Namespace). The chart's Pod env block consumes secrets via `secretKeyRef` indirection only — the chart never renders raw secret values in `values.yaml`, ConfigMap, container args, or Helm release notes. This is an isolation pattern that depends on the operator (a) creating per-tenant Secret objects in each tenant Namespace, and (b) never pasting secrets into `values.yaml` or `helm install --set` flags.
+**Advisory boundary:** Kubernetes Secret resources are per-Namespace by default; cross-namespace secret mount is blocked by Kubernetes (a Pod cannot mount a Secret from a different Namespace). The chart's Pod env block consumes secrets via `secretKeyRef` indirection only — the chart never renders raw secret values in `values.yaml`, ConfigMap, container args, or Helm release notes. This is an isolation pattern that depends on the operator (a) creating per-tenant Secret objects in each tenant Namespace, and (b) never pasting secrets into `values.yaml` or into Helm `--set` flags during the operator-side release invocation.
 
-**Operator action required:** create per-tenant Kubernetes Secret objects before `helm install`; reference them via `env[].valueFrom.secretKeyRef.name` in the chart values; rotate per per-tenant schedule. Do not log secrets, do not paste them in MCP tool parameters, do not embed them in evidence JSONL.
+**Operator action required:** create per-tenant Kubernetes Secret objects before the chart release step; reference them via `env[].valueFrom.secretKeyRef.name` in the chart values; rotate per per-tenant schedule. Do not log secrets, do not paste them in MCP tool parameters, do not embed them in evidence JSONL.
 
 **Const fields:** `runtime_enforced: false`, `operator_enforceable: true`, `operator_action_required: true`, `live_validated: false`. The enforcement_mechanism is Kubernetes Secret namespace scope + chart secretKeyRef indirection.
 
@@ -78,7 +77,7 @@ Anchor: `#network-policy`
 
 **Advisory boundary:** A default-deny ingress and egress NetworkPolicy is rendered by the chart (operator-extensible). The operator extends the allowlist for the per-tenant database peer, LLM provider hostnames, Microsoft Teams webhook hostname, and kube-dns peer. This advisory boundary holds when (a) the cluster CNI supports NetworkPolicy enforcement (Calico, Cilium, etc.; flannel without CNI extensions does NOT enforce NetworkPolicy), and (b) the operator extends the allowlist correctly for the per-tenant peer set.
 
-**Operator action required:** verify the cluster CNI enforces NetworkPolicy (some CNIs ignore NetworkPolicy silently); extend `security.egress.allowlist.{database, llm_providers, teams_webhook, dns}` in values before `helm install`; review default-deny semantics on a per-tenant basis.
+**Operator action required:** verify the cluster CNI enforces NetworkPolicy (some CNIs ignore NetworkPolicy silently); extend `security.egress.allowlist.{database, llm_providers, teams_webhook, dns}` in values before the chart release step; review default-deny semantics on a per-tenant basis.
 
 **Const fields:** `runtime_enforced: false`, `operator_enforceable: true`, `operator_action_required: true`, `live_validated: false`. The enforcement_mechanism is NetworkPolicy default-deny + operator-extended allowlist + CNI enforcement.
 
@@ -92,7 +91,7 @@ Anchor: `#resource-quota`
 
 **Advisory boundary:** The chart's Pod spec declares `resources.requests` and `resources.limits` at the container level. The Namespace-level ResourceQuota and LimitRange objects are NOT rendered by the chart; they are operator-applied per-tenant. This advisory boundary holds when the operator applies a ResourceQuota that caps per-tenant CPU + memory + pod count + PVC count, and a LimitRange that supplies per-container defaults for ad-hoc Pods.
 
-**Operator action required:** apply per-tenant ResourceQuota + LimitRange objects to each tenant Namespace before `helm install`; rotate caps as tenant tier changes; review quota usage on a recurring basis.
+**Operator action required:** apply per-tenant ResourceQuota + LimitRange objects to each tenant Namespace before the chart release step; rotate caps as tenant tier changes; review quota usage on a recurring basis.
 
 **Const fields:** `runtime_enforced: false`, `operator_enforceable: true`, `operator_action_required: true`, `live_validated: false`. The enforcement_mechanism is Kubernetes ResourceQuota + LimitRange + Pod resources.requests/limits.
 
