@@ -61,25 +61,32 @@ Final operator-bound decision PR tüm evidence refs'i bağlar — flag flip ANCA
 - E-1-6 Retro ADR cross-AI revalidation: ADR-0001..0004 Codex+Mavis ile `cross_ai_validated` review_status
 - E-1-7 PR #764: CI shadow-skip permanent fix (operator gate; halen pending)
 
-### Epic 2 (Live Adapter Execution — `live_adapter_execution=true` enablement)
+### Epic 2 (Live Adapter Execution Infrastructure — flag flip ITSELF Epic 9'da)
 
-**Risk:** critical · **Bağımlılık:** Epic 1 + E-P0-2 (master plan amend)
+**Risk:** critical (epic-aggregate; eventual flip downstream) · **Bağımlılık:** Epic 1 + E-P0-2 (master plan amend) · **Reframe:** 2026-06-02 (Codex thread `019e87b6` iter-1 F7 absorb)
 
-- E-2-1 Operator-bound GPP supersession PR (live_adapter_execution flip authority decision)
-- E-2-2 Production runbook: live adapter envelope + cost guardrails production tuning + circuit breaker production limits
-- E-2-3 4.5 stub → 4.6 native-import → real LLM worker production envelope (Anthropic + OpenAI + Mavis canlı providers)
-- E-2-4 Live adapter test suite (real provider calls; SLA budget; cost tracking enabled; mocked olmayan)
-- E-2-5 Production telemetry: OTEL trace gerçek provider calls; usage/cost metrics
+> **AMEND NOTU (2026-06-02):** Önceki E-2-1 listesi "operator-bound GPP supersession PR (flip authority)" idi. Bu yapı yeniden çerçevelendi: **bu epic infrastructure-only**; `live_adapter_execution` flag flip authority **Epic 9 PR-Xfinal**'e taşındı. Detaylı plan: `.claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md` (Codex iter-N AGREE chain ile mühürlendi).
 
-### Epic 3 (Support Widening — `support_widening=true` enablement)
+- E-2-1 Live adapter envelope schema (`live_adapter_envelope.v1.json`; `mode` enum stub/dry_run only; `live_adapter_execution: const false` pin)
+- E-2-2 Per-call audit evidence schema (`per_call_audit.v1.json`; cost field required = fail-closed)
+- E-2-3 Cost ceiling enforcement module (soft/hard breach + concurrent atomicity)
+- E-2-4 Dry-run harness (library-mode; runtime kill-switches; no live network)
+- E-2-5 Secret resolution discipline module (value-based taint; env-var-only; 3-way cross-AI)
+- E-2-6 Opt-in advisory CI workflow (artifact-only; no required check; pull_request type)
+- E-2-7 Pre-supersession-PR checklist artifact for Epic 9 PR-Xfinal (18 conditions; 3-way cross-AI)
 
-**Risk:** critical · **Bağımlılık:** Epic 1 + Epic 2
+### Epic 3 (Support Widening Infrastructure — flag flip ITSELF Epic 9'da)
 
-- E-3-1 Operator-bound GPP supersession PR (support_widening flip authority)
-- E-3-2 Windows desktop support (mevcut "Operating System :: POSIX" enlarge; Windows + macOS Apple Silicon + Linux ARM64)
-- E-3-3 Python 3.10 backward compat decision (mevcut >=3.11; eski distro için yararlı?)
-- E-3-4 Provider widening matrix: Mistral / Cohere / Llama (HuggingFace adapter); per-provider capability profile
-- E-3-5 ARM64/Apple Silicon Docker images (CI multi-arch build)
+**Risk:** critical (epic-aggregate; eventual flip downstream) · **Bağımlılık:** Epic 1 (Epic 2 paralel olabilir) · **Reframe:** 2026-06-02 (Codex thread `019e87b2` iter-4 AGREE)
+
+> **AMEND NOTU (2026-06-02):** Önceki E-3-1 listesi "operator-bound GPP supersession PR (flip authority)" idi. Bu yapı yeniden çerçevelendi: **bu epic infrastructure-only**; `support_widening` flag flip authority **Epic 9 PR-Xfinal**'e taşındı. Detaylı plan: `.claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md` (Codex 4-iter chain AGREE ile mühürlendi).
+
+- E-3-1 Support widening evidence schema v1 (`support_widening_evidence.v1.json`; const false + recursive closure)
+- E-3-2 Per-surface smoke harness scaffolding (library-mode; stub adapters; runtime kill-switches)
+- E-3-3 Advisory CI matrix workflow (`support-matrix-smoke.yml`; opt-in label trigger; no required check)
+- E-3-4 Surface inventory document (`docs/SUPPORT-SURFACE-INVENTORY.md`; forbidden-language regex set)
+- E-3-5 Cross-AI consensus protocol checklist (`widening-supersession-checklist.v1.json`; recompute bind fields)
+- E-3-6 Recompute-not-trust validator (v1-only fail-closed; replay/TOCTOU/identity drift guards)
 
 ### Epic 4 (Deployment, Operations, Tenancy — multi-tenant production)
 
@@ -137,6 +144,13 @@ Final operator-bound decision PR tüm evidence refs'i bağlar — flag flip ANCA
 ### Epic 9 (Final Promotion Decision)
 
 **Risk:** critical · **Bağımlılık:** Tüm Epic 1-8 evidence complete
+
+> **AMEND NOTU (2026-06-02):** Epic 2 + Epic 3 reframe sonrası, **3 guard flag flip authority** bu epic'e konsolide edildi:
+> - `live_adapter_execution` flip → Epic 9 PR-Xfinal (Epic 2 E-2-7 pre-supersession checklist 18 conditions evidence pack)
+> - `support_widening` flip → Epic 9 PR-Xfinal (Epic 3 E-3-5 supersession consensus protocol checklist evidence pack)
+> - `production_platform_claim` flip → Epic 9 PR-Xfinal (Epic 1-8 toplam evidence)
+>
+> Bu konsolidasyon HARD RULE Cross-AI Peer Review + Plan Consensus Autonomy + Admin Merge YASAK + CI Kırmızıyken Merge YASAK ile uyumlu; operator-bound supersession tek noktada (Epic 9) toplanır. Detay supersession PR taslağı: `.claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md` (gelecek slice; Epic 1-8 complete sonrası).
 
 **PR-Xfinal:** operator-bound supersession decision PR. Tüm epic evidence refs'i bağlar + 3 guard flag flip (`support_widening=true` + `production_platform_claim=true` + `live_adapter_execution=true`) + version bump (`v4.x` → `v5.0.0`) + CHANGELOG release entry + tag push. **Bu PR'dan ÖNCE hiçbir flag flip YOK.**
 
