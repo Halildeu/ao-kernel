@@ -69,7 +69,8 @@ def _sha256_hex(path: Path) -> str:
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text())
+    data: dict[str, Any] = json.loads(path.read_text())
+    return data
 
 
 def _scorecard_rows_by_scenario(scorecard: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
