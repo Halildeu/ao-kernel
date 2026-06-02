@@ -179,18 +179,26 @@ Final operator-bound decision PR tüm evidence refs'i bağlar — flag flip ANCA
 
 **Risk:** critical · **Bağımlılık:** Tüm Epic 1-8 evidence complete
 
-> **AMEND NOTU (2026-06-02, iter-2 absorb):** Epic 2 + Epic 3 reframe sonrası, **3 guard flag flip authority** bu epic'e konsolide edildi. Her flag **independent per-flag gate** üzerinden değerlendirilir (single bundled super-flip YASAK; iter-2 F2 partial absorb):
-> - `live_adapter_execution` flip → Epic 9 PR-Xfinal (Epic 2 E-2-7 pre-supersession checklist 18 conditions evidence pack)
-> - `support_widening` flip → Epic 9 PR-Xfinal (Epic 3 E-3-5 supersession consensus protocol checklist evidence pack + per-class subordinate PR evidence aggregate)
-> - `production_platform_claim` flip → Epic 9 PR-Xfinal (Epic 1-8 toplam evidence)
+> **AMEND NOTU (2026-06-02, iter-3 absorb):** Epic 2 + Epic 3 reframe sonrası, **3 guard flag flip authority** bu epic'e konsolide edildi. Her flag **bağımsız per-flag gate** üzerinden değerlendirilir (per-flag pre-merge evidence requirement). Flip flag evidence chain'leri:
+> - `live_adapter_execution` gate → Epic 2 E-2-7 pre-supersession checklist 18 conditions evidence pack (evidence_pack_A)
+> - `support_widening` gate → Epic 3 E-3-5 supersession consensus protocol checklist evidence pack + per-class subordinate PR evidence aggregate (evidence_pack_B)
+> - `production_platform_claim` gate → Epic 1-8 toplam evidence (evidence_pack_C)
 >
-> **Per-flag independent gate semantic:** Flip authority bağımsız değerlendirilir — bir flag'in evidence pack'i complete iken diğeri pending olabilir; her flag kendi evidence chain'iyle gate geçer. Aggregate flip kararı PR-Xfinal'de toplanır ama gate logic her flag için ayrıdır. Bu, fail-closed semantic + recompute-not-trust pattern (Epic 3 E-3-6 validator) ile uyumlu.
+> **All-or-none flip discipline (iter-3 N2 absorb — net ambiguity resolution):** PR-Xfinal **single all-or-none operator-bound decision PR**'dır. **3 flag ANCAK üç bağımsız gate de green ise aynı PR'da flip edilir**; **bir gate pending ise PR-Xfinal AÇILMAZ veya hiçbir flip yapılmaz**. Partial flip YASAK (single PR-Xfinal authority). Per-gate evidence bağımsız değerlendirilir (per-flag pre-merge requirement) ama flip kararı tek atomic transaction'da PR-Xfinal'de toplanır:
 >
-> Bu konsolidasyon HARD RULE Cross-AI Peer Review + Plan Consensus Autonomy + Admin Merge YASAK + CI Kırmızıyken Merge YASAK ile uyumlu; operator-bound supersession tek noktada (Epic 9) toplanır. Detay supersession PR taslağı: `.claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md` (gelecek slice; Epic 1-8 complete sonrası).
+> | Gate state (3 flag) | PR-Xfinal davranışı |
+> |---|---|
+> | All 3 gates green (A + B + C complete) | PR-Xfinal açılabilir; 3 flag aynı PR'da atomic flip (squash commit'te) |
+> | Any gate pending (A or B or C incomplete) | PR-Xfinal AÇILMAZ; pending gate'in evidence chain'i complete olmalı önce |
+> | All gates pending | PR-Xfinal AÇILMAZ; Epic 1-8 evidence work devam |
 >
-> **Machine-checkable preconditions:** §14a "HARD STOP — E-2-* + E-3-* implementation prerequisites" bu epic için de geçerli — Epic 9 PR-Xfinal açılışı tüm Epic 1-8 evidence + per-flag gate green + operator authorization şartlarına bağlı.
+> **Önemli:** "Per-flag independent gate" semantic = gate **evaluation** bağımsız (her flag kendi evidence chain'iyle), ama **flip decision** atomic (tek PR-Xfinal, üçü beraber). Partial flip alternatif modeli (per-flag operator-bound supersession PR per-flag) YASAK — single PR-Xfinal model seçildi (HARD RULE Admin Merge YASAK + No Fake Work + Operator-bound supersession discipline ile uyumlu).
+>
+> Bu konsolidasyon HARD RULE Cross-AI Peer Review + Plan Consensus Autonomy + Admin Merge YASAK + CI Kırmızıyken Merge YASAK ile uyumlu; operator-bound supersession tek noktada (Epic 9 PR-Xfinal) toplanır. Detay supersession PR taslağı: `.claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md` (gelecek slice; Epic 1-8 complete sonrası).
+>
+> **Machine-checkable preconditions:** §14a "HARD STOP — E-2-* + E-3-* implementation prerequisites" bu epic için de geçerli — Epic 9 PR-Xfinal açılışı tüm Epic 1-8 evidence + 3 per-flag gate hepsinin green + operator authorization şartlarına bağlı.
 
-**PR-Xfinal:** operator-bound supersession decision PR. Tüm epic evidence refs'i bağlar + 3 guard flag flip (`support_widening=true` + `production_platform_claim=true` + `live_adapter_execution=true`) + version bump (`v4.x` → `v5.0.0`) + CHANGELOG release entry + tag push. **Bu PR'dan ÖNCE hiçbir flag flip YOK.**
+**PR-Xfinal:** operator-bound **single all-or-none** supersession decision PR. Tüm epic evidence refs'i bağlar + **3 guard flag atomic flip** (tek squash commit'te: `support_widening=true` + `production_platform_claim=true` + `live_adapter_execution=true`) + version bump (`v4.x` → `v5.0.0`) + CHANGELOG release entry + tag push. **Bu PR'dan ÖNCE hiçbir flag flip YOK; bu PR sonrası 3 flag birlikte true (partial flip YASAK).**
 
 ## 4. Bağımlılık + sıralama (Codex iter-1 absorb + iter-2 F3 absorb: Epic 2/3 reframe)
 
@@ -214,8 +222,9 @@ Epic 1 (follow-up; sistem mod aktivasyon) ----------+
    |                |
    +----------------+
                     v
-   Epic 9 (final operator-bound promotion decision PR-Xfinal
-           + 3 guard flag flip [per-flag independent gates]
+   Epic 9 (final operator-bound single all-or-none promotion decision PR-Xfinal
+           + 3 guard flag atomic flip [per-flag independent gates evaluation,
+             but flip decision atomic in PR-Xfinal squash commit]
            + per-class subordinate PR evidence aggregate
            + v5.0.0 version bump)
 ```
@@ -362,7 +371,7 @@ Implementer: Claude (Anthropic). Reviewer: Codex (OpenAI) thread `019e80b3` — 
 2. Epic 1 sub-issue'ları lazy-expand (her sub-issue kendi consensus consultation)
 3. **Epic 2 + Epic 3 infrastructure consensus before implementation** (iter-2 F3 absorb): PR #827 (Epic 2 detail plan) + PR #826 (Epic 3 detail plan) + PR #828 (this amend) üçü merged + Codex AGREE evidence; slice family PR'ları (E-2-1..E-2-7 + E-3-1..E-3-6) §14a HARD STOP preconditions sağlandıktan sonra açılır
 4. Epic 4-8 paralel sub-issue açılışı (her sub-issue kendi plan-consensus + impl + cross-AI review + merge)
-5. **Flip authority Epic 9 PR-Xfinal** (iter-2 F3 absorb): per-flag independent gate semantic; Epic 1-8 evidence complete → PR-Xfinal operator-bound supersession decision + 3 flag flip (`live_adapter_execution` / `support_widening` / `production_platform_claim`) + per-class subordinate PR evidence aggregate + v5.0.0 publish
+5. **Flip authority Epic 9 PR-Xfinal** (iter-2 F3 + iter-3 N2 absorb): per-flag independent gate **evaluation** + **atomic all-or-none flip decision** in single PR-Xfinal. Epic 1-8 evidence complete + 3 per-flag gates green (evidence_pack_A + B + C) → PR-Xfinal operator-bound supersession decision + 3 flag atomic flip (single squash commit: `live_adapter_execution=true` + `support_widening=true` + `production_platform_claim=true`) + per-class subordinate PR evidence aggregate + v5.0.0 publish. **Partial flip YASAK** — herhangi bir gate pending ise PR-Xfinal açılmaz.
 
 ## 14a. HARD STOP — E-2-* + E-3-* implementation prerequisites (iter-2 F2 absorb)
 
@@ -370,32 +379,89 @@ Epic 2 ve Epic 3 slice (E-2-1..E-2-7 ve E-3-1..E-3-6) implementation PR'ı **AÇ
 
 ### Pre-implementation gate conditions
 
+All verify commands are **commit-scoped** (use PR merge commit, not current root file) and reference **existing-file** SSOT (no nonexistent paths). Output snippets are shown for clarity.
+
 1. **PR #828 (this amend) MERGED to main**
-   - Verify: `git log origin/main --grep="V5-ROADMAP-EPIC-2-3-AMEND" -1 --format="%H %s"` returns merge commit
-   - Verify: `gh pr view 828 --json mergedAt,baseRefName,mergeCommit` returns non-null `mergedAt`, `baseRefName="main"`, `mergeCommit.oid` matches main HEAD ancestry
+   - Verify merge state + base + commit ancestry:
+     ```bash
+     gh pr view 828 --json mergedAt,baseRefName,mergeCommit \
+       --jq 'select(.mergedAt != null and .baseRefName == "main" and .mergeCommit.oid != null)'
+     # Then verify mergeCommit is ancestor of origin/main:
+     PR828_SHA=$(gh pr view 828 --json mergeCommit --jq '.mergeCommit.oid')
+     git fetch origin main --quiet
+     git merge-base --is-ancestor "$PR828_SHA" origin/main && echo "PR #828 in main ancestry"
+     ```
 
 2. **PR #827 (Epic 2 detail plan source) MERGED to main with Codex AGREE evidence**
-   - Verify: `gh pr view 827 --json mergedAt,baseRefName` returns non-null `mergedAt`, `baseRefName="main"`
-   - Verify: `local-ai-review-evidence.v1.json` from PR #827 has `reviewer.verdict="AGREE"` (cross-AI peer review)
-   - Verify: `.claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md` exists on `origin/main`
+   - Verify merge state:
+     ```bash
+     gh pr view 827 --json mergedAt,baseRefName,mergeCommit \
+       --jq 'select(.mergedAt != null and .baseRefName == "main")'
+     ```
+   - Verify Codex AGREE evidence at merge commit (NOT current root file — commit-scoped to avoid overwrite):
+     ```bash
+     PR827_SHA=$(gh pr view 827 --json mergeCommit --jq '.mergeCommit.oid')
+     git fetch origin main --quiet
+     git show "$PR827_SHA:local-ai-review-evidence.v1.json" \
+       | jq -e '.work_package=="V5-EPIC-2-LIVE-ADAPTER-EXECUTION-PLAN" and .reviewer.verdict=="AGREE"'
+     # Alternative via GitHub contents API (no local clone):
+     gh api "repos/Halildeu/ao-kernel/contents/local-ai-review-evidence.v1.json?ref=$PR827_SHA" \
+       --jq '.content' | base64 -d | jq -e '.reviewer.verdict=="AGREE"'
+     ```
+   - Verify detail plan file exists on `origin/main`:
+     ```bash
+     git fetch origin main --quiet
+     git cat-file -e "origin/main:.claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md" \
+       && echo "Epic 2 detail plan present on main"
+     ```
 
 3. **PR #826 (Epic 3 detail plan source) MERGED to main with Codex AGREE evidence**
-   - Verify: `gh pr view 826 --json mergedAt,baseRefName` returns non-null `mergedAt`, `baseRefName="main"`
-   - Verify: `local-ai-review-evidence.v1.json` from PR #826 has `reviewer.verdict="AGREE"` (Codex 4-iter chain AGREE)
-   - Verify: `.claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md` exists on `origin/main`
+   - Verify merge state:
+     ```bash
+     gh pr view 826 --json mergedAt,baseRefName,mergeCommit \
+       --jq 'select(.mergedAt != null and .baseRefName == "main")'
+     ```
+   - Verify Codex AGREE evidence at merge commit (commit-scoped):
+     ```bash
+     PR826_SHA=$(gh pr view 826 --json mergeCommit --jq '.mergeCommit.oid')
+     git fetch origin main --quiet
+     git show "$PR826_SHA:local-ai-review-evidence.v1.json" \
+       | jq -e '.work_package=="V5-EPIC-3-SUPPORT-WIDENING-MATRIX-PLAN" and .reviewer.verdict=="AGREE"'
+     ```
+   - Verify detail plan file exists on `origin/main`:
+     ```bash
+     git cat-file -e "origin/main:.claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md" \
+       && echo "Epic 3 detail plan present on main"
+     ```
 
-4. **3 guard flags STILL `const false`** (no premature flip)
-   - Verify: `ao_kernel/defaults/extensions.v1.json` (or canonical guard flag manifest) has:
-     - `live_adapter_execution.const = false`
-     - `support_widening.const = false`
-     - `production_platform_claim.const = false`
-   - Verify: No flag flip commit between this amend merge and slice PR opening
+4. **3 guard flags STILL allowed=false** (no premature flip; canonical SSOT path)
+   - Canonical guard authority SSOT: `.claude/plans/gpp_status.v1.json` + `scripts/gpp_next.py` (NOT `ao_kernel/defaults/extensions.v1.json` — that file does not exist as a guard manifest):
+     ```bash
+     jq -e '.support_widening_allowed == false and .production_platform_claim_allowed == false and .live_adapter_execution_allowed == false' \
+       .claude/plans/gpp_status.v1.json
+     # Cross-check via gpp_next.py canonical guard authority output:
+     python3 scripts/gpp_next.py | grep -E "(support_widening|production_platform_claim|live_adapter_execution).*false"
+     ```
+   - Verify no flag flip commit between this amend merge and slice PR opening:
+     ```bash
+     PR828_SHA=$(gh pr view 828 --json mergeCommit --jq '.mergeCommit.oid')
+     git log "$PR828_SHA..origin/main" --oneline -- .claude/plans/gpp_status.v1.json \
+       | grep -iE "(flip|allowed.*true)" || echo "No flag flip in window — gate clear"
+     ```
 
-5. **Drift sweep complete** (iter-2 F3 alignment verified)
-   - Verify: §4 dependency diagram does NOT contain "Epic 2 (... + flip)" or "Epic 3 (... + flip)"
-   - Verify: §7 issue labels use `flip-prerequisite:*` / `flip-authority:*` (NOT `guard-flip:*` alone)
-   - Verify: §10 PR yapısı references Epic 2 (E-2-1..E-2-7) + Epic 3 (E-3-1..E-3-6) slice families
-   - Verify: §14 sonraki adımlar references "infrastructure consensus before implementation"
+5. **Drift sweep complete** (iter-2 F3 alignment verified — check at merge commit, not WIP)
+   - Verify at PR #828 merge commit (commit-scoped; immune to subsequent edits):
+     ```bash
+     PR828_SHA=$(gh pr view 828 --json mergeCommit --jq '.mergeCommit.oid')
+     git show "$PR828_SHA:.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md" \
+       | grep -E "Epic 2 \(.*\+ flip\)|Epic 3 \(.*\+ flip\)" \
+       && echo "DRIFT: + flip language still present" \
+       || echo "Drift sweep clean (no + flip language in Epic 2/3)"
+     # Verify §7 labels use flip-prerequisite/flip-authority:
+     git show "$PR828_SHA:.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md" \
+       | grep -E "flip-prerequisite:|flip-authority:" \
+       && echo "§7 labels use prerequisite/authority semantic"
+     ```
 
 ### Slice PR opening discipline (interim — until CI gate exists)
 
