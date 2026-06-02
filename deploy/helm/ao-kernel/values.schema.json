@@ -148,7 +148,10 @@
       "required": ["create"],
       "properties": {
         "create": { "type": "boolean" },
-        "rules": { "type": "array" }
+        "rules": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/rbacPolicyRule" }
+        }
       }
     },
     "probes": {
@@ -160,7 +163,10 @@
       }
     },
     "nodeSelector": { "type": "object" },
-    "tolerations": { "type": "array" },
+    "tolerations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/toleration" }
+    },
     "affinity": { "type": "object" },
     "podLabels": { "type": "object" },
     "podAnnotations": { "type": "object" }
@@ -183,6 +189,48 @@
         "periodSeconds": { "type": "integer", "minimum": 1 },
         "timeoutSeconds": { "type": "integer", "minimum": 1 },
         "failureThreshold": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "rbacPolicyRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verbs"],
+      "properties": {
+        "apiGroups": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "resources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "resourceNames": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "nonResourceURLs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "verbs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "toleration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "operator": { "type": "string", "enum": ["Exists", "Equal"] },
+        "value": { "type": "string" },
+        "effect": {
+          "type": "string",
+          "enum": ["NoSchedule", "PreferNoSchedule", "NoExecute", ""]
+        },
+        "tolerationSeconds": { "type": "integer", "minimum": 0 }
       }
     }
   }

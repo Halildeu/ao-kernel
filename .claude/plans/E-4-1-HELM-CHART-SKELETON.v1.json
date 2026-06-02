@@ -50,12 +50,12 @@
     "chart_dir": "deploy/helm/ao-kernel/"
   },
   "ao_kernel_version_pinned": "4.1.0",
-  "cross_ai_review_thread": null,
+  "cross_ai_review_thread": "019e87c9-c6b9-7e43-bd89-6ef7d21704b7",
   "notes": [
     "V5 Epic 4 first slice; foundation for E-4-2a/E-4-3/E-4-5/E-4-4/E-4-2b/E-4-6.",
     "Helm chart is render-only at this skeleton stage; operator runbooks for live deployment land in later Epic 4 slices.",
     "Three runtime guard flag key strings (support_widening, production_platform_claim, live_adapter_execution) are absent from every file under deploy/helm/ao-kernel/ per the no_guard_flip invariant.",
     "appVersion in Chart.yaml manually pinned to ao_kernel.__version__ (4.1.0); shape test asserts the equality.",
-    "Cross-AI review thread id is recorded after Codex MCP post-impl review submission; field updated in final commit pre-merge."
+    "Codex post-impl iter-1 REVISE absorbed (thread 019e87c9): typed rbac.rules + tolerations $defs added (rbacPolicyRule + toleration); two new tests (no-untyped-arrays walker + helm template negative-path rejection of bare-string entries). 23 tests pass (up from 21)."
   ]
 }

@@ -58,6 +58,9 @@ Live deployment is **out-of-scope** for this chart skeleton. Operator runbooks f
 - `image.repository`, `image.tag`, `image.pullPolicy` all required and non-empty.
 - `serviceAccount.create` and `rbac.create` required booleans.
 - `env.plain[].name + value` and `env.secretRefs[].name + secretName + secretKey` required when entries are present.
+- `rbac.rules[]` typed against an `rbacPolicyRule` definition (`verbs` required, `apiGroups`/`resources`/`resourceNames`/`nonResourceURLs` typed as string arrays). Bare-string entries are rejected by `helm template`.
+- `tolerations[]` typed against a `toleration` definition (`operator` ∈ `{Exists, Equal}`, `effect` ∈ `{NoSchedule, PreferNoSchedule, NoExecute, ""}`). Bare-string entries are rejected by `helm template`.
+- Every `type: array` in the schema declares an `items` sub-schema (no untyped arrays) — enforced by `test_values_schema_every_array_declares_items`.
 
 ## Cross-AI peer review
 

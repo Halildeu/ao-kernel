@@ -278,6 +278,74 @@ def test_values_schema_freeform_allowlist_paths_exist_in_schema() -> None:
     assert missing == [], "free-form allowlist drift; entries no longer resolve to type:object:\n" + "\n".join(missing)
 
 
+def test_values_schema_every_array_declares_items() -> None:
+    """Every `type: array` node in values.schema.json MUST declare an `items`
+    sub-schema (typed shape) so the operator cannot inject untyped entries
+    (e.g. rbac.rules=[\"bad\"] or tolerations=[\"bad\"]). Codex post-impl iter-1
+    REVISE absorb (thread 019e87c9): bare `type: array` allowed invalid
+    Kubernetes/RBAC shapes; this walker prevents regression."""
+    schema = json.loads((_CHART_DIR / "values.schema.json").read_text(encoding="utf-8"))
+
+    def _walk(node: object, path: str) -> list[str]:
+        violations: list[str] = []
+        if isinstance(node, dict):
+            if node.get("type") == "array" and "items" not in node:
+                violations.append(f"{path}: array without items sub-schema")
+            for key, value in node.items():
+                violations.extend(_walk(value, f"{path}.{key}"))
+        elif isinstance(node, list):
+            for idx, item in enumerate(node):
+                violations.extend(_walk(item, f"{path}[{idx}]"))
+        return violations
+
+    violations = _walk(schema, "$")
+    assert violations == [], "values.schema.json has arrays without items (untyped entries allowed):\n" + "\n".join(
+        violations
+    )
+
+
+def test_values_schema_rejects_invalid_rbac_rules_and_tolerations_via_helm() -> None:
+    """Negative-path runtime gate: helm template MUST reject string entries in
+    rbac.rules and tolerations. Codex post-impl iter-1 REVISE absorb (thread
+    019e87c9 Finding 1): bare `type: array` accepted invalid shapes;
+    typed `items` schemas now enforce Kubernetes structural shape."""
+    if not _helm_available():
+        pytest.skip("helm binary not installed")
+    bad_inputs = (
+        ("rbac.rules", "--set-json", 'rbac.rules=["bad"]', "/rbac/rules/0"),
+        ("tolerations", "--set", "tolerations[0]=bad", "/tolerations/0"),
+    )
+    failures: list[str] = []
+    for label, flag, payload, expected_path in bad_inputs:
+        proc = subprocess.run(
+            [
+                "helm",
+                "template",
+                "neg-test",
+                str(_CHART_DIR),
+                "--namespace",
+                "neg-ns",
+                flag,
+                payload,
+            ],
+            capture_output=True,
+            text=True,
+        )
+        # helm MUST fail (non-zero exit) and mention the rejected path.
+        if proc.returncode == 0:
+            failures.append(
+                f"{label}: helm template accepted invalid payload {payload!r} "
+                f"(returncode 0; expected schema failure at {expected_path})"
+            )
+        elif expected_path not in (proc.stdout + proc.stderr):
+            failures.append(
+                f"{label}: helm template failed but error did not reference "
+                f"expected path {expected_path!r} for payload {payload!r}; "
+                f"stderr={proc.stderr.strip()[:200]}"
+            )
+    assert failures == [], "\n".join(failures)
+
+
 # ── 6. no_secret_in_values ─────────────────────────────────────────────
 
 
