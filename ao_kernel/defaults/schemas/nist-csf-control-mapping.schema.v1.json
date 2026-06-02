@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://halildeu.github.io/ao-kernel/schemas/nist-csf-control-mapping.schema.v1.json",
+  "title": "ao-kernel NIST CSF 2.0 Function/Category Reference Mapping v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "service",
+    "operator_owned",
+    "is_contractual_sla",
+    "framework_version",
+    "guard_flags",
+    "csf_disclaimer",
+    "csf_tier_disclosure",
+    "csf_profile_disclosure",
+    "prohibited_claims",
+    "functions"
+  ],
+  "properties": {
+    "schema_version": {"const": "nist-csf-control-mapping.v1"},
+    "artifact_kind": {"const": "nist-csf-control-reference-mapping"},
+    "service": {"const": "ao-kernel"},
+    "operator_owned": {"const": true},
+    "is_contractual_sla": {"const": false},
+    "framework_version": {"const": "NIST-CSF-2.0"},
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed",
+        "csf_certification_claim_allowed",
+        "csf_tier_claim_allowed",
+        "csf_profile_claim_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": {"const": false},
+        "production_platform_claim_allowed": {"const": false},
+        "live_adapter_execution_allowed": {"const": false},
+        "csf_certification_claim_allowed": {"const": false},
+        "csf_tier_claim_allowed": {"const": false},
+        "csf_profile_claim_allowed": {"const": false}
+      }
+    },
+    "csf_disclaimer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "not_nist_certified",
+        "no_nist_csf_certification_program",
+        "not_nist_audited",
+        "not_cisa_attested",
+        "documentation_only",
+        "operator_csf_profile_decision"
+      ],
+      "properties": {
+        "not_nist_certified": {"const": true},
+        "no_nist_csf_certification_program": {"const": true},
+        "not_nist_audited": {"const": true},
+        "not_cisa_attested": {"const": true},
+        "documentation_only": {"const": true},
+        "operator_csf_profile_decision": {"const": true}
+      }
+    },
+    "csf_tier_disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ao_kernel_claims_tier", "tier_assessment_operator_owned", "available_tiers"],
+      "properties": {
+        "ao_kernel_claims_tier": {"const": "none"},
+        "tier_assessment_operator_owned": {"const": true},
+        "available_tiers": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {"enum": ["partial", "risk_informed", "repeatable", "adaptive"]}
+        }
+      }
+    },
+    "csf_profile_disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ao_kernel_is_organization", "no_csf_profile_in_repo", "operator_csf_profile_owner"],
+      "properties": {
+        "ao_kernel_is_organization": {"const": false},
+        "no_csf_profile_in_repo": {"const": true},
+        "operator_csf_profile_owner": {"const": true}
+      }
+    },
+    "prohibited_claims": {
+      "type": "array",
+      "minItems": 18,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 3}
+    },
+    "functions": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {"$ref": "#/$defs/function_entry"},
+      "allOf": [
+        {"contains": {"properties": {"function_id": {"const": "GV"}}, "required": ["function_id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"function_id": {"const": "ID"}}, "required": ["function_id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"function_id": {"const": "PR"}}, "required": ["function_id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"function_id": {"const": "DE"}}, "required": ["function_id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"function_id": {"const": "RS"}}, "required": ["function_id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"function_id": {"const": "RC"}}, "required": ["function_id"]}, "minContains": 1, "maxContains": 1}
+      ]
+    }
+  },
+  "$defs": {
+    "function_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["function_id", "function_title", "function_status", "categories"],
+      "properties": {
+        "function_id": {"enum": ["GV", "ID", "PR", "DE", "RS", "RC"]},
+        "function_title": {"type": "string", "minLength": 3},
+        "function_status": {"enum": ["documented", "partial", "out_of_scope", "not_applicable"]},
+        "categories": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 6,
+          "items": {"$ref": "#/$defs/category"}
+        }
+      }
+    },
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category_id", "category_title", "category_status", "rationale", "operator_boundary", "evidence_refs"],
+      "properties": {
+        "category_id": {"type": "string", "pattern": "^(GV|ID|PR|DE|RS|RC)\\.[A-Z]{2}$"},
+        "category_title": {"type": "string", "minLength": 3},
+        "category_status": {"enum": ["documented", "partial", "out_of_scope", "not_applicable"]},
+        "rationale": {"type": "string", "minLength": 10},
+        "operator_boundary": {"type": "string", "minLength": 10},
+        "evidence_refs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/evidence_ref"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"category_status": {"enum": ["out_of_scope", "not_applicable"]}}, "required": ["category_status"]},
+          "then": {"properties": {"evidence_refs": {"maxItems": 0}}}
+        },
+        {
+          "if": {"properties": {"category_status": {"enum": ["documented", "partial"]}}, "required": ["category_status"]},
+          "then": {"properties": {"evidence_refs": {"minItems": 1}}}
+        }
+      ]
+    },
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "ref", "description", "claim_boundary"],
+      "properties": {
+        "type": {"enum": ["pr", "doc", "test", "source", "hard_rule"]},
+        "ref": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 3},
+        "claim_boundary": {"type": "string", "minLength": 10}
+      }
+    }
+  }
+}
