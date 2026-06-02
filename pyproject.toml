@@ -67,6 +67,10 @@ metrics = [
 sbom = [
     "cyclonedx-bom>=4.0.0",
 ]
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-autodoc-typehints>=2.0.0",
+]
 policy-service = [
     "gunicorn>=22.0.0",
     "PyJWT[crypto]>=2.8.0",
