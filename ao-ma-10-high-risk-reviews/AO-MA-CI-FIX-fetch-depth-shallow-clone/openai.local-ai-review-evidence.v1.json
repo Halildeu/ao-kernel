@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-905-cloud-run-gate",
+  "work_package": "AO-MA-CI-FIX-fetch-depth-shallow-clone",
   "implementer": {
     "agent": "claude-opus-4-7-1m",
     "provider": "anthropic"
@@ -13,15 +13,15 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/fix/cloud-run-deploy-false-red",
+    "head_ref": "refs/heads/codex/ci-fix-fetch-depth-shallow-clone",
     "changed_files": [
-      ".claude/plans/CLOUD-RUN-AUTO-DEPLOY-LANE-FLAG.md",
-      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
-      ".github/workflows/policy-service-deploy-cloud-run.yml",
-      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/openai.local-ai-review-evidence.v1.json",
-      "tests/test_ao_release_gate_deploy_workflow.py",
-      "tests/test_policy_service_deploy_workflow.py"
+      ".github/workflows/test.yml",
+      "CHANGELOG.md",
+      "local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/openai.local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [

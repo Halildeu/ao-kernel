@@ -20,6 +20,9 @@
       ".github/workflows/policy-service-deploy-cloud-run.yml",
       "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
       "tests/test_ao_release_gate_deploy_workflow.py",
       "tests/test_policy_service_deploy_workflow.py"
     ]
@@ -34,39 +37,23 @@
       "status": "pass"
     },
     {
-      "name": "yaml_valid",
+      "name": "json_valid",
       "status": "pass"
     },
     {
-      "name": "root_cause_correctly_identified",
+      "name": "cloud_run_auto_deploy_flag_default_off",
       "status": "pass"
     },
     {
-      "name": "fix_chosen_is_canonical_for_shallow_clone_problem",
+      "name": "workflow_dispatch_lane_preserved",
       "status": "pass"
     },
     {
-      "name": "fetch_depth_zero_vs_50_decision_justified",
+      "name": "guard_flags_const_false",
       "status": "pass"
     },
     {
-      "name": "coverage_job_correctly_unmodified",
-      "status": "pass"
-    },
-    {
-      "name": "ao_release_gate_job_correctly_unmodified",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_remain_const_false",
-      "status": "pass"
-    },
-    {
-      "name": "no_governance_file_touch",
-      "status": "pass"
-    },
-    {
-      "name": "no_codeowners_mutation",
+      "name": "no_branch_protection_mutation",
       "status": "pass"
     },
     {
@@ -74,7 +61,7 @@
       "status": "pass"
     },
     {
-      "name": "no_runtime_python_module_change",
+      "name": "no_codeowners_mutation",
       "status": "pass"
     },
     {
@@ -83,11 +70,10 @@
     }
   ],
   "findings": [
-    "Codex MCP cross-provider AGREE on core CI fix (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d). Root cause correctly identified: actions/checkout@v6 default fetch-depth:1 \u2192 shallow clone \u2192 merge-base origin/main HEAD cannot resolve \u2192 _resolve_pr_diff_base() returns None \u2192 fail-closed in CI PR context with `pytest.fail('no PR diff base resolved')`. git diff origin/main...HEAD callers exit 128.",
-    "fetch-depth:0 is the correct choice over fetch-depth:50. fetch-depth:50 is cheaper but is not guaranteed on long-lived, stacked, or main-distant branches. This PR resolves a sistemik CI blocker affecting every open PR, so deterministic solution outweighs the small bandwidth cost. Aligns with HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm \u2014 6 ay sonra h\u00e2l\u00e2 machine-enforced.",
-    "No need to add fetch-depth on coverage job. The coverage job does not re-run the test suite; it downloads the 3.13 test leg's coverage artifact and runs `coverage report --fail-under=85`. Diff-base tests run in the `test` matrix, which now has fetch-depth:0. Scope minimal.",
-    "Guard-controlled runtime surfaces unmodified: .github/CODEOWNERS, ruleset definitions, ao_kernel/, ao_release_gate scripts, gpp_status \u2014 none in diff. Three guard flags const false across all evidence JSONs in this PR (support_widening, production_platform_claim, live_adapter_execution).",
-    "Codex's only revise points were about evidence path/PR-body scope description, not the fix itself. After this iteration: (a) top-level evidence updated to AO-MA-CI-FIX-fetch-depth-shallow-clone work_package with correct schema, (b) reviewer.verdict=AGREE with real Codex thread ID, (c) PR body scope corrected to reflect 4 files + 2 nested evidence files actually changed."
+    "Codex plan/review thread 019e8a05 AGREE: gating automatic workflow_run Cloud Run deploy behind CLOUD_RUN_AUTO_DEPLOY_ENABLED prevents pre-cutover main false-red without enabling live deploy by default.",
+    "The manual workflow_dispatch lane remains flag-independent, preserving explicit operator intent for manual debug/cutover runs while automatic workflow_run deploy is default-off unless the repo variable is literal true.",
+    "The review scope is bound to the actual #905 PR diff, including workflow files, plan doc, regression tests, nested AO-MA-905 audit evidence files, and top-level raw review evidence files. Historical nested work-package evidence artifacts are intentionally not rewritten.",
+    "No live adapter execution, support widening, production platform claim, branch-protection mutation, ruleset mutation, CODEOWNERS mutation, runtime module change, or secret material is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
