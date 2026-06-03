@@ -560,15 +560,28 @@ kirlenmemesi ve retarget sonrası CI boşluğu oluşmaması.
 
 ### CI kuralı
 
-- `.github/workflows/test.yml` artık `codex/*` branch push'larında da koşar.
-  Bu sayede stacked branch daha PR açılmadan gerçek check üretir.
+- `.github/workflows/test.yml` `push` tetikleyicisi yalnız `main` branch'inde
+  koşar; `codex/**` push'larında **koşmaz** (queue-relief, 2026-06-02). Aynı
+  SHA'da hem push-run hem PR-run koşması = required check'lerin iki kez
+  hesaplanması; bu çiftleşme ~45 paralel worktree modelinde kuyruğu en
+  yoran kaynaktı.
+- Pre-PR sinyal için iki yol (base türüne göre):
+  1. **base = `main` PR'ları** → PR'ı erkenden aç (draft veya ready);
+     `pull_request: opened` / `synchronize` test workflow'unu otomatik
+     tetikler; bu canonical sinyaldir.
+  2. **base = `codex/**` üst-stacked PR'ları** (alt PR henüz merge olmadan
+     açılan üst-stack) — test.yml `pull_request.branches: [main]` olduğu
+     için bu PR'lar otomatik tetiklemez. Pre-retarget sinyal için manuel
+     workflow_dispatch fallback **zorunlu**:
+     ```bash
+     bash .claude/scripts/trigger-test-workflow.sh <branch>
+     ```
+     Aynı script PR henüz açılmamış branch'ler için de kullanılır.
 - `pull_request` tetikleyicisi `ready_for_review` ve `edited` olaylarını da
   dinler. `edited` yalnızca retarget (`base` değişti) ise gate'i yeniden koşturur.
-- Otomatik run görünmüyorsa manuel fallback:
-
-```bash
-bash .claude/scripts/trigger-test-workflow.sh <branch>
-```
+- Required check anlamsal dürüstlüğü için: pre-PR branch'te koşan CI olsa
+  bile aynı SHA için PR-run koşar; required check'in tek source-of-truth'u
+  PR run'ıdır.
 
 ### Merge metodu
 
