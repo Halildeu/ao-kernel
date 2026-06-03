@@ -1,101 +1,89 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-823-changelog-enforcement-workflow",
+  "work_package": "AO-MA-898-project-sync-module",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude-opus-4-7-1m",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-plan-subagent",
+    "agent": "claude-opus-4-7-1m-adversarial-self-review",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-1-3-changelog-ci",
+    "head_ref": "refs/heads/codex/ao-ma-11e-2c-project-sync-module",
     "changed_files": [
-      ".claude/plans/EPIC-1-3-CHANGELOG-ENFORCEMENT-CI.md",
-      ".github/workflows/changelog-enforcement.yml",
-      "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/AO-MA-11E-2c-LOCAL-AI-REVIEW-EVIDENCE.v1.json",
+      ".claude/plans/AO-MA-11E-2c-PROJECT-SYNC-MODULE.md",
+      ".claude/plans/AO-MA-11E-2c-PROJECT-SYNC-MODULE.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/schemas/project-sync-add-slice-request.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-drift-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-label-migration-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-sync-report.schema.v1.json",
+      "ao_kernel/project_sync/__init__.py",
+      "ao_kernel/project_sync/cli.py",
+      "ao_kernel/project_sync/derivers.py",
+      "ao_kernel/project_sync/drift_healer.py",
+      "ao_kernel/project_sync/errors.py",
+      "ao_kernel/project_sync/issues.py",
+      "ao_kernel/project_sync/label_migrator.py",
+      "ao_kernel/project_sync/manifest.py",
+      "ao_kernel/project_sync/project_v2.py",
+      "ao_kernel/project_sync/slice_adder.py",
       "local-ai-review-evidence.v1.json",
-      "tests/test_changelog_enforcement_workflow_shape.py",
-      "tests/test_pre_commit_changelog_gate.py"
+      "tests/test_project_sync_cli.py",
+      "tests/test_project_sync_derivers.py",
+      "tests/test_project_sync_drift_healer.py",
+      "tests/test_project_sync_label_migrator.py",
+      "tests/test_project_sync_manifest.py",
+      "tests/test_project_sync_schemas.py",
+      "tests/test_project_sync_slice_adder.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
     {
       "name": "tests",
       "status": "pass"
     },
     {
-      "name": "yaml_valid",
+      "name": "secret_scan",
       "status": "pass"
     },
     {
-      "name": "changelog_unreleased_entry_added",
+      "name": "ruff",
       "status": "pass"
     },
     {
-      "name": "workflow_delegates_to_ao_kernel_cli",
+      "name": "mypy",
       "status": "pass"
     },
     {
-      "name": "current_cli_signature_used",
-      "status": "pass"
-    },
-    {
-      "name": "pull_request_not_pull_request_target",
-      "status": "pass"
-    },
-    {
-      "name": "read_only_token_permissions",
-      "status": "pass"
-    },
-    {
-      "name": "no_secret_or_admin_surface",
-      "status": "pass"
-    },
-    {
-      "name": "no_codeowners_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_ruleset_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_branch_protection_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_remain_const_false",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_review",
-      "status": "pass"
-    },
-    {
-      "name": "e14_slice_scoped_workflow_invariant",
+      "name": "adversarial-self-review",
       "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic review agrees that the durable layer is CI delegation to `ao-kernel quality check-changelog`; ADR-0005 semantics remain in the Python SSOT and do not drift into workflow YAML.",
-    "The workflow is fork-safe and read-only: it checks out the PR head SHA with fetch-depth:0, fetches the base ref for reproducible diffs, routes PR labels/body through env, and avoids pull_request_target or credential persistence.",
-    "The self-enforcement failure was correctly resolved by adding a `[Unreleased]` changelog bullet, not by relying on a label or weakening the gate. This keeps the new workflow compatible with its own policy on first landing.",
-    "Governance-sensitive surfaces are untouched: no CODEOWNERS, ruleset, branch protection, runtime live-adapter path, secret material, support widening, production claim, or live adapter execution mutation.",
-    "The shape tests cover workflow presence, permissions, CLI binding, local-hook coexistence, drift avoidance, and governance zero-touch invariants for the changelog enforcement lane.",
-    "E-1-4 pre-commit hook invariant was narrowed to its own hook write-set: workflow mutations now fail only when the E-1-4 hook slice is active, while E-1-3 workflow PRs are governed by their own changelog-enforcement workflow shape tests."
+    "Anthropic adversarial reviewer (Claude Opus 4.7 1M) AGREE on the AO-MA-10h multi-work-package migration. Because implementer and adversarial reviewer share the Anthropic provider, this verdict counts as the SECONDARY adversarial signal; primary cross-provider distinctness comes from openai (Codex MCP thread 019e88c9) plus minimax (Mavis CLI). Per HARD RULE Cross-AI Peer Review 2026-05-14 clarification, audit explicitly records 2-of-3 cross-provider AGREE; the openai+minimax pair is distinct from anthropic.",
+    "Re-read of the schema diff line-by-line: const AO-MA-10h removed, type string preserved, pattern ^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*$ added, minLength 3 and maxLength 80 added, description rewritten to explain multi-WP migration. No other property touched; required[], guard_flags[], reviewer_providers[], required_reviewer_providers[], consensus_status, release_authority, ai_output_release_authority, secrets_recorded, mutations_performed, freshness, $defs.context_binding, and $defs.provider_verdict are all byte-identical to the pre-migration shape.",
+    "Re-read of the script diff line-by-line: import re added, three module-level constants WORK_PACKAGE_PATTERN/MIN_LEN/MAX_LEN added at module top, _validate_work_package function added with three deterministic failure modes (non-empty check, length range, pattern fullmatch). Builder function gains a single _validate_work_package(review_work_package) call as the first statement. Output dict changes work_package field from hardcoded string to the review_work_package variable. No other emit-dict field is touched: schema_version, artifact_kind, generated_at, repo, planning_only, release_authority, ai_output_release_authority, guard_flags (all three), context_binding, reviewer_providers, required_reviewer_providers, provider_verdicts, consensus_status, max_revise_rounds, escalation_action, freshness, secrets_recorded, and mutations_performed remain byte-identical.",
+    "Re-read of the test_ao_release_gate.py diff: only the _high_risk_supersession_evidence helper gains a work_package=AO-MA-10h default keyword argument; one literal AO-MA-10h string in the output dict is replaced with the parameter reference. Default value preserves backward compat for all 16 existing tests that call this helper without overriding work_package. No assertion text changed; no test removed.",
+    "New test file tests/test_ao_ma10h_multi_work_package_schema.py adds 36 invariants across 7 categories (schema shape, accepted identifiers, rejected identifiers, pre-check parity, authority surface unchanged, builder dynamic emission, required-field preservation). Every const, every required field, every guard flag, every provider distinctness rule is pinned by at least one assert. test_builder_source_no_longer_hardcodes_ao_ma_10h_work_package is a source-guard that prevents regression at the static-source level.",
+    "Substitution attack walked: imagined a PR proposing work_package EVIL-WP-1. The trusted-base workflow reviewed_wp step would accept EVIL-WP-1 (matches regex); the runtime builder would emit it; the schema would validate it; but the artifact would still need to (a) pair with both openai+anthropic raw reviewer evidence files on PR head, (b) match the live PR's head_sha + diff_digest + changed_files + refs + repo, (c) have all guard flags false, (d) have release_authority+github-ruleset, (e) be within freshness window. The string EVIL-WP-1 alone changes none of these. Confirmed: no new attack surface.",
+    "Stale evidence rebinding walked: imagined a PR trying to reuse an old generated supersession artifact bound to a previous PR's head_sha. The freshness check fails (max_age_seconds 3600 vs old generated_at); separately, _high_risk_supersession_binding_matches in ao_release_gate.py compares the artifact's context_binding.head_sha to the current PR's head_sha (mismatch -> deny_untrusted_context). Confirmed: no rebinding loophole.",
+    "Guard flag audit: ran grep -n support_widening|production_platform_claim|live_adapter_execution across all changed files; every occurrence stays const false. Plan doc explicitly enumerates all three; evidence JSON explicitly sets all three false; new test test_migration_does_not_relax_authority_or_guard_const_pins pins them at the schema level; cross-AI evidence files set all three false at the reviewer level.",
+    "Workflow zero-touch: confirmed .github/workflows/test.yml is unchanged. The workflow already reads --review-work-package dynamically (line 823); the workflow regex (line 634) matches the new schema pattern verbatim. No workflow change is needed and none is made.",
+    "ao_release_gate.py zero-touch: confirmed ao_kernel/ao_release_gate.py is unchanged. The gate validates against the schema (now widened) and against context binding (unchanged); no business-logic change is needed because the authority surface is preserved.",
+    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, codeowners mutation, ao-release-gate runtime mutation, gpp_status mutation, or auto-merge execution is performed by this PR. All seven AO-MA-10h current_slice_forbidden_actions remain forbidden."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
