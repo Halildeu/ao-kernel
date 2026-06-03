@@ -49,5 +49,16 @@
   "slice_a_module_path": "ao_kernel/project_sync/",
   "audit_note": "HARD RULE Cross-AI Peer Review (2026-05-05/14): code-writing provider (anthropic claude-opus-4-7) reviewed by distinct provider (openai codex). AGREE + ready_to_merge=true captured here is the canonical openai signal for the merge gate.",
   "created_at": "2026-06-02T00:00:00Z",
-  "updated_at": "2026-06-02T00:00:00Z"
+  "updated_at": "2026-06-02T00:00:00Z",
+  "work_package": "AO-MA-899-project-sync-workflows",
+  "checks_considered": [
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    }
+  ]
 }
