@@ -44,6 +44,31 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     "scripts/",
     "tests/",
     ".claude/plans/",
+    # Dev-time governance helper scripts. Same
+    # ``diff_scope`` / base-ref allowlist trust tier as
+    # ``.claude/plans/``: CLAUDE.md §17-19 already pins ``ops.sh``,
+    # ``pre-commit-version-gate.sh`` and ``trigger-test-workflow.sh``
+    # as the canonical preflight / version-bump-guard / manual-CI
+    # surfaces every Claude/Codex session is expected to invoke. A
+    # PR-author edit under ``.claude/scripts/`` cannot reach the
+    # runtime adapter surface, claim production readiness, widen
+    # support, or bypass branch protection. ``.claude/scripts/``
+    # also stays under the ``.claude/**`` HIGH_RISK_PATH_PATTERNS
+    # umbrella so the other gate checks (path_sensitive_human_review,
+    # secret_boundary, admin_bypass_boundary, gpp_closed_boundaries)
+    # still run independently — a helper-script edit without a
+    # current non-author review is still denied. Adding this prefix only resolves the
+    # ``diff_scope`` false-block so workflow PRs that ship matching
+    # ``.claude/scripts/`` hygiene/doc updates (e.g. trigger-script
+    # header reflecting a workflow trigger change) do not get
+    # ``ao_release_gate_diff_out_of_scope``. Concrete regression:
+    # PR #907 (CI-CODEX-PUSH-DEDUP, 2026-06-03) had to revert a
+    # ``.claude/scripts/trigger-test-workflow.sh`` header comment
+    # aligned to the test.yml ``codex/**`` push-trigger removal,
+    # because the gate rejected the diff. Future widening of this
+    # allowlist requires an explicit governance update (new
+    # ao-release-gate allowlist PR + plan doc + cross-AI review).
+    ".claude/scripts/",
     ".github/workflows/",
     ".github/CODEOWNERS",
     "deploy/",

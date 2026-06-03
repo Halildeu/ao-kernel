@@ -597,6 +597,12 @@ def test_build_payload_allowed_path_prefixes_repo_owned_not_pr_supplied(tmp_path
     assert "scripts/" in prefixes
     assert "tests/" in prefixes
     assert ".claude/plans/" in prefixes
+    # Dev-time governance helper scripts (CLAUDE.md §17-19): the
+    # canonical preflight (`ops.sh`), version-bump guard
+    # (`pre-commit-version-gate.sh`) and manual CI trigger
+    # (`trigger-test-workflow.sh`) live under `.claude/scripts/` and
+    # must be diff-scope eligible alongside `.claude/plans/`.
+    assert ".claude/scripts/" in prefixes
     assert ".github/workflows/" in prefixes
     # GPP-2D-3c bootstrap prerequisite: the ao-release-gate enforce
     # job reads the raw reviewer evidence file committed at the repo
@@ -633,6 +639,37 @@ def test_build_payload_allowed_path_prefixes_includes_gitignore(tmp_path: Path) 
     mod.main(_build_argv(tmp_path, output=output))
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert ".gitignore" in payload["allowed_path_prefixes"]
+
+
+def test_build_payload_allowed_path_prefixes_includes_claude_scripts(
+    tmp_path: Path,
+) -> None:
+    """`.claude/scripts/` is pinned to the base-ref allowlist so dev-time
+    governance helper script updates (CLAUDE.md §17-19: ``ops.sh``,
+    ``pre-commit-version-gate.sh``, ``trigger-test-workflow.sh``) do
+    not trigger ao_release_gate_diff_out_of_scope.
+
+    Same trust tier as ``.claude/plans/``: a PR-author edit under
+    ``.claude/scripts/`` cannot reach the runtime adapter surface,
+    claim production readiness, widen support, or bypass branch
+    protection. The other gate checks
+    (``path_sensitive_human_review``, ``secret_boundary``,
+    ``admin_bypass_boundary``, ``gpp_closed_boundaries``) still run
+    independently.
+
+    Regression for PR #907 (CI-CODEX-PUSH-DEDUP, 2026-06-03): a
+    ``.claude/scripts/trigger-test-workflow.sh`` header comment update
+    that re-aligned the script with the ``test.yml`` ``codex/**``
+    push-trigger removal had to be reverted because the gate
+    rejected the diff with ``ao_release_gate_diff_out_of_scope``.
+    Pinning ``.claude/scripts/`` here lets workflow PRs ship the
+    matching helper-script hygiene/doc updates atomically.
+    """
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    mod.main(_build_argv(tmp_path, output=output))
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert ".claude/scripts/" in payload["allowed_path_prefixes"]
 
 
 def test_build_payload_allowed_path_prefixes_includes_release_lifecycle_files(
