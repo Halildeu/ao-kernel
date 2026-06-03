@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 project sync module**: added the `ao_kernel.project_sync`
+  package and `ao-kernel project ...` CLI surface for project-board
+  sync, drift checks, slice creation, field updates, label cleanup, and
+  PR-derived slice metadata. This is the module-only foundation for the
+  follow-up workflow integration slice.
 - **V5 changelog enforcement CI**: added a read-only pull-request
   workflow that delegates ADR-0005 changelog discipline to the
   canonical `ao-kernel quality check-changelog` CLI instead of

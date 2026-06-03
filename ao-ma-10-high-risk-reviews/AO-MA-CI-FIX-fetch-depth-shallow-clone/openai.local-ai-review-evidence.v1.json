@@ -1,29 +1,4 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-CI-FIX-fetch-depth-shallow-clone",
-  "implementer": {
-    "agent": "claude-opus-4-7-1m",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex-mcp-thread-019e8c9d",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ci-fix-fetch-depth-shallow-clone",
-    "changed_files": [
-      ".github/workflows/test.yml",
-      "CHANGELOG.md",
-      "local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/openai.local-ai-review-evidence.v1.json"
-    ]
-  },
   "checks_considered": [
     {
       "name": "secret_scan",
@@ -69,8 +44,68 @@
     "Guard-controlled runtime surfaces unmodified: .github/CODEOWNERS, ruleset definitions, ao_kernel/, scripts/ao_release_gate, gpp_status \u2014 none in diff. Three guard flags const false across all evidence JSONs (support_widening, production_platform_claim, live_adapter_execution).",
     "Codex's REVISE points were strictly evidence/PR-body scope corrections (top-level path canonical form + PENDING_REVIEW \u2192 real AGREE + PR body 'TEK dosya' overclaim correction). All absorbed in iter-2: top-level evidence rewritten with correct schema, AO-MA-CI-FIX-fetch-depth-shallow-clone work_package, reviewer.verdict=AGREE with real Codex thread ID."
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "claude-opus-4-7-1m",
+    "provider": "anthropic"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "codex-mcp-thread-019e8c9d",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/AO-MA-11E-2c-LOCAL-AI-REVIEW-EVIDENCE.v1.json",
+      ".claude/plans/AO-MA-11E-2c-PROJECT-SYNC-MODULE.md",
+      ".claude/plans/AO-MA-11E-2c-PROJECT-SYNC-MODULE.v1.json",
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-818-pre-commit-changelog-hook-minimal/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-818-pre-commit-changelog-hook-minimal/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/schemas/project-sync-add-slice-request.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-drift-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-label-migration-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-sync-report.schema.v1.json",
+      "ao_kernel/project_sync/__init__.py",
+      "ao_kernel/project_sync/cli.py",
+      "ao_kernel/project_sync/derivers.py",
+      "ao_kernel/project_sync/drift_healer.py",
+      "ao_kernel/project_sync/errors.py",
+      "ao_kernel/project_sync/issues.py",
+      "ao_kernel/project_sync/label_migrator.py",
+      "ao_kernel/project_sync/manifest.py",
+      "ao_kernel/project_sync/project_v2.py",
+      "ao_kernel/project_sync/slice_adder.py",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_changelog_enforcement_workflow_shape.py",
+      "tests/test_project_sync_cli.py",
+      "tests/test_project_sync_clients.py",
+      "tests/test_project_sync_derivers.py",
+      "tests/test_project_sync_drift_healer.py",
+      "tests/test_project_sync_label_migrator.py",
+      "tests/test_project_sync_manifest.py",
+      "tests/test_project_sync_schemas.py",
+      "tests/test_project_sync_slice_adder.py"
+    ],
+    "head_ref": "refs/heads/codex/ao-ma-11e-2c-project-sync-module"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "AO-MA-898-project-sync-module"
 }

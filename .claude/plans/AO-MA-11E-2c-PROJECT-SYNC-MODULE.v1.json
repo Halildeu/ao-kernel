@@ -1,0 +1,80 @@
+{
+  "schema_version": "ao-ma-11e-2c-slice-evidence.v1",
+  "slice_id": "AO-MA-11E-2c",
+  "epic_id": "E-1",
+  "v5_epic_ref": "E-1-2",
+  "title": "ao_kernel/project_sync module + CLI",
+  "implementer": {"provider": "anthropic", "agent": "claude-opus-4.7-1m"},
+  "reviewer": {"provider": "openai", "agent": "codex", "verdict": "AGREE", "thread_id": "019e8835-f18a-7eb1-899f-01dff61f33ae", "iter_count": 3},
+  "scope": {
+    "module_paths": [
+      "ao_kernel/project_sync/__init__.py",
+      "ao_kernel/project_sync/errors.py",
+      "ao_kernel/project_sync/manifest.py",
+      "ao_kernel/project_sync/project_v2.py",
+      "ao_kernel/project_sync/issues.py",
+      "ao_kernel/project_sync/derivers.py",
+      "ao_kernel/project_sync/slice_adder.py",
+      "ao_kernel/project_sync/drift_healer.py",
+      "ao_kernel/project_sync/label_migrator.py",
+      "ao_kernel/project_sync/cli.py"
+    ],
+    "cli_paths": [
+      "ao_kernel/cli.py"
+    ],
+    "schema_paths": [
+      "ao_kernel/defaults/schemas/project-sync-drift-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-sync-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-add-slice-request.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-label-migration-report.schema.v1.json"
+    ],
+    "test_paths": [
+      "tests/test_project_sync_manifest.py",
+      "tests/test_project_sync_derivers.py",
+      "tests/test_project_sync_slice_adder.py",
+      "tests/test_project_sync_drift_healer.py",
+      "tests/test_project_sync_label_migrator.py",
+      "tests/test_project_sync_cli.py",
+      "tests/test_project_sync_schemas.py"
+    ],
+    "workflow_paths_touched": [],
+    "registers_modified": []
+  },
+  "local_gate": {
+    "pytest_passed": 46,
+    "pytest_failed": 0,
+    "ruff_clean": true,
+    "mypy_strict_clean": true,
+    "file_budget_max_lines": 335,
+    "file_budget_threshold": 800
+  },
+  "cli_surface": [
+    "ao-kernel project sync",
+    "ao-kernel project drift [--strict]",
+    "ao-kernel project add-slice --epic --slice-id --title --risk --plan-ref --consensus [--guard] [--depends-on] [--estimate-days] [--dry-run]",
+    "ao-kernel project field-set --item --field --value",
+    "ao-kernel project label-cleanup [--dry-run]",
+    "ao-kernel project from-pr <pr#> [--dry-run]"
+  ],
+  "guard_flags": {
+    "live_adapter_execution": false,
+    "support_widening": false,
+    "production_platform_claim": false
+  },
+  "register_authority": "evidence_record_only",
+  "github_write_authorized": true,
+  "github_write_rationale": "project_sync module is the authorized writer surface for the GitHub Projects v2 mirror per AO-MA-SPM master plan; documented exception with const true.",
+  "no_fake_work": {
+    "pytest_real": true,
+    "ruff_real": true,
+    "mypy_real": true,
+    "cross_ai_review_real": true,
+    "cross_ai_review_pending": false
+  },
+  "deferred_to_next_slice": [
+    ".github/workflows/project-mirror-sync.yml (high-risk path; operator gate)",
+    ".github/workflows/project-drift-guard.yml",
+    ".github/workflows/project-label-cleanup.yml",
+    "manifest amendment binding new module + workflow paths"
+  ]
+}

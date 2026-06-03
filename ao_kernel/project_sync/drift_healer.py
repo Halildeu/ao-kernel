@@ -1,0 +1,269 @@
+"""Drift detection + heal loop between manifest and GitHub state.
+
+The healer is pure-Python over fetched data. Strict mode raises
+:class:`ManifestDriftError` so CI workflows can wire the exit code, while
+heal mode shells back through the injected ``SliceAdder``-style helpers
+to bring GitHub in line with the manifest.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Iterable
+
+from ao_kernel.project_sync.derivers import (
+    DerivedFields,
+    FieldDeriver,
+    derive_all_fields,
+)
+from ao_kernel.project_sync.errors import ManifestDriftError
+from ao_kernel.project_sync.issues import IssueClient, IssueRecord
+from ao_kernel.project_sync.manifest import ProjectionManifest
+from ao_kernel.project_sync.project_v2 import (
+    ProjectField,
+    ProjectItemId,
+    ProjectV2Client,
+)
+
+
+@dataclass(frozen=True)
+class DriftFinding:
+    """A single drift entry."""
+
+    issue_number: int
+    field_name: str
+    expected: str
+    actual: str
+    kind: str  # "missing", "mismatch", "extra"
+
+
+@dataclass(frozen=True)
+class DriftReport:
+    """Aggregate drift report for the sync surface.
+
+    ``healed`` lists field/value pairs the healer mutated (empty in
+    check-only mode). ``warnings`` collects deriver warnings encountered
+    while normalising each issue.
+
+    ``items_added`` / ``items_existing`` track *issues*, not findings:
+    one new issue may cause many per-field findings, but it counts as a
+    single item add. Sync-report summary readers (workflows, dashboards)
+    need the issue-level number, not the field-level one — Codex iter-2
+    flagged this as audit-semantics drift.
+    """
+
+    findings: list[DriftFinding] = field(default_factory=list)
+    healed: list[DriftFinding] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    items_added: int = 0
+    items_existing: int = 0
+
+    @property
+    def has_drift(self) -> bool:
+        return bool(self.findings)
+
+
+class DriftHealer:
+    """Compares per-issue expected derivation vs project board state.
+
+    Construction is deliberately wide: callers pass the clients + manifest
+    + the list of issues to scan. The healer never goes hunting for issues
+    on its own — that's the sync surface's job.
+    """
+
+    def __init__(
+        self,
+        *,
+        issue_client: IssueClient,
+        project_client: ProjectV2Client,
+        manifest: ProjectionManifest,
+        deriver: FieldDeriver | None = None,
+    ) -> None:
+        self._issues = issue_client
+        self._project = project_client
+        self._manifest = manifest
+        self._deriver = deriver or FieldDeriver()
+
+    def check(
+        self,
+        issues: Iterable[IssueRecord],
+        *,
+        strict: bool = False,
+    ) -> DriftReport:
+        """Check drift without mutating GitHub state.
+
+        ``strict=True`` raises :class:`ManifestDriftError` after the full
+        scan so callers see every finding before the error fires.
+        """
+        report = self._scan(issues)
+        if strict and report.has_drift:
+            raise ManifestDriftError(f"{len(report.findings)} drift finding(s); first: {report.findings[0]}")
+        return report
+
+    def heal(self, issues: Iterable[IssueRecord]) -> DriftReport:
+        """Bring GitHub in line with manifest-derived expectations.
+
+        Returns a report whose ``items_added`` counts only the *issues*
+        that needed a fresh board item — not the number of per-field
+        ``kind=missing`` findings. ``items_existing`` covers the rest of
+        the scanned set. Codex iter-2 absorb: workflows consume the
+        report at issue granularity, not finding granularity.
+        """
+        issues_list = list(issues)
+        report = self._scan(issues_list)
+        if not report.has_drift:
+            return report
+        project_node_id = self._manifest.project_node_id()
+        if project_node_id is None:
+            return report
+        fields_map = self._project.fetch_fields(project_node_id)
+        healed: list[DriftFinding] = []
+        item_id_cache: dict[int, ProjectItemId] = {}
+        items_added = 0
+        items_seen: set[int] = set()
+        for finding in report.findings:
+            field_obj = fields_map.get(finding.field_name)
+            if field_obj is None:
+                # Field isn't even present on the board — out of healer
+                # scope; manifest projection bootstrap owns those.
+                continue
+            issue_record = next((i for i in issues_list if i.number == finding.issue_number), None)
+            if issue_record is None:
+                continue
+            if issue_record.number in item_id_cache:
+                item_id = item_id_cache[issue_record.number]
+            else:
+                existing = self._project.find_item_for_issue(project_node_id, issue_record.node_id)
+                if existing is None:
+                    item_id = self._project.add_issue_to_project(project_node_id, issue_record.node_id)
+                    items_added += 1
+                else:
+                    item_id = existing
+                item_id_cache[issue_record.number] = item_id
+            items_seen.add(issue_record.number)
+            value: str | float = finding.expected
+            if field_obj.data_type.upper() == "NUMBER":
+                try:
+                    value = float(finding.expected)
+                except ValueError:
+                    continue
+            self._project.set_field_value(
+                project_node_id=project_node_id,
+                item_id=item_id,
+                field=field_obj,
+                value=value,
+            )
+            healed.append(finding)
+        # ``items_existing`` = issues we touched that already had an item.
+        items_existing = max(len(items_seen) - items_added, 0)
+        return DriftReport(
+            findings=report.findings,
+            healed=healed,
+            warnings=report.warnings,
+            items_added=items_added,
+            items_existing=items_existing,
+        )
+
+    def _scan(self, issues: Iterable[IssueRecord]) -> DriftReport:
+        project_node_id = self._manifest.project_node_id()
+        findings: list[DriftFinding] = []
+        warnings: list[str] = []
+        if project_node_id is None:
+            return DriftReport(findings=findings, warnings=warnings)
+        fields_map = self._project.fetch_fields(project_node_id)
+        for issue in issues:
+            try:
+                derived = derive_all_fields(
+                    issue,
+                    deriver=self._deriver,
+                    require_epic=False,
+                    require_risk=False,
+                )
+            except Exception:  # noqa: BLE001 - deriver errors become per-issue findings
+                warnings.append(f"derive_failed:{issue.number}")
+                continue
+            warnings.extend(f"{issue.number}:{w}" for w in derived.warnings)
+            item_id = self._project.find_item_for_issue(project_node_id, issue.node_id)
+            actual: dict[str, str] = {}
+            if item_id is not None:
+                actual = self._project.fetch_field_values(project_node_id, item_id)
+            findings.extend(self._compare(issue, derived, fields_map, actual, has_item=item_id is not None))
+        return DriftReport(findings=findings, warnings=warnings)
+
+    def _compare(
+        self,
+        issue: IssueRecord,
+        derived: DerivedFields,
+        fields_map: dict[str, ProjectField],
+        actual: dict[str, str],
+        *,
+        has_item: bool,
+    ) -> list[DriftFinding]:
+        expected: dict[str, str] = {}
+        if derived.epic is not None and "Epic" in fields_map:
+            expected["Epic"] = derived.epic
+        if derived.risk is not None and "Risk" in fields_map:
+            expected["Risk"] = derived.risk
+        if "Guard" in fields_map:
+            expected["Guard"] = derived.guard
+        if derived.dependency is not None and "Dependency" in fields_map:
+            expected["Dependency"] = derived.dependency
+        if derived.estimate is not None and "Estimate" in fields_map:
+            expected["Estimate"] = str(derived.estimate)
+        if derived.release_impact is not None and "Release impact" in fields_map:
+            expected["Release impact"] = derived.release_impact
+        findings: list[DriftFinding] = []
+        for name, value in expected.items():
+            if not has_item:
+                findings.append(
+                    DriftFinding(
+                        issue_number=issue.number,
+                        field_name=name,
+                        expected=value,
+                        actual="",
+                        kind="missing",
+                    )
+                )
+                continue
+            current = actual.get(name)
+            if current is None:
+                findings.append(
+                    DriftFinding(
+                        issue_number=issue.number,
+                        field_name=name,
+                        expected=value,
+                        actual="",
+                        kind="missing",
+                    )
+                )
+            else:
+                field_obj = fields_map.get(name)
+                data_type = field_obj.data_type.upper() if field_obj is not None else "TEXT"
+                if not self._values_match(current, value, data_type=data_type):
+                    findings.append(
+                        DriftFinding(
+                            issue_number=issue.number,
+                            field_name=name,
+                            expected=value,
+                            actual=current,
+                            kind="mismatch",
+                        )
+                    )
+        return findings
+
+    @staticmethod
+    def _values_match(actual: str, expected: str, *, data_type: str = "TEXT") -> bool:
+        """Type-aware comparison.
+
+        Only NUMBER fields coerce via ``float`` — coercing every field
+        would mask string-vs-numeric drift on TEXT or SINGLE_SELECT
+        fields whose option name happens to parse as a number.
+        """
+        if actual == expected:
+            return True
+        if data_type == "NUMBER":
+            try:
+                return float(actual) == float(expected)
+            except (TypeError, ValueError):
+                return False
+        return False

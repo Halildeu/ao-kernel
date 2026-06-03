@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -28,10 +29,12 @@ WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "changelog-enforcement.yml
 LOCAL_HOOK_PATH = REPO_ROOT / ".claude" / "scripts" / "pre-commit-changelog-gate.sh"
 
 
-def _load_workflow() -> dict:
+def _load_workflow() -> dict[Any, Any]:
     if yaml is None:
         pytest.skip("PyYAML not installed in this environment")
-    return yaml.safe_load(WORKFLOW_PATH.read_text())
+    loaded = yaml.safe_load(WORKFLOW_PATH.read_text())
+    assert isinstance(loaded, dict)
+    return loaded
 
 
 # ---- 1. Presence + structure (5) ----------------------------------------
@@ -45,6 +48,7 @@ def test_workflow_has_name_and_pull_request_trigger() -> None:
     wf = _load_workflow()
     assert wf["name"] == "Changelog Enforcement"
     on_block = wf.get("on") if "on" in wf else wf.get(True)
+    assert isinstance(on_block, dict)
     assert "pull_request" in on_block
     pr = on_block["pull_request"]
     assert "main" in pr["branches"]
@@ -212,8 +216,9 @@ def test_workflow_disclaims_required_check_wiring_is_separate_slice() -> None:
 
 
 def test_only_one_workflow_file_changed() -> None:
-    """E-1-3 must add exactly one new workflow file (skipped when the
-    local working tree has no committed diff yet)."""
+    """When E-1-3 edits the changelog workflow, it must be the only
+    workflow file changed. Other PRs exercise the already-landed workflow
+    shape tests above without inheriting the E-1-3 diff-shape invariant."""
     proc = subprocess.run(
         ["git", "diff", "--name-only", "origin/main...HEAD"],
         cwd=REPO_ROOT,
@@ -228,8 +233,11 @@ def test_only_one_workflow_file_changed() -> None:
         pytest.skip(
             "no committed diff vs origin/main yet (untracked-only state); CI run on the PR will exercise this invariant"
         )
+    workflow_path = ".github/workflows/changelog-enforcement.yml"
+    if workflow_path not in changed:
+        pytest.skip("E-1-3 workflow diff-shape invariant applies only when the changelog workflow is changed")
     workflow_changes = [p for p in changed if p.startswith(".github/workflows/")]
-    assert workflow_changes == [".github/workflows/changelog-enforcement.yml"], (
+    assert workflow_changes == [workflow_path], (
         f"E-1-3 must add exactly one workflow; got: {workflow_changes}"
     )
 
