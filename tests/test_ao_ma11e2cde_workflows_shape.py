@@ -17,9 +17,13 @@ import json
 import re
 import subprocess
 from pathlib import Path
+from typing import Any, TypeAlias, cast
 
 import pytest
 from jsonschema import Draft202012Validator
+
+JsonObject: TypeAlias = dict[str, Any]
+YamlObject: TypeAlias = dict[object, Any]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
@@ -44,29 +48,14 @@ GUARD_FLAG_KEYS = (
 )
 
 
-def _load_yaml(path: Path) -> dict:
+def _load_yaml(path: Path) -> YamlObject:
     yaml = pytest.importorskip("yaml")
     text = path.read_text(encoding="utf-8")
-    return yaml.safe_load(text)
+    return cast(YamlObject, yaml.safe_load(text))
 
 
 def _read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
-
-
-def _read_executable_text(path: Path) -> str:
-    """Return the workflow source with comment-only lines stripped.
-
-    Forbidden-pattern checks (``pull_request_target``, ``git push origin
-    main``, ``--admin``) must apply to the *executable* surface of the
-    workflow, NOT to documentation comments that explain what the workflow
-    does or does NOT do. A line is treated as a "comment-only" line if its
-    first non-whitespace character is ``#``.
-    """
-    return (
-        "\n".join(line for line in path.read_text(encoding="utf-8").splitlines() if not line.lstrip().startswith("#"))
-        + "\n"
-    )
 
 
 def _read_executable_text(path: Path) -> str:
@@ -89,32 +78,32 @@ def _read_executable_text(path: Path) -> str:
     return "\n".join(out_lines) + "\n"
 
 
-def _yaml_top_on(doc: dict) -> dict:
+def _yaml_top_on(doc: YamlObject) -> JsonObject:
     """PyYAML maps the GHA ``on`` key to Python ``True`` because YAML 1.1
     interprets the bareword ``on`` as a boolean. Normalise so tests can write
     ``doc_on["push"]`` regardless of dialect.
     """
     if True in doc:
-        return doc[True]
+        return cast(JsonObject, doc[True])
     if "on" in doc:
-        return doc["on"]
+        return cast(JsonObject, doc["on"])
     raise AssertionError("workflow missing top-level 'on' trigger block")
 
 
-def test_01_shape_workflow_files_exist():
+def test_01_shape_workflow_files_exist() -> None:
     """All 3 workflow yml files exist on disk."""
     missing = [p for p in ALL_WORKFLOW_PATHS if not p.is_file()]
     assert not missing, f"missing workflow files: {missing}"
 
 
-def test_02_shape_valid_yaml():
+def test_02_shape_valid_yaml() -> None:
     """Each workflow parses as valid YAML and is a top-level mapping."""
     for path in ALL_WORKFLOW_PATHS:
         doc = _load_yaml(path)
         assert isinstance(doc, dict), f"{path.name} is not a YAML mapping"
 
 
-def test_03_shape_required_keys():
+def test_03_shape_required_keys() -> None:
     """Each workflow has ``name``, ``on``, ``permissions``, ``jobs``."""
     for path in ALL_WORKFLOW_PATHS:
         doc = _load_yaml(path)
@@ -124,7 +113,7 @@ def test_03_shape_required_keys():
         assert "jobs" in doc and isinstance(doc["jobs"], dict), f"{path.name} missing 'jobs' mapping"
 
 
-def test_04_2c_triggers_correct():
+def test_04_2c_triggers_correct() -> None:
     """11e-2c has push:main + schedule + workflow_dispatch triggers."""
     doc = _load_yaml(WF_2C)
     on = _yaml_top_on(doc)
@@ -142,7 +131,7 @@ def test_04_2c_triggers_correct():
     assert "heal_mode" in dispatch["inputs"], "11e-2c workflow_dispatch missing heal_mode input"
 
 
-def test_05_2d_uses_pull_request_NOT_target():
+def test_05_2d_uses_pull_request_NOT_target() -> None:
     """11e-2d MUST use pull_request (no _target) for security."""
     doc = _load_yaml(WF_2D)
     on = _yaml_top_on(doc)
@@ -166,7 +155,7 @@ def test_05_2d_uses_pull_request_NOT_target():
     )
 
 
-def test_06_2e_dispatch_only():
+def test_06_2e_dispatch_only() -> None:
     """11e-2e MUST be workflow_dispatch ONLY (no push/PR/schedule)."""
     doc = _load_yaml(WF_2E)
     on = _yaml_top_on(doc)
@@ -179,7 +168,7 @@ def test_06_2e_dispatch_only():
         assert forbidden not in text, f"11e-2e executable surface contains forbidden trigger keyword '{forbidden}'"
 
 
-def test_07_2e_confirmation_required():
+def test_07_2e_confirmation_required() -> None:
     """11e-2e confirmation input must be declared with required: true."""
     doc = _load_yaml(WF_2E)
     on = _yaml_top_on(doc)
@@ -193,7 +182,7 @@ def test_07_2e_confirmation_required():
     assert "LABEL-CLEANUP-CONFIRM" in text, "11e-2e source must contain literal confirmation phrase"
 
 
-def test_08_2c_no_direct_push_to_main():
+def test_08_2c_no_direct_push_to_main() -> None:
     """11e-2c must NOT contain direct git push to main in the executable surface."""
     text = _read_executable_text(WF_2C)
     forbidden_patterns = [
@@ -207,14 +196,14 @@ def test_08_2c_no_direct_push_to_main():
         )
 
 
-def test_09_all_no_admin():
+def test_09_all_no_admin() -> None:
     """No --admin flag in any workflow executable surface."""
     for path in ALL_WORKFLOW_PATHS:
         text = _read_executable_text(path)
         assert "--admin" not in text, f"{path.name} executable surface contains forbidden --admin flag"
 
 
-def test_10_all_no_admin_via_workflow_id():
+def test_10_all_no_admin_via_workflow_id() -> None:
     """No permission grants `actions: write` (workflow ID write surface)."""
     for path in ALL_WORKFLOW_PATHS:
         doc = _load_yaml(path)
@@ -229,7 +218,7 @@ def test_10_all_no_admin_via_workflow_id():
                 assert actions_val != "write", f"{path.name}::{job_name} has actions: write"
 
 
-def test_11_permissions_minimal_per_workflow():
+def test_11_permissions_minimal_per_workflow() -> None:
     """Each workflow grants exactly the permissions documented in the plan."""
     expected = {
         WF_2C: {
@@ -255,7 +244,7 @@ def test_11_permissions_minimal_per_workflow():
         assert got == want, f"{path.name} permissions mismatch.\n  expected: {want}\n  got: {got}"
 
 
-def test_12_2c_2d_use_ao_kernel_cli():
+def test_12_2c_2d_use_ao_kernel_cli() -> None:
     """11e-2c and 11e-2d bodies contain ao-kernel project CLI calls."""
     text_2c = _read_text(WF_2C)
     text_2d = _read_text(WF_2D)
@@ -264,13 +253,13 @@ def test_12_2c_2d_use_ao_kernel_cli():
     assert "ao-kernel project from-pr" in text_2d, "11e-2d missing `ao-kernel project from-pr` invocation"
 
 
-def test_13_2e_uses_label_cleanup_subcommand():
+def test_13_2e_uses_label_cleanup_subcommand() -> None:
     """11e-2e body contains `ao-kernel project label-cleanup` invocation."""
     text = _read_text(WF_2E)
     assert "ao-kernel project label-cleanup" in text, "11e-2e missing `ao-kernel project label-cleanup` invocation"
 
 
-def test_14_no_existing_workflow_mutation():
+def test_14_no_existing_workflow_mutation() -> None:
     """git diff --name-only origin/main..HEAD shows only NEW workflow files."""
     try:
         result = subprocess.run(
@@ -301,7 +290,7 @@ def test_14_no_existing_workflow_mutation():
     assert not unexpected, f"branch mutates existing workflows beyond write-set: {unexpected}"
 
 
-def test_15_no_guard_flag_keys_in_workflow_output():
+def test_15_no_guard_flag_keys_in_workflow_output() -> None:
     """Workflow YAML must not set any of the 3 guard flags to true."""
     for path in ALL_WORKFLOW_PATHS:
         text = _read_text(path)
@@ -316,7 +305,7 @@ def test_15_no_guard_flag_keys_in_workflow_output():
             )
 
 
-def test_16_evidence_validates():
+def test_16_evidence_validates() -> None:
     """Plan evidence JSON validates against its Draft 2020-12 schema."""
     assert EVIDENCE_PLAN_JSON.is_file(), f"missing plan evidence: {EVIDENCE_PLAN_JSON}"
     assert EVIDENCE_SCHEMA_JSON.is_file(), f"missing evidence schema: {EVIDENCE_SCHEMA_JSON}"
@@ -330,7 +319,7 @@ def test_16_evidence_validates():
     )
 
 
-def test_17_high_risk_evidence_pair_exists():
+def test_17_high_risk_evidence_pair_exists() -> None:
     """3 distinct provider review evidence files exist under high-risk dir."""
     required = {
         "openai.local-ai-review-evidence.v1.json",
@@ -344,7 +333,7 @@ def test_17_high_risk_evidence_pair_exists():
     assert not missing, f"missing high-risk evidence files: {missing}"
 
 
-def test_18_3way_cross_ai_provider_distinct():
+def test_18_3way_cross_ai_provider_distinct() -> None:
     """The 3 provider evidence files declare distinct providers."""
     providers_seen = set()
     for name in (
