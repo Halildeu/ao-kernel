@@ -20,6 +20,7 @@
       ".github/ISSUE_TEMPLATE/governance-bug.yml",
       ".github/ISSUE_TEMPLATE/v5-gate.yml",
       ".github/ISSUE_TEMPLATE/v5-slice.yml",
+      "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/AO-MA-822-issue-forms-minimal/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/AO-MA-822-issue-forms-minimal/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
@@ -76,7 +77,7 @@
     "The tests assert blank issues are disabled, canonical roadmap/HARD RULE links are present, and the V5 evidence class set is complete.",
     "The zero-touch contract is preserved: no workflows, CODEOWNERS, ruleset, PR template, branch-protection, live adapter, or runtime files are changed.",
     "AI review output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset.",
-    "scope_reviewed.changed_files is rebound to the current 11-file PR diff after rebase onto origin/main."
+    "scope_reviewed.changed_files is rebound to the current 12-file PR diff after rebase onto origin/main."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
