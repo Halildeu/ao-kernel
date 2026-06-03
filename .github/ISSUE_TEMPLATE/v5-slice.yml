@@ -1,0 +1,103 @@
+name: V5 Slice
+description: Track a V5 roadmap slice (epic.sub-id) with mandatory SPM anchor + authority artifact + plan digest + computed risk class.
+title: "[V5-SLICE] <epic>.<sub-id>: <one-line title>"
+labels: ["v5", "slice"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **Visibility, NOT authority.** This issue mirrors a slice in
+        > `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`. Repo
+        > artifacts remain the SSOT. The three guard flags
+        > (`support_widening`, `production_platform_claim`,
+        > `live_adapter_execution`) remain `const false`. Promotion
+        > authority lives in the final operator-bound supersession PR.
+        >
+        > **Risk class is COMPUTED**, not operator-set. The
+        > `risk_class_source` field below must reference the source
+        > artifact + line range; manual downgrade is forbidden.
+  - type: input
+    id: spm_anchor
+    attributes:
+      label: spm_anchor
+      description: Pointer into the V5 roadmap (file:line or section heading anchor).
+      placeholder: ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md#epic-N"
+    validations:
+      required: true
+  - type: input
+    id: ao_authority_artifact
+    attributes:
+      label: ao_authority_artifact
+      description: Path to the canonical authority artifact (plan doc / ADR / schema) that binds this slice.
+      placeholder: ".claude/plans/EPIC-N-..."
+    validations:
+      required: true
+  - type: input
+    id: artifact_sha256
+    attributes:
+      label: artifact_sha256
+      description: SHA256 of ao_authority_artifact at the time of issue creation.
+      placeholder: "sha256:..."
+    validations:
+      required: true
+  - type: input
+    id: plan_digest
+    attributes:
+      label: plan_digest
+      description: Plan digest (hash of plan sections that this slice binds to).
+      placeholder: "plan-digest:..."
+    validations:
+      required: true
+  - type: input
+    id: slice_id
+    attributes:
+      label: slice_id
+      description: Stable slice identifier (Epic.Sub-Id form).
+      placeholder: "E-N-M"
+    validations:
+      required: true
+  - type: input
+    id: risk_class_source
+    attributes:
+      label: risk_class_source (COMPUTED)
+      description: Pointer to the source artifact + line range that determines the risk class. NOT operator-set; classifier output is authoritative.
+      placeholder: ".claude/plans/...#risk-classifier-line-N"
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence_classes
+    attributes:
+      label: evidence_classes (multi-select)
+      description: Required evidence classes per the V5 roadmap §2 invariant matrix.
+      multiple: true
+      options:
+        - public_support_matrix
+        - real_provider_live_calls
+        - cost_rate_circuit_breaker_evidence
+        - observability_prod_tunables
+        - security_sbom_license_scan
+        - install_deploy_lifecycle_smoke
+        - multi_tenancy_isolation
+        - docs_runbooks
+        - ao_release_gate_clean_trail
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: One-paragraph scope statement (what this slice does + does NOT do).
+    validations:
+      required: true
+  - type: checkboxes
+    id: guard_flags_const_false
+    attributes:
+      label: Guard flag posture
+      description: Confirm none of the three V5 guard flags flip in this slice.
+      options:
+        - label: "support_widening remains const false"
+          required: true
+        - label: "production_platform_claim remains const false"
+          required: true
+        - label: "live_adapter_execution remains const false"
+          required: true
