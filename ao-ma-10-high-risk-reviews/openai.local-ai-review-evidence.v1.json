@@ -1,28 +1,26 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-909-pre-commit-changelog-hook",
+  "work_package": "AO-MA-823-changelog-enforcement-workflow",
   "implementer": {
     "agent": "claude-opus-4-7-1m",
     "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "codex-mcp-thread",
+    "agent": "codex-mcp-thread-019e8c9d",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-1-4-pre-commit-minimal",
+    "head_ref": "refs/heads/codex/epic-1-3-changelog-ci",
     "changed_files": [
-      ".claude/plans/EPIC-1-4-PRE-COMMIT-CHANGELOG-HOOK.md",
-      ".claude/scripts/pre-commit-changelog-gate.sh",
-      "ao-ma-10-high-risk-reviews/AO-MA-818-pre-commit-changelog-hook-minimal/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-818-pre-commit-changelog-hook-minimal/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/EPIC-1-3-CHANGELOG-ENFORCEMENT-CI.md",
+      ".github/workflows/changelog-enforcement.yml",
+      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_pre_commit_changelog_gate.py"
+      "tests/test_changelog_enforcement_workflow_shape.py"
     ]
   },
   "checks_considered": [
@@ -35,15 +33,35 @@
       "status": "pass"
     },
     {
-      "name": "pre_commit_hook_delegates_to_changelog_policy",
+      "name": "yaml_valid",
       "status": "pass"
     },
     {
-      "name": "local_only_operator_installed_hook",
+      "name": "root_cause_correctly_identified",
       "status": "pass"
     },
     {
-      "name": "no_github_workflow_mutation",
+      "name": "fix_chosen_is_canonical_for_shallow_clone_problem",
+      "status": "pass"
+    },
+    {
+      "name": "fetch_depth_zero_vs_50_decision_justified",
+      "status": "pass"
+    },
+    {
+      "name": "coverage_job_correctly_unmodified",
+      "status": "pass"
+    },
+    {
+      "name": "ao_release_gate_job_correctly_unmodified",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_remain_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "no_governance_file_touch",
       "status": "pass"
     },
     {
@@ -55,25 +73,20 @@
       "status": "pass"
     },
     {
-      "name": "no_runtime_support_widening",
+      "name": "no_runtime_python_module_change",
       "status": "pass"
     },
     {
-      "name": "guard_flags_remain_false",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_review_evidence_present",
+      "name": "cross_provider_review",
       "status": "pass"
     }
   ],
   "findings": [
-    "PR #909 implements the V5 Epic 1 E-1-4 local pre-commit changelog gate as an operator-installed local hook, not as release authority. The hook blocks user-visible code commits without CHANGELOG.md unless the commit prefix is explicitly non-user-visible.",
-    "The hook delegates policy intent to the existing ADR-0005 Keep-a-Changelog discipline and mirrors the future E-1-3 CI enforcement lane without mutating .github/workflows/.",
-    "The tested decision contract covers no-code pass, code+CHANGELOG pass, feat/fix-style code-without-CHANGELOG block, and non-user-visible prefixes such as chore/docs/test/ci/style/refactor/build/perf pass.",
-    "The final PR diff is intentionally limited to the E-1-4 plan document, local hook script, pre-commit hook tests, current top-level review evidence, and nested AO-MA-818 reopening review artifacts. Historical AO-MA-10h and AO-MA-CI-FIX evidence rewrites were restored to origin/main.",
-    "Guard-controlled surfaces are not widened: support_widening=false, production_platform_claim=false, live_adapter_execution=false; no CODEOWNERS, ruleset, branch-protection, live adapter, or ao_kernel runtime surface is changed.",
-    "OpenAI review signal is represented as cross-provider review evidence for the E-1-4 local hook scope; AI output remains evidence only, while ao-release-gate plus GitHub ruleset remains release authority."
+    "Codex MCP cross-provider AGREE on core CI fix (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d). Root cause correctly identified: actions/checkout@v6 default fetch-depth:1 \u2192 shallow clone \u2192 merge-base origin/main HEAD cannot resolve \u2192 _resolve_pr_diff_base() returns None \u2192 fail-closed in CI PR context with `pytest.fail('no PR diff base resolved')`. git diff origin/main...HEAD callers exit 128.",
+    "fetch-depth:0 is the correct choice over fetch-depth:50. fetch-depth:50 is cheaper but is not guaranteed on long-lived, stacked, or main-distant branches. This PR resolves a sistemik CI blocker affecting every open PR, so deterministic solution outweighs the small bandwidth cost. Aligns with HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm \u2014 6 ay sonra h\u00e2l\u00e2 machine-enforced.",
+    "No need to add fetch-depth on coverage job. The coverage job does not re-run the test suite; it downloads the 3.13 test leg's coverage artifact and runs `coverage report --fail-under=85`. Diff-base tests run in the `test` matrix, which now has fetch-depth:0. Scope minimal.",
+    "Guard-controlled runtime surfaces unmodified: .github/CODEOWNERS, ruleset definitions, ao_kernel/, ao_release_gate scripts, gpp_status \u2014 none in diff. Three guard flags const false across all evidence JSONs in this PR (support_widening, production_platform_claim, live_adapter_execution).",
+    "Codex's only revise points were about evidence path/PR-body scope description, not the fix itself. After this iteration: (a) top-level evidence updated to AO-MA-CI-FIX-fetch-depth-shallow-clone work_package with correct schema, (b) reviewer.verdict=AGREE with real Codex thread ID, (c) PR body scope corrected to reflect 4 files + 2 nested evidence files actually changed."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

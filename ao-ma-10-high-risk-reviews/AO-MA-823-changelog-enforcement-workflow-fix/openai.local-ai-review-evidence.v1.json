@@ -2,19 +2,42 @@
   "schema_version": "local-ai-review-evidence.v1",
   "artifact_kind": "local-ai-review-evidence",
   "review_target": "AO-MA-823-changelog-enforcement-workflow-fix",
-  "review_target_paths": [".github/workflows/changelog-enforcement.yml", "tests/test_changelog_enforcement_workflow_shape.py"],
+  "review_target_paths": [
+    ".github/workflows/changelog-enforcement.yml",
+    "tests/test_changelog_enforcement_workflow_shape.py"
+  ],
   "provider": "openai",
   "reviewer": "codex",
   "review_method": "Codex thread 019e877e iter-1 REVISE absorb. Workflow originally bound to outdated CLI args (--base, --labels-json). Anti-drift principle: ADR-0005 enforcement SSOT is the CLI; workflow must follow CLI signature changes.",
   "verdict": "agree",
   "ready_to_merge": true,
   "verdict_rationale": "Workflow rewrite aligns to current CLI signature (--base-changelog, --head-changelog, --out, --diff-path, --chore-no-changelog, --chore-rationale). Label routing preserved via PR_LABELS_JSON env (CLI does not accept --labels-json flag). 18 invariants pass (was 15 fail prior to fix). YAML valid.",
-  "findings_count_by_severity": {"blocker": 0, "high": 0, "medium": 0, "low": 0},
+  "findings_count_by_severity": {
+    "blocker": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
   "key_findings_summary": [
     "CLI signature evolution gracefully absorbed",
     "Test assertion updated to match new args (no fake green)",
     "Label routing preserved via env (not flag)"
   ],
   "consensus_state": "agree_with_anthropic_cross_review",
-  "guard_flags_const_false": {"support_widening": false, "production_platform_claim": false, "live_adapter_execution": false}
+  "guard_flags_const_false": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "work_package": "AO-MA-823-changelog-enforcement-workflow",
+  "checks_considered": [
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    }
+  ]
 }

@@ -2,14 +2,22 @@
   "schema_version": "local-ai-review-evidence.v1",
   "artifact_kind": "local-ai-review-evidence",
   "review_target": "AO-MA-823-changelog-enforcement-workflow-fix",
-  "review_target_paths": [".github/workflows/changelog-enforcement.yml", "tests/test_changelog_enforcement_workflow_shape.py"],
+  "review_target_paths": [
+    ".github/workflows/changelog-enforcement.yml",
+    "tests/test_changelog_enforcement_workflow_shape.py"
+  ],
   "provider": "anthropic",
   "reviewer": "claude-opus-4.7-1m",
   "review_method": "Adversarial post-impl review. Read CLI --help live; confirmed --base-changelog/--head-changelog/--out required, --diff-path repeatable. Read workflow before+after; ran local pytest tests/test_changelog_enforcement_workflow_shape.py (18 pass / 1 skip / 0 fail).",
   "verdict": "agree",
   "ready_to_merge": true,
   "verdict_rationale": "Workflow correctly invokes CLI: (1) dumps base CHANGELOG.md via git show, (2) parses PR_LABELS_JSON inline for chore-no-changelog detection, (3) builds --diff-path args from git diff. Test updated honestly (not faked green) to assert current CLI surface. ZERO TOUCH ao_kernel/ CLI implementation; only workflow YAML + shape test changed.",
-  "findings_count_by_severity": {"blocker": 0, "high": 0, "medium": 0, "low": 0},
+  "findings_count_by_severity": {
+    "blocker": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
   "key_findings_summary": [
     "18 pass / 1 skip / 0 fail (full workflow shape suite)",
     "CLI args match --help signature verified",
@@ -18,5 +26,20 @@
     "3 guard flags const false intact"
   ],
   "consensus_state": "agree_with_openai_cross_review",
-  "guard_flags_const_false": {"support_widening": false, "production_platform_claim": false, "live_adapter_execution": false}
+  "guard_flags_const_false": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "work_package": "AO-MA-823-changelog-enforcement-workflow",
+  "checks_considered": [
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    }
+  ]
 }
