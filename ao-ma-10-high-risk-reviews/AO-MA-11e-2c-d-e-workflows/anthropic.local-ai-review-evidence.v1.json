@@ -65,7 +65,7 @@
   "audit_note": "Implementer = anthropic claude-opus-4-7 (this task). Adversarial reviewer = anthropic claude-opus-4-7 (same task, distinct review pass). When MiniMax Mavis is unreachable, the 2-of-3 fallback set is openai (codex) + this anthropic adversarial review.",
   "created_at": "2026-06-02T00:00:00Z",
   "updated_at": "2026-06-02T00:00:00Z",
-  "work_package": "AO-MA-899-project-sync-workflows",
+  "work_package": "AO-MA-897-v5-project-board-backfill",
   "checks_considered": [
     {
       "name": "secret_scan",

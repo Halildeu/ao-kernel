@@ -32,7 +32,7 @@
   "audit_note": "Per HARD RULE Mavis CLI (2026-05-29): mavis communication peers + send is the canonical lokal IPC channel. Environment limitation: mavis binary not installed. Per HARD RULE Tam Otonom \u00d6nerme: agent organizes fallback path autonomously \u2014 does NOT yield merge gate to operator.",
   "created_at": "2026-06-02T00:00:00Z",
   "updated_at": "2026-06-02T00:00:00Z",
-  "work_package": "AO-MA-899-project-sync-workflows",
+  "work_package": "AO-MA-897-v5-project-board-backfill",
   "checks_considered": [
     {
       "name": "secret_scan",
