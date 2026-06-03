@@ -1,0 +1,141 @@
+name: Changelog Enforcement
+
+# V5 Epic 1 E-1-3 — CI enforcement of ADR-0005 Keep-a-Changelog
+# discipline by invoking the canonical `ao-kernel quality
+# check-changelog` CLI (the authoritative SSOT validator). The CLI
+# itself enforces:
+#   - `[Unreleased]` section must carry a new bullet for the PR, OR
+#   - PR must carry the `chore-no-changelog` label + >=10-char rationale.
+#
+# This workflow is the CI counterpart of the local
+# `pre-commit-changelog-gate.sh` (E-1-4, PR #818) ergonomic helper —
+# the local hook is a UX shortcut for developers; this CI gate is the
+# authoritative enforcement bound to the SSOT validator.
+#
+# Codex iter-1 REVISE absorb (thread `019e877e`):
+#   F1: bind to ao-kernel CLI so the ADR-0005 contract is not
+#       duplicated/drifted in YAML
+#   F2: required-check ruleset wiring is a follow-up operator-bound
+#       slice; this workflow is CI enforcement only
+#   F3: explicit base+head SHA fetch so fork-PR diffs are reproducible
+#   F4: workflow is the only .github/workflows addition; tests,
+#       changelog entry, and review evidence are supporting artifacts
+#       outside governance edge mutation
+#   F5: scripts use printf (not echo) for portable variable expansion
+#
+# Boundaries:
+#   - Read-only token: contents:read, pull-requests:read
+#   - No secrets, no admin merge, no branch protection mutation
+#   - No live provider call; no guard flag flip
+#   - Fork PRs run with fork token (uses pull_request event only)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: changelog-enforcement-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  enforce-changelog:
+    name: Enforce CHANGELOG via ao-kernel CLI (ADR-0005)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch base ref for diff
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -e
+          printf 'Fetching base ref: %s\n' "$BASE_REF"
+          git fetch origin "$BASE_REF" --quiet
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install ao-kernel (core only)
+        run: |
+          set -e
+          python -m pip install --upgrade pip
+          # Editable install of the PR head; core extras are sufficient
+          # for the quality CLI surface.
+          python -m pip install -e .
+
+      - name: Run ao-kernel quality check-changelog
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -e
+          # CLI signature (V5 Epic 1 E-1-3 binding to ao-kernel CLI SSOT):
+          #   --base-changelog <committed base CHANGELOG.md>
+          #   --head-changelog <PR head CHANGELOG.md>
+          #   --out <verdict artifact path>
+          #   --diff-path <repeated for each changed file>
+          #   [--chore-no-changelog --chore-rationale "..."]
+
+          # 1. Dump base CHANGELOG.md from origin/$BASE_REF
+          git show "origin/${BASE_REF}:CHANGELOG.md" > base-changelog.md
+
+          # 2. Detect chore-no-changelog label
+          CHORE_FLAG=""
+          CHORE_RATIONALE_TEXT=""
+          HAS_CHORE_LABEL=$(printf '%s' "$PR_LABELS_JSON" | python3 -c "
+          import json, sys
+          try:
+              labels = json.load(sys.stdin)
+              print('yes' if any(l.get('name') == 'chore-no-changelog' for l in labels) else 'no')
+          except Exception:
+              print('no')
+          ")
+          if [ "$HAS_CHORE_LABEL" = "yes" ]; then
+            CHORE_FLAG="--chore-no-changelog"
+            CHORE_RATIONALE_TEXT="${PR_BODY:0:200}"
+            if [ "${#CHORE_RATIONALE_TEXT}" -lt 10 ]; then
+              CHORE_RATIONALE_TEXT="chore: no changelog entry required for this PR"
+            fi
+          fi
+
+          # 3. Compute diff paths (changed files between base and head)
+          DIFF_ARGS=""
+          while IFS= read -r path; do
+            [ -n "$path" ] && DIFF_ARGS="$DIFF_ARGS --diff-path $path"
+          done < <(git diff --name-only "origin/${BASE_REF}...HEAD")
+
+          # 4. Run CLI
+          if [ -n "$CHORE_FLAG" ]; then
+            ao-kernel quality check-changelog \
+              --base-changelog base-changelog.md \
+              --head-changelog CHANGELOG.md \
+              --out changelog-verdict.json \
+              $DIFF_ARGS \
+              $CHORE_FLAG \
+              --chore-rationale "$CHORE_RATIONALE_TEXT"
+          else
+            ao-kernel quality check-changelog \
+              --base-changelog base-changelog.md \
+              --head-changelog CHANGELOG.md \
+              --out changelog-verdict.json \
+              $DIFF_ARGS
+          fi || {
+            printf '%s\n' "::error::CHANGELOG.md enforcement failed per ADR-0005."
+            printf '%s\n' "::error::Either (a) add a new bullet under ## [Unreleased] and commit, or"
+            printf '%s\n' "::error::(b) add the 'chore-no-changelog' label to this PR and provide >=10-char rationale in the PR body."
+            exit 1
+          }

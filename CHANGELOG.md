@@ -7,6 +7,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **V5 changelog enforcement CI**: added a read-only pull-request
+  workflow that delegates ADR-0005 changelog discipline to the
+  canonical `ao-kernel quality check-changelog` CLI instead of
+  duplicating decision logic in workflow YAML.
+
 ### Fixed
 
 - **CI sistemik bug**: `.github/workflows/test.yml` test job now uses

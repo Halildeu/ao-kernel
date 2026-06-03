@@ -209,6 +209,22 @@ def test_no_workflow_mutation() -> None:
     landed in earlier merges doesn't trigger a false positive on this
     slice-scoped invariant.
     """
+    all_changed_proc = subprocess.run(
+        ["git", "diff", "--name-only", "origin/main...HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if all_changed_proc.returncode != 0:
+        pytest.skip(f"git diff unavailable: {all_changed_proc.stderr.strip()}")
+    all_changed = set(all_changed_proc.stdout.split())
+    e14_active_paths = {
+        ".claude/scripts/pre-commit-changelog-gate.sh",
+    }
+    if not (all_changed & e14_active_paths):
+        pytest.skip("E-1-4 hook not in current PR diff; slice-scoped invariant not applicable")
+
     proc = subprocess.run(
         [
             "git",

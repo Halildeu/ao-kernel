@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-909-pre-commit-changelog-hook",
+  "work_package": "AO-MA-823-changelog-enforcement-workflow",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,15 +13,17 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-1-4-pre-commit-minimal",
+    "head_ref": "refs/heads/codex/epic-1-3-changelog-ci",
     "changed_files": [
-      ".claude/plans/EPIC-1-4-PRE-COMMIT-CHANGELOG-HOOK.md",
-      ".claude/scripts/pre-commit-changelog-gate.sh",
-      "ao-ma-10-high-risk-reviews/AO-MA-818-pre-commit-changelog-hook-minimal/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-818-pre-commit-changelog-hook-minimal/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/EPIC-1-3-CHANGELOG-ENFORCEMENT-CI.md",
+      ".github/workflows/changelog-enforcement.yml",
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
+      "tests/test_changelog_enforcement_workflow_shape.py",
       "tests/test_pre_commit_changelog_gate.py"
     ]
   },
@@ -35,15 +37,31 @@
       "status": "pass"
     },
     {
-      "name": "pre_commit_hook_delegates_to_changelog_policy",
+      "name": "yaml_valid",
       "status": "pass"
     },
     {
-      "name": "local_only_operator_installed_hook",
+      "name": "changelog_unreleased_entry_added",
       "status": "pass"
     },
     {
-      "name": "no_github_workflow_mutation",
+      "name": "workflow_delegates_to_ao_kernel_cli",
+      "status": "pass"
+    },
+    {
+      "name": "current_cli_signature_used",
+      "status": "pass"
+    },
+    {
+      "name": "pull_request_not_pull_request_target",
+      "status": "pass"
+    },
+    {
+      "name": "read_only_token_permissions",
+      "status": "pass"
+    },
+    {
+      "name": "no_secret_or_admin_surface",
       "status": "pass"
     },
     {
@@ -55,25 +73,29 @@
       "status": "pass"
     },
     {
-      "name": "no_runtime_support_widening",
+      "name": "no_branch_protection_mutation",
       "status": "pass"
     },
     {
-      "name": "guard_flags_remain_false",
+      "name": "guard_flags_remain_const_false",
       "status": "pass"
     },
     {
-      "name": "cross_provider_review_evidence_present",
+      "name": "cross_provider_review",
+      "status": "pass"
+    },
+    {
+      "name": "e14_slice_scoped_workflow_invariant",
       "status": "pass"
     }
   ],
   "findings": [
-    "PR #909 implements the V5 Epic 1 E-1-4 local pre-commit changelog gate as an operator-installed local hook, not as release authority. The hook blocks user-visible code commits without CHANGELOG.md unless the commit prefix is explicitly non-user-visible.",
-    "The hook delegates policy intent to the existing ADR-0005 Keep-a-Changelog discipline and mirrors the future E-1-3 CI enforcement lane without mutating .github/workflows/.",
-    "The tested decision contract covers no-code pass, code+CHANGELOG pass, feat/fix-style code-without-CHANGELOG block, and non-user-visible prefixes such as chore/docs/test/ci/style/refactor/build/perf pass.",
-    "The final PR diff is intentionally limited to the E-1-4 plan document, local hook script, pre-commit hook tests, current top-level review evidence, and nested AO-MA-818 reopening review artifacts. Historical AO-MA-10h and AO-MA-CI-FIX evidence rewrites were restored to origin/main.",
-    "Guard-controlled surfaces are not widened: support_widening=false, production_platform_claim=false, live_adapter_execution=false; no CODEOWNERS, ruleset, branch-protection, live adapter, or ao_kernel runtime surface is changed.",
-    "Root local evidence summarizes the accepted E-1-4 scope after rebase onto origin/main and binds scope_reviewed.changed_files to the current PR diff."
+    "E-1-3 adds a read-only pull_request CI workflow for ADR-0005 changelog enforcement and delegates the decision to `ao-kernel quality check-changelog`, preserving the CLI as SSOT.",
+    "The workflow uses the current CLI contract and computes changed paths from `origin/<base>...HEAD`; PR labels are parsed only to allow the documented `chore-no-changelog` recovery path.",
+    "A real `CHANGELOG.md` `[Unreleased]` entry was added for this PR, proving the new gate can pass without label-based bypass on its introducer PR.",
+    "High-risk governance boundaries remain closed: no CODEOWNERS, ruleset, branch protection, secret, admin, support widening, production claim, or live adapter execution change.",
+    "Top-level OpenAI and Anthropic review evidence is rebound to the exact current PR diff so `ao-release-gate` can verify source-pinned high-risk review evidence.",
+    "E-1-4 pre-commit hook invariant was narrowed to its own hook write-set: workflow mutations now fail only when the E-1-4 hook slice is active, while E-1-3 workflow PRs are governed by their own changelog-enforcement workflow shape tests."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
