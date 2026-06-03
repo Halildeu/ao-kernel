@@ -25,15 +25,41 @@
     ]
   },
   "checks_considered": [
-    { "name": "yaml_valid", "status": "pass" },
-    { "name": "fetch_depth_set_to_zero_on_test_job", "status": "pass" },
-    { "name": "coverage_job_not_modified", "status": "pass" },
-    { "name": "no_governance_file_touch", "status": "pass" },
-    { "name": "no_guard_flip", "status": "pass" },
-    { "name": "adversarial-self-review", "status": "pass" }
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "yaml_valid",
+      "status": "pass"
+    },
+    {
+      "name": "fetch_depth_set_to_zero_on_test_job",
+      "status": "pass"
+    },
+    {
+      "name": "coverage_job_not_modified",
+      "status": "pass"
+    },
+    {
+      "name": "no_governance_file_touch",
+      "status": "pass"
+    },
+    {
+      "name": "no_guard_flip",
+      "status": "pass"
+    },
+    {
+      "name": "adversarial-self-review",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "Per-work-package Anthropic adversarial review AGREE on the CI fetch-depth fix. Root cause (shallow clone) correctly identified; fix (fetch-depth:0 on test job only) is minimal and complete; coverage + other jobs correctly unmodified; HARD RULE Uzun Vadeli Kalıcı Çözüm + Governance/Sistemik Bug + No Fake Work satisfied.",
+    "Per-work-package Anthropic adversarial review AGREE on the CI fetch-depth fix. Root cause (shallow clone) correctly identified; fix (fetch-depth:0 on test job only) is minimal and complete; coverage + other jobs correctly unmodified; HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm + Governance/Sistemik Bug + No Fake Work satisfied.",
     "Anthropic-side review counts as SECONDARY adversarial signal (same provider as implementer). Cross-provider distinctness comes from OpenAI Codex MCP thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d AGREE verdict per HARD RULE Cross-AI Peer Review (2026-05-14)."
   ],
   "secrets_recorded": false,

@@ -2,8 +2,15 @@
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
   "work_package": "AO-MA-CI-FIX-fetch-depth-shallow-clone",
-  "implementer": { "agent": "claude", "provider": "anthropic" },
-  "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ci-fix-fetch-depth-shallow-clone",
@@ -18,25 +25,66 @@
     ]
   },
   "checks_considered": [
-    { "name": "yaml_valid", "status": "pass" },
-    { "name": "fetch_depth_set_to_zero_on_test_job", "status": "pass" },
-    { "name": "no_branch_protection_mutation", "status": "pass" },
-    { "name": "no_ruleset_mutation", "status": "pass" },
-    { "name": "no_codeowners_mutation", "status": "pass" },
-    { "name": "no_guard_flip", "status": "pass" },
-    { "name": "ao_release_gate_allowlist_preserved", "status": "pass" },
-    { "name": "required_check_names_preserved", "status": "pass" },
-    { "name": "matrix_preserved", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "changelog_unreleased_entry_added", "status": "pass" }
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "yaml_valid",
+      "status": "pass"
+    },
+    {
+      "name": "fetch_depth_set_to_zero_on_test_job",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_ruleset_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_codeowners_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_guard_flip",
+      "status": "pass"
+    },
+    {
+      "name": "ao_release_gate_allowlist_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "required_check_names_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "matrix_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_unreleased_entry_added",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "Sistemik CI bug fix: actions/checkout@v6 default fetch-depth=1 → shallow clone → `_resolve_pr_diff_base()` returns None + `git diff origin/main...HEAD` exits 128 across every open PR. Affected tests: test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners, test_epic_4_1_*_diff*, test_epic_4_2a_*_diff*, test_pci_dss_mapping::test_allowlist_diff_no_other_files (task #64 each-PR fail).",
-    "Fix: `.github/workflows/test.yml` test job's actions/checkout@v6 gets `with: fetch-depth: 0` + 6-line inline comment citing affected tests + HARD RULE Uzun Vadeli Kalıcı Çözüm. Single-purpose root-cause fix. Coverage job unmodified (downloads artifact, does not re-run suite). Other jobs (lint/typecheck/packaging-smoke/etc.) do not call diff-base resolution and remain on default fetch-depth=1.",
+    "Sistemik CI bug fix: actions/checkout@v6 default fetch-depth=1 \u2192 shallow clone \u2192 `_resolve_pr_diff_base()` returns None + `git diff origin/main...HEAD` exits 128 across every open PR. Affected tests: test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners, test_epic_4_1_*_diff*, test_epic_4_2a_*_diff*, test_pci_dss_mapping::test_allowlist_diff_no_other_files (task #64 each-PR fail).",
+    "Fix: `.github/workflows/test.yml` test job's actions/checkout@v6 gets `with: fetch-depth: 0` + 6-line inline comment citing affected tests + HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm. Single-purpose root-cause fix. Coverage job unmodified (downloads artifact, does not re-run suite). Other jobs (lint/typecheck/packaging-smoke/etc.) do not call diff-base resolution and remain on default fetch-depth=1.",
     "Codex MCP cross-provider review (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d) verdict AGREE on the core fix; REVISE on initial evidence path scope (top-level vs nested) + PR body 'TEK dosya' overclaim. Both absorbed in iter-2: top-level evidence JSONs rewritten with correct schema + AO-MA-CI-FIX-fetch-depth-shallow-clone work_package + real Codex thread ID, PR body scope corrected to reflect 4 files + 2 nested evidence files.",
-    "Cross-AI peer-review HARD RULE compliance (2026-05-14): implementer Anthropic ≠ reviewer OpenAI; supersession not invoked because this is a single-purpose fix and Codex MCP review evidence is captured. Anthropic adversarial self-review is the SECONDARY signal (same-provider) per HARD RULE 2-of-3 distinct-provider AGREE policy.",
+    "Cross-AI peer-review HARD RULE compliance (2026-05-14): implementer Anthropic \u2260 reviewer OpenAI; supersession not invoked because this is a single-purpose fix and Codex MCP review evidence is captured. Anthropic adversarial self-review is the SECONDARY signal (same-provider) per HARD RULE 2-of-3 distinct-provider AGREE policy.",
     "ZERO TOUCH on guard-controlled surfaces: 3 guard flags const false across all PR evidence files. No CODEOWNERS / ruleset / branch-protection / ao_kernel/ runtime / .ao/ canonical store / gpp_status / scripts/ao_release_gate mutation. test.yml change scope is one with-block + comment on a single checkout step in the test job.",
-    "HARD RULE Uzun Vadeli Kalıcı Çözüm: kalıcı çözüm (root cause not symptom). Patching individual tests to tolerate shallow clones would be the wrong layer. HARD RULE Governance/Sistemik Bug: sistemik bug bypass YASAK; kalıcı fix önce, no admin merge. HARD RULE No Fake Work: machine-verified by post-merge effect — every other open PR's CI re-run clears these specific failures."
+    "HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm: kal\u0131c\u0131 \u00e7\u00f6z\u00fcm (root cause not symptom). Patching individual tests to tolerate shallow clones would be the wrong layer. HARD RULE Governance/Sistemik Bug: sistemik bug bypass YASAK; kal\u0131c\u0131 fix \u00f6nce, no admin merge. HARD RULE No Fake Work: machine-verified by post-merge effect \u2014 every other open PR's CI re-run clears these specific failures."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

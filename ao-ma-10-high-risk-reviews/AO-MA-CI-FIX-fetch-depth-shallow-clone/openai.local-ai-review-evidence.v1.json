@@ -25,20 +25,49 @@
     ]
   },
   "checks_considered": [
-    { "name": "root_cause_correctly_identified", "status": "pass" },
-    { "name": "fetch_depth_zero_chosen_over_50", "status": "pass" },
-    { "name": "coverage_job_correctly_unmodified", "status": "pass" },
-    { "name": "scope_minimal_to_test_job", "status": "pass" },
-    { "name": "guard_flags_remain_const_false", "status": "pass" },
-    { "name": "no_governance_file_touch", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" }
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "root_cause_correctly_identified",
+      "status": "pass"
+    },
+    {
+      "name": "fetch_depth_zero_chosen_over_50",
+      "status": "pass"
+    },
+    {
+      "name": "coverage_job_correctly_unmodified",
+      "status": "pass"
+    },
+    {
+      "name": "scope_minimal_to_test_job",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_remain_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "no_governance_file_touch",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "Codex MCP cross-provider review (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d, 2026-06-03) AGREE on the core CI fetch-depth fix. Verbatim verdict: 'Core CI fix'e AGREE'. Root cause correctly identified (actions/checkout@v6 default fetch-depth:1 → shallow clone → merge-base origin/main HEAD cannot resolve → _resolve_pr_diff_base() returns None → fail-closed in CI PR context).",
-    "fetch-depth:0 is the deterministic choice; fetch-depth:50 is cheaper but not guaranteed for long-lived, stacked, or main-distant branches. This PR resolves a sistemik CI blocker affecting every open PR, so deterministic solution outweighs the small bandwidth cost. Aligns with HARD RULE Uzun Vadeli Kalıcı Çözüm (6 ay sonra hâlâ machine-enforced).",
+    "Codex MCP cross-provider review (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d, 2026-06-03) AGREE on the core CI fetch-depth fix. Verbatim verdict: 'Core CI fix'e AGREE'. Root cause correctly identified (actions/checkout@v6 default fetch-depth:1 \u2192 shallow clone \u2192 merge-base origin/main HEAD cannot resolve \u2192 _resolve_pr_diff_base() returns None \u2192 fail-closed in CI PR context).",
+    "fetch-depth:0 is the deterministic choice; fetch-depth:50 is cheaper but not guaranteed for long-lived, stacked, or main-distant branches. This PR resolves a sistemik CI blocker affecting every open PR, so deterministic solution outweighs the small bandwidth cost. Aligns with HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm (6 ay sonra h\u00e2l\u00e2 machine-enforced).",
     "Coverage job correctly left at fetch-depth=1. The coverage job does NOT re-run the test suite; it downloads the 3.13 test leg's coverage.data artifact and runs `coverage report --fail-under=85`. Diff-base tests live in the test matrix only. Scope correctly minimal.",
-    "Guard-controlled runtime surfaces unmodified: .github/CODEOWNERS, ruleset definitions, ao_kernel/, scripts/ao_release_gate, gpp_status — none in diff. Three guard flags const false across all evidence JSONs (support_widening, production_platform_claim, live_adapter_execution).",
-    "Codex's REVISE points were strictly evidence/PR-body scope corrections (top-level path canonical form + PENDING_REVIEW → real AGREE + PR body 'TEK dosya' overclaim correction). All absorbed in iter-2: top-level evidence rewritten with correct schema, AO-MA-CI-FIX-fetch-depth-shallow-clone work_package, reviewer.verdict=AGREE with real Codex thread ID."
+    "Guard-controlled runtime surfaces unmodified: .github/CODEOWNERS, ruleset definitions, ao_kernel/, scripts/ao_release_gate, gpp_status \u2014 none in diff. Three guard flags const false across all evidence JSONs (support_widening, production_platform_claim, live_adapter_execution).",
+    "Codex's REVISE points were strictly evidence/PR-body scope corrections (top-level path canonical form + PENDING_REVIEW \u2192 real AGREE + PR body 'TEK dosya' overclaim correction). All absorbed in iter-2: top-level evidence rewritten with correct schema, AO-MA-CI-FIX-fetch-depth-shallow-clone work_package, reviewer.verdict=AGREE with real Codex thread ID."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

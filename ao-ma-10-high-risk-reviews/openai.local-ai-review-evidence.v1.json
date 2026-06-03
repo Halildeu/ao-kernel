@@ -25,24 +25,68 @@
     ]
   },
   "checks_considered": [
-    { "name": "yaml_valid", "status": "pass" },
-    { "name": "root_cause_correctly_identified", "status": "pass" },
-    { "name": "fix_chosen_is_canonical_for_shallow_clone_problem", "status": "pass" },
-    { "name": "fetch_depth_zero_vs_50_decision_justified", "status": "pass" },
-    { "name": "coverage_job_correctly_unmodified", "status": "pass" },
-    { "name": "ao_release_gate_job_correctly_unmodified", "status": "pass" },
-    { "name": "guard_flags_remain_const_false", "status": "pass" },
-    { "name": "no_governance_file_touch", "status": "pass" },
-    { "name": "no_codeowners_mutation", "status": "pass" },
-    { "name": "no_ruleset_mutation", "status": "pass" },
-    { "name": "no_runtime_python_module_change", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" }
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "yaml_valid",
+      "status": "pass"
+    },
+    {
+      "name": "root_cause_correctly_identified",
+      "status": "pass"
+    },
+    {
+      "name": "fix_chosen_is_canonical_for_shallow_clone_problem",
+      "status": "pass"
+    },
+    {
+      "name": "fetch_depth_zero_vs_50_decision_justified",
+      "status": "pass"
+    },
+    {
+      "name": "coverage_job_correctly_unmodified",
+      "status": "pass"
+    },
+    {
+      "name": "ao_release_gate_job_correctly_unmodified",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_remain_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "no_governance_file_touch",
+      "status": "pass"
+    },
+    {
+      "name": "no_codeowners_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_ruleset_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_runtime_python_module_change",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "Codex MCP cross-provider AGREE on core CI fix (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d). Root cause correctly identified: actions/checkout@v6 default fetch-depth:1 → shallow clone → merge-base origin/main HEAD cannot resolve → _resolve_pr_diff_base() returns None → fail-closed in CI PR context with `pytest.fail('no PR diff base resolved')`. git diff origin/main...HEAD callers exit 128.",
-    "fetch-depth:0 is the correct choice over fetch-depth:50. fetch-depth:50 is cheaper but is not guaranteed on long-lived, stacked, or main-distant branches. This PR resolves a sistemik CI blocker affecting every open PR, so deterministic solution outweighs the small bandwidth cost. Aligns with HARD RULE Uzun Vadeli Kalıcı Çözüm — 6 ay sonra hâlâ machine-enforced.",
+    "Codex MCP cross-provider AGREE on core CI fix (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d). Root cause correctly identified: actions/checkout@v6 default fetch-depth:1 \u2192 shallow clone \u2192 merge-base origin/main HEAD cannot resolve \u2192 _resolve_pr_diff_base() returns None \u2192 fail-closed in CI PR context with `pytest.fail('no PR diff base resolved')`. git diff origin/main...HEAD callers exit 128.",
+    "fetch-depth:0 is the correct choice over fetch-depth:50. fetch-depth:50 is cheaper but is not guaranteed on long-lived, stacked, or main-distant branches. This PR resolves a sistemik CI blocker affecting every open PR, so deterministic solution outweighs the small bandwidth cost. Aligns with HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm \u2014 6 ay sonra h\u00e2l\u00e2 machine-enforced.",
     "No need to add fetch-depth on coverage job. The coverage job does not re-run the test suite; it downloads the 3.13 test leg's coverage artifact and runs `coverage report --fail-under=85`. Diff-base tests run in the `test` matrix, which now has fetch-depth:0. Scope minimal.",
-    "Guard-controlled runtime surfaces unmodified: .github/CODEOWNERS, ruleset definitions, ao_kernel/, ao_release_gate scripts, gpp_status — none in diff. Three guard flags const false across all evidence JSONs in this PR (support_widening, production_platform_claim, live_adapter_execution).",
+    "Guard-controlled runtime surfaces unmodified: .github/CODEOWNERS, ruleset definitions, ao_kernel/, ao_release_gate scripts, gpp_status \u2014 none in diff. Three guard flags const false across all evidence JSONs in this PR (support_widening, production_platform_claim, live_adapter_execution).",
     "Codex's only revise points were about evidence path/PR-body scope description, not the fix itself. After this iteration: (a) top-level evidence updated to AO-MA-CI-FIX-fetch-depth-shallow-clone work_package with correct schema, (b) reviewer.verdict=AGREE with real Codex thread ID, (c) PR body scope corrected to reflect 4 files + 2 nested evidence files actually changed."
   ],
   "secrets_recorded": false,
