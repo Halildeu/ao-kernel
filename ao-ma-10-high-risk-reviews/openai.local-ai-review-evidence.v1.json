@@ -1,26 +1,32 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-ISSUE-TEMPLATE-ALLOWLIST",
+  "work_package": "AO-MA-910-issue-forms",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude-opus-4-7-1m",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "codex-adversarial-review",
+    "agent": "codex-mcp-thread",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-release-gate-issue-template-allowlist",
+    "head_ref": "refs/heads/codex/epic-p0-5-issue-forms-minimal",
     "changed_files": [
+      ".claude/plans/EPIC-P0-5-ISSUE-FORMS.md",
+      ".github/ISSUE_TEMPLATE/config.yml",
+      ".github/ISSUE_TEMPLATE/governance-bug.yml",
+      ".github/ISSUE_TEMPLATE/v5-gate.yml",
+      ".github/ISSUE_TEMPLATE/v5-slice.yml",
       "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/AO-MA-822-issue-forms-minimal/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-822-issue-forms-minimal/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "tests/test_issue_forms_shape.py"
     ]
   },
   "checks_considered": [
@@ -33,32 +39,45 @@
       "status": "pass"
     },
     {
-      "name": "narrow_issue_template_prefix",
+      "name": "issue_forms_present",
       "status": "pass"
     },
     {
-      "name": "no_workflow_change",
+      "name": "mandatory_v5_anchor_fields_required",
       "status": "pass"
     },
     {
-      "name": "no_codeowners_change",
+      "name": "computed_risk_class_marker_present",
       "status": "pass"
     },
     {
-      "name": "no_ruleset_or_branch_protection_change",
+      "name": "evidence_classes_multi_select_complete",
       "status": "pass"
     },
     {
-      "name": "release_authority_boundary",
+      "name": "guard_flags_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "no_github_workflow_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_codeowners_ruleset_or_pr_template_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review_evidence_present",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI review accepts the `.github/ISSUE_TEMPLATE/` allowlist widening because it is exact-folder metadata, not a broad `.github/` grant.",
-    "The diff does not mutate workflows, CODEOWNERS, rulesets, branch protection, runtime adapter code, or public support tier semantics.",
-    "The regression test would fail if the protected-base builder dropped the issue-template prefix again.",
-    "The CHANGELOG entry documents the limited unblock for reviewed V5 issue-form PRs.",
-    "Release authority remains ao-release-gate plus GitHub ruleset; this review is evidence only."
+    "OpenAI review evidence accepts PR #910 as a V5 Epic P0 E-P0-5 issue-form intake slice.",
+    "The forms require the V5 authority anchors and compute-risk source pointer rather than allowing manual risk downgrade.",
+    "The tests assert blank issues are disabled, canonical roadmap/HARD RULE links are present, and the V5 evidence class set is complete.",
+    "The zero-touch contract is preserved: no workflows, CODEOWNERS, ruleset, PR template, branch-protection, live adapter, or runtime files are changed.",
+    "AI review output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset.",
+    "scope_reviewed.changed_files is rebound to the current 12-file PR diff after rebase onto origin/main."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

@@ -1,0 +1,96 @@
+name: Governance Bug
+description: Report a governance violation, fake-work pattern, or evidence-chain integrity bug. Use this for HARD RULE breaches, not feature requests.
+title: "[GOV-BUG] <slice-or-rule>: <one-line title>"
+labels: ["governance", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **Fail-closed reporting.** Governance bugs (fake work, evidence
+        > chain integrity, HARD RULE breach, cross-AI peer review
+        > violation, admin merge bypass) are higher priority than
+        > feature requests. Do NOT use this template for vague code
+        > smells.
+  - type: input
+    id: spm_anchor
+    attributes:
+      label: spm_anchor
+      description: V5 roadmap pointer (which slice / gate is affected).
+      placeholder: ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md#..."
+    validations:
+      required: true
+  - type: input
+    id: ao_authority_artifact
+    attributes:
+      label: ao_authority_artifact
+      description: Path to the artifact whose authority was bypassed / violated.
+      placeholder: ".claude/plans/..."
+    validations:
+      required: true
+  - type: input
+    id: artifact_sha256
+    attributes:
+      label: artifact_sha256
+      placeholder: "sha256:..."
+    validations:
+      required: true
+  - type: input
+    id: plan_digest
+    attributes:
+      label: plan_digest
+      placeholder: "plan-digest:..."
+    validations:
+      required: true
+  - type: input
+    id: slice_id
+    attributes:
+      label: slice_id (affected slice / rule id)
+      placeholder: "E-N-M / ADR-NNNN / HARD-RULE-..."
+    validations:
+      required: true
+  - type: input
+    id: risk_class_source
+    attributes:
+      label: risk_class_source (COMPUTED)
+      description: Computed risk class for this governance bug (often high or critical).
+      placeholder: ".claude/plans/...#risk-classifier-line-N"
+    validations:
+      required: true
+  - type: dropdown
+    id: violation_kind
+    attributes:
+      label: Violation kind
+      options:
+        - fake_work (HARD RULE 2026-04-25)
+        - cross_ai_peer_review_violation (ADR-0004)
+        - admin_merge_bypass (HARD RULE 2026-05-05)
+        - ci_red_merge (HARD RULE 2026-05-17)
+        - evidence_chain_integrity (ADR-0002 recompute-not-trust)
+        - guard_flag_unauthorized_flip
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Reproduction + Impact
+      description: What happened + what evidence demonstrates the violation + which guard flag / HARD RULE was breached.
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence_classes
+    attributes:
+      label: evidence_classes (multi-select)
+      multiple: true
+      options:
+        - ao_release_gate_clean_trail
+        - security_sbom_license_scan
+        - docs_runbooks
+        - real_provider_live_calls
+        - cost_rate_circuit_breaker_evidence
+        - observability_prod_tunables
+        - install_deploy_lifecycle_smoke
+        - multi_tenancy_isolation
+        - public_support_matrix
+    validations:
+      required: true

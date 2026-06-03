@@ -1,26 +1,32 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-ISSUE-TEMPLATE-ALLOWLIST",
+  "work_package": "AO-MA-910-issue-forms",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-code-cli",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-release-gate-issue-template-allowlist",
+    "head_ref": "refs/heads/codex/epic-p0-5-issue-forms-minimal",
     "changed_files": [
+      ".claude/plans/EPIC-P0-5-ISSUE-FORMS.md",
+      ".github/ISSUE_TEMPLATE/config.yml",
+      ".github/ISSUE_TEMPLATE/governance-bug.yml",
+      ".github/ISSUE_TEMPLATE/v5-gate.yml",
+      ".github/ISSUE_TEMPLATE/v5-slice.yml",
       "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/AO-MA-822-issue-forms-minimal/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-822-issue-forms-minimal/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "tests/test_issue_forms_shape.py"
     ]
   },
   "checks_considered": [
@@ -33,28 +39,45 @@
       "status": "pass"
     },
     {
-      "name": "narrow_issue_template_prefix",
+      "name": "issue_forms_present",
       "status": "pass"
     },
     {
-      "name": "no_workflow_codeowners_ruleset_mutation",
+      "name": "mandatory_v5_anchor_fields_required",
       "status": "pass"
     },
     {
-      "name": "no_live_adapter_execution",
+      "name": "computed_risk_class_marker_present",
+      "status": "pass"
+    },
+    {
+      "name": "evidence_classes_multi_select_complete",
       "status": "pass"
     },
     {
       "name": "guard_flags_const_false",
       "status": "pass"
+    },
+    {
+      "name": "no_github_workflow_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_codeowners_ruleset_or_pr_template_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review_evidence_present",
+      "status": "pass"
     }
   ],
   "findings": [
-    "The allowlist widening is exact and narrow: `.github/ISSUE_TEMPLATE/`, not the broader `.github/` tree.",
-    "The changed builder prefix is GitHub issue-form metadata only; workflows, CODEOWNERS, rulesets, branch protection, runtime adapter code, support widening, and production-claim surfaces remain independently guarded.",
-    "The invariant test pins the prefix and documents the PR #910 regression that triggered this unblock slice.",
-    "The CHANGELOG entry records the governance boundary and explicitly states that workflow, CODEOWNERS, ruleset, live-adapter, support, and production-claim surfaces are not widened.",
-    "AI output is review evidence only; release authority remains ao-release-gate plus GitHub ruleset."
+    "PR #910 implements V5 Epic P0 E-P0-5 GitHub issue forms as an intake structure, not release authority.",
+    "The three forms v5-slice, v5-gate, and governance-bug require the mandatory V5 anchor fields: spm_anchor, ao_authority_artifact, artifact_sha256, plan_digest, slice_id, risk_class_source, and evidence_classes.",
+    "risk_class_source is explicitly marked COMPUTED and evidence_classes exposes the nine V5 evidence dimensions as a required multi-select field.",
+    "Issue template config disables blank issues and points operators to the V5 roadmap plus HARD RULE catalog.",
+    "Zero-touch governance holds: no .github/workflows, CODEOWNERS, ruleset, PR template, branch-protection, live adapter, or ao_kernel runtime surface is changed.",
+    "Root local evidence binds scope_reviewed.changed_files to the current 12-file PR diff after rebase onto origin/main; guard flags remain false."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

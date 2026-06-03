@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 issue forms**: added GitHub Issue templates for V5 slices,
+  V5 exit gates, and governance bugs with mandatory SPM/authority
+  anchors, computed risk-class source pointers, required evidence-class
+  selection, blank-issue blocking, and zero-touch governance tests.
 - **V5 project sync module**: added the `ao_kernel.project_sync`
   package and `ao-kernel project ...` CLI surface for project-board
   sync, drift checks, slice creation, field updates, label cleanup, and
