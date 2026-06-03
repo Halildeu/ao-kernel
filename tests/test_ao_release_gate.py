@@ -493,6 +493,49 @@ def test_release_gate_denies_high_risk_paths_without_current_non_author_review()
     ]
 
 
+def test_release_gate_denies_claude_scripts_without_current_non_author_review() -> None:
+    """`.claude/scripts/` is base-ref-trusted in DEFAULT_ALLOWED_PATH_PREFIXES
+    (so workflow PRs that ship matching helper-script hygiene updates do
+    not trigger ``ao_release_gate_diff_out_of_scope``), but it stays under
+    the ``.claude/**`` HIGH_RISK_PATH_PATTERNS umbrella. ``diff_scope``
+    therefore passes, while ``path_sensitive_human_review`` still blocks
+    the diff until a current non-author review is present.
+
+    Regression guard: if a future refactor narrows
+    ``HIGH_RISK_PATH_PATTERNS`` (e.g. swapping ``.claude/**`` for
+    ``.claude/plans/**``), this test fails immediately. Without it,
+    ``.claude/scripts/`` would silently demote to low-risk and let
+    helper-script edits ship without operator review. Pairs with the
+    payload-builder regression test in
+    ``test_ao_release_gate_build_payload.py``
+    (``test_build_payload_allowed_path_prefixes_includes_claude_scripts``)
+    introduced alongside PR #907 (CI-CODEX-PUSH-DEDUP, 2026-06-03).
+    """
+    path = ".claude/scripts/trigger-test-workflow.sh"
+    payload = _allow_payload()
+    payload["changed_paths"] = [path]
+    payload["allowed_path_prefixes"] = [
+        "ao_kernel/",
+        "scripts/",
+        "tests/",
+        ".claude/plans/",
+        ".claude/scripts/",
+    ]
+    payload["human_reviews"] = []
+
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        review_evidence=_review_evidence(changed_paths=[path]),
+    )
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert _find_check(decision, "diff_scope")["status"] == "pass"
+    assert _find_check(decision, "path_sensitive_human_review")["status"] == "blocked"
+    assert decision["context"]["high_risk_changed_paths"] == [path]
+    assert "ao_release_gate_high_risk_human_review_missing" in decision["findings"]
+
+
 def test_release_gate_allows_high_risk_paths_with_valid_supersession_evidence() -> None:
     decision = build_ao_release_gate_decision(
         _high_risk_without_review_payload(),
