@@ -122,6 +122,14 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Full history needed so test_ao_ma10_pr_scope, test_epic_4_*,
+          # test_pci_dss and other PR-diff-base tests can resolve
+          # origin/main via merge-base. Default fetch-depth=1 (shallow)
+          # makes `git diff origin/main...HEAD` fail with exit 128 in
+          # every PR (sistemik bug, blocks all PRs from going green).
+          # See HARD RULE Uzun Vadeli Kalıcı Çözüm.
+          fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:

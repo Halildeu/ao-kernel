@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "evidence_kind": "local_ai_review",
+  "provider": "openai",
+  "model": "gpt-5-codex",
+  "session_id": "codex-mcp-thread-pending",
+  "work_package": "AO-MA-CI-FIX-fetch-depth-shallow-clone",
+  "review_scope": [
+    ".github/workflows/test.yml"
+  ],
+  "verdict": "PENDING_REVIEW",
+  "verdict_rationale": "Codex review will be invoked via MCP after PR creation. Expected verdict: AGREE — fetch-depth:0 is the canonical fix for shallow-clone merge-base failures in GitHub Actions; comment explains root cause; ZERO TOUCH other workflows / governance files.",
+  "guard_flags_unchanged_assertion": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "reviewed_at": "2026-06-03T07:30:00Z",
+  "reviewer_evidence_classes": [
+    "ci_workflow_correctness",
+    "ao_release_gate_clean_trail"
+  ]
+}

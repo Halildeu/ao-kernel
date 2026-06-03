@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI sistemik bug**: `.github/workflows/test.yml` test job now uses
+  `actions/checkout@v6` with `fetch-depth: 0` so PR-diff-base tests
+  (`test_ao_ma10_pr_scope`, `test_epic_4_1_*`, `test_epic_4_2a_*`,
+  `test_pci_dss_*`, etc.) can resolve `origin/main` via `merge-base`.
+  Previously default shallow clone (`fetch-depth: 1`) made
+  `git diff origin/main...HEAD` fail with exit 128 and
+  `_resolve_pr_diff_base()` return `None` → `pytest.fail("no PR
+  diff base resolved")` in every PR. This is the kalıcı çözüm
+  (HARD RULE Uzun Vadeli Kalıcı Çözüm) — root cause not symptom.
+
 ## [4.1.0] - 2026-06-01
 
 This release ships the **AO-MA-SPM master plan §Faz 1-7** — a 7-phase

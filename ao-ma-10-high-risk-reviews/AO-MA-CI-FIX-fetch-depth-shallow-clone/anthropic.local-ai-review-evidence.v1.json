@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "evidence_kind": "local_ai_review",
+  "provider": "anthropic",
+  "model": "claude-opus-4-7",
+  "session_id": "claude-2026-06-03-ci-shallow-clone-fix",
+  "work_package": "AO-MA-CI-FIX-fetch-depth-shallow-clone",
+  "review_scope": [
+    ".github/workflows/test.yml"
+  ],
+  "verdict": "AGREE",
+  "verdict_rationale": "Sistemik bug: tüm PR'larda 'git diff origin/main...HEAD' exit 128 + _resolve_pr_diff_base() None. Root cause: actions/checkout@v6 default fetch-depth=1 (shallow). Fix: test job'a fetch-depth: 0 ekle. Single-line scope, comment dokümanı eksiksiz, HARD RULE Uzun Vadeli Kalıcı Çözüm + Governance/Sistemik Bug uyumlu (kalıcı çözüm önce, bypass yok).",
+  "guard_flags_unchanged_assertion": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "reviewed_at": "2026-06-03T07:30:00Z",
+  "reviewer_evidence_classes": [
+    "ci_workflow_correctness",
+    "ao_release_gate_clean_trail"
+  ]
+}
