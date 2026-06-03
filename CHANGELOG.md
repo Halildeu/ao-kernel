@@ -19,6 +19,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 sub-issue mirror manifest**: added the full retroactive V5
+  sub-issue mirror for issues `#834` through `#895` and linked it from
+  `v5_issue_projection.v1.json` so the GitHub Project mirror exposes
+  all 62 planned/merged V5 sub-slices while repo artifacts remain the
+  authority.
 - **V5 issue forms**: added GitHub Issue templates for V5 slices,
   V5 exit gates, and governance bugs with mandatory SPM/authority
   anchors, computed risk-class source pointers, required evidence-class
