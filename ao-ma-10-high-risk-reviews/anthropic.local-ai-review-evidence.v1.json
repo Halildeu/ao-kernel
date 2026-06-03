@@ -15,6 +15,9 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/fix/ao-release-gate-allowlist-claude-scripts",
     "changed_files": [
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
       "scripts/ao_release_gate_build_payload.py",
       "tests/test_ao_release_gate.py",
       "tests/test_ao_release_gate_build_payload.py"
@@ -30,19 +33,19 @@
       "status": "pass"
     },
     {
-      "name": "yaml_valid",
+      "name": "json_valid",
       "status": "pass"
     },
     {
-      "name": "fetch_depth_set_to_zero_on_test_job",
+      "name": "diff_scope_false_block_root_cause",
       "status": "pass"
     },
     {
-      "name": "fetch_depth_not_set_on_other_jobs",
+      "name": "high_risk_human_review_preserved",
       "status": "pass"
     },
     {
-      "name": "coverage_job_not_modified",
+      "name": "guard_flags_const_false",
       "status": "pass"
     },
     {
@@ -58,44 +61,20 @@
       "status": "pass"
     },
     {
-      "name": "no_guard_flip",
+      "name": "cross_provider_review",
       "status": "pass"
     },
     {
-      "name": "no_runtime_python_module_change",
-      "status": "pass"
-    },
-    {
-      "name": "ao_release_gate_allowlist_preserved",
-      "status": "pass"
-    },
-    {
-      "name": "required_check_names_preserved",
-      "status": "pass"
-    },
-    {
-      "name": "matrix_preserved",
-      "status": "pass"
-    },
-    {
-      "name": "changelog_unreleased_entry_added",
-      "status": "pass"
-    },
-    {
-      "name": "adversarial-self-review",
+      "name": "adversarial_self_review",
       "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic adversarial self-review AGREE on CI fetch-depth fix. Single-purpose root-cause fix: actions/checkout@v6 default fetch-depth=1 produces shallow clones; _resolve_pr_diff_base + git diff origin/main...HEAD callers fail-closed in CI PR context with exit 128. fetch-depth:0 brings full history \u2192 merge-base resolves \u2192 invariants pass.",
-    "Affected tests verified by failing CI evidence across every open PR: test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners, test_epic_4_1_helm_chart_skeleton::test_no_workflow_mutation_in_diff, test_epic_4_1_helm_chart_skeleton::test_write_set_exact_match_git_diff, test_epic_4_1_helm_chart_skeleton::test_no_pyproject_change_in_slice, test_epic_4_2a_multi_tenant_boundary (4 diff-base tests), test_pci_dss_mapping::test_allowlist_diff_no_other_files (task #64 each-PR fail).",
-    "Workflow zero-touch on coverage job verified by reading lines 181-213 \u2014 coverage job downloads coverage.data artifact from the 3.13 test leg and runs `coverage report --fail-under=85`; it does NOT re-run the test suite. fetch-depth on coverage job unnecessary; failing diff-base tests run inside `test` job only.",
-    "Other jobs reviewed: lint (98), packaging-smoke (213), policy-container-smoke (232), release-gate-container-smoke (251), typecheck (276), benchmark-fast (296), scorecard (337), extras-install (385) \u2014 none call git diff origin/main...HEAD or _resolve_pr_diff_base. fetch-depth:1 default safe for those jobs.",
-    "ao-release-gate job (405, 488, 513) uses dedicated base + head checkout with explicit ref pinning; not affected by test job's fetch-depth change.",
-    "Guard flag audit: grep -n support_widening|production_platform_claim|live_adapter_execution across all changed files; every occurrence stays const false. No flag flip, no admin merge, no branch protection mutation, no ruleset mutation, no CODEOWNERS mutation, no ao_kernel/ runtime module mutation, no .ao/ canonical decision write, no gpp_status mutation.",
-    "Workflow file diff is ~8 lines (with: { fetch-depth: 0 } + 6-line explanatory comment). Comment cites affected tests + root cause + HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm. Self-documenting for future readers.",
-    "HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm + Governance/Sistemik Bug compliance: kal\u0131c\u0131 \u00e7\u00f6z\u00fcm (root cause not symptom). Patching tests individually to tolerate shallow clones would be a symptom fix; CI workflow is the correct level. No admin bypass requested.",
-    "HARD RULE No Fake Work: machine-verified by post-merge effect \u2014 every other open PR's CI runs the new test.yml and the diff-base tests resolve origin/main \u2192 existing failures clear without per-PR rebases."
+    "Anthropic adversarial review agrees with the narrow allowlist change: .claude/scripts/ is a dev-time governance helper-script surface documented alongside .claude/plans/, so diff_scope should not reject it by itself.",
+    "The regression tests cover both layers: payload builder includes .claude/scripts/ in base-ref allowed prefixes, and decision-core still denies .claude/scripts/ edits without current non-author review through path_sensitive_human_review.",
+    "The corrected evidence binding records the full current PR changed-files set instead of only the implementation files, satisfying the high-risk supersession current-PR binding rule without weakening the gate.",
+    "Historical evidence directories from earlier work packages are left untouched; this PR only updates current PR evidence plus the implementation/test files needed for AO-MA-908.",
+    "No live adapter execution, support widening, production platform claim, admin bypass, branch-protection mutation, ruleset mutation, CODEOWNERS mutation, or secret material is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
