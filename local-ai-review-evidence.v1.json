@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-905-cloud-run-gate",
+  "work_package": "AO-MA-909-pre-commit-changelog-hook",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,18 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/fix/cloud-run-deploy-false-red",
+    "head_ref": "refs/heads/codex/epic-1-4-pre-commit-minimal",
     "changed_files": [
-      ".claude/plans/CLOUD-RUN-AUTO-DEPLOY-LANE-FLAG.md",
-      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
-      ".github/workflows/policy-service-deploy-cloud-run.yml",
-      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/EPIC-1-4-PRE-COMMIT-CHANGELOG-HOOK.md",
+      ".claude/scripts/pre-commit-changelog-gate.sh",
+      "ao-ma-10-high-risk-reviews/AO-MA-818-pre-commit-changelog-hook-minimal/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-818-pre-commit-changelog-hook-minimal/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_release_gate_deploy_workflow.py",
-      "tests/test_policy_service_deploy_workflow.py"
+      "tests/test_pre_commit_changelog_gate.py"
     ]
   },
   "checks_considered": [
@@ -37,27 +35,15 @@
       "status": "pass"
     },
     {
-      "name": "json_valid",
+      "name": "pre_commit_hook_delegates_to_changelog_policy",
       "status": "pass"
     },
     {
-      "name": "cloud_run_auto_deploy_flag_default_off",
+      "name": "local_only_operator_installed_hook",
       "status": "pass"
     },
     {
-      "name": "workflow_dispatch_lane_preserved",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_const_false",
-      "status": "pass"
-    },
-    {
-      "name": "no_branch_protection_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_ruleset_mutation",
+      "name": "no_github_workflow_mutation",
       "status": "pass"
     },
     {
@@ -65,15 +51,29 @@
       "status": "pass"
     },
     {
-      "name": "cross_provider_review",
+      "name": "no_ruleset_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_runtime_support_widening",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_remain_false",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review_evidence_present",
       "status": "pass"
     }
   ],
   "findings": [
-    "#905 fixes a pre-cutover false-red class: Cloud Run deploy workflows fired automatically after container publish workflows even though Cloud Run cutover variables are intentionally absent. The deploy job failed on missing variables and painted main red on a non-required pre-cutover lane.",
-    "Long-term fix: gate only the automatic workflow_run deploy lane behind CLOUD_RUN_AUTO_DEPLOY_ENABLED == 'true'. Default unset means skipped/non-failure; manual workflow_dispatch remains open for explicit operator runs.",
-    "Evidence binding is updated to the real PR diff. Historical AO-MA-10h and AO-MA-CI-FIX evidence files are not rewritten.",
-    "This is not a production claim and not live adapter execution. It preserves validation failure once the operator opts into automatic Cloud Run deploy."
+    "PR #909 implements the V5 Epic 1 E-1-4 local pre-commit changelog gate as an operator-installed local hook, not as release authority. The hook blocks user-visible code commits without CHANGELOG.md unless the commit prefix is explicitly non-user-visible.",
+    "The hook delegates policy intent to the existing ADR-0005 Keep-a-Changelog discipline and mirrors the future E-1-3 CI enforcement lane without mutating .github/workflows/.",
+    "The tested decision contract covers no-code pass, code+CHANGELOG pass, feat/fix-style code-without-CHANGELOG block, and non-user-visible prefixes such as chore/docs/test/ci/style/refactor/build/perf pass.",
+    "The final PR diff is intentionally limited to the E-1-4 plan document, local hook script, pre-commit hook tests, current top-level review evidence, and nested AO-MA-818 reopening review artifacts. Historical AO-MA-10h and AO-MA-CI-FIX evidence rewrites were restored to origin/main.",
+    "Guard-controlled surfaces are not widened: support_widening=false, production_platform_claim=false, live_adapter_execution=false; no CODEOWNERS, ruleset, branch-protection, live adapter, or ao_kernel runtime surface is changed.",
+    "Root local evidence summarizes the accepted E-1-4 scope after rebase onto origin/main and binds scope_reviewed.changed_files to the current PR diff."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

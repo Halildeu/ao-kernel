@@ -31,5 +31,16 @@
     "support_widening": false,
     "production_platform_claim": false,
     "live_adapter_execution": false
-  }
+  },
+  "work_package": "AO-MA-909-pre-commit-changelog-hook",
+  "checks_considered": [
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    }
+  ]
 }
