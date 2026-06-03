@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-CI-FIX-fetch-depth-shallow-clone",
+  "work_package": "AO-MA-908-ao-release-gate-allowlist",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,15 +13,11 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ci-fix-fetch-depth-shallow-clone",
+    "head_ref": "refs/heads/fix/ao-release-gate-allowlist-claude-scripts",
     "changed_files": [
-      ".github/workflows/test.yml",
-      "CHANGELOG.md",
-      "local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/openai.local-ai-review-evidence.v1.json"
+      "scripts/ao_release_gate_build_payload.py",
+      "tests/test_ao_release_gate.py",
+      "tests/test_ao_release_gate_build_payload.py"
     ]
   },
   "checks_considered": [
