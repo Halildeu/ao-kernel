@@ -8,7 +8,7 @@ GitHub Actions on real PR events. Tests verify discipline:
   (ADR-0005 SSOT) — NOT a YAML-duplicated decision contract
 - Read-only token + pull_request (not _target) + no secrets/admin
 - Env-routed PR labels + base ref (no inline expression injection)
-- ZERO TOUCH governance + only one new workflow + only one new test file
+- ZERO TOUCH governance + only one new workflow under `.github/workflows/`
 """
 
 from __future__ import annotations

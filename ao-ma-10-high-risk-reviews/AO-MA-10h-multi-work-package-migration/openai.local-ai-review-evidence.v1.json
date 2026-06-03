@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-823-changelog-enforcement-workflow",
+  "work_package": "AO-MA-10h-multi-work-package-migration",
   "implementer": {
     "agent": "claude-opus-4-7-1m",
     "provider": "anthropic"
@@ -13,14 +13,18 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-1-3-changelog-ci",
+    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
     "changed_files": [
-      ".claude/plans/EPIC-1-3-CHANGELOG-ENFORCEMENT-CI.md",
-      ".github/workflows/changelog-enforcement.yml",
-      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "tests/test_changelog_enforcement_workflow_shape.py"
+      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
+      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "scripts/ao_ma10_high_risk_supersession_evidence.py",
+      "tests/test_ao_ma10h_multi_work_package_schema.py",
+      "tests/test_ao_release_gate.py"
     ]
   },
   "checks_considered": [
@@ -50,7 +54,7 @@
     "work_package is correctly identified as a per-PR review/evidence identifier rather than a release authority or permission boundary; the const AO-MA-10h was not providing security value, only blocking dynamic-WP PRs from producing conforming evidence.",
     "Authority chain remains fail-closed after migration: release_authority+github-ruleset, context_binding, path allowlist, provider distinctness, unanimous AGREE, freshness, and three guard flag const false checks all preserved unchanged.",
     "Substitution attack analysis: a malicious PR proposing work_package EVIL-WP cannot bypass any defense; head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths binding pins the artifact to the live PR; guard flag closure is enforced; cross-provider distinct AGREE is mandatory.",
-    "Stale evidence rebinding is blocked by freshness window plus live PR context binding plus the added/modified/unchanged binding-mode discipline and immutable property checks in the builder; eski artifact yeni PR'a ili\u015ftirilemez.",
+    "Stale evidence rebinding is blocked by freshness window plus live PR context binding plus the added/modified/unchanged binding-mode discipline and immutable property checks in the builder; eski artifact yeni PR'a iliştirilemez.",
     "Option A active-index alternative was rejected because it would only add a separate ledger requiring operator preapproval per WP, providing no new cryptographic or context defense that Option B does not already supply; new drift source and rebase coordination overhead would slow down the autonomous review chain without governance value.",
     "Schema pattern ^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*$ is verified to round-trip with the trusted-base workflow's reviewed_wp regex (tests/test_ao_ma10h_multi_work_package_schema.py::test_work_package_regex_matches_workflow_canonical_regex pins exact source-line equality).",
     "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, or secret material is introduced by this migration; the three GPP guard flags remain const false in schema, fixture, and builder source."

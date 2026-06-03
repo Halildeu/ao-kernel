@@ -18,8 +18,9 @@ name: Changelog Enforcement
 #   F2: required-check ruleset wiring is a follow-up operator-bound
 #       slice; this workflow is CI enforcement only
 #   F3: explicit base+head SHA fetch so fork-PR diffs are reproducible
-#   F4: workflow + its shape test are the only additions (ZERO TOUCH
-#       on governance files — codified by invariant)
+#   F4: workflow is the only .github/workflows addition; tests,
+#       changelog entry, and review evidence are supporting artifacts
+#       outside governance edge mutation
 #   F5: scripts use printf (not echo) for portable variable expansion
 #
 # Boundaries:

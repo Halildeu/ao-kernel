@@ -14,7 +14,9 @@ workflow is the authoritative CI enforcement bound to the same SSOT.
 
 **In scope:**
 - `.github/workflows/changelog-enforcement.yml` (~95 LOC)
-- `tests/test_changelog_enforcement_workflow_shape.py` (~270 LOC, 17 invariants)
+- `tests/test_changelog_enforcement_workflow_shape.py` (~270 LOC, 19 invariants)
+- `CHANGELOG.md` `## [Unreleased]` entry for this CI enforcement slice
+- `ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/{openai,anthropic}.local-ai-review-evidence.v1.json` (iteration evidence)
 - `ao-ma-10-high-risk-reviews/{openai,anthropic}.local-ai-review-evidence.v1.json` (supersession pair)
 
 **Out of scope (ZERO TOUCH; enforced by 3 invariant tests):**
@@ -32,7 +34,7 @@ workflow is the authoritative CI enforcement bound to the same SSOT.
 
 | ID | Issue | Resolution |
 |---|---|---|
-| F1 | YAML drift: workflow re-implemented ADR-0005 decision (prefix-based) instead of binding to canonical CLI | Replaced with `ao-kernel quality check-changelog --base origin/$BASE_REF --labels-json pr-labels.json`; SSOT stays in `quality_profile.py::check_changelog` |
+| F1 | YAML drift: workflow re-implemented ADR-0005 decision (prefix-based) instead of binding to canonical CLI | Replaced with current `ao-kernel quality check-changelog --base-changelog ... --head-changelog ... --out ... --diff-path ...` signature; label routing remains env-parsed because the CLI has no `--labels-json` flag; SSOT stays in `quality_profile.py::check_changelog` |
 | F2 | "non-bypassable" overclaim without ruleset required-check wiring | Header reworded: "CI enforcement"; required-check ruleset wiring deferred to follow-up operator-bound slice |
 | F3 | Fork-PR diff sağlamlığı: HEAD_SHA fetch garantisi yok | Explicit `actions/checkout@v6` with `ref: github.event.pull_request.head.sha` + `fetch-depth: 0` + separate `git fetch origin "$BASE_REF"` step |
 | F4 | "only this workflow added" invariant vs test dosyası ekleme çelişkisi | Test invariant'ı `only one workflow under .github/workflows/` olarak daraltıldı (test dosyası `tests/` altında, governance kapsamı dışında) |
@@ -41,8 +43,9 @@ workflow is the authoritative CI enforcement bound to the same SSOT.
 ### iter-2 absorb AGREE
 
 - Workflow CLI'a delege ediliyor (SSOT korunuyor)
-- 17 invariant (15 pass + 2 skip pre-commit untracked-only state için)
+- 19 invariant (18 pass + 1 optional local-hook skip on bases where E-1-4 is absent)
 - ZERO TOUCH governance + supersession evidence pair
+- This PR carries its own `CHANGELOG.md` `[Unreleased]` entry, so the new CI workflow passes without relying on a label bypass
 
 ## 3. Decision Contract (delegated to CLI)
 
@@ -62,7 +65,7 @@ workflow fails with an actionable error citing both recovery paths.
 |---|---|---|
 | 1. Presence + structure | 5 | File + pull_request trigger + edited/synchronize event types + no pull_request_target + concurrency cancel-in-progress + single enforce-changelog job |
 | 2. Permissions + token discipline | 3 | Read-only contents+pull-requests + no write surface + persist-credentials:false + env-routed BASE_REF + PR_LABELS_JSON (no inline expression) |
-| 3. CLI binding (F1 absorb) | 4 | Invokes `ao-kernel quality check-changelog` + core-only install (no live LLM extras) + `--base origin/$BASE_REF --labels-json pr-labels.json` flags + actionable error cites both recovery paths |
+| 3. CLI binding (F1 absorb) | 4 | Invokes `ao-kernel quality check-changelog` + core-only install (no live LLM extras) + current `--base-changelog/--head-changelog/--out/--diff-path` signature + actionable error cites both recovery paths |
 | 4. Coexistence with E-1-4 hook | 2 | Optional local hook skip + header documents E-1-4 reference |
 | 5. SSOT binding (F1+F2 absorb) | 2 | No inline prefix regex (drift detection) + no "non-bypassable" overclaim language |
 | 6. ZERO TOUCH governance | 3 | Only one workflow file + no CODEOWNERS/PR-template/governance + no secret/admin/PAT/id-token surface |

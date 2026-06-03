@@ -17,9 +17,12 @@
     "changed_files": [
       ".claude/plans/EPIC-1-3-CHANGELOG-ENFORCEMENT-CI.md",
       ".github/workflows/changelog-enforcement.yml",
+      "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
       "tests/test_changelog_enforcement_workflow_shape.py"
     ]
   },
@@ -37,15 +40,27 @@
       "status": "pass"
     },
     {
-      "name": "fetch_depth_set_to_zero_on_test_job",
+      "name": "changelog_unreleased_entry_added",
       "status": "pass"
     },
     {
-      "name": "no_branch_protection_mutation",
+      "name": "workflow_delegates_to_ao_kernel_cli",
       "status": "pass"
     },
     {
-      "name": "no_ruleset_mutation",
+      "name": "current_cli_signature_used",
+      "status": "pass"
+    },
+    {
+      "name": "pull_request_not_pull_request_target",
+      "status": "pass"
+    },
+    {
+      "name": "read_only_token_permissions",
+      "status": "pass"
+    },
+    {
+      "name": "no_secret_or_admin_surface",
       "status": "pass"
     },
     {
@@ -53,37 +68,28 @@
       "status": "pass"
     },
     {
-      "name": "no_guard_flip",
+      "name": "no_ruleset_mutation",
       "status": "pass"
     },
     {
-      "name": "ao_release_gate_allowlist_preserved",
+      "name": "no_branch_protection_mutation",
       "status": "pass"
     },
     {
-      "name": "required_check_names_preserved",
-      "status": "pass"
-    },
-    {
-      "name": "matrix_preserved",
+      "name": "guard_flags_remain_const_false",
       "status": "pass"
     },
     {
       "name": "cross_provider_review",
       "status": "pass"
-    },
-    {
-      "name": "changelog_unreleased_entry_added",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Sistemik CI bug fix: actions/checkout@v6 default fetch-depth=1 \u2192 shallow clone \u2192 `_resolve_pr_diff_base()` returns None + `git diff origin/main...HEAD` exits 128 across every open PR. Affected tests: test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners, test_epic_4_1_*_diff*, test_epic_4_2a_*_diff*, test_pci_dss_mapping::test_allowlist_diff_no_other_files (task #64 each-PR fail).",
-    "Fix: `.github/workflows/test.yml` test job's actions/checkout@v6 gets `with: fetch-depth: 0` + 6-line inline comment citing affected tests + HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm. Single-purpose root-cause fix. Coverage job unmodified (downloads artifact, does not re-run suite). Other jobs (lint/typecheck/packaging-smoke/etc.) do not call diff-base resolution and remain on default fetch-depth=1.",
-    "Codex MCP cross-provider review (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d) verdict AGREE on the core fix; REVISE on initial evidence path scope (top-level vs nested) + PR body 'TEK dosya' overclaim. Both absorbed in iter-2: top-level evidence JSONs rewritten with correct schema + AO-MA-CI-FIX-fetch-depth-shallow-clone work_package + real Codex thread ID, PR body scope corrected to reflect 4 files + 2 nested evidence files.",
-    "Cross-AI peer-review HARD RULE compliance (2026-05-14): implementer Anthropic \u2260 reviewer OpenAI; supersession not invoked because this is a single-purpose fix and Codex MCP review evidence is captured. Anthropic adversarial self-review is the SECONDARY signal (same-provider) per HARD RULE 2-of-3 distinct-provider AGREE policy.",
-    "ZERO TOUCH on guard-controlled surfaces: 3 guard flags const false across all PR evidence files. No CODEOWNERS / ruleset / branch-protection / ao_kernel/ runtime / .ao/ canonical store / gpp_status / scripts/ao_release_gate mutation. test.yml change scope is one with-block + comment on a single checkout step in the test job.",
-    "HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm: kal\u0131c\u0131 \u00e7\u00f6z\u00fcm (root cause not symptom). Patching individual tests to tolerate shallow clones would be the wrong layer. HARD RULE Governance/Sistemik Bug: sistemik bug bypass YASAK; kal\u0131c\u0131 fix \u00f6nce, no admin merge. HARD RULE No Fake Work: machine-verified by post-merge effect \u2014 every other open PR's CI re-run clears these specific failures."
+    "E-1-3 adds a read-only pull_request CI workflow for ADR-0005 changelog enforcement and delegates the decision to `ao-kernel quality check-changelog`, preserving the CLI as SSOT.",
+    "The workflow uses the current CLI contract and computes changed paths from `origin/<base>...HEAD`; PR labels are parsed only to allow the documented `chore-no-changelog` recovery path.",
+    "A real `CHANGELOG.md` `[Unreleased]` entry was added for this PR, proving the new gate can pass without label-based bypass on its introducer PR.",
+    "High-risk governance boundaries remain closed: no CODEOWNERS, ruleset, branch protection, secret, admin, support widening, production claim, or live adapter execution change.",
+    "Top-level OpenAI and Anthropic review evidence is rebound to the exact current PR diff so `ao-release-gate` can verify source-pinned high-risk review evidence."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

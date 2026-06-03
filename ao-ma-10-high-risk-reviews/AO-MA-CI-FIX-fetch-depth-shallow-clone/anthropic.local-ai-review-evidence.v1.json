@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-823-changelog-enforcement-workflow",
+  "work_package": "AO-MA-CI-FIX-fetch-depth-shallow-clone",
   "implementer": {
     "agent": "claude-opus-4-7-1m",
     "provider": "anthropic"
@@ -13,14 +13,15 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-1-3-changelog-ci",
+    "head_ref": "refs/heads/codex/ci-fix-fetch-depth-shallow-clone",
     "changed_files": [
-      ".claude/plans/EPIC-1-3-CHANGELOG-ENFORCEMENT-CI.md",
-      ".github/workflows/changelog-enforcement.yml",
-      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-823-changelog-enforcement-workflow-fix/openai.local-ai-review-evidence.v1.json",
+      ".github/workflows/test.yml",
+      "CHANGELOG.md",
+      "local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "tests/test_changelog_enforcement_workflow_shape.py"
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/openai.local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
