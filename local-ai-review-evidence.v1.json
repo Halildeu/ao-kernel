@@ -1,14 +1,16 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "CI-UV-INSTALLER",
+  "work_package": "CI-CODEX-PUSH-DEDUP",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ci-uv-installer",
+    "head_ref": "refs/heads/codex/ci-codex-push-dedup",
     "changed_files": [
+      ".claude/scripts/trigger-test-workflow.sh",
       ".github/workflows/test.yml",
+      "CLAUDE.md",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -16,24 +18,26 @@
     { "name": "tests", "status": "pass" },
     { "name": "secret_scan", "status": "pass" },
     { "name": "yaml_valid", "status": "pass" },
-    { "name": "uv_extras_resolve_smoke", "status": "pass" },
-    { "name": "no_bare_pip_install_leftover", "status": "pass" },
+    { "name": "actionlint_clean", "status": "pass" },
+    { "name": "bash_syntax_clean", "status": "pass" },
     { "name": "required_check_names_preserved", "status": "pass" },
     { "name": "matrix_preserved", "status": "pass" },
-    { "name": "coverage_topology_preserved", "status": "pass" },
-    { "name": "no_new_action_supply_chain", "status": "pass" },
-    { "name": "retry_guard_preserved_all_sites", "status": "pass" },
+    { "name": "ao_release_gate_allowlist_preserved", "status": "pass" },
+    { "name": "ao_ma10n_classic_ci_requirements_intact", "status": "pass" },
+    { "name": "no_branch_protection_mutation", "status": "pass" },
+    { "name": "no_ruleset_mutation", "status": "pass" },
     { "name": "no_guard_flip", "status": "pass" },
+    { "name": "downstream_workflow_run_unaffected", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "CI-perf change (PR-0 of the queue-relief program): swap every pip-based dependency install in the Test workflow to a uv-bootstrapped `uv pip install --system` form. Goal is faster dependency resolution/install across all jobs (uv resolver + parallel downloads) -> lower per-job setup time + total compute + queue occupancy in the ~45-parallel-worktree model. No test execution path, no coverage gate, no required-check names change.",
-    "Change set (1 file: .github/workflows/test.yml; +27/-12). 9 install sites converted by a count-asserted transform: lint (ruff), test matrix 3.11/3.12/3.13 (.[dev,llm,metrics]), coverage (coverage), packaging-smoke (build), typecheck + benchmark-fast + scorecard (.[dev,llm,mcp,metrics] x3), extras-install (pip_install() helper), ao-release-gate (.[mcp]). Each site follows one pattern: `python -m pip install uv || (sleep 5 && ...)` bootstrap then `uv pip install --system <args> || (sleep 5 && ...)` -- the v3.8 H6 2-try retry guard is preserved at every site including the ao-release-gate merge-authority job (Codex post-impl REVISE absorb: the gate install initially lost its retry; re-added so a transient PyPI/uv flake cannot break the merge gate).",
-    "Deliberately NO new third-party action: uv is obtained via `python -m pip install uv` inside each run block rather than astral-sh/setup-uv. This keeps the supply-chain delta at zero (no new `uses:` surface, nothing to SHA-pin/review), which matters for the ao-release-gate job that is the merge authority. The ~3-5s per-job uv bootstrap is off the critical path (only test (3.13)=248s is the long pole; uv affects the install portion, not the ~6k-test execution).",
-    "Local smoke (uv 0.11.18, dry-run resolution against .venv): .[dev,llm,metrics], .[dev,llm,mcp,metrics], .[mcp], and .[policy-service] all resolve cleanly with the expected packages (starlette/uvicorn/typing-inspection/pyjwt/pycparser); no resolution error. YAML parses (yaml.safe_load); `git diff --check` clean; a grep guard confirms zero leftover bare `pip install <package>` (only the `python -m pip install uv` bootstrap remains). The canonical install + full-suite validation is this workflow PR's own GitHub Actions run.",
-    "Invariants preserved (verified): job names (test (3.11)/(3.12)/(3.13), coverage, lint, typecheck, packaging-smoke, ...) unchanged; matrix still [\"3.11\",\"3.12\",\"3.13\"]; coverage instrumentation still only on the 3.13 leg, coverage-data artifact + fail-closed `coverage` sentinel unchanged; ao-release-gate `--required-check` allowlist still includes test (3.11)/(3.12)/(3.13); `cache: pip` left in place (uv uses its own cache; pip cache stays harmless, no cache-topology change in this PR); 2 pip-specific comments neutralized to installer-neutral wording (doc-drift hygiene).",
-    "Cross-AI review: Codex thread 019e8a1b. Plan-time (program design): REVISE -> AGREE on the staged uv-only-first sequence. Post-impl iter-1: REVISE (ao-release-gate install dropped the retry guard) -> absorbed (retry re-added) -> iter-2 AGREE. Reviewer verdict is one evidence layer; merge authority remains the repo-owned ao-release-gate required check + GitHub ruleset.",
-    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime change, no defaults/ change, no scripts/ change, no .ao/ workspace write, no branch-protection mutation, no secret material. Diff is workflow installer-swap only."
+    "CI-perf change (PR-1 of the queue-relief program after #901 + #906): remove `codex/**` from .github/workflows/test.yml on.push.branches. Goal is to eliminate the same-SHA push-run + PR-run double-trigger on every codex/* branch update -- the concurrency key is `github.ref`, so push and PR live in separate concurrency groups and BOTH run all 9+ required checks against the same commit. In the ~45-parallel-worktree model this duplication was the dominant queue saturator. The PR run remains the canonical required-check source-of-truth; semantics do not change.",
+    "Change set (3 files; small surgical edits + one workflow line + 2 docs):\n(1) .github/workflows/test.yml: a single line removed from on.push.branches -- `- \"codex/**\"` deleted. push.branches is now `[main]` (single element, valid YAML). pull_request / pull_request_review / workflow_dispatch triggers + concurrency + matrix + every job + every required-check job name are unchanged.\n(2) CLAUDE.md §19 'CI kurali' paragraph rewritten so the documented model matches the new behavior: test.yml push trigger is main-only; pre-PR signal has two paths depending on PR base type. For base=`main` PRs, opening the PR (draft or ready) auto-triggers the workflow (canonical signal). For base=`codex/**` upper-stacked PRs, automatic trigger does NOT fire (since pull_request.branches: [main]); pre-retarget signal there requires the workflow_dispatch fallback (.claude/scripts/trigger-test-workflow.sh). A required-check honesty sentence was added: even if pre-PR branch CI ran, the same-SHA PR run will run again; the required check's source-of-truth is always the PR run.\n(3) .claude/scripts/trigger-test-workflow.sh: file header comment updated. It no longer claims 'codex/* push normally produces CI'; it now lists three honest use cases (pre-PR branch CI, base=codex/** upper-stacked PR pre-retarget signal, post-retarget recovery). The script body itself was not touched.",
+    "AO-MA-10N hard-stop ('No removal of classic CI requirements.', pinned by test_ao_ma10n_live_enforcement_cutover.py:45 + test_ao_ma10o_cc9_no_human_bootstrap_supersession.py:146 + .claude/plans/AO-MA-10N-LIVE-ENFORCEMENT-CUTOVER.md:182 + AO-MA-10O-CC9-NO-HUMAN-BOOTSTRAP-SUPERSESSION.md:137) is INTACT: no required-check is removed or renamed, branch protection / ruleset is NOT mutated, matrix python-version list still [\"3.11\",\"3.12\",\"3.13\"], AO-MA-10O CLASSIC_CI_CHECKS tuple unchanged, ao-release-gate `--required-check` allowlist (lint, typecheck, test (3.11)/(3.12)/(3.13), coverage, packaging-smoke, policy-container-smoke, release-gate-container-smoke) unchanged, enforce_job invariant test (test_ao_release_gate_enforce_job.py:478) untouched. The matrix-reduction path was deliberately abandoned earlier this session precisely because it would have collided with this hard-stop; this PR uses Codex thread 019e8a1b's plan-time AGREE alternative.",
+    "Deliberately out-of-scope: ao-release-gate-container-publish.yml still runs on codex/** push (separate concern -- container publish, not a required check, on a different workflow_run chain that the ao-autonomous-merge-executor only triggers when head_branch=main + event!=pull_request). That workflow is intact. Downstream workflow_run consumers (ao-autonomous-merge-executor.yml: only triggers on pull_request workflow_run success; deploy workflows: only on head_branch=main) are unaffected by removing codex/** push from test.yml.",
+    "Validation: YAML parses (yaml.safe_load, push.branches==[\"main\"], pull_request.branches==[\"main\"]); actionlint clean on test.yml; bash -n clean on trigger-test-workflow.sh; git diff --check clean; no invariant test pins `codex/**` in on.push.branches (taraytion sonucu: only agent='codex' string references in test_ao_ma10_high_risk_raw_review_producer.py, irrelevant). Quantitative queue-relief impact is observable post-merge via GitHub Actions run count per branch update.",
+    "Cross-AI review: Codex plan-time (thread 019e8a1b, previous session): REVISE -> AGREE on the queue-relief sequence (PR-0 uv done as #906, PR-1 now). Post-impl (thread 019e8c07): REVISE iter-1 found two documentation-side gaps -- (a) the 'open PR early -> canonical signal' sentence was scope-incorrect for upper-stacked PRs because pull_request.branches=[main] excludes base=codex/** PRs, (b) trigger-test-workflow.sh header comment still claimed codex push produces CI which is no longer true. Both absorbed in this revision: CLAUDE.md §19 now splits pre-PR signal by base type and marks workflow_dispatch fallback as mandatory for base=codex/**; script header rewritten with three honest use cases. iter-2 AGREE.",
+    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime change, no defaults/ change, no scripts/*.py change (only the bash header comment), no .ao/ workspace write, no branch protection mutation, no ruleset mutation, no secret material. Diff is one workflow line + two documentation surfaces."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

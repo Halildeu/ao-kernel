@@ -2,9 +2,12 @@
 #
 # trigger-test-workflow.sh — Test workflow'unu mevcut branch için manuel tetikle.
 #
-# Özellikle stacked PR retarget sonrası GitHub otomatik check üretmezse
-# kullanılır. Branch push'u normalde codex/* için CI üretir; bu script
-# manuel fallback'tir.
+# Üç tipik durum (2026-06-02 sonrası, codex/** push trigger'ı kaldırıldı):
+#   1. Pre-PR branch CI: PR henüz açılmadıysa workflow_dispatch ile CI üret.
+#   2. Üst-stacked PR (base=codex/...): test.yml `pull_request.branches: [main]`
+#      olduğu için yalnız base=main PR'larında otomatik tetiklenir; üst-stack
+#      PR'larında retarget öncesi sinyal için bu fallback gerekir.
+#   3. Stacked PR retarget sonrası otomatik check görünmezse.
 #
 # Kullanım:
 #   bash .claude/scripts/trigger-test-workflow.sh
