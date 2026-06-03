@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10h-multi-work-package-migration",
+  "work_package": "AO-MA-898-project-sync-module",
   "implementer": {
     "agent": "claude-opus-4-7-1m",
     "provider": "anthropic"
@@ -13,18 +13,33 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
+    "head_ref": "refs/heads/codex/ao-ma-11e-2c-project-sync-module",
     "changed_files": [
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/test_ao_ma10h_multi_work_package_schema.py",
-      "tests/test_ao_release_gate.py"
+      ".claude/plans/AO-MA-11E-2c-LOCAL-AI-REVIEW-EVIDENCE.v1.json",
+      ".claude/plans/AO-MA-11E-2c-PROJECT-SYNC-MODULE.md",
+      ".claude/plans/AO-MA-11E-2c-PROJECT-SYNC-MODULE.v1.json",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/schemas/project-sync-add-slice-request.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-drift-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-label-migration-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/project-sync-sync-report.schema.v1.json",
+      "ao_kernel/project_sync/__init__.py",
+      "ao_kernel/project_sync/cli.py",
+      "ao_kernel/project_sync/derivers.py",
+      "ao_kernel/project_sync/drift_healer.py",
+      "ao_kernel/project_sync/errors.py",
+      "ao_kernel/project_sync/issues.py",
+      "ao_kernel/project_sync/label_migrator.py",
+      "ao_kernel/project_sync/manifest.py",
+      "ao_kernel/project_sync/project_v2.py",
+      "ao_kernel/project_sync/slice_adder.py",
+      "tests/test_project_sync_cli.py",
+      "tests/test_project_sync_derivers.py",
+      "tests/test_project_sync_drift_healer.py",
+      "tests/test_project_sync_label_migrator.py",
+      "tests/test_project_sync_manifest.py",
+      "tests/test_project_sync_schemas.py",
+      "tests/test_project_sync_slice_adder.py"
     ]
   },
   "checks_considered": [
