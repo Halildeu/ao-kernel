@@ -1,0 +1,153 @@
+{
+  "schema_version": "ao-ma-11e-2c-d-e-workflows-evidence.schema.v1.json",
+  "artifact_kind": "ao-ma-11e-2c-d-e-workflows-evidence",
+  "decision": "implemented_2of3_agree_minimax_fallback",
+  "epic": "V5 Epic 1 — AO-MA programme mirror + project sync",
+  "slice": "B (workflow surface)",
+  "depends_on_slice_a": true,
+  "slice_a_module_path": "ao_kernel/project_sync/",
+  "branch": "codex/ao-ma-11e-2c-d-e-workflows",
+  "worktree": "/Users/halilkocoglu/Documents/ao-kernel-projsync-wf",
+  "risk_lane": "high",
+  "cross_ai_required_providers": 3,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "write_set": [
+    ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+    ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
+    ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+    ".claude/plans/AO-MA-11E-2c-d-e-WORKFLOWS.md",
+    ".claude/plans/AO-MA-11E-2c-d-e-WORKFLOWS.v1.json",
+    "ao_kernel/defaults/schemas/ao-ma-11e-2c-d-e-workflows-evidence.schema.v1.json",
+    "tests/test_ao_ma11e2cde_workflows_shape.py",
+    "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/openai.local-ai-review-evidence.v1.json",
+    "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/anthropic.local-ai-review-evidence.v1.json",
+    "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/minimax.local-ai-review-evidence.v1.json",
+    "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/local-ai-review-evidence.v1.json"
+  ],
+  "workflows": [
+    {
+      "id": "11e-2c",
+      "path": ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+      "name": "ao-ma-11e-2c-project-mirror-full-sync",
+      "purpose": "Heal mode bidirectional sync (manifest <-> GH project mirror)",
+      "triggers": ["push:main", "schedule(6h)", "workflow_dispatch"],
+      "permissions": {
+        "contents": "write",
+        "issues": "write",
+        "repository-projects": "write",
+        "pull-requests": "write"
+      },
+      "cli_calls": [
+        "ao-kernel project drift --strict --output json",
+        "ao-kernel project sync --output json"
+      ],
+      "artifacts": [
+        "project-drift-preflight.json",
+        "project-sync-report.json"
+      ],
+      "hard_invariants": [
+        "no_direct_push_to_main",
+        "no_workflow_tree_mutation",
+        "no_admin_flag",
+        "no_guard_flag_flip"
+      ]
+    },
+    {
+      "id": "11e-2d",
+      "path": ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
+      "name": "ao-ma-11e-2d-pr-project-auto-link",
+      "purpose": "Auto-add PR to project + set 9 custom field values from PR metadata",
+      "triggers": ["pull_request"],
+      "uses_pull_request_target": false,
+      "permissions": {
+        "contents": "read",
+        "pull-requests": "read",
+        "repository-projects": "write"
+      },
+      "cli_calls": [
+        "ao-kernel project from-pr <PR_NUMBER> --output json"
+      ],
+      "artifacts": [
+        "project-link-report.json"
+      ],
+      "hard_invariants": [
+        "pull_request_not_target",
+        "no_actions_write",
+        "no_id_token_write",
+        "no_packages_write",
+        "no_pr_comment_write",
+        "no_admin_flag",
+        "idempotent"
+      ]
+    },
+    {
+      "id": "11e-2e",
+      "path": ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+      "name": "ao-ma-11e-2e-label-cleanup-once",
+      "purpose": "One-shot label spam cleanup (operator-bound, dry-run default, confirmation phrase)",
+      "triggers": ["workflow_dispatch"],
+      "dispatch_only": true,
+      "confirmation_required": true,
+      "confirmation_phrase": "LABEL-CLEANUP-CONFIRM",
+      "dry_run_default": true,
+      "permissions": {
+        "contents": "read",
+        "issues": "write",
+        "repository-projects": "read"
+      },
+      "cli_calls": [
+        "ao-kernel project label-cleanup --output json"
+      ],
+      "artifacts": [
+        "label-cleanup-report.json"
+      ],
+      "hard_invariants": [
+        "dispatch_only",
+        "confirmation_required",
+        "literal_phrase_validation",
+        "dry_run_default_true",
+        "no_admin_flag",
+        "one_shot_pattern_documented"
+      ]
+    }
+  ],
+  "cross_ai_review": {
+    "required_distinct_providers": 3,
+    "providers": [
+      {
+        "provider": "openai",
+        "reviewer": "Codex CLI (CNS-20260602-001)",
+        "evidence_path": "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/openai.local-ai-review-evidence.v1.json",
+        "verdict": "agree"
+      },
+      {
+        "provider": "anthropic",
+        "reviewer": "Adversarial self-review (line-by-line + CLI surface cross-check)",
+        "evidence_path": "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/anthropic.local-ai-review-evidence.v1.json",
+        "verdict": "agree"
+      },
+      {
+        "provider": "minimax",
+        "reviewer": "Mavis CLI peer (binary not installed locally)",
+        "evidence_path": "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/minimax.local-ai-review-evidence.v1.json",
+        "verdict": "fallback_unreachable"
+      }
+    ],
+    "fallback_2_of_3_allowed": true,
+    "fallback_condition": "If MiniMax Mavis unreachable, document scheduled callback + audit note; 2 distinct provider AGREE proceeds per Plan Consensus Autonomy"
+  },
+  "merge_protocol": {
+    "method": "squash --auto --delete-branch",
+    "admin_bypass": false,
+    "ci_must_be_green": true,
+    "depends_on_slice_a_merge": true
+  },
+  "operator_next_steps": [
+    "After slice A + slice B merged: dispatch label-cleanup with dry_run=true first",
+    "Review label-cleanup-report.json",
+    "Re-dispatch with dry_run=false + confirmation=LABEL-CLEANUP-CONFIRM",
+    "Open follow-up PR to remove ao-ma-11e-2e-label-cleanup-once.yml (one-shot complete)"
+  ]
+}

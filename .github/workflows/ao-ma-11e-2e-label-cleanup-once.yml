@@ -1,0 +1,158 @@
+# AO-MA-11E-2e — One-shot label spam cleanup
+#
+# Purpose: Migrate legacy programme labels (`epic-X`, `risk:Y`, `guard-flip:Z`,
+# `status:*`) into project custom field values, then REMOVE those labels.
+# Operator-bound, irreversible, single-trigger surface.
+#
+# Lifecycle: One-shot pattern. After this workflow runs successfully with
+# `dry_run=false` and confirmation phrase validated, this file SHOULD be
+# removed in a follow-up cleanup PR. The label-removal is irreversible; the
+# workflow remaining in the tree is a dormant footgun.
+#
+# Trigger surface (workflow_dispatch ONLY):
+#   - Operator-initiated only. No push, no PR, no schedule.
+#   - Confirmation phrase required when applying (typo guard).
+#   - `dry_run=true` by default (false-positive guard).
+#
+# Permissions (minimum sufficient):
+#   - contents: read              # checkout
+#   - issues: write               # remove labels from issues
+#   - repository-projects: read   # READ ONLY (custom field values are set by 11e-2d,
+#                                 #             not by this cleanup workflow)
+#
+# Hard invariants (enforced by tests/test_ao_ma11e2cde_workflows_shape.py):
+#   - workflow_dispatch ONLY
+#   - confirmation input required: true
+#   - Validates literal phrase `LABEL-CLEANUP-CONFIRM` when dry_run=false
+#   - No `--admin` flag
+#   - No `actions: write`
+#   - `repository-projects: read` (intentionally NOT write — cleanup removes
+#     labels, project field SSOT migration is owned by 11e-2d)
+
+name: ao-ma-11e-2e-label-cleanup-once
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true = report only (default); false = apply cleanup'
+        type: boolean
+        default: true
+      confirmation:
+        description: 'Type LABEL-CLEANUP-CONFIRM to apply (irreversible label removal)'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  issues: write
+  repository-projects: read
+
+concurrency:
+  group: ao-ma-11e-2e-label-cleanup-once
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: One-shot label cleanup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate confirmation phrase
+        env:
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          INPUT_CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ "$INPUT_DRY_RUN" = "false" ]; then
+            if [ "$INPUT_CONFIRMATION" != "LABEL-CLEANUP-CONFIRM" ]; then
+              echo "::error::Apply mode requires confirmation phrase 'LABEL-CLEANUP-CONFIRM'."
+              echo "::error::Received length ${#INPUT_CONFIRMATION}"
+              exit 1
+            fi
+            echo "Confirmation phrase validated; running apply mode."
+          else
+            echo "Running in dry-run mode (no label mutations)."
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install ao-kernel
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Verify CLI present
+        run: |
+          ao-kernel version
+          ao-kernel project --help
+
+      - name: Run label cleanup
+        id: cleanup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$INPUT_DRY_RUN" = "true" ]; then
+            ao-kernel project label-cleanup --dry-run \
+              --repo "${{ github.repository }}" \
+              --output json \
+              > label-cleanup-report.json
+          else
+            ao-kernel project label-cleanup \
+              --repo "${{ github.repository }}" \
+              --output json \
+              > label-cleanup-report.json
+          fi
+
+      - name: Render cleanup report into job summary
+        if: always()
+        run: |
+          if [ -f label-cleanup-report.json ]; then
+            {
+              echo "## AO-MA-11E-2e label cleanup report"
+              echo ""
+              echo '```json'
+              cat label-cleanup-report.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload migration report artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: label-cleanup-report-${{ github.run_id }}
+          path: label-cleanup-report.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Comment summary on tracking issue (best effort)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AO_TRACKING_ISSUE_NUMBER: ${{ vars.AO_MA_11E_2E_TRACKING_ISSUE || '' }}
+        run: |
+          if [ -z "$AO_TRACKING_ISSUE_NUMBER" ]; then
+            echo "AO_MA_11E_2E_TRACKING_ISSUE repo variable not set; skipping summary comment."
+            exit 0
+          fi
+          if [ -f label-cleanup-report.json ]; then
+            {
+              echo "## AO-MA-11E-2e label-cleanup result (run ${{ github.run_id }})"
+              echo ""
+              echo '```json'
+              cat label-cleanup-report.json
+              echo '```'
+            } > issue-comment-body.md
+            gh issue comment "$AO_TRACKING_ISSUE_NUMBER" \
+              --repo "${{ github.repository }}" \
+              --body-file issue-comment-body.md || true
+          fi

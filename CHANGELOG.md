@@ -14,6 +14,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   sync, drift checks, slice creation, field updates, label cleanup, and
   PR-derived slice metadata. This is the module-only foundation for the
   follow-up workflow integration slice.
+- **V5 project sync workflows**: added GitHub Actions workflows for
+  scheduled/manual project mirror sync, PR-to-project auto-linking, and
+  one-shot legacy label cleanup, all backed by the `ao-kernel project`
+  CLI and scoped with fail-closed workflow-shape tests.
 - **V5 changelog enforcement CI**: added a read-only pull-request
   workflow that delegates ADR-0005 changelog discipline to the
   canonical `ao-kernel quality check-changelog` CLI instead of
