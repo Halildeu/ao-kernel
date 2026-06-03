@@ -79,16 +79,60 @@ jobs:
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           set -e
-          # The CLI reads CHANGELOG.md vs the merge base of origin/$BASE_REF
-          # and inspects PR labels via the env-injected JSON (the CLI
-          # normalizes label payload from --labels-json or env).
-          printf '%s\n' "$PR_LABELS_JSON" > pr-labels.json
-          ao-kernel quality check-changelog \
-            --base "origin/$BASE_REF" \
-            --labels-json pr-labels.json \
-          || {
+          # CLI signature (V5 Epic 1 E-1-3 binding to ao-kernel CLI SSOT):
+          #   --base-changelog <committed base CHANGELOG.md>
+          #   --head-changelog <PR head CHANGELOG.md>
+          #   --out <verdict artifact path>
+          #   --diff-path <repeated for each changed file>
+          #   [--chore-no-changelog --chore-rationale "..."]
+
+          # 1. Dump base CHANGELOG.md from origin/$BASE_REF
+          git show "origin/${BASE_REF}:CHANGELOG.md" > base-changelog.md
+
+          # 2. Detect chore-no-changelog label
+          CHORE_FLAG=""
+          CHORE_RATIONALE_TEXT=""
+          HAS_CHORE_LABEL=$(printf '%s' "$PR_LABELS_JSON" | python3 -c "
+          import json, sys
+          try:
+              labels = json.load(sys.stdin)
+              print('yes' if any(l.get('name') == 'chore-no-changelog' for l in labels) else 'no')
+          except Exception:
+              print('no')
+          ")
+          if [ "$HAS_CHORE_LABEL" = "yes" ]; then
+            CHORE_FLAG="--chore-no-changelog"
+            CHORE_RATIONALE_TEXT="${PR_BODY:0:200}"
+            if [ "${#CHORE_RATIONALE_TEXT}" -lt 10 ]; then
+              CHORE_RATIONALE_TEXT="chore: no changelog entry required for this PR"
+            fi
+          fi
+
+          # 3. Compute diff paths (changed files between base and head)
+          DIFF_ARGS=""
+          while IFS= read -r path; do
+            [ -n "$path" ] && DIFF_ARGS="$DIFF_ARGS --diff-path $path"
+          done < <(git diff --name-only "origin/${BASE_REF}...HEAD")
+
+          # 4. Run CLI
+          if [ -n "$CHORE_FLAG" ]; then
+            ao-kernel quality check-changelog \
+              --base-changelog base-changelog.md \
+              --head-changelog CHANGELOG.md \
+              --out changelog-verdict.json \
+              $DIFF_ARGS \
+              $CHORE_FLAG \
+              --chore-rationale "$CHORE_RATIONALE_TEXT"
+          else
+            ao-kernel quality check-changelog \
+              --base-changelog base-changelog.md \
+              --head-changelog CHANGELOG.md \
+              --out changelog-verdict.json \
+              $DIFF_ARGS
+          fi || {
             printf '%s\n' "::error::CHANGELOG.md enforcement failed per ADR-0005."
             printf '%s\n' "::error::Either (a) add a new bullet under ## [Unreleased] and commit, or"
             printf '%s\n' "::error::(b) add the 'chore-no-changelog' label to this PR and provide >=10-char rationale in the PR body."
