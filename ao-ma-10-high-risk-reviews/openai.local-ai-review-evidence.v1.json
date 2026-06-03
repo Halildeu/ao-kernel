@@ -32,7 +32,7 @@
   },
   "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
-    "base_ref": "origin/main",
+    "base_ref": "refs/heads/main",
     "changed_files": [
       ".claude/plans/v5_issue_projection.v1.json",
       ".claude/plans/v5_subissues_mirror.v1.json",
