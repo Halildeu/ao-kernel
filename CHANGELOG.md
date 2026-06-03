@@ -19,6 +19,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 production deployment guide**: added the Epic 8 E-8-1
+  deployment guide covering standalone Python package, Docker, and
+  Kubernetes operator-deployable patterns while preserving the three
+  guard flags as `const false` and explicitly avoiding any production
+  readiness claim.
 - **V5 sub-issue mirror manifest**: added the full retroactive V5
   sub-issue mirror for issues `#834` through `#895` and linked it from
   `v5_issue_projection.v1.json` so the GitHub Project mirror exposes
