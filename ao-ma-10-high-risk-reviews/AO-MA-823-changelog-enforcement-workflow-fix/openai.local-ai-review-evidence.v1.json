@@ -29,7 +29,7 @@
     "production_platform_claim": false,
     "live_adapter_execution": false
   },
-  "work_package": "AO-MA-823-changelog-enforcement-workflow",
+  "work_package": "AO-MA-898-project-sync-module",
   "checks_considered": [
     {
       "name": "secret_scan",
