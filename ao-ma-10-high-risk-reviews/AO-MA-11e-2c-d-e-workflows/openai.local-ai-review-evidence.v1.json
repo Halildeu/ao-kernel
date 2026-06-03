@@ -25,13 +25,13 @@
     "low": 4
   },
   "key_findings_summary": [
-    "Medium: pull_request types include 'edited' which fires on body/title edits — mitigated by concurrency cancel-in-progress",
+    "Medium: pull_request types include 'edited' which fires on body/title edits \u2014 mitigated by concurrency cancel-in-progress",
     "Medium: 11e-2c grants contents: write although no commit is made (Slice A only mutates project board + issues). Tightening to 'read' is recommended; not blocking since auto-PR adapter is documented as out-of-scope follow-up",
     "Medium: gh issue comment --body-file with raw JSON wrapped in markdown code block (fixed in revision)",
     "Medium: confirmation phrase only enforced in apply mode (dry_run=false). 'required: true' input is form-level; intentional design",
-    "Medium: ao-kernel CLI relies on PATH; pip install -e . in editable mode provides the entry point — Codex agrees this is correct",
-    "Low: actions/upload-artifact@v6 — current GH-stable line",
-    "Low: --strict exits 1 + continue-on-error: true — verified correct behavior (preflight outcome captured for follow-up step)",
+    "Medium: ao-kernel CLI relies on PATH; pip install -e . in editable mode provides the entry point \u2014 Codex agrees this is correct",
+    "Low: actions/upload-artifact@v6 \u2014 current GH-stable line",
+    "Low: --strict exits 1 + continue-on-error: true \u2014 verified correct behavior (preflight outcome captured for follow-up step)",
     "Low: 11e-2c lacks run-ID concurrency cancel-in-progress=true; cancel-in-progress=false is intentional for sync correctness (atomic batch)",
     "Low: operator next-step relies on AO_MA_11E_2E_TRACKING_ISSUE repo variable; gracefully skipped if unset"
   ],

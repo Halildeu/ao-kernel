@@ -13,10 +13,10 @@
   ],
   "provider": "minimax",
   "reviewer": "mavis-cli",
-  "review_method": "Attempted: mavis communication peers + send per HARD RULE Mavis CLI (2026-05-29). Local mavis binary was not discoverable on PATH or under standard install prefixes (~/.local/bin, /usr/local/bin, /opt/homebrew/bin, ~/.cargo/bin, ~/go/bin, $HOME hierarchy). The CLAUDE.md HARD RULE Tam Otonom Önerme + Plan Consensus Autonomy fallback protocol applies: 2-of-3 distinct-provider AGREE with explicit audit note + scheduled-callback marker.",
+  "review_method": "Attempted: mavis communication peers + send per HARD RULE Mavis CLI (2026-05-29). Local mavis binary was not discoverable on PATH or under standard install prefixes (~/.local/bin, /usr/local/bin, /opt/homebrew/bin, ~/.cargo/bin, ~/go/bin, $HOME hierarchy). The CLAUDE.md HARD RULE Tam Otonom \u00d6nerme + Plan Consensus Autonomy fallback protocol applies: 2-of-3 distinct-provider AGREE with explicit audit note + scheduled-callback marker.",
   "verdict": "fallback_unreachable",
   "ready_to_merge": false,
-  "verdict_rationale": "Mavis CLI not installed in this environment; cannot submit prompt to MiniMax peer. Per HARD RULE Tam Otonom Önerme + Plan Consensus Autonomy, the merge gate is met by 2-of-3 distinct-provider AGREE (openai codex AGREE + anthropic adversarial AGREE) with this evidence record documenting the unreachable state.",
+  "verdict_rationale": "Mavis CLI not installed in this environment; cannot submit prompt to MiniMax peer. Per HARD RULE Tam Otonom \u00d6nerme + Plan Consensus Autonomy, the merge gate is met by 2-of-3 distinct-provider AGREE (openai codex AGREE + anthropic adversarial AGREE) with this evidence record documenting the unreachable state.",
   "support_widening": false,
   "production_platform_claim": false,
   "live_adapter_execution": false,
@@ -29,7 +29,7 @@
     "if_unreachable": "Mark verdict=fallback_unreachable; 2-of-3 distinct-provider AGREE (openai + anthropic) proceeds per Plan Consensus Autonomy; scheduled-callback intent documented for next session.",
     "callback_issue_url": "tracked-via-pr-comment"
   },
-  "audit_note": "Per HARD RULE Mavis CLI (2026-05-29): mavis communication peers + send is the canonical lokal IPC channel. Environment limitation: mavis binary not installed. Per HARD RULE Tam Otonom Önerme: agent organizes fallback path autonomously — does NOT yield merge gate to operator.",
+  "audit_note": "Per HARD RULE Mavis CLI (2026-05-29): mavis communication peers + send is the canonical lokal IPC channel. Environment limitation: mavis binary not installed. Per HARD RULE Tam Otonom \u00d6nerme: agent organizes fallback path autonomously \u2014 does NOT yield merge gate to operator.",
   "created_at": "2026-06-02T00:00:00Z",
   "updated_at": "2026-06-02T00:00:00Z"
 }
