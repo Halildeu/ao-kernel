@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **test_pre_commit_changelog_gate::test_no_workflow_mutation introducer-PR detection**:
+  After #909 merged, this slice-scoped invariant test was firing on every
+  successor PR that touched `.github/workflows/` because the skip predicate
+  also matched modifications to the hook file. Fix uses `--diff-filter=A`
+  so only PRs that **ADD** `.claude/scripts/pre-commit-changelog-gate.sh`
+  trigger the assertion. Pattern parity with
+  `test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners`.
+
 ### Added
 
 - **V5 issue forms**: added GitHub Issue templates for V5 slices,
