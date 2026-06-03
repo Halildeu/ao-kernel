@@ -22,6 +22,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   workflow that delegates ADR-0005 changelog discipline to the
   canonical `ao-kernel quality check-changelog` CLI instead of
   duplicating decision logic in workflow YAML.
+- **ao-release-gate issue-template metadata allowlist**: added the
+  exact `.github/ISSUE_TEMPLATE/` prefix to the protected-base
+  release-gate diff-scope allowlist so reviewed V5 issue-form PRs can
+  merge without widening workflow, CODEOWNERS, ruleset, live-adapter,
+  support, or production-claim surfaces.
 
 ### Fixed
 

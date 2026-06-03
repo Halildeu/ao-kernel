@@ -70,6 +70,18 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     # ao-release-gate allowlist PR + plan doc + cross-AI review).
     ".claude/scripts/",
     ".github/workflows/",
+    # V5 governance intake forms live under `.github/ISSUE_TEMPLATE/`.
+    # They are GitHub UI metadata, not runtime adapter code and not branch
+    # protection / required-check configuration. Keeping this exact folder
+    # in the base-ref allowlist lets issue-form PRs pass the diff_scope
+    # gate while the independent checks still enforce no workflow,
+    # CODEOWNERS, ruleset, live-adapter, support-widening, or production
+    # claim mutation. Regression: PR #910 (E-P0-5 minimal issue forms)
+    # was correctly reviewed but blocked with
+    # `ao_release_gate_diff_out_of_scope` because the base-ref builder did
+    # not yet recognize `.github/ISSUE_TEMPLATE/` as an allowed GitHub
+    # metadata surface.
+    ".github/ISSUE_TEMPLATE/",
     ".github/CODEOWNERS",
     "deploy/",
     "docs/",
