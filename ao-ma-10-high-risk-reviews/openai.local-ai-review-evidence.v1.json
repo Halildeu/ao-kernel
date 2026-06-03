@@ -1,86 +1,49 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-910-issue-forms",
-  "implementer": {
-    "agent": "claude-opus-4-7-1m",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex-mcp-thread",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-p0-5-issue-forms-minimal",
-    "changed_files": [
-      ".claude/plans/EPIC-P0-5-ISSUE-FORMS.md",
-      ".github/ISSUE_TEMPLATE/config.yml",
-      ".github/ISSUE_TEMPLATE/governance-bug.yml",
-      ".github/ISSUE_TEMPLATE/v5-gate.yml",
-      ".github/ISSUE_TEMPLATE/v5-slice.yml",
-      "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/AO-MA-822-issue-forms-minimal/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-822-issue-forms-minimal/openai.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_issue_forms_shape.py"
-    ]
-  },
   "checks_considered": [
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
     {
       "name": "tests",
       "status": "pass"
     },
     {
-      "name": "issue_forms_present",
-      "status": "pass"
-    },
-    {
-      "name": "mandatory_v5_anchor_fields_required",
-      "status": "pass"
-    },
-    {
-      "name": "computed_risk_class_marker_present",
-      "status": "pass"
-    },
-    {
-      "name": "evidence_classes_multi_select_complete",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_const_false",
-      "status": "pass"
-    },
-    {
-      "name": "no_github_workflow_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_codeowners_ruleset_or_pr_template_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_review_evidence_present",
+      "name": "secret_scan",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI review evidence accepts PR #910 as a V5 Epic P0 E-P0-5 issue-form intake slice.",
-    "The forms require the V5 authority anchors and compute-risk source pointer rather than allowing manual risk downgrade.",
-    "The tests assert blank issues are disabled, canonical roadmap/HARD RULE links are present, and the V5 evidence class set is complete.",
-    "The zero-touch contract is preserved: no workflows, CODEOWNERS, ruleset, PR template, branch-protection, live adapter, or runtime files are changed.",
-    "AI review output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset.",
-    "scope_reviewed.changed_files is rebound to the current 12-file PR diff after rebase onto origin/main."
+    "Product/governance scope is limited to the V5 projection manifest, the new V5 sub-issue mirror manifest, and the narrow ADR-0005 CHANGELOG.md Unreleased record; the remaining changed paths are review-evidence artifacts identified as provisional regeneration inputs.",
+    "The projection manifest only adds runtime_created_state.sub_issues_mirror_ref and keeps guard_flags.support_widening, guard_flags.production_platform_claim, and guard_flags.live_adapter_execution false.",
+    "The new mirror manifest is internally consistent at the reviewed level: total_created is 62, per-epic counts sum to 62, issue_number_range 834-895 covers 62 issues, and projection parent_to_sub_count matches the mirror counts.",
+    "The mirror preserves register_authority as evidence_record_only and visibility_mode as one_way_mirror_repo_authority_wins; it does not claim release authority, production-platform readiness, support widening, or live-adapter execution.",
+    "No workflow, ruleset, branch protection, CODEOWNERS, PR template, runtime binding, or secret-bearing implementation path is changed in the supplied diff.",
+    "The supplied validation is sufficient for this mirror/projection change: both plan JSON files parsed, targeted manifest/project-sync tests reported 23 passed, git diff --check passed, changelog enforcement passed, and the changed-file secret scan reported no matches.",
+    "Minor non-blocking formatting note: v5_subissues_mirror.v1.json is shown without a trailing newline, but supplied git diff --check passed and this does not affect governance semantics."
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex-v5-subissues-mirror-rebase",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "openai-governance-review",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/v5_issue_projection.v1.json",
+      ".claude/plans/v5_subissues_mirror.v1.json",
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json"
+    ],
+    "head_ref": "refs/heads/codex/v5-subissues-mirror"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "AO-MA-896-v5-mirror-sub-issues"
 }

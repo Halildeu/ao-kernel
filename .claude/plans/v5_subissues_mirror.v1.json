@@ -1,0 +1,1526 @@
+{
+  "schema_version": "v5-subissues-mirror.v1",
+  "parent_manifest": ".claude/plans/v5_issue_projection.v1.json",
+  "parent_plan": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+  "milestone": "v5.0.0 \u2014 Full Production Promotion",
+  "milestone_number": 3,
+  "created_at": "2026-06-02",
+  "created_by": "Halildeu (operator-driven mirror via Claude session)",
+  "visibility_mode": "one_way_mirror_repo_authority_wins",
+  "register_authority": "evidence_record_only",
+  "github_write_authorized": true,
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "rationale": "Full retroactive sub-slice mirror created 2026-06-02; 62 sub-issues across 10 parents (P0 + Epic 1-9). User explicit \"full retro mirror\" requirement (not lazy expansion). Each sub-issue carries parent ref + plan path + risk + status + DoD; Epic 9 E-9-1 alone carries all 3 guard-flip labels (atomic all-or-none flip).",
+  "sub_issues_by_parent": {
+    "epic_p0": {
+      "parent_issue_number": 773,
+      "count": 5,
+      "sub_issues": [
+        {
+          "slice_id": "E-P0-1",
+          "issue_number": 834,
+          "title": "[E-P0-1] v5 roadmap plan doc (foundational)"
+        },
+        {
+          "slice_id": "E-P0-2",
+          "issue_number": 835,
+          "title": "[E-P0-2] Master plan amend (v5 promotion section)"
+        },
+        {
+          "slice_id": "E-P0-3",
+          "issue_number": 836,
+          "title": "[E-P0-3] GH mirror create (milestone + 13 issues + 23 labels + project board)"
+        },
+        {
+          "slice_id": "E-P0-4",
+          "issue_number": 837,
+          "title": "[E-P0-4] README badge + roadmap link"
+        },
+        {
+          "slice_id": "E-P0-5",
+          "issue_number": 838,
+          "title": "[E-P0-5] Issue forms YAML (anchor field templates)"
+        }
+      ]
+    },
+    "epic_1": {
+      "parent_issue_number": 774,
+      "count": 7,
+      "sub_issues": [
+        {
+          "slice_id": "E-1-1",
+          "issue_number": 839,
+          "title": "[E-1-1] AO-MA-11A-2 plan-approval gate wiring"
+        },
+        {
+          "slice_id": "E-1-2",
+          "issue_number": 840,
+          "title": "[E-1-2] AO-MA-11E-2 GH mirror sync workflow + drift checker"
+        },
+        {
+          "slice_id": "E-1-3",
+          "issue_number": 841,
+          "title": "[E-1-3] CI workflow changelog enforcement check"
+        },
+        {
+          "slice_id": "E-1-4",
+          "issue_number": 842,
+          "title": "[E-1-4] Pre-commit hook for changelog"
+        },
+        {
+          "slice_id": "E-1-5",
+          "issue_number": 843,
+          "title": "[E-1-5] AO-MA-4.6-2 native-import operator dogfooding"
+        },
+        {
+          "slice_id": "E-1-6",
+          "issue_number": 844,
+          "title": "[E-1-6] Retro ADR cross-AI revalidation (ADR-0001..0004)"
+        },
+        {
+          "slice_id": "E-1-7",
+          "issue_number": 845,
+          "title": "[E-1-7] PR #764 CI shadow-skip permanent fix"
+        }
+      ]
+    },
+    "epic_2": {
+      "parent_issue_number": 775,
+      "count": 7,
+      "sub_issues": [
+        {
+          "slice_id": "E-2-1",
+          "issue_number": 846,
+          "title": "[E-2-1] Live adapter envelope schema (live_adapter_envelope.v1.json)"
+        },
+        {
+          "slice_id": "E-2-2",
+          "issue_number": 847,
+          "title": "[E-2-2] Per-call audit evidence schema (per_call_audit.v1.json)"
+        },
+        {
+          "slice_id": "E-2-3",
+          "issue_number": 848,
+          "title": "[E-2-3] Cost ceiling enforcement module"
+        },
+        {
+          "slice_id": "E-2-4",
+          "issue_number": 849,
+          "title": "[E-2-4] Dry-run harness (no network kill-switches)"
+        },
+        {
+          "slice_id": "E-2-5",
+          "issue_number": 850,
+          "title": "[E-2-5] Secret resolution discipline module (3-way cross-AI)"
+        },
+        {
+          "slice_id": "E-2-6",
+          "issue_number": 851,
+          "title": "[E-2-6] Opt-in advisory CI workflow (live-adapter-evidence-emit.yml)"
+        },
+        {
+          "slice_id": "E-2-7",
+          "issue_number": 852,
+          "title": "[E-2-7] Pre-supersession-PR checklist artifact for Epic 9 PR-Xfinal (3-way)"
+        }
+      ]
+    },
+    "epic_3": {
+      "parent_issue_number": 776,
+      "count": 6,
+      "sub_issues": [
+        {
+          "slice_id": "E-3-1",
+          "issue_number": 853,
+          "title": "[E-3-1] Support widening evidence schema v1 (support_widening_evidence.v1.json)"
+        },
+        {
+          "slice_id": "E-3-2",
+          "issue_number": 854,
+          "title": "[E-3-2] Per-surface smoke harness scaffolding (library-mode + stub adapters)"
+        },
+        {
+          "slice_id": "E-3-3",
+          "issue_number": 855,
+          "title": "[E-3-3] Advisory CI matrix workflow (support-matrix-smoke.yml; opt-in)"
+        },
+        {
+          "slice_id": "E-3-4",
+          "issue_number": 856,
+          "title": "[E-3-4] Surface inventory document (docs/SUPPORT-SURFACE-INVENTORY.md)"
+        },
+        {
+          "slice_id": "E-3-5",
+          "issue_number": 857,
+          "title": "[E-3-5] Cross-AI consensus protocol checklist (3-way; future supersession spec)"
+        },
+        {
+          "slice_id": "E-3-6",
+          "issue_number": 858,
+          "title": "[E-3-6] Recompute-not-trust validator (v1-only fail-closed)"
+        }
+      ]
+    },
+    "epic_4": {
+      "parent_issue_number": 777,
+      "count": 7,
+      "sub_issues": [
+        {
+          "slice_id": "E-4-1",
+          "issue_number": 859,
+          "title": "[E-4-1] Helm chart skeleton (deploy/helm/ao-kernel/)"
+        },
+        {
+          "slice_id": "E-4-2a",
+          "issue_number": 860,
+          "title": "[E-4-2a] Multi-tenant advisory boundary contract + schema (early)"
+        },
+        {
+          "slice_id": "E-4-2b",
+          "issue_number": 861,
+          "title": "[E-4-2b] Multi-tenant matrix final seal (high risk; 3-way Codex+Mavis)"
+        },
+        {
+          "slice_id": "E-4-3",
+          "issue_number": 862,
+          "title": "[E-4-3] Operator-owned PostgreSQL provisioning + secret management"
+        },
+        {
+          "slice_id": "E-4-4",
+          "issue_number": 863,
+          "title": "[E-4-4] Observability surface (ServiceMonitor template + OTEL sidecar; Teams primary)"
+        },
+        {
+          "slice_id": "E-4-5",
+          "issue_number": 864,
+          "title": "[E-4-5] NetworkPolicy + PodSecurityStandards namespace-label baseline"
+        },
+        {
+          "slice_id": "E-4-6",
+          "issue_number": 865,
+          "title": "[E-4-6] helm-unittest CI invocation doc + lokal runbook + epic-wide idempotency"
+        }
+      ]
+    },
+    "epic_5": {
+      "parent_issue_number": 778,
+      "count": 6,
+      "sub_issues": [
+        {
+          "slice_id": "E-5-1",
+          "issue_number": 866,
+          "title": "[E-5-1] OTEL production tracing tunables"
+        },
+        {
+          "slice_id": "E-5-2",
+          "issue_number": 867,
+          "title": "[E-5-2] Prometheus + Grafana dashboard templates"
+        },
+        {
+          "slice_id": "E-5-3",
+          "issue_number": 868,
+          "title": "[E-5-3] Distributed tracing (multi-session correlation)"
+        },
+        {
+          "slice_id": "E-5-3b",
+          "issue_number": 869,
+          "title": "[E-5-3b] Consultation tracing integration"
+        },
+        {
+          "slice_id": "E-5-4",
+          "issue_number": 870,
+          "title": "[E-5-4] SLI/SLO definitions (uptime + latency + cost burn-rate)"
+        },
+        {
+          "slice_id": "E-5-5",
+          "issue_number": 871,
+          "title": "[E-5-5] Alertmanager rule templates (escalation policy)"
+        }
+      ]
+    },
+    "epic_6": {
+      "parent_issue_number": 779,
+      "count": 11,
+      "sub_issues": [
+        {
+          "slice_id": "E-6-1",
+          "issue_number": 872,
+          "title": "[E-6-1] SBOM generation (cyclonedx-py release artifact)"
+        },
+        {
+          "slice_id": "E-6-2",
+          "issue_number": 873,
+          "title": "[E-6-2] Dependabot + Trivy vulnerability scanning"
+        },
+        {
+          "slice_id": "E-6-3",
+          "issue_number": 874,
+          "title": "[E-6-3] SOC2/ISO 27001 documentation pack (audit-ready)"
+        },
+        {
+          "slice_id": "E-6-3b",
+          "issue_number": 875,
+          "title": "[E-6-3b] HIPAA control mapping"
+        },
+        {
+          "slice_id": "E-6-3c",
+          "issue_number": 876,
+          "title": "[E-6-3c] GDPR DPIA operator template"
+        },
+        {
+          "slice_id": "E-6-3d",
+          "issue_number": 877,
+          "title": "[E-6-3d] PCI-DSS control reference mapping"
+        },
+        {
+          "slice_id": "E-6-3e",
+          "issue_number": 878,
+          "title": "[E-6-3e] NIST CSF 2.0 Function/Category mapping"
+        },
+        {
+          "slice_id": "E-6-4",
+          "issue_number": 879,
+          "title": "[E-6-4] 3rd party license compliance audit (MIT dependency matrix)"
+        },
+        {
+          "slice_id": "E-6-5",
+          "issue_number": 880,
+          "title": "[E-6-5] CodeQL workflow (GitHub Advanced Security)"
+        },
+        {
+          "slice_id": "E-6-6",
+          "issue_number": 881,
+          "title": "[E-6-6] Security incident response playbook"
+        },
+        {
+          "slice_id": "E-6-6b",
+          "issue_number": 882,
+          "title": "[E-6-6b] Vendor escalation matrix"
+        }
+      ]
+    },
+    "epic_7": {
+      "parent_issue_number": 780,
+      "count": 6,
+      "sub_issues": [
+        {
+          "slice_id": "E-7-1",
+          "issue_number": 883,
+          "title": "[E-7-1] Production benchmark suite (cross-PR regression detection)"
+        },
+        {
+          "slice_id": "E-7-2",
+          "issue_number": 884,
+          "title": "[E-7-2] Long-running session stress test (24h+ continuous)"
+        },
+        {
+          "slice_id": "E-7-3",
+          "issue_number": 885,
+          "title": "[E-7-3] Memory profiling (mprof; production resource budgets)"
+        },
+        {
+          "slice_id": "E-7-4",
+          "issue_number": 886,
+          "title": "[E-7-4] Provider rate limit production tuning per-tenant"
+        },
+        {
+          "slice_id": "E-7-5",
+          "issue_number": 887,
+          "title": "[E-7-5] pgvector backend implementation"
+        },
+        {
+          "slice_id": "E-7-x",
+          "issue_number": 888,
+          "title": "[E-7-x] CI promotion track regression"
+        }
+      ]
+    },
+    "epic_8": {
+      "parent_issue_number": 781,
+      "count": 6,
+      "sub_issues": [
+        {
+          "slice_id": "E-8-1",
+          "issue_number": 889,
+          "title": "[E-8-1] Production deployment guide (k8s + standalone)"
+        },
+        {
+          "slice_id": "E-8-2",
+          "issue_number": 890,
+          "title": "[E-8-2] Multi-tenant production config recipe (delegates to Epic 4 E-4-3)"
+        },
+        {
+          "slice_id": "E-8-3",
+          "issue_number": 891,
+          "title": "[E-8-3] Operator runbook (incident response; Epic 4-6 ile)"
+        },
+        {
+          "slice_id": "E-8-4",
+          "issue_number": 892,
+          "title": "[E-8-4] API reference auto-generated (Sphinx + autodoc)"
+        },
+        {
+          "slice_id": "E-8-5",
+          "issue_number": 893,
+          "title": "[E-8-5] Tutorial: 'Build your own AO-MA-SPM program with AI'"
+        },
+        {
+          "slice_id": "E-8-6",
+          "issue_number": 894,
+          "title": "[E-8-6] Migration guide v4.x \u2192 v5.0.0"
+        }
+      ]
+    },
+    "epic_9": {
+      "parent_issue_number": 782,
+      "count": 1,
+      "sub_issues": [
+        {
+          "slice_id": "E-9-1",
+          "issue_number": 895,
+          "title": "[E-9-1] Final operator-bound supersession PR-Xfinal (3 guard flag atomic flip; all-or-none)"
+        }
+      ]
+    }
+  },
+  "sub_issues": {
+    "E-P0-1": {
+      "issue_number": 834,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/834",
+      "parent": 773,
+      "slice_id": "E-P0-1",
+      "title": "[E-P0-1] v5 roadmap plan doc (foundational)",
+      "risk": "low",
+      "status": "merged",
+      "status_ref": "merged via PR-X0 (foundational)",
+      "labels": [
+        "epic-p0",
+        "risk:low",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "None (foundational)",
+      "description": "Initial V5 promotion roadmap plan doc establishing 9 epics + P0 governance."
+    },
+    "E-P0-2": {
+      "issue_number": 835,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/835",
+      "parent": 773,
+      "slice_id": "E-P0-2",
+      "title": "[E-P0-2] Master plan amend (v5 promotion section)",
+      "risk": "low",
+      "status": "merged",
+      "status_ref": "merged with PR-X0 / master plan amend",
+      "labels": [
+        "epic-p0",
+        "risk:low",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-P0-1",
+      "description": "AO-MA-SPM master plan amend section: v5 operator-bound production promotion path."
+    },
+    "E-P0-3": {
+      "issue_number": 836,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/836",
+      "parent": 773,
+      "slice_id": "E-P0-3",
+      "title": "[E-P0-3] GH mirror create (milestone + 13 issues + 23 labels + project board)",
+      "risk": "low",
+      "status": "merged",
+      "status_ref": "merged PR #772 (closes #785)",
+      "labels": [
+        "epic-p0",
+        "risk:low",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-P0-1 + E-P0-2",
+      "description": "Manual NOW path mirror create: milestone v5.0.0 + 13 parent issues + 23 labels + Roadmap project board."
+    },
+    "E-P0-4": {
+      "issue_number": 837,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/837",
+      "parent": 773,
+      "slice_id": "E-P0-4",
+      "title": "[E-P0-4] README badge + roadmap link",
+      "risk": "low",
+      "status": "merged",
+      "status_ref": "merged PR #813",
+      "labels": [
+        "epic-p0",
+        "risk:low",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-P0-4-README-V5-ROADMAP-BADGE.md",
+      "deps": "E-P0-1",
+      "description": "README v5 production promotion roadmap badge + link; production-ready badge YOK until final PR."
+    },
+    "E-P0-5": {
+      "issue_number": 838,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/838",
+      "parent": 773,
+      "slice_id": "E-P0-5",
+      "title": "[E-P0-5] Issue forms YAML (anchor field templates)",
+      "risk": "low",
+      "status": "pending",
+      "status_ref": "pending PR #822",
+      "labels": [
+        "epic-p0",
+        "risk:low",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/v5_issue_projection.v1.json",
+      "deps": "E-P0-3",
+      "description": "Issue forms (YAML): zorunlu spm_anchor + ao_authority_artifact + artifact_sha256 + plan_digest + slice_id + risk_class_source + evidence_classes; risk field manuel d\u00fc\u015f\u00fcr\u00fclemez (computed)."
+    },
+    "E-1-1": {
+      "issue_number": 839,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/839",
+      "parent": 774,
+      "slice_id": "E-1-1",
+      "title": "[E-1-1] AO-MA-11A-2 plan-approval gate wiring",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged PR #792",
+      "labels": [
+        "epic-1",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "P0 runway",
+      "description": "GitHub Environment ao-ma-plan-approval required-reviewer wiring; otonom plan-consensus gate aktif."
+    },
+    "E-1-2": {
+      "issue_number": 840,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/840",
+      "parent": 774,
+      "slice_id": "E-1-2",
+      "title": "[E-1-2] AO-MA-11E-2 GH mirror sync workflow + drift checker",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged PRs #788/#789/#790",
+      "labels": [
+        "epic-1",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "P0 runway",
+      "description": "GH Projects/Milestone/Issue one-way sync + anchor injection + drift checker (mirror_drift_detected \u2192 otonom DUR); V5 mirror write sync + PAT fallback."
+    },
+    "E-1-3": {
+      "issue_number": 841,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/841",
+      "parent": 774,
+      "slice_id": "E-1-3",
+      "title": "[E-1-3] CI workflow changelog enforcement check",
+      "risk": "normal",
+      "status": "pending",
+      "status_ref": "pending PR #823",
+      "labels": [
+        "epic-1",
+        "risk:normal",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-1-1",
+      "description": "AO-MA-11G-2c: ao-kernel quality check-changelog PR'da CI seviyesinde bloklar."
+    },
+    "E-1-4": {
+      "issue_number": 842,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/842",
+      "parent": 774,
+      "slice_id": "E-1-4",
+      "title": "[E-1-4] Pre-commit hook for changelog",
+      "risk": "low",
+      "status": "pending",
+      "status_ref": "pending PR #818",
+      "labels": [
+        "epic-1",
+        "risk:low",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-1-3",
+      "description": "AO-MA-11G-2d: lokal yard\u0131mc\u0131 pre-commit hook (release authority de\u011fil)."
+    },
+    "E-1-5": {
+      "issue_number": 843,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/843",
+      "parent": 774,
+      "slice_id": "E-1-5",
+      "title": "[E-1-5] AO-MA-4.6-2 native-import operator dogfooding",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned",
+      "labels": [
+        "epic-1",
+        "risk:normal",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-1-1",
+      "description": "Operator claude-cli ile worker_result \u00fcret \u2192 ao-kernel native-import ingest."
+    },
+    "E-1-6": {
+      "issue_number": 844,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/844",
+      "parent": 774,
+      "slice_id": "E-1-6",
+      "title": "[E-1-6] Retro ADR cross-AI revalidation (ADR-0001..0004)",
+      "risk": "low",
+      "status": "pending",
+      "status_ref": "pending PR #814",
+      "labels": [
+        "epic-1",
+        "risk:low",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "P0 runway",
+      "description": "ADR-0001..0004 Codex+Mavis ile cross_ai_validated review_status."
+    },
+    "E-1-7": {
+      "issue_number": 845,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/845",
+      "parent": 774,
+      "slice_id": "E-1-7",
+      "title": "[E-1-7] PR #764 CI shadow-skip permanent fix",
+      "risk": "high",
+      "status": "pending",
+      "status_ref": "pending PR #764 (operator gate; .github high-risk)",
+      "labels": [
+        "epic-1",
+        "risk:high",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "operator gate",
+      "description": "Operator CODEOWNER review pending \u2014 .github/workflows/test.yml high-risk path."
+    },
+    "E-2-1": {
+      "issue_number": 846,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/846",
+      "parent": 775,
+      "slice_id": "E-2-1",
+      "title": "[E-2-1] Live adapter envelope schema (live_adapter_envelope.v1.json)",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP: deps PR #828 V5 amend + PR #827 Epic 2 plan + PR #826 Epic 3 plan all merged)",
+      "labels": [
+        "epic-2",
+        "risk:low",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
+      "deps": "PR #828 (V5 amend) + PR #827 (Epic 2 plan) + PR #826 (Epic 3 plan) all merged",
+      "description": "Schema with mode enum (stub/dry_run only) + live_adapter_execution: const false pin; request/response/cost/circuit-breaker fields."
+    },
+    "E-2-2": {
+      "issue_number": 847,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/847",
+      "parent": 775,
+      "slice_id": "E-2-2",
+      "title": "[E-2-2] Per-call audit evidence schema (per_call_audit.v1.json)",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "labels": [
+        "epic-2",
+        "risk:low",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
+      "deps": "E-2-1",
+      "description": "JSONL writer + cost field required = fail-closed; cost_breach_state enum (ok/soft_breached/hard_breached/not_applicable) + cost_breach_handling conditional."
+    },
+    "E-2-3": {
+      "issue_number": 848,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/848",
+      "parent": 775,
+      "slice_id": "E-2-3",
+      "title": "[E-2-3] Cost ceiling enforcement module",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "labels": [
+        "epic-2",
+        "risk:normal",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
+      "deps": "E-2-1 + E-2-2",
+      "description": "Soft/hard breach + concurrent atomicity (file lock fcntl LOCK_EX); pre-reservation pattern alternative; Decimal arithmetic."
+    },
+    "E-2-4": {
+      "issue_number": 849,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/849",
+      "parent": 775,
+      "slice_id": "E-2-4",
+      "title": "[E-2-4] Dry-run harness (no network kill-switches)",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "labels": [
+        "epic-2",
+        "risk:normal",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
+      "deps": "E-2-1 + E-2-2 + E-2-3",
+      "description": "Library-mode; comprehensive runtime kill-switches (socket + subprocess full family + httpx async + urllib3 + aiohttp + ctypes/cffi); bypass fixture tests."
+    },
+    "E-2-5": {
+      "issue_number": 850,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/850",
+      "parent": 775,
+      "slice_id": "E-2-5",
+      "title": "[E-2-5] Secret resolution discipline module (3-way cross-AI)",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "labels": [
+        "epic-2",
+        "risk:normal",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
+      "deps": "E-2-1",
+      "description": "Value-based taint (PRIMARY) + regex defense-in-depth; env-var only resolution (D11); 3-way cross-AI review (Codex + Mavis)."
+    },
+    "E-2-6": {
+      "issue_number": 851,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/851",
+      "parent": 775,
+      "slice_id": "E-2-6",
+      "title": "[E-2-6] Opt-in advisory CI workflow (live-adapter-evidence-emit.yml)",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "labels": [
+        "epic-2",
+        "risk:normal",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
+      "deps": "E-2-1..E-2-5",
+      "description": "Path A default (pull_request, no secrets, artifact-only) OR Path B advanced (pull_request_target.types:[labeled] with explicit threat model + separate notify workflow)."
+    },
+    "E-2-7": {
+      "issue_number": 852,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/852",
+      "parent": 775,
+      "slice_id": "E-2-7",
+      "title": "[E-2-7] Pre-supersession-PR checklist artifact for Epic 9 PR-Xfinal (3-way)",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "labels": [
+        "epic-2",
+        "risk:low",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
+      "deps": "E-2-1..E-2-6",
+      "description": "18 conditions checklist for Epic 9 PR-Xfinal; 3-way cross-AI; flip-gate spec."
+    },
+    "E-3-1": {
+      "issue_number": 853,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/853",
+      "parent": 776,
+      "slice_id": "E-3-1",
+      "title": "[E-3-1] Support widening evidence schema v1 (support_widening_evidence.v1.json)",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP: deps V5 amend + Epic 3 plan + Epic 2 plan merged)",
+      "labels": [
+        "epic-3",
+        "risk:low",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
+      "deps": "V5 amend PR #828 + Epic 3 plan PR #826 + Epic 2 plan PR #827 all merged",
+      "description": "Schema strict + module + invariant tests; const false pin; surface_class enum (provider/python_version/os_platform/db_backend/deployment_topology)."
+    },
+    "E-3-2": {
+      "issue_number": 854,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/854",
+      "parent": 776,
+      "slice_id": "E-3-2",
+      "title": "[E-3-2] Per-surface smoke harness scaffolding (library-mode + stub adapters)",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "labels": [
+        "epic-3",
+        "risk:normal",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
+      "deps": "E-3-1",
+      "description": "Per-surface harness modules (stub adapters; never network); 3-layer stub purity (AST + runtime kill-switch + runtime declaration)."
+    },
+    "E-3-3": {
+      "issue_number": 855,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/855",
+      "parent": 776,
+      "slice_id": "E-3-3",
+      "title": "[E-3-3] Advisory CI matrix workflow (support-matrix-smoke.yml; opt-in)",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "labels": [
+        "epic-3",
+        "risk:normal",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
+      "deps": "E-3-1 + E-3-2",
+      "description": "Job-level label gate (pull_request + workflow_dispatch only); no ruleset mutation; no required check; artifact-only output."
+    },
+    "E-3-4": {
+      "issue_number": 856,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/856",
+      "parent": 776,
+      "slice_id": "E-3-4",
+      "title": "[E-3-4] Surface inventory document (docs/SUPPORT-SURFACE-INVENTORY.md)",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "labels": [
+        "epic-3",
+        "risk:low",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
+      "deps": "E-3-1",
+      "description": "Narrative inventory of current narrow stable + future widening prerequisites; forbidden-language regex set."
+    },
+    "E-3-5": {
+      "issue_number": 857,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/857",
+      "parent": 776,
+      "slice_id": "E-3-5",
+      "title": "[E-3-5] Cross-AI consensus protocol checklist (3-way; future supersession spec)",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "labels": [
+        "epic-3",
+        "risk:low",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
+      "deps": "E-3-1",
+      "description": "widening-supersession-checklist.v1.json + recompute bind fields; reviewer identity hashes; verdict completeness proof; 3-way Codex+Mavis."
+    },
+    "E-3-6": {
+      "issue_number": 858,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/858",
+      "parent": 776,
+      "slice_id": "E-3-6",
+      "title": "[E-3-6] Recompute-not-trust validator (v1-only fail-closed)",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "labels": [
+        "epic-3",
+        "risk:low",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
+      "deps": "E-3-1..E-3-5",
+      "description": "Replay/TOCTOU/identity drift guards; v1-only fail-closed (validator_v2 absent in Epic 3 codebase); 3-layer separation."
+    },
+    "E-4-1": {
+      "issue_number": 859,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/859",
+      "parent": 777,
+      "slice_id": "E-4-1",
+      "title": "[E-4-1] Helm chart skeleton (deploy/helm/ao-kernel/)",
+      "risk": "low",
+      "status": "pending",
+      "status_ref": "pending PR #829 (Codex AGREE)",
+      "labels": [
+        "epic-4",
+        "risk:low",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+      "deps": "P0 mirror",
+      "description": "Chart.yaml + values.yaml + 4-5 baseline template (Deployment/Service/ConfigMap/SA+RBAC/NetworkPolicy); replicaCount default 1."
+    },
+    "E-4-2a": {
+      "issue_number": 860,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/860",
+      "parent": 777,
+      "slice_id": "E-4-2a",
+      "title": "[E-4-2a] Multi-tenant advisory boundary contract + schema (early)",
+      "risk": "low",
+      "status": "pending",
+      "status_ref": "pending PR #830 (Codex AGREE)",
+      "labels": [
+        "epic-4",
+        "risk:low",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+      "deps": "E-4-1",
+      "description": "Early advisory contract + schema; 7 dimension placeholder; per-dimension 4 const field (operator_enforceable/operator_action_required/runtime_enforced:false/live_validated:false)."
+    },
+    "E-4-2b": {
+      "issue_number": 861,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/861",
+      "parent": 777,
+      "slice_id": "E-4-2b",
+      "title": "[E-4-2b] Multi-tenant matrix final seal (high risk; 3-way Codex+Mavis)",
+      "risk": "high",
+      "status": "planned",
+      "status_ref": "planned (deps E-4-2a + E-4-5 + E-4-4 + E-4-3 evidence refs)",
+      "labels": [
+        "epic-4",
+        "risk:high",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+      "deps": "E-4-2a + E-4-3 + E-4-4 + E-4-5",
+      "description": "Final 7-dimension matrix seal; cross-tenant boundary; 3-way cross-AI (Codex + Mavis) zorunlu."
+    },
+    "E-4-3": {
+      "issue_number": 862,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/862",
+      "parent": 777,
+      "slice_id": "E-4-3",
+      "title": "[E-4-3] Operator-owned PostgreSQL provisioning + secret management",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned",
+      "labels": [
+        "epic-4",
+        "risk:normal",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+      "deps": "E-4-1 + E-4-2a",
+      "description": "Operator DDL responsibility; ao-kernel hi\u00e7bir DDL execute etmez; env-only secret resolution (D11); secret kaynak \u00f6ncelik tablosu."
+    },
+    "E-4-4": {
+      "issue_number": 863,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/863",
+      "parent": 777,
+      "slice_id": "E-4-4",
+      "title": "[E-4-4] Observability surface (ServiceMonitor template + OTEL sidecar; Teams primary)",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned",
+      "labels": [
+        "epic-4",
+        "risk:normal",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+      "deps": "E-4-1 + E-4-2a",
+      "description": "Opt-in ServiceMonitor template + OTEL sidecar doc; Microsoft Teams Power Automate primary alert sink (HARD RULE); Slack asset-preserved dormant."
+    },
+    "E-4-5": {
+      "issue_number": 864,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/864",
+      "parent": 777,
+      "slice_id": "E-4-5",
+      "title": "[E-4-5] NetworkPolicy + PodSecurityStandards namespace-label baseline",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned",
+      "labels": [
+        "epic-4",
+        "risk:normal",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+      "deps": "E-4-1 + E-4-2a",
+      "description": "Default-deny ingress + egress allowlist; PSS namespace label (restricted); PSP YASAK (deprecated API)."
+    },
+    "E-4-6": {
+      "issue_number": 865,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/865",
+      "parent": 777,
+      "slice_id": "E-4-6",
+      "title": "[E-4-6] helm-unittest CI invocation doc + lokal runbook + epic-wide idempotency",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned",
+      "labels": [
+        "epic-4",
+        "risk:low",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+      "deps": "E-4-1..E-4-5",
+      "description": "Lokal helm-unittest invocation + runbook (CI workflow EKLENMEZ Epic 4'te); epic-wide template idempotency test (3-render sha256 identical)."
+    },
+    "E-5-1": {
+      "issue_number": 866,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/866",
+      "parent": 778,
+      "slice_id": "E-5-1",
+      "title": "[E-5-1] OTEL production tracing tunables",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged PR #791",
+      "labels": [
+        "epic-5",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "None",
+      "description": "Lazy-loadable OTEL prod tunables; no-op fallback korunur (D12)."
+    },
+    "E-5-2": {
+      "issue_number": 867,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/867",
+      "parent": 778,
+      "slice_id": "E-5-2",
+      "title": "[E-5-2] Prometheus + Grafana dashboard templates",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged PR-B5 (docs/grafana/ao_kernel_default.v1.json 8 panels)",
+      "labels": [
+        "epic-5",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-5-1",
+      "description": "Grafana JSON baseline 8 panels + README + shape test."
+    },
+    "E-5-3": {
+      "issue_number": 868,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/868",
+      "parent": 778,
+      "slice_id": "E-5-3",
+      "title": "[E-5-3] Distributed tracing (multi-session correlation)",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged",
+      "labels": [
+        "epic-5",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-5-E5-3-DISTRIBUTED-TRACING.md",
+      "deps": "E-5-1",
+      "description": "Distributed tracing for multi-session correlation."
+    },
+    "E-5-3b": {
+      "issue_number": 869,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/869",
+      "parent": 778,
+      "slice_id": "E-5-3b",
+      "title": "[E-5-3b] Consultation tracing integration",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged PR #804",
+      "labels": [
+        "epic-5",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-5-E5-3B-CONSULTATION-TRACING.md",
+      "deps": "E-5-3",
+      "description": "Codex consultation tracing OTEL spans."
+    },
+    "E-5-4": {
+      "issue_number": 870,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/870",
+      "parent": 778,
+      "slice_id": "E-5-4",
+      "title": "[E-5-4] SLI/SLO definitions (uptime + latency + cost burn-rate)",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged",
+      "labels": [
+        "epic-5",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-5-E5-4-SLI-SLO-DEFINITIONS.md",
+      "deps": "E-5-1",
+      "description": "Production SLI/SLO definitions."
+    },
+    "E-5-5": {
+      "issue_number": 871,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/871",
+      "parent": 778,
+      "slice_id": "E-5-5",
+      "title": "[E-5-5] Alertmanager rule templates (escalation policy)",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged",
+      "labels": [
+        "epic-5",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-5-E5-5-ALERTMANAGER-RULE-TEMPLATES.md",
+      "deps": "E-5-2",
+      "description": "Alertmanager rule templates with escalation policy."
+    },
+    "E-6-1": {
+      "issue_number": 872,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/872",
+      "parent": 779,
+      "slice_id": "E-6-1",
+      "title": "[E-6-1] SBOM generation (cyclonedx-py release artifact)",
+      "risk": "high",
+      "status": "merged",
+      "status_ref": "merged",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-6-E6-1-SBOM-GENERATION.md",
+      "deps": "None",
+      "description": "cyclonedx-py SBOM generation as release artifact."
+    },
+    "E-6-2": {
+      "issue_number": 873,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/873",
+      "parent": 779,
+      "slice_id": "E-6-2",
+      "title": "[E-6-2] Dependabot + Trivy vulnerability scanning",
+      "risk": "high",
+      "status": "pending",
+      "status_ref": "pending PR #798",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "None",
+      "description": "GitHub Dependabot + Trivy + Snyk vuln scanning workflow."
+    },
+    "E-6-3": {
+      "issue_number": 874,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/874",
+      "parent": 779,
+      "slice_id": "E-6-3",
+      "title": "[E-6-3] SOC2/ISO 27001 documentation pack (audit-ready)",
+      "risk": "high",
+      "status": "merged",
+      "status_ref": "merged",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-6-E6-3-SOC2-ISO-COMPLIANCE-DOCS.md",
+      "deps": "None",
+      "description": "SOC2/ISO 27001 audit-ready documentation (NOT certification)."
+    },
+    "E-6-3b": {
+      "issue_number": 875,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/875",
+      "parent": 779,
+      "slice_id": "E-6-3b",
+      "title": "[E-6-3b] HIPAA control mapping",
+      "risk": "high",
+      "status": "merged",
+      "status_ref": "merged PR #809",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-6-E6-3B-HIPAA-CONTROL-MAPPING.md",
+      "deps": "E-6-3",
+      "description": "HIPAA Security Rule control mapping documentation."
+    },
+    "E-6-3c": {
+      "issue_number": 876,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/876",
+      "parent": 779,
+      "slice_id": "E-6-3c",
+      "title": "[E-6-3c] GDPR DPIA operator template",
+      "risk": "high",
+      "status": "merged",
+      "status_ref": "merged PR #810",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-6-E6-3C-GDPR-DPIA-TEMPLATE.md",
+      "deps": "E-6-3",
+      "description": "GDPR DPIA operator template (Data Protection Impact Assessment)."
+    },
+    "E-6-3d": {
+      "issue_number": 877,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/877",
+      "parent": 779,
+      "slice_id": "E-6-3d",
+      "title": "[E-6-3d] PCI-DSS control reference mapping",
+      "risk": "high",
+      "status": "merged",
+      "status_ref": "merged PR #811",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-6-E6-3D-PCI-DSS-MAPPING.md",
+      "deps": "E-6-3",
+      "description": "PCI-DSS v4.0 control reference mapping documentation."
+    },
+    "E-6-3e": {
+      "issue_number": 878,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/878",
+      "parent": 779,
+      "slice_id": "E-6-3e",
+      "title": "[E-6-3e] NIST CSF 2.0 Function/Category mapping",
+      "risk": "high",
+      "status": "pending",
+      "status_ref": "pending PR #812",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-6-3",
+      "description": "NIST Cybersecurity Framework 2.0 Function/Category mapping documentation."
+    },
+    "E-6-4": {
+      "issue_number": 879,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/879",
+      "parent": 779,
+      "slice_id": "E-6-4",
+      "title": "[E-6-4] 3rd party license compliance audit (MIT dependency matrix)",
+      "risk": "high",
+      "status": "merged",
+      "status_ref": "merged PR #803",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-6-E6-4-LICENSE-COMPLIANCE.md",
+      "deps": "None",
+      "description": "3rd party license audit + MIT dependency matrix."
+    },
+    "E-6-5": {
+      "issue_number": 880,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/880",
+      "parent": 779,
+      "slice_id": "E-6-5",
+      "title": "[E-6-5] CodeQL workflow (GitHub Advanced Security)",
+      "risk": "high",
+      "status": "pending",
+      "status_ref": "pending PR #796",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "None",
+      "description": "GitHub Advanced Security CodeQL workflow."
+    },
+    "E-6-6": {
+      "issue_number": 881,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/881",
+      "parent": 779,
+      "slice_id": "E-6-6",
+      "title": "[E-6-6] Security incident response playbook",
+      "risk": "high",
+      "status": "merged",
+      "status_ref": "merged",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-6-E6-6-INCIDENT-RESPONSE-PLAYBOOK.md",
+      "deps": "None",
+      "description": "Security incident response playbook + escalation matrix."
+    },
+    "E-6-6b": {
+      "issue_number": 882,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/882",
+      "parent": 779,
+      "slice_id": "E-6-6b",
+      "title": "[E-6-6b] Vendor escalation matrix",
+      "risk": "high",
+      "status": "merged",
+      "status_ref": "merged PR #808",
+      "labels": [
+        "epic-6",
+        "risk:high",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-6-E6-6B-VENDOR-ESCALATION-MATRIX.md",
+      "deps": "E-6-6",
+      "description": "Provider vendor escalation matrix for incident response."
+    },
+    "E-7-1": {
+      "issue_number": 883,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/883",
+      "parent": 780,
+      "slice_id": "E-7-1",
+      "title": "[E-7-1] Production benchmark suite (cross-PR regression detection)",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned",
+      "labels": [
+        "epic-7",
+        "risk:normal",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/EPIC-7-PERFORMANCE-BASELINE.md",
+      "deps": "None",
+      "description": "Production benchmark suite + cross-PR regression detection."
+    },
+    "E-7-2": {
+      "issue_number": 884,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/884",
+      "parent": 780,
+      "slice_id": "E-7-2",
+      "title": "[E-7-2] Long-running session stress test (24h+ continuous)",
+      "risk": "normal",
+      "status": "pending",
+      "status_ref": "pending PR #819",
+      "labels": [
+        "epic-7",
+        "risk:normal",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-7-1",
+      "description": "24h+ continuous session stress test."
+    },
+    "E-7-3": {
+      "issue_number": 885,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/885",
+      "parent": 780,
+      "slice_id": "E-7-3",
+      "title": "[E-7-3] Memory profiling (mprof; production resource budgets)",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged PR #820",
+      "labels": [
+        "epic-7",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-7-3-MEMORY-PROFILING.md",
+      "deps": "E-7-1",
+      "description": "Memory profiling harness with mprof + production resource budgets."
+    },
+    "E-7-4": {
+      "issue_number": 886,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/886",
+      "parent": 780,
+      "slice_id": "E-7-4",
+      "title": "[E-7-4] Provider rate limit production tuning per-tenant",
+      "risk": "normal",
+      "status": "planned",
+      "status_ref": "planned",
+      "labels": [
+        "epic-7",
+        "risk:normal",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "Epic 4",
+      "description": "Provider rate limit per-tenant tuning (E-4-3/E-4-5 ile uyumlu)."
+    },
+    "E-7-5": {
+      "issue_number": 887,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/887",
+      "parent": 780,
+      "slice_id": "E-7-5",
+      "title": "[E-7-5] pgvector backend implementation",
+      "risk": "normal",
+      "status": "pending",
+      "status_ref": "pending PR #824",
+      "labels": [
+        "epic-7",
+        "risk:normal",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "None",
+      "description": "pgvector backend implementation (extra pinned, no backend currently)."
+    },
+    "E-7-x": {
+      "issue_number": 888,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/888",
+      "parent": 780,
+      "slice_id": "E-7-x",
+      "title": "[E-7-x] CI promotion track regression",
+      "risk": "normal",
+      "status": "merged",
+      "status_ref": "merged PR #806",
+      "labels": [
+        "epic-7",
+        "risk:normal",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-7X-CI-PROMOTION-TRACK.md",
+      "deps": "None",
+      "description": "CI promotion track regression detection."
+    },
+    "E-8-1": {
+      "issue_number": 889,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/889",
+      "parent": 781,
+      "slice_id": "E-8-1",
+      "title": "[E-8-1] Production deployment guide (k8s + standalone)",
+      "risk": "low",
+      "status": "pending",
+      "status_ref": "pending PR #815",
+      "labels": [
+        "epic-8",
+        "risk:low",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "Epic 4",
+      "description": "Production deployment guide for k8s + standalone scenarios."
+    },
+    "E-8-2": {
+      "issue_number": 890,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/890",
+      "parent": 781,
+      "slice_id": "E-8-2",
+      "title": "[E-8-2] Multi-tenant production config recipe (delegates to Epic 4 E-4-3)",
+      "risk": "low",
+      "status": "planned",
+      "status_ref": "planned (delegated to E-4-3)",
+      "labels": [
+        "epic-8",
+        "risk:low",
+        "status:planned"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "E-4-3",
+      "description": "Multi-tenant production config recipe; primary content in Epic 4 E-4-3."
+    },
+    "E-8-3": {
+      "issue_number": 891,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/891",
+      "parent": 781,
+      "slice_id": "E-8-3",
+      "title": "[E-8-3] Operator runbook (incident response; Epic 4-6 ile)",
+      "risk": "low",
+      "status": "pending",
+      "status_ref": "pending PR #816",
+      "labels": [
+        "epic-8",
+        "risk:low",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "Epic 4 + Epic 6",
+      "description": "Operator incident response runbook."
+    },
+    "E-8-4": {
+      "issue_number": 892,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/892",
+      "parent": 781,
+      "slice_id": "E-8-4",
+      "title": "[E-8-4] API reference auto-generated (Sphinx + autodoc)",
+      "risk": "low",
+      "status": "merged",
+      "status_ref": "merged PR #821",
+      "labels": [
+        "epic-8",
+        "risk:low",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/EPIC-8-4-API-REFERENCE-SPHINX.md",
+      "deps": "None",
+      "description": "Sphinx + autodoc API reference auto-generation."
+    },
+    "E-8-5": {
+      "issue_number": 893,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/893",
+      "parent": 781,
+      "slice_id": "E-8-5",
+      "title": "[E-8-5] Tutorial: 'Build your own AO-MA-SPM program with AI'",
+      "risk": "low",
+      "status": "pending",
+      "status_ref": "pending PR #817",
+      "labels": [
+        "epic-8",
+        "risk:low",
+        "status:in_progress"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "None",
+      "description": "Build-your-own AO-MA-SPM program tutorial with AI."
+    },
+    "E-8-6": {
+      "issue_number": 894,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/894",
+      "parent": 781,
+      "slice_id": "E-8-6",
+      "title": "[E-8-6] Migration guide v4.x \u2192 v5.0.0",
+      "risk": "low",
+      "status": "merged",
+      "status_ref": "merged PR #807",
+      "labels": [
+        "epic-8",
+        "risk:low",
+        "status:done"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "None",
+      "description": "v4.x to v5.0.0 migration guide (docs/MIGRATION-V5.md)."
+    },
+    "E-9-1": {
+      "issue_number": 895,
+      "url": "https://github.com/Halildeu/ao-kernel/issues/895",
+      "parent": 782,
+      "slice_id": "E-9-1",
+      "title": "[E-9-1] Final operator-bound supersession PR-Xfinal (3 guard flag atomic flip; all-or-none)",
+      "risk": "critical",
+      "status": "planned",
+      "status_ref": "planned (deps Epic 1-8 complete)",
+      "labels": [
+        "epic-9",
+        "risk:critical",
+        "guard-flip:live_adapter",
+        "guard-flip:support_widening",
+        "guard-flip:production_platform_claim",
+        "status:blocked"
+      ],
+      "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "deps": "Epic 1-8 all complete (evidence packs A + B + C)",
+      "description": "Single all-or-none operator-bound decision PR; per-flag independent gate evaluation; atomic flip in single squash commit. Partial flip YASAK. Depends on all Epic 1-8 evidence complete (evidence_pack_A from E-2-7, evidence_pack_B from E-3-5 + per-class subordinate PRs, evidence_pack_C from Epic 1-8 aggregate)."
+    }
+  },
+  "counts": {
+    "total_created": 62,
+    "per_epic": {
+      "epic_p0": 5,
+      "epic_1": 7,
+      "epic_2": 7,
+      "epic_3": 6,
+      "epic_4": 7,
+      "epic_5": 6,
+      "epic_6": 11,
+      "epic_7": 6,
+      "epic_8": 6,
+      "epic_9": 1
+    }
+  }
+}
