@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-908-ao-release-gate-allowlist",
+  "work_package": "AO-MA-905-cloud-run-gate",
   "implementer": {
     "agent": "claude-opus-4-7-1m",
     "provider": "anthropic"
@@ -13,14 +13,15 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/fix/ao-release-gate-allowlist-claude-scripts",
+    "head_ref": "refs/heads/fix/cloud-run-deploy-false-red",
     "changed_files": [
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      ".claude/plans/CLOUD-RUN-AUTO-DEPLOY-LANE-FLAG.md",
+      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
+      ".github/workflows/policy-service-deploy-cloud-run.yml",
+      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/openai.local-ai-review-evidence.v1.json",
+      "tests/test_ao_release_gate_deploy_workflow.py",
+      "tests/test_policy_service_deploy_workflow.py"
     ]
   },
   "checks_considered": [
@@ -33,23 +34,39 @@
       "status": "pass"
     },
     {
-      "name": "json_valid",
+      "name": "yaml_valid",
       "status": "pass"
     },
     {
-      "name": "diff_scope_false_block_root_cause",
+      "name": "root_cause_correctly_identified",
       "status": "pass"
     },
     {
-      "name": "high_risk_human_review_preserved",
+      "name": "fix_chosen_is_canonical_for_shallow_clone_problem",
       "status": "pass"
     },
     {
-      "name": "guard_flags_const_false",
+      "name": "fetch_depth_zero_vs_50_decision_justified",
       "status": "pass"
     },
     {
-      "name": "no_branch_protection_mutation",
+      "name": "coverage_job_correctly_unmodified",
+      "status": "pass"
+    },
+    {
+      "name": "ao_release_gate_job_correctly_unmodified",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_remain_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "no_governance_file_touch",
+      "status": "pass"
+    },
+    {
+      "name": "no_codeowners_mutation",
       "status": "pass"
     },
     {
@@ -57,7 +74,7 @@
       "status": "pass"
     },
     {
-      "name": "no_codeowners_mutation",
+      "name": "no_runtime_python_module_change",
       "status": "pass"
     },
     {
@@ -66,10 +83,11 @@
     }
   ],
   "findings": [
-    "Codex thread 019e8c25 AGREE after one REVISE iteration: adding .claude/scripts/ to DEFAULT_ALLOWED_PATH_PREFIXES is the correct narrow fix for the PR #907 diff_scope false-block, provided .claude/** remains high-risk and path_sensitive_human_review still blocks without current non-author review.",
-    "The review scope is bound to the actual PR #908 diff, including the two top-level raw review evidence files and root local-ai-review-evidence artifact modified by this PR. Historical nested evidence artifacts are intentionally not rewritten.",
-    "Security boundary is preserved: .claude/scripts/ becomes diff-scope eligible only; it is not demoted to low-risk because HIGH_RISK_PATH_PATTERNS continues to cover .claude/** and the new core regression test asserts the block path without current non-author review.",
-    "No runtime adapter execution, support widening, production platform claim, branch-protection mutation, ruleset mutation, CODEOWNERS mutation, or secret material is introduced by this PR."
+    "Codex MCP cross-provider AGREE on core CI fix (thread 019e8c9d-f929-7bf1-ab64-54cc4c54a65d). Root cause correctly identified: actions/checkout@v6 default fetch-depth:1 \u2192 shallow clone \u2192 merge-base origin/main HEAD cannot resolve \u2192 _resolve_pr_diff_base() returns None \u2192 fail-closed in CI PR context with `pytest.fail('no PR diff base resolved')`. git diff origin/main...HEAD callers exit 128.",
+    "fetch-depth:0 is the correct choice over fetch-depth:50. fetch-depth:50 is cheaper but is not guaranteed on long-lived, stacked, or main-distant branches. This PR resolves a sistemik CI blocker affecting every open PR, so deterministic solution outweighs the small bandwidth cost. Aligns with HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm \u2014 6 ay sonra h\u00e2l\u00e2 machine-enforced.",
+    "No need to add fetch-depth on coverage job. The coverage job does not re-run the test suite; it downloads the 3.13 test leg's coverage artifact and runs `coverage report --fail-under=85`. Diff-base tests run in the `test` matrix, which now has fetch-depth:0. Scope minimal.",
+    "Guard-controlled runtime surfaces unmodified: .github/CODEOWNERS, ruleset definitions, ao_kernel/, ao_release_gate scripts, gpp_status \u2014 none in diff. Three guard flags const false across all evidence JSONs in this PR (support_widening, production_platform_claim, live_adapter_execution).",
+    "Codex's only revise points were about evidence path/PR-body scope description, not the fix itself. After this iteration: (a) top-level evidence updated to AO-MA-CI-FIX-fetch-depth-shallow-clone work_package with correct schema, (b) reviewer.verdict=AGREE with real Codex thread ID, (c) PR body scope corrected to reflect 4 files + 2 nested evidence files actually changed."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

@@ -14,7 +14,12 @@
   "verdict": "agree",
   "ready_to_merge": true,
   "verdict_rationale": "Workflow conditional gate pattern correct: deploy job runs only when operator flag set + GCP vars present. Pre-cutover state legitimate (Cloud Run intentionally not yet wired). Post-cutover gate restoration verified via test invariants. ZERO TOUCH runtime modules; no guard flag flip. Pipeline noise (~30 false-red runs / day) eliminated.",
-  "findings_count_by_severity": {"blocker": 0, "high": 0, "medium": 0, "low": 0},
+  "findings_count_by_severity": {
+    "blocker": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
   "key_findings_summary": [
     "Local pytest 8 pass / 0 fail (deploy workflow regression suite)",
     "Workflow conditional gate semantic correct (operator flag + GCP vars)",
@@ -27,5 +32,16 @@
     "support_widening": false,
     "production_platform_claim": false,
     "live_adapter_execution": false
-  }
+  },
+  "work_package": "AO-MA-905-cloud-run-gate",
+  "checks_considered": [
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    }
+  ]
 }
