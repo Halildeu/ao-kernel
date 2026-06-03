@@ -8,7 +8,6 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ci-codex-push-dedup",
     "changed_files": [
-      ".claude/scripts/trigger-test-workflow.sh",
       ".github/workflows/test.yml",
       "CLAUDE.md",
       "local-ai-review-evidence.v1.json"
