@@ -10,13 +10,13 @@
     }
   ],
   "findings": [
-    "Product/governance change is scoped to the V5 projection manifest and new V5 sub-issue mirror manifest; the other changed paths are review-evidence artifacts explicitly identified as provisional regeneration inputs.",
-    "The projection manifest adds only runtime_created_state.sub_issues_mirror_ref for the sub-issue mirror and leaves guard_flags.support_widening, guard_flags.production_platform_claim, and guard_flags.live_adapter_execution set to false.",
-    "The mirror manifest preserves evidence_record_only authority and one_way_mirror_repo_authority_wins visibility; it does not claim release authority, production-platform readiness, support widening, or live adapter execution.",
-    "Sub-issue arithmetic is internally consistent: per-parent counts sum to 62, created_count and total_created are 62, issue_number_range 834-895 represents 62 issues, and projection parent_to_sub_count matches mirror counts.per_epic.",
-    "The supplied validation is sufficient for this mirror/projection change: JSON parsing passed for both plan files, targeted manifest/sync tests reported 23 passed, git diff --check passed, and the changed-file secret-like scan reported no matches.",
+    "Product/governance scope is limited to the V5 projection manifest, the new V5 sub-issue mirror manifest, and the narrow ADR-0005 CHANGELOG.md Unreleased record; the remaining changed paths are review-evidence artifacts identified as provisional regeneration inputs.",
+    "The projection manifest only adds runtime_created_state.sub_issues_mirror_ref and keeps guard_flags.support_widening, guard_flags.production_platform_claim, and guard_flags.live_adapter_execution false.",
+    "The new mirror manifest is internally consistent at the reviewed level: total_created is 62, per-epic counts sum to 62, issue_number_range 834-895 covers 62 issues, and projection parent_to_sub_count matches the mirror counts.",
+    "The mirror preserves register_authority as evidence_record_only and visibility_mode as one_way_mirror_repo_authority_wins; it does not claim release authority, production-platform readiness, support widening, or live-adapter execution.",
     "No workflow, ruleset, branch protection, CODEOWNERS, PR template, runtime binding, or secret-bearing implementation path is changed in the supplied diff.",
-    "Minor non-blocking note: v5_subissues_mirror.v1.json is shown without a trailing newline, but supplied git diff --check passed and this does not affect governance semantics."
+    "The supplied validation is sufficient for this mirror/projection change: both plan JSON files parsed, targeted manifest/project-sync tests reported 23 passed, git diff --check passed, changelog enforcement passed, and the changed-file secret scan reported no matches.",
+    "Minor non-blocking formatting note: v5_subissues_mirror.v1.json is shown without a trailing newline, but supplied git diff --check passed and this does not affect governance semantics."
   ],
   "implementer": {
     "agent": "codex-v5-subissues-mirror-rebase",
@@ -26,7 +26,7 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "openai-independent-governance-review",
+    "agent": "openai-governance-review",
     "provider": "openai",
     "verdict": "AGREE"
   },
@@ -36,6 +36,7 @@
     "changed_files": [
       ".claude/plans/v5_issue_projection.v1.json",
       ".claude/plans/v5_subissues_mirror.v1.json",
+      "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json"
