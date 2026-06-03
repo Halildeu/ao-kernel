@@ -188,8 +188,22 @@ def test_governance_bug_form_violation_kind_enum() -> None:
 
 
 def test_no_workflow_mutation() -> None:
+    """E-P0-5 scope: ISSUE_TEMPLATE only; the slice's own write-set
+    MUST NOT touch `.github/workflows/`.
+
+    BLK-005 absorb: path-filtered diff (-- .github/workflows/) so
+    unrelated workflow maintenance that landed in earlier merges
+    doesn't trigger a false positive on this slice-scoped invariant.
+    """
     proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
+        [
+            "git",
+            "diff",
+            "--name-only",
+            "origin/main...HEAD",
+            "--",
+            ".github/workflows/",
+        ],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
@@ -197,10 +211,8 @@ def test_no_workflow_mutation() -> None:
     )
     if proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        # ISSUE_TEMPLATE is .github/ but not .github/workflows/; allowed
-        assert not path.startswith(".github/workflows/"), f"E-P0-5 must not touch workflows: {path}"
+    touched = [p for p in proc.stdout.split() if p]
+    assert not touched, f"E-P0-5 (issue forms) slice must not touch .github/workflows/. Touched: {touched}"
 
 
 def test_only_issue_template_under_dot_github_changed() -> None:
