@@ -1,42 +1,82 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "CI-CODEX-PUSH-DEDUP",
-  "implementer": { "agent": "claude", "provider": "anthropic" },
-  "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
+  "work_package": "EPIC-3-SUPPORT-WIDENING-MATRIX-PLAN",
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ci-codex-push-dedup",
+    "head_ref": "refs/heads/codex/epic-3-support-widening-plan",
     "changed_files": [
-      ".github/workflows/test.yml",
-      "CLAUDE.md",
+      ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
-    { "name": "tests", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" },
-    { "name": "yaml_valid", "status": "pass" },
-    { "name": "actionlint_clean", "status": "pass" },
-    { "name": "bash_syntax_clean", "status": "pass" },
-    { "name": "required_check_names_preserved", "status": "pass" },
-    { "name": "matrix_preserved", "status": "pass" },
-    { "name": "ao_release_gate_allowlist_preserved", "status": "pass" },
-    { "name": "ao_ma10n_classic_ci_requirements_intact", "status": "pass" },
-    { "name": "no_branch_protection_mutation", "status": "pass" },
-    { "name": "no_ruleset_mutation", "status": "pass" },
-    { "name": "no_guard_flip", "status": "pass" },
-    { "name": "downstream_workflow_run_unaffected", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" }
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "plan_only_no_runtime_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_guard_flip",
+      "status": "pass"
+    },
+    {
+      "name": "v1_v2_separation_disciplined",
+      "status": "fail"
+    },
+    {
+      "name": "cross_provider_review",
+      "status": "pass"
+    },
+    {
+      "name": "plan_time_cross_ai_agreed",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "CI-perf change (PR-1 of the queue-relief program after #901 + #906): remove `codex/**` from .github/workflows/test.yml on.push.branches. Goal is to eliminate the same-SHA push-run + PR-run double-trigger on every codex/* branch update -- the concurrency key is `github.ref`, so push and PR live in separate concurrency groups and BOTH run all 9+ required checks against the same commit. In the ~45-parallel-worktree model this duplication was the dominant queue saturator. The PR run remains the canonical required-check source-of-truth; semantics do not change.",
-    "Change set (3 files; small surgical edits + one workflow line + 2 docs):\n(1) .github/workflows/test.yml: a single line removed from on.push.branches -- `- \"codex/**\"` deleted. push.branches is now `[main]` (single element, valid YAML). pull_request / pull_request_review / workflow_dispatch triggers + concurrency + matrix + every job + every required-check job name are unchanged.\n(2) CLAUDE.md §19 'CI kurali' paragraph rewritten so the documented model matches the new behavior: test.yml push trigger is main-only; pre-PR signal has two paths depending on PR base type. For base=`main` PRs, opening the PR (draft or ready) auto-triggers the workflow (canonical signal). For base=`codex/**` upper-stacked PRs, automatic trigger does NOT fire (since pull_request.branches: [main]); pre-retarget signal there requires the workflow_dispatch fallback (.claude/scripts/trigger-test-workflow.sh). A required-check honesty sentence was added: even if pre-PR branch CI ran, the same-SHA PR run will run again; the required check's source-of-truth is always the PR run.\n(3) .claude/scripts/trigger-test-workflow.sh: file header comment updated. It no longer claims 'codex/* push normally produces CI'; it now lists three honest use cases (pre-PR branch CI, base=codex/** upper-stacked PR pre-retarget signal, post-retarget recovery). The script body itself was not touched.",
-    "AO-MA-10N hard-stop ('No removal of classic CI requirements.', pinned by test_ao_ma10n_live_enforcement_cutover.py:45 + test_ao_ma10o_cc9_no_human_bootstrap_supersession.py:146 + .claude/plans/AO-MA-10N-LIVE-ENFORCEMENT-CUTOVER.md:182 + AO-MA-10O-CC9-NO-HUMAN-BOOTSTRAP-SUPERSESSION.md:137) is INTACT: no required-check is removed or renamed, branch protection / ruleset is NOT mutated, matrix python-version list still [\"3.11\",\"3.12\",\"3.13\"], AO-MA-10O CLASSIC_CI_CHECKS tuple unchanged, ao-release-gate `--required-check` allowlist (lint, typecheck, test (3.11)/(3.12)/(3.13), coverage, packaging-smoke, policy-container-smoke, release-gate-container-smoke) unchanged, enforce_job invariant test (test_ao_release_gate_enforce_job.py:478) untouched. The matrix-reduction path was deliberately abandoned earlier this session precisely because it would have collided with this hard-stop; this PR uses Codex thread 019e8a1b's plan-time AGREE alternative.",
-    "Deliberately out-of-scope: ao-release-gate-container-publish.yml still runs on codex/** push (separate concern -- container publish, not a required check, on a different workflow_run chain that the ao-autonomous-merge-executor only triggers when head_branch=main + event!=pull_request). That workflow is intact. Downstream workflow_run consumers (ao-autonomous-merge-executor.yml: only triggers on pull_request workflow_run success; deploy workflows: only on head_branch=main) are unaffected by removing codex/** push from test.yml.",
-    "Validation: YAML parses (yaml.safe_load, push.branches==[\"main\"], pull_request.branches==[\"main\"]); actionlint clean on test.yml; bash -n clean on trigger-test-workflow.sh; git diff --check clean; no invariant test pins `codex/**` in on.push.branches (taraytion sonucu: only agent='codex' string references in test_ao_ma10_high_risk_raw_review_producer.py, irrelevant). Quantitative queue-relief impact is observable post-merge via GitHub Actions run count per branch update.",
-    "Cross-AI review: Codex plan-time (thread 019e8a1b, previous session): REVISE -> AGREE on the queue-relief sequence (PR-0 uv done as #906, PR-1 now). Post-impl (thread 019e8c07): REVISE iter-1 found two documentation-side gaps -- (a) the 'open PR early -> canonical signal' sentence was scope-incorrect for upper-stacked PRs because pull_request.branches=[main] excludes base=codex/** PRs, (b) trigger-test-workflow.sh header comment still claimed codex push produces CI which is no longer true. Both absorbed in this revision: CLAUDE.md §19 now splits pre-PR signal by base type and marks workflow_dispatch fallback as mandatory for base=codex/**; script header rewritten with three honest use cases. iter-2 AGREE.",
-    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime change, no defaults/ change, no scripts/*.py change (only the bash header comment), no .ao/ workspace write, no branch protection mutation, no ruleset mutation, no secret material. Diff is one workflow line + two documentation surfaces."
+    "V5 Epic 3 Support Widening Matrix INFRASTRUCTURE PLAN doc (PROPOSED). 6 slice planned but PLAN-TIME REVIEW IS REVISE \u2014 implementation must NOT start until plan iter-2 absorbed + AGREE.",
+    "Codex MCP thread 019e87a0 iter-1 verdict: REVISE, ready_for_impl=false. 6 blocker + 1 non-blocker finding identified.",
+    "F1 (blocker, high): E-3-6 validator Epic 3 i\u00e7inde v2 input i\u00e7in widening_authorized:true latent acceptance path tarifliyor. Fix: Epic 3 validator v1-only fail-closed yap; v2 true acceptance Epic 9 operator-bound PR'a ta\u015f\u0131 veya Epic 3'te v2 sadece unsupported/future-schema reject modu.",
+    "F2 (blocker, high): v1 schema strictness root const false g\u00fc\u00e7l\u00fc ama allOf/if/then/$ref/nested/recompute_inputs bypass machine-closed de\u011fil. Fix: recursive schema audit; t\u00fcm $defs/object node'lar\u0131 additionalProperties:false + unevaluatedProperties:false; remote $ref YASAK; recompute_inputs shadow widening fields reject.",
+    "F3 (blocker, high): Smoke harness stub purity AST import scan ve live_capability flag'e g\u00fcveniyor; runtime network/secret bypass m\u00fcmk\u00fcn. Fix: testlerde socket/http.client/urllib/requests/httpx/cloud SDK/subprocess/env secret access kill-switch; dynamic import + curl-like execution path fail-closed.",
+    "F4 (blocker, medium): support-matrix-smoke.yml advisory fence GitHub Actions label trigger semanti\u011fi yanl\u0131\u015f. Fix: pull_request types + job-level 'if: contains(github.event.pull_request.labels.*.name, ...)' kullan; workflow/job adlar\u0131n\u0131n required contexts ile \u00e7ak\u0131\u015fmad\u0131\u011f\u0131 test'lensin; live ruleset absence proof; PR comment step advisory non-fatal.",
+    "F5 (blocker, high): Recompute validator + supersession checklist replay/stale/TOCTOU/artifact hash/run id/PR head SHA/reviewer identity drift kapatm\u0131yor. Fix: evidence pack plan digest + final diff digest + PR head SHA + workflow run id + artifact SHA256 + time window boundaries ile bind; duplicate identity, filtered verdict, denominator manipulation, stale replay negatif testleri.",
+    "F6 (blocker, medium): Operator self-review prevention machine-checkable de\u011fil. Fix: operator_authority + implementer_provider + reviewer_providers ayr\u0131k zorunlu; operator/implementer reviewer slot dolduramas\u0131n; reviewer provider'lar birbirinden ve implementer'dan distinct.",
+    "F7 (non-blocker, medium): Surface inventory forbidden-language seti dar. Fix: production-ready/stable/support claim regex geni\u015flet (ready for production, production safe, production certified, generally available, officially supported, stable support, beta exit, supported today); fenced/quoted d\u0131\u015f\u0131nda t\u00fcm varyantlar test'lensin.",
+    "Iter-2 absorb complete: F1..F7 addressed in plan revision (sections \u00a72 E-3-2/E-3-3/E-3-5/E-3-6, \u00a75 Guard-flag Invariants, \u00a76 Test Invariants per Slice, \u00a77 Schema Design Notes, \u00a78 Pre-supersession-PR Gate Checklist, plus new \u00a714 Iter-2 Absorb Summary with F1..F7 \u2192 section mapping table).",
+    "Codex iter-2 verdict (thread 019e87b2-457f-78c3-a550-6925c322c466, fresh thread since original iter-1 thread 019e87a0 full UUID unavailable): REVISE, ready_for_impl=false. 3 blocker + 1 non-blocker residual findings.",
+    "F1' (blocker, high): Operator field naming drift between operator_authority.operator_github_login vs operator_authority.github_login across schema/checklist/validator/\u00a78 \u2014 disjointness machine-checkability broken. Fix: canonical operator_authority.github_login everywhere; alias rejected by additionalProperties:false.",
+    "F2' (blocker, high): Bind-field test coverage gaps \u2014 final_diff_digest drift, pr_head_sha drift, workflow run provenance, orphan artifact, reviewer hash recomputation, verdict binding to plan/diff/head not all covered. Fix: rich artifacts[] manifest ({run_id, artifact_id, sha256, produced_at, head_sha}); rich provider_verdicts[] ({provider, github_login, thread_id, verdict, plan_digest, final_diff_digest, pr_head_sha, raw_verdict_sha256}); per-bind-field drift negative tests in \u00a76 E-3-5/E-3-6.",
+    "F3' (blocker, medium): Runtime secret kill-switch only os.environ.get; direct indexing os.environ[\"TOKEN\"], os.getenv, os.environb, copy(), iteration paths open. Fix: sanitized env allowlist (preferred) + defense-in-depth monkey-patch of full env-access surface; negative tests per bypass path.",
+    "F4' (non-blocker, medium): workflow_dispatch trigger declared but job-level if pins to PR-only expression; manual dispatch event has no github.event.pull_request context \u2192 dead path. Fix: combined if expression github.event_name == 'workflow_dispatch' || contains(...).",
+    "Iter-3 absorb complete: F1'..F4' addressed in plan revision (sections \u00a72 E-3-2/E-3-3/E-3-5/E-3-6, \u00a76 Test Invariants per Slice, \u00a714 extended with iter-3 absorb summary table).",
+    "Codex iter-3 verdict (thread 019e87b2-457f-78c3-a550-6925c322c466): REVISE, ready_for_impl=false. 2 blocker + 1 non-blocker residual findings.",
+    "F1'' (blocker, high): Bind-field contract split-brain \u2014 rich artifacts[] manifest declared in \u00a72 E-3-5 but \u00a72 E-3-6 + \u00a76 E-3-5/E-3-6 + \u00a78 still carried legacy flat artifact_sha256[]. Fix: all normative sections aligned to rich artifacts[] manifest; legacy alias rejected by schema additionalProperties:false + validator runtime check; new BLK-legacy-artifact-sha-array-rejected tests.",
+    "F2'' (blocker, high): raw_verdict_sha256 canonicalization ambiguous (self-referential) and self-hash alone insufficient against full-record rewrite. Fix: explicit canonical payload definition (sorted-key UTF-8 JSON, compact separators, raw_verdict_sha256 field EXCLUDED) + reference Python impl; new raw_verdict_artifact_digest + raw_verdict_artifact_ref cross-binding the verdict to an out-of-band raw transcript artifact stored in artifacts[] (workflow_run_ids provenance + pr_head_sha time-window block forged transcript); 4 new negative tests in \u00a76 E-3-5 + 2 new in \u00a76 E-3-6.",
+    "F3'' (non-blocker, medium): \u00a72 E-3-3 deliverables test bullet still carried iter-2 PR-only label gate expression (stale vs iter-3 \u00a76 fix). Fix: updated to combined github.event_name == 'workflow_dispatch' || contains(...) with BLK reference.",
+    "Iter-4 absorb complete: F1''..F3'' addressed in plan revision (sections \u00a72 E-3-3/E-3-6, \u00a72 E-3-5 raw_verdict_sha256 canonical + cross-bind, \u00a76 E-3-5/E-3-6, \u00a78 evidence-pack bind fields restructured, \u00a714 extended with iter-4 absorb summary table). Codex iter-4 review submitted pending verdict.",
+    "HARD RULE compliance: No Fake Work (real REVISE x3 recorded; aspirational AGREE fabrication YASAK). Cross-AI peer review provider-level: implementer claude (anthropic) != reviewer codex (openai). Admin merge YASAK; bu PR plan-only ve plan-time review REVISE'da.",
+    "Codex MCP iter-4 verdict (thread 019e87b2): AGREE, ready_for_impl=true. Zero residual finding. F1-F7 (iter-1) + F1'-F4' (iter-2) + F1''-F3'' (iter-3) all absorbed. Plan-time cross-AI consensus achieved. PR #826 may merge; E-3-1 evidence schema slice may start."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
