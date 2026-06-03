@@ -95,7 +95,7 @@
     "The self-enforcement failure was correctly resolved by adding a `[Unreleased]` changelog bullet, not by relying on a label or weakening the gate. This keeps the new workflow compatible with its own policy on first landing.",
     "Governance-sensitive surfaces are untouched: no CODEOWNERS, ruleset, branch protection, runtime live-adapter path, secret material, support widening, production claim, or live adapter execution mutation.",
     "The shape tests cover workflow presence, permissions, CLI binding, local-hook coexistence, drift avoidance, and governance zero-touch invariants for the changelog enforcement lane.",
-    "E-1-4 pre-commit hook invariant was narrowed to its own hook/test write-set: workflow mutations now fail only when the E-1-4 slice is active, while E-1-3 workflow PRs are governed by their own changelog-enforcement workflow shape tests."
+    "E-1-4 pre-commit hook invariant was narrowed to its own hook write-set: workflow mutations now fail only when the E-1-4 hook slice is active, while E-1-3 workflow PRs are governed by their own changelog-enforcement workflow shape tests."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

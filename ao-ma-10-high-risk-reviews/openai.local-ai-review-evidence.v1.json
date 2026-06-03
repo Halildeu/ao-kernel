@@ -95,7 +95,7 @@
     "The PR now includes a real `CHANGELOG.md` `[Unreleased]` entry for the new CI enforcement lane, so the newly introduced workflow passes without requiring a `chore-no-changelog` label bypass.",
     "Security posture remains narrow: pull_request event only, contents:read and pull-requests:read, persist-credentials:false, no secrets context, no admin token, no branch-protection/ruleset/CODEOWNERS mutation, and all guard flags remain false.",
     "Scope-reviewed binding is current-PR exact: the changed_files list matches the sorted `git diff --name-only origin/main` output, including the changelog entry, workflow, shape test, and review-evidence artifacts.",
-    "E-1-4 pre-commit hook invariant was narrowed to its own hook/test write-set: workflow mutations now fail only when the E-1-4 slice is active, while E-1-3 workflow PRs are governed by their own changelog-enforcement workflow shape tests."
+    "E-1-4 pre-commit hook invariant was narrowed to its own hook write-set: workflow mutations now fail only when the E-1-4 hook slice is active, while E-1-3 workflow PRs are governed by their own changelog-enforcement workflow shape tests."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

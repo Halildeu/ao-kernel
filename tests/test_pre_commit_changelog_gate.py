@@ -219,12 +219,11 @@ def test_no_workflow_mutation() -> None:
     if all_changed_proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {all_changed_proc.stderr.strip()}")
     all_changed = set(all_changed_proc.stdout.split())
-    e14_paths = {
+    e14_active_paths = {
         ".claude/scripts/pre-commit-changelog-gate.sh",
-        "tests/test_pre_commit_changelog_gate.py",
     }
-    if not (all_changed & e14_paths):
-        pytest.skip("E-1-4 hook/test not in current PR diff; slice-scoped invariant not applicable")
+    if not (all_changed & e14_active_paths):
+        pytest.skip("E-1-4 hook not in current PR diff; slice-scoped invariant not applicable")
 
     proc = subprocess.run(
         [

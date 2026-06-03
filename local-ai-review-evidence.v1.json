@@ -95,7 +95,7 @@
     "A real `CHANGELOG.md` `[Unreleased]` entry was added for this PR, proving the new gate can pass without label-based bypass on its introducer PR.",
     "High-risk governance boundaries remain closed: no CODEOWNERS, ruleset, branch protection, secret, admin, support widening, production claim, or live adapter execution change.",
     "Top-level OpenAI and Anthropic review evidence is rebound to the exact current PR diff so `ao-release-gate` can verify source-pinned high-risk review evidence.",
-    "E-1-4 pre-commit hook invariant was narrowed to its own hook/test write-set: workflow mutations now fail only when the E-1-4 slice is active, while E-1-3 workflow PRs are governed by their own changelog-enforcement workflow shape tests."
+    "E-1-4 pre-commit hook invariant was narrowed to its own hook write-set: workflow mutations now fail only when the E-1-4 hook slice is active, while E-1-3 workflow PRs are governed by their own changelog-enforcement workflow shape tests."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
