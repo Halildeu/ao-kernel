@@ -21,6 +21,10 @@
   },
   "checks_considered": [
     {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
       "name": "plan_only_no_runtime_change",
       "status": "pass"
     },
