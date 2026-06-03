@@ -1,0 +1,47 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "artifact_kind": "local-ai-review-evidence",
+  "review_target": "AO-MA-905-cloud-run-deploy-lane-gate",
+  "review_target_paths": [
+    ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
+    ".github/workflows/policy-service-deploy-cloud-run.yml",
+    "tests/test_ao_release_gate_deploy_workflow.py",
+    "tests/test_policy_service_deploy_workflow.py",
+    ".claude/plans/CLOUD-RUN-AUTO-DEPLOY-LANE-FLAG.md"
+  ],
+  "provider": "openai",
+  "reviewer": "codex",
+  "review_method": "Codex spawn_task autonomous PR. Documented root cause chain: container-publish workflows trigger on push to ao_kernel/** or pyproject.toml \u2192 publish image (success) \u2192 deploy workflows fire via workflow_run: completed \u2192 deploy job first step 'Validate trusted deploy configuration' hard-fails because GCP auth repository variables (GCP_PROJECT_ID, GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT, RELEASE_GATE_SERVICE_NAME, AO_RELEASE_GATE_*) are deliberately unset (Cloud Run intentionally pre-cutover). Pre-cutover false-red painted every main push.",
+  "verdict": "agree",
+  "ready_to_merge": true,
+  "verdict_rationale": "Gating deploy lane behind operator-controlled repository variable (e.g. ENABLE_CLOUD_RUN_AUTO_DEPLOY) prevents pre-cutover noise without weakening deploy gate semantics post-cutover. 2 workflow YAML conditional + 2 regression tests pin the gate behavior. Pre-cutover state explicitly documented in .claude/plans/CLOUD-RUN-AUTO-DEPLOY-LANE-FLAG.md.",
+  "findings_count_by_severity": {
+    "blocker": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "key_findings_summary": [
+    "False-red on every main push since deploy auth never configured",
+    "Operator flag-based gate preserves post-cutover behavior",
+    "2 regression tests pin gate semantics",
+    "ZERO TOUCH runtime ao_kernel/ modules"
+  ],
+  "consensus_state": "agree_with_anthropic_cross_review",
+  "guard_flags_const_false": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "work_package": "AO-MA-905-cloud-run-gate",
+  "checks_considered": [
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "tests",
+      "status": "pass"
+    }
+  ]
+}

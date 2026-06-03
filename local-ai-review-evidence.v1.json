@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-908-ao-release-gate-allowlist",
+  "work_package": "AO-MA-905-cloud-run-gate",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,14 +13,18 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/fix/ao-release-gate-allowlist-claude-scripts",
+    "head_ref": "refs/heads/fix/cloud-run-deploy-false-red",
     "changed_files": [
+      ".claude/plans/CLOUD-RUN-AUTO-DEPLOY-LANE-FLAG.md",
+      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
+      ".github/workflows/policy-service-deploy-cloud-run.yml",
+      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-905-cloud-run-deploy-lane-gate/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "tests/test_ao_release_gate_deploy_workflow.py",
+      "tests/test_policy_service_deploy_workflow.py"
     ]
   },
   "checks_considered": [
@@ -37,11 +41,11 @@
       "status": "pass"
     },
     {
-      "name": "diff_scope_false_block_root_cause",
+      "name": "cloud_run_auto_deploy_flag_default_off",
       "status": "pass"
     },
     {
-      "name": "high_risk_human_review_preserved",
+      "name": "workflow_dispatch_lane_preserved",
       "status": "pass"
     },
     {
@@ -66,10 +70,10 @@
     }
   ],
   "findings": [
-    "Current PR #908 fixes a systemic ao-release-gate false-red: .claude/scripts/ helper-script edits were outside DEFAULT_ALLOWED_PATH_PREFIXES even though the scripts are documented governance helpers, producing ao_release_gate_diff_out_of_scope before the proper high-risk review check could apply.",
-    "Long-term fix preserves defense in depth: allowlist diff_scope for .claude/scripts/ while keeping .claude/** high-risk, so current non-author review remains mandatory for helper-script changes.",
-    "Evidence binding is updated to the real PR diff and historical nested review artifacts are not rewritten. This avoids stale evidence corruption and keeps audit provenance per work package.",
-    "Focused tests cover payload allowlist and decision-core denial without current non-author review; full CI has already shown the normal test matrix green with only ao-release-gate pending this evidence-binding correction."
+    "#905 fixes a pre-cutover false-red class: Cloud Run deploy workflows fired automatically after container publish workflows even though Cloud Run cutover variables are intentionally absent. The deploy job failed on missing variables and painted main red on a non-required pre-cutover lane.",
+    "Long-term fix: gate only the automatic workflow_run deploy lane behind CLOUD_RUN_AUTO_DEPLOY_ENABLED == 'true'. Default unset means skipped/non-failure; manual workflow_dispatch remains open for explicit operator runs.",
+    "Evidence binding is updated to the real PR diff. Historical AO-MA-10h and AO-MA-CI-FIX evidence files are not rewritten.",
+    "This is not a production claim and not live adapter execution. It preserves validation failure once the operator opts into automatic Cloud Run deploy."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
