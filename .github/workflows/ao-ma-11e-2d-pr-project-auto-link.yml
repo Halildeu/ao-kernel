@@ -81,7 +81,7 @@ jobs:
 
       - name: Verify CLI present
         run: |
-          ao-kernel --version
+          ao-kernel version
           ao-kernel project --help
 
       - name: Auto-link PR to project (derive 9 custom fields)

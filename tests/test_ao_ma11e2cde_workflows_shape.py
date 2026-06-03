@@ -251,6 +251,10 @@ def test_12_2c_2d_use_ao_kernel_cli() -> None:
     assert "ao-kernel project drift" in text_2c, "11e-2c missing `ao-kernel project drift` invocation"
     assert "ao-kernel project sync" in text_2c, "11e-2c missing `ao-kernel project sync` invocation"
     assert "ao-kernel project from-pr" in text_2d, "11e-2d missing `ao-kernel project from-pr` invocation"
+    for path in ALL_WORKFLOW_PATHS:
+        text = _read_text(path)
+        assert "ao-kernel version" in text, f"{path.name} missing supported `ao-kernel version` smoke"
+        assert "ao-kernel --version" not in text, f"{path.name} uses unsupported `ao-kernel --version`"
 
 
 def test_13_2e_uses_label_cleanup_subcommand() -> None:

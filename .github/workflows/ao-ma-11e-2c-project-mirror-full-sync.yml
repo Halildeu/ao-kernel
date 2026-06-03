@@ -82,7 +82,7 @@ jobs:
 
       - name: Verify CLI present
         run: |
-          ao-kernel --version
+          ao-kernel version
           ao-kernel project --help
 
       - name: Drift preflight (fail-fast, strict)
