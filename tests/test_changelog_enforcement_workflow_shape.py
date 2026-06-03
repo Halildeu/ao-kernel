@@ -134,12 +134,18 @@ def test_workflow_installs_ao_kernel_core_only() -> None:
 
 
 def test_workflow_passes_base_and_labels_to_cli() -> None:
-    """CLI MUST receive --base origin/$BASE_REF and --labels-json
-    pr-labels.json. F1 absorb: parameters flow from event payload to
-    the canonical validator."""
+    """CLI MUST receive the current signature so behavior is bound to
+    the SSOT validator (no YAML drift). The CLI requires
+    --base-changelog, --head-changelog, --out; optional --diff-path /
+    --chore-no-changelog / --chore-rationale. Labels are still env-
+    routed via PR_LABELS_JSON, parsed inline (the CLI does not accept
+    a --labels-json flag)."""
     text = WORKFLOW_PATH.read_text()
-    assert '--base "origin/$BASE_REF"' in text
-    assert "--labels-json pr-labels.json" in text
+    assert "--base-changelog base-changelog.md" in text
+    assert "--head-changelog CHANGELOG.md" in text
+    assert "--out changelog-verdict.json" in text
+    assert "PR_LABELS_JSON" in text
+    assert "chore-no-changelog" in text
 
 
 def test_workflow_actionable_error_cites_adr_0005_paths() -> None:
