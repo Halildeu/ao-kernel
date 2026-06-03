@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10h-multi-work-package-migration",
+  "work_package": "AO-MA-CI-FIX-fetch-depth-shallow-clone",
   "implementer": {
     "agent": "claude-opus-4-7-1m",
     "provider": "anthropic"
@@ -13,37 +13,76 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10h-multi-work-package",
+    "head_ref": "refs/heads/codex/ci-fix-fetch-depth-shallow-clone",
     "changed_files": [
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.md",
-      ".claude/plans/AO-MA-10h-MULTI-WORK-PACKAGE-MIGRATION.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-10h-multi-work-package-migration/openai.local-ai-review-evidence.v1.json",
+      ".github/workflows/test.yml",
+      "CHANGELOG.md",
+      "local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/test_ao_ma10h_multi_work_package_schema.py",
-      "tests/test_ao_release_gate.py"
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/AO-MA-CI-FIX-fetch-depth-shallow-clone/openai.local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
     {
       "name": "secret_scan",
       "status": "pass"
     },
     {
-      "name": "ruff",
+      "name": "tests",
       "status": "pass"
     },
     {
-      "name": "mypy",
+      "name": "yaml_valid",
+      "status": "pass"
+    },
+    {
+      "name": "fetch_depth_set_to_zero_on_test_job",
+      "status": "pass"
+    },
+    {
+      "name": "fetch_depth_not_set_on_other_jobs",
+      "status": "pass"
+    },
+    {
+      "name": "coverage_job_not_modified",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_ruleset_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_codeowners_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_guard_flip",
+      "status": "pass"
+    },
+    {
+      "name": "no_runtime_python_module_change",
+      "status": "pass"
+    },
+    {
+      "name": "ao_release_gate_allowlist_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "required_check_names_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "matrix_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_unreleased_entry_added",
       "status": "pass"
     },
     {
@@ -52,17 +91,15 @@
     }
   ],
   "findings": [
-    "Anthropic adversarial reviewer (Claude Opus 4.7 1M) AGREE on the AO-MA-10h multi-work-package migration. Because implementer + adversarial reviewer share the Anthropic provider, this verdict counts as the SECONDARY adversarial signal; primary cross-provider distinctness comes from OpenAI (Codex MCP thread 019e88c9) plus the documented MiniMax fallback. 2-of-3 distinct-provider AGREE policy applies per HARD RULE Cross-AI Peer Review (2026-05-14).",
-    "Diff line-by-line re-read of schema: const AO-MA-10h removed, pattern + minLength + maxLength added, description rewritten. No other property touched; required[], guard_flags[], reviewer_providers[], required_reviewer_providers[], consensus_status, release_authority, ai_output_release_authority, secrets_recorded, mutations_performed, freshness, $defs.context_binding, $defs.provider_verdict byte-identical to pre-migration.",
-    "Diff line-by-line re-read of scripts/ao_ma10_high_risk_supersession_evidence.py: import re added, three module constants (WORK_PACKAGE_PATTERN, MIN_LEN, MAX_LEN), _validate_work_package function with three failure modes, single pre-check call in builder, emit-dict work_package field swapped from hardcoded literal to dynamic variable. No other emit-dict field is touched.",
-    "Diff line-by-line re-read of tests/test_ao_release_gate.py: only the _high_risk_supersession_evidence helper gains a work_package=AO-MA-10h default keyword argument; one string literal replaced with variable reference. 16 existing call sites unchanged via default.",
-    "New test file tests/test_ao_ma10h_multi_work_package_schema.py: 36 invariants across 7 categories. Every const, every required field, every guard flag, every provider distinctness rule pinned. test_builder_source_no_longer_hardcodes_ao_ma_10h_work_package is a static-source regression guard.",
-    "Substitution attack walked: imagined PR with work_package EVIL-WP-1 — workflow accepts the regex, builder emits it, schema validates it, BUT the artifact still needs to (a) pair-present openai+anthropic raw reviewer files on PR head, (b) match live PR head_sha + diff_digest + changed_files + refs + repo + high_risk_changed_paths, (c) all guard flags false, (d) release_authority+github-ruleset, (e) freshness within window. EVIL-WP-1 alone defeats no defense.",
-    "Stale rebinding walked: imagined PR reusing old generated artifact - freshness check fails (max_age_seconds vs old generated_at); separately, ao_release_gate.py compares artifact context_binding.head_sha to current PR head_sha (mismatch -> deny_untrusted_context).",
-    "Guard flag audit: grep -n support_widening|production_platform_claim|live_adapter_execution across all changed files; every occurrence stays const false. Plan doc, evidence JSON, new tests, cross-AI evidence files all consistent.",
-    "Workflow zero-touch: .github/workflows/test.yml unchanged; already reads --review-work-package dynamically; regex already matches new schema pattern.",
-    "ao_release_gate.py zero-touch: business logic unchanged; gate validates against the widened schema and live context binding.",
-    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, workflow mutation, ruleset mutation, codeowners mutation, ao-release-gate runtime mutation, gpp_status mutation, or auto-merge execution is performed; all seven AO-MA-10h current_slice_forbidden_actions remain forbidden."
+    "Anthropic adversarial self-review AGREE on CI fetch-depth fix. Single-purpose root-cause fix: actions/checkout@v6 default fetch-depth=1 produces shallow clones; _resolve_pr_diff_base + git diff origin/main...HEAD callers fail-closed in CI PR context with exit 128. fetch-depth:0 brings full history \u2192 merge-base resolves \u2192 invariants pass.",
+    "Affected tests verified by failing CI evidence across every open PR: test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners, test_epic_4_1_helm_chart_skeleton::test_no_workflow_mutation_in_diff, test_epic_4_1_helm_chart_skeleton::test_write_set_exact_match_git_diff, test_epic_4_1_helm_chart_skeleton::test_no_pyproject_change_in_slice, test_epic_4_2a_multi_tenant_boundary (4 diff-base tests), test_pci_dss_mapping::test_allowlist_diff_no_other_files (task #64 each-PR fail).",
+    "Workflow zero-touch on coverage job verified by reading lines 181-213 \u2014 coverage job downloads coverage.data artifact from the 3.13 test leg and runs `coverage report --fail-under=85`; it does NOT re-run the test suite. fetch-depth on coverage job unnecessary; failing diff-base tests run inside `test` job only.",
+    "Other jobs reviewed: lint (98), packaging-smoke (213), policy-container-smoke (232), release-gate-container-smoke (251), typecheck (276), benchmark-fast (296), scorecard (337), extras-install (385) \u2014 none call git diff origin/main...HEAD or _resolve_pr_diff_base. fetch-depth:1 default safe for those jobs.",
+    "ao-release-gate job (405, 488, 513) uses dedicated base + head checkout with explicit ref pinning; not affected by test job's fetch-depth change.",
+    "Guard flag audit: grep -n support_widening|production_platform_claim|live_adapter_execution across all changed files; every occurrence stays const false. No flag flip, no admin merge, no branch protection mutation, no ruleset mutation, no CODEOWNERS mutation, no ao_kernel/ runtime module mutation, no .ao/ canonical decision write, no gpp_status mutation.",
+    "Workflow file diff is ~8 lines (with: { fetch-depth: 0 } + 6-line explanatory comment). Comment cites affected tests + root cause + HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm. Self-documenting for future readers.",
+    "HARD RULE Uzun Vadeli Kal\u0131c\u0131 \u00c7\u00f6z\u00fcm + Governance/Sistemik Bug compliance: kal\u0131c\u0131 \u00e7\u00f6z\u00fcm (root cause not symptom). Patching tests individually to tolerate shallow clones would be a symptom fix; CI workflow is the correct level. No admin bypass requested.",
+    "HARD RULE No Fake Work: machine-verified by post-merge effect \u2014 every other open PR's CI runs the new test.yml and the diff-base tests resolve origin/main \u2192 existing failures clear without per-PR rebases."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
