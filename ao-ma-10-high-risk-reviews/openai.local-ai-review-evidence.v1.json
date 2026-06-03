@@ -34,11 +34,16 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/v5_issue_projection.v1.json"
+      ".claude/plans/v5_issue_projection.v1.json",
+      ".claude/plans/v5_subissues_mirror.v1.json",
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json"
     ],
-    "head_ref": "refs/heads/codex/v5-project-board-setup-mirror"
+    "head_ref": "refs/heads/codex/v5-subissues-mirror"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-897-v5-project-board-backfill"
+  "work_package": "AO-MA-896-v5-mirror-sub-issues"
 }
