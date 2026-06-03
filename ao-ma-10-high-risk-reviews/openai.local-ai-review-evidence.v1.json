@@ -1,35 +1,26 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-899-project-sync-workflows",
+  "work_package": "AO-MA-ISSUE-TEMPLATE-ALLOWLIST",
   "implementer": {
-    "agent": "claude-opus-4-7-1m",
-    "provider": "anthropic"
+    "agent": "codex",
+    "provider": "openai"
   },
   "reviewer": {
-    "agent": "codex-mcp-thread",
+    "agent": "codex-adversarial-review",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-11e-2c-d-e-workflows",
+    "head_ref": "refs/heads/codex/ao-release-gate-issue-template-allowlist",
     "changed_files": [
-      ".claude/plans/AO-MA-11E-2c-d-e-WORKFLOWS.md",
-      ".claude/plans/AO-MA-11E-2c-d-e-WORKFLOWS.v1.json",
-      ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
-      ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
-      ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
       "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/minimax.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/AO-MA-11e-2c-d-e-workflows/openai.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-11e-2c-d-e-workflows-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma11e2cde_workflows_shape.py"
+      "scripts/ao_release_gate_build_payload.py",
+      "tests/test_ao_release_gate_build_payload.py"
     ]
   },
   "checks_considered": [
@@ -42,45 +33,32 @@
       "status": "pass"
     },
     {
-      "name": "pre_commit_hook_delegates_to_changelog_policy",
+      "name": "narrow_issue_template_prefix",
       "status": "pass"
     },
     {
-      "name": "local_only_operator_installed_hook",
+      "name": "no_workflow_change",
       "status": "pass"
     },
     {
-      "name": "no_github_workflow_mutation",
+      "name": "no_codeowners_change",
       "status": "pass"
     },
     {
-      "name": "no_codeowners_mutation",
+      "name": "no_ruleset_or_branch_protection_change",
       "status": "pass"
     },
     {
-      "name": "no_ruleset_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_support_widening",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_remain_false",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_review_evidence_present",
+      "name": "release_authority_boundary",
       "status": "pass"
     }
   ],
   "findings": [
-    "PR #909 implements the V5 Epic 1 E-1-4 local pre-commit changelog gate as an operator-installed local hook, not as release authority. The hook blocks user-visible code commits without CHANGELOG.md unless the commit prefix is explicitly non-user-visible.",
-    "The hook delegates policy intent to the existing ADR-0005 Keep-a-Changelog discipline and mirrors the future E-1-3 CI enforcement lane without mutating .github/workflows/.",
-    "The tested decision contract covers no-code pass, code+CHANGELOG pass, feat/fix-style code-without-CHANGELOG block, and non-user-visible prefixes such as chore/docs/test/ci/style/refactor/build/perf pass.",
-    "The final PR diff is intentionally limited to the E-1-4 plan document, local hook script, pre-commit hook tests, current top-level review evidence, and nested AO-MA-818 reopening review artifacts. Historical AO-MA-10h and AO-MA-CI-FIX evidence rewrites were restored to origin/main.",
-    "Guard-controlled surfaces are not widened: support_widening=false, production_platform_claim=false, live_adapter_execution=false; no CODEOWNERS, ruleset, branch-protection, live adapter, or ao_kernel runtime surface is changed.",
-    "OpenAI review signal is represented as cross-provider review evidence for the E-1-4 local hook scope; AI output remains evidence only, while ao-release-gate plus GitHub ruleset remains release authority."
+    "OpenAI review accepts the `.github/ISSUE_TEMPLATE/` allowlist widening because it is exact-folder metadata, not a broad `.github/` grant.",
+    "The diff does not mutate workflows, CODEOWNERS, rulesets, branch protection, runtime adapter code, or public support tier semantics.",
+    "The regression test would fail if the protected-base builder dropped the issue-template prefix again.",
+    "The CHANGELOG entry documents the limited unblock for reviewed V5 issue-form PRs.",
+    "Release authority remains ao-release-gate plus GitHub ruleset; this review is evidence only."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
