@@ -19,22 +19,86 @@
     {
       "name": "claude_independent_review",
       "status": "pass"
+    },
+    {
+      "name": "guide_exists_at_expected_path",
+      "status": "pass"
+    },
+    {
+      "name": "three_deployment_patterns_covered",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_const_false_in_disclaimer",
+      "status": "pass"
+    },
+    {
+      "name": "no_positive_production_claim_tokens",
+      "status": "pass"
+    },
+    {
+      "name": "no_in_prose_flag_flip",
+      "status": "pass"
+    },
+    {
+      "name": "operator_bound_supersession_reference",
+      "status": "pass"
+    },
+    {
+      "name": "operator_owned_surfaces_listed",
+      "status": "pass"
+    },
+    {
+      "name": "v5_roadmap_forward_ref",
+      "status": "pass"
+    },
+    {
+      "name": "helm_e41_forward_ref",
+      "status": "pass"
+    },
+    {
+      "name": "zero_touch_no_workflow_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_runtime_source_changes",
+      "status": "pass"
+    },
+    {
+      "name": "no_codeowners_ruleset_branch_protection_changes",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_entry_appropriate",
+      "status": "pass"
+    },
+    {
+      "name": "test_count_matches_plan_13_invariants",
+      "status": "pass"
+    },
+    {
+      "name": "claim_scanner_negation_window_correctness",
+      "status": "pass"
+    },
+    {
+      "name": "test_meaningful_no_whole_diff_mutation_guard",
+      "status": "pass"
     }
   ],
   "findings": [
-    "items_count 13\u219271 and issues_count 13\u219271 are arithmetically consistent (13 parent + 58 sub = 71)",
-    "board_field_setup is additive-only under runtime_created_state; no existing fields modified except the two counts",
-    "sub_issues_mirror_ref preserved intact \u2014 coexistence confirmed",
-    "guard_flags unchanged (all three remain false)",
-    "register_authority remains evidence_record_only; visibility_mode remains one_way_mirror_repo_authority_wins",
-    "_description explicitly states authority remains projection manifest, not GitHub board",
-    "No workflow, ruleset, CODEOWNERS, or source code mutations in diff",
-    "No --admin bypass (also explicitly noted in board_field_setup.notes)",
-    "Skipping stale evidence commits that rewrote unrelated ao-ma-10-high-risk-reviews work_package fields is correct \u2014 those are out of scope for this PR and would have introduced unauthorized field mutations",
-    "Risk note: Mirror digest in board_field_setup will become stale after any manifest write-back; notes correctly flag this for AO-MA-11E-2 drift checker to recompute"
+    "Production deployment guide is documentation-only and scoped to Epic 8 E-8-1.",
+    "Guide covers standalone Python package, Docker, and Kubernetes operator-deployable patterns.",
+    "Disclaimer keeps support_widening, production_platform_claim, and live_adapter_execution as const false.",
+    "Guide explicitly avoids a production-ready certification claim and points production/beta promotion to a future operator-bound supersession slice.",
+    "Tests enforce the expected path, three deployment patterns, operator-owned surfaces, V5 roadmap and Helm E-4-1 forward references, and claim-safety invariants.",
+    "Claude review AGREE: disclaimer negates prohibited production-readiness language and preserves guard flags.",
+    "Claude review AGREE: claim scanner strips fenced code blocks and checks a whitespace-flattened negation window.",
+    "Claude review AGREE: ZERO TOUCH test checks the plan boundary and does not perform a whole-diff workflow mutation guard.",
+    "Claude review AGREE: changelog entry is appropriately scoped under Unreleased Added.",
+    "No workflow, runtime source, CODEOWNERS, ruleset, branch-protection, or live-adapter mutation is included."
   ],
   "implementer": {
-    "agent": "codex-v5-project-board-setup-mirror-rebase",
+    "agent": "codex-epic-8-1-deployment-guide-rebase",
     "provider": "openai"
   },
   "live_adapter_execution": false,
@@ -49,12 +113,15 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/v5_issue_projection.v1.json",
-      "local-ai-review-evidence.v1.json"
+      ".claude/plans/EPIC-8-1-PRODUCTION-DEPLOYMENT-GUIDE.md",
+      "CHANGELOG.md",
+      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_production_deployment_guide.py"
     ],
-    "head_ref": "refs/heads/codex/v5-project-board-setup-mirror"
+    "head_ref": "refs/heads/codex/epic-8-1-deployment-guide-v2"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-897-v5-project-board-backfill"
+  "work_package": "AO-MA-912-deployment-guide"
 }
