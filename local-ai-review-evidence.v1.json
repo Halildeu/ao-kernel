@@ -19,6 +19,11 @@
       ".github/dependabot.yml",
       ".github/workflows/trivy.yml",
       "CHANGELOG.md",
+      "tests/test_ao_ma11e2cde_workflows_shape.py",
+      "tests/test_epic_4_1_helm_chart_skeleton.py",
+      "tests/test_epic_4_2a_multi_tenant_boundary.py",
+      "tests/test_issue_forms_shape.py",
+      "tests/test_semantic_backends.py",
       "tests/test_vuln_scanning_invariants.py",
       "local-ai-review-evidence.v1.json"
     ]
@@ -67,11 +72,16 @@
     {
       "name": "changelog_discipline",
       "status": "pass"
+    },
+    {
+      "name": "legacy_slice_invariant_scope_fix",
+      "status": "pass"
     }
   ],
   "findings": [
     "Claude re-review verdict AGREE after rebase and plan-doc version drift cleanup.",
     "ADR-0005 changelog enforcement failure was resolved with a narrow Unreleased entry for the advisory Dependabot + Trivy filesystem scanning baseline.",
+    "CI matrix failures from stale slice-specific workflow/dot-github invariants were resolved by scoping those tests to their own slice evidence or artifact markers; no Trivy workflow guard was relaxed.",
     "No blocking findings: advisory-only Dependabot + Trivy filesystem baseline remains scoped; Snyk, image scans, required-gate promotion, MEDIUM severity, config/secret scanning, support widening, production claim, and live adapter execution remain out of scope."
   ],
   "secrets_recorded": false,

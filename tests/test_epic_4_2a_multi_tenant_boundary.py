@@ -192,6 +192,7 @@ def test_evidence_pins_three_guard_flags_const_false() -> None:
 def test_no_workflow_mutation_in_diff() -> None:
     """git diff against origin/main MUST NOT include .github/workflows/** entries."""
     changed = _changed_files_against_origin_main()
+    _skip_unless_e42a_evidence_in_diff(changed, "workflow mutation invariant")
     workflow_changes = [p for p in changed if p.startswith(".github/workflows/")]
     assert workflow_changes == [], f"workflow files modified in this slice (FORBIDDEN): {workflow_changes}"
 

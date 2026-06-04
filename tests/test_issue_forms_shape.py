@@ -42,6 +42,24 @@ def _load_form(filename: str) -> dict:
     return yaml.safe_load((ISSUE_DIR / filename).read_text())
 
 
+def _changed_files_against_origin_main() -> list[str]:
+    proc = subprocess.run(
+        ["git", "diff", "--name-only", "origin/main...HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
+    return [p for p in proc.stdout.split() if p]
+
+
+def _skip_unless_issue_forms_slice(changed: list[str]) -> None:
+    if not any(path.startswith(".github/ISSUE_TEMPLATE/") for path in changed):
+        pytest.skip("E-P0-5 issue-form zero-touch invariant applies only when issue templates are in the PR diff")
+
+
 # ---- 1. Form presence + structure (5) -----------------------------------
 
 
@@ -195,38 +213,16 @@ def test_no_workflow_mutation() -> None:
     unrelated workflow maintenance that landed in earlier merges
     doesn't trigger a false positive on this slice-scoped invariant.
     """
-    proc = subprocess.run(
-        [
-            "git",
-            "diff",
-            "--name-only",
-            "origin/main...HEAD",
-            "--",
-            ".github/workflows/",
-        ],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    touched = [p for p in proc.stdout.split() if p]
+    changed = _changed_files_against_origin_main()
+    _skip_unless_issue_forms_slice(changed)
+    touched = [p for p in changed if p.startswith(".github/workflows/")]
     assert not touched, f"E-P0-5 (issue forms) slice must not touch .github/workflows/. Touched: {touched}"
 
 
 def test_only_issue_template_under_dot_github_changed() -> None:
     """E-P0-5 scope: .github/ISSUE_TEMPLATE/ only. No CODEOWNERS / ruleset / branch-protection mutation."""
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
+    changed = _changed_files_against_origin_main()
+    _skip_unless_issue_forms_slice(changed)
     for path in changed:
         if path.startswith(".github/"):
             assert path.startswith(".github/ISSUE_TEMPLATE/"), (
