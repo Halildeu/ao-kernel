@@ -1,27 +1,28 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-2-5-SECRET-DISCIPLINE",
+  "work_package": "E-3-1-SUPPORT-WIDENING-EVIDENCE",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-2-5-secret-discipline",
+    "head_ref": "refs/heads/feat/epic-3-1-support-widening-evidence",
     "changed_files": [
-      ".claude/plans/adr/ADR-0007-secret-resolution-discipline.md",
-      ".claude/plans/adr/index.json",
+      ".claude/plans/EPIC-3-E-3-1-EVIDENCE-SCHEMA.md",
+      ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "CHANGELOG.md",
-      "ao_kernel/_internal/secrets/__init__.py",
-      "ao_kernel/_internal/secrets/discipline.py",
-      "ao_kernel/_internal/secrets/taint.py",
-      "tests/test_secret_discipline.py",
+      "ao_kernel/_internal/support_widening/__init__.py",
+      "ao_kernel/_internal/support_widening/evidence.py",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/schemas/support-widening-evidence.schema.v1.json",
+      "tests/test_support_widening_evidence_v1.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -30,25 +31,18 @@
     { "name": "secret_scan", "status": "pass" },
     { "name": "ruff", "status": "pass" },
     { "name": "mypy", "status": "pass" },
-    { "name": "json_validity", "status": "pass" },
-    { "name": "gpp_next_guard_flags", "status": "pass" },
-    { "name": "diff_whitespace", "status": "pass" },
-    { "name": "workflow_mutation_guard", "status": "pass" },
-    { "name": "env_only_secret_resolution", "status": "pass" },
-    { "name": "value_taint_redaction", "status": "pass" },
-    { "name": "regex_defense_in_depth", "status": "pass" },
-    { "name": "legacy_resolver_compatibility", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "minimax_secondary_review", "status": "pass" }
+    { "name": "schema_valid_draft_2020_12", "status": "pass" },
+    { "name": "guard_flags_const_false", "status": "pass" },
+    { "name": "recursive_closure_shape_nodes", "status": "pass" },
+    { "name": "no_remote_ref_local_only", "status": "pass" },
+    { "name": "recompute_inputs_shadow_widening_guard", "status": "pass" },
+    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Claude Anthropic cross-provider review returned AGREE for E-2-5 secret resolution discipline.",
-    "Mavis MiniMax secondary review also returned AGREE for the same scope and acceptance criteria.",
-    "The new discipline module resolves secrets from environment variables only and does not import or call provider factory, vault, MCP, argv, stdin, file, or header fallback paths.",
-    "Every resolved value is added to an in-memory value-based taint set; JSON, JSONL, and log serialization helpers redact by exact taint before regex defense-in-depth.",
-    "Missing required secrets fail closed with SecretResolutionError, optional missing secrets return None without taint, and provider invalidation clears provider-specific taints for rotation.",
-    "Legacy dual-read API-key resolver behavior is preserved for existing callers; E-2-5 adds explicit adoption infrastructure rather than changing legacy resolution semantics.",
-    "Guard flags remain false. No workflow mutation, support widening, production platform claim, live adapter execution, or secret readback is introduced."
+    "E-3-1 support widening evidence schema + pure parse/recompute/verify module + read-only CLI (infrastructure-only). 2-iter Codex (OpenAI) cross-AI review on thread 019e9339; all 5 REVISE findings absorbed: (1) no-remote-ref test tightened to a local '#/' allowlist (http(s)-only let file/ftp/urn/bare-file through); (2) bare delegated-container closure asserted by exact json-pointer path set (was count-only); (3) plan §7 normative text reconciled with the implemented $defs+allOf+bare-container design; (4) branch rebased onto origin/main with both E-3-1 and E-2-5 CHANGELOG entries preserved; (5) invariant-count wording fixed (17 functions / 20 pytest cases).",
+    "Reviewer found NO behavioral bypass: cross-class key contamination rejected, shadow-widening key (even camelCase) rejected at any depth, double-pin fail-closed (schema const false + parse_v1 _RUNTIME_PINS re-assert) confirmed, recompute_v1 recompute-not-trust (evidence_dimensions == raw_dimensions canonical equality) and verify_v1 on-disk re-hash tamper-detection confirmed.",
+    "Guard flags const false at schema + evidence level (support_widening / production_platform_claim / live_adapter_execution / github_write_authorized) and re-asserted at runtime. No network call; no guard flip; a true value requires the separate v2 supersession schema (Epic 9). 20 pytest cases green; ruff + mypy clean."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
