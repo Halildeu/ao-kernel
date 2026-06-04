@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-2-7",
+  "work_package": "E-3-2",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,13 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-2-7-pre-supersession-checklist",
+    "head_ref": "refs/heads/codex/epic3-e2-smoke-harness",
     "changed_files": [
-      ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+      ".claude/plans/EPIC-3-E-3-2-SMOKE-HARNESS.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/pre_supersession_checklist.schema.v1.json",
+      "ao_kernel/_internal/support_widening/harnesses/__init__.py",
+      "ao_kernel/_internal/support_widening/harnesses/killswitch.py",
+      "ao_kernel/_internal/support_widening/harnesses/runner.py",
       "local-ai-review-evidence.v1.json",
-      "tests/test_pre_supersession_checklist_schema.py"
+      "scripts/run_support_smoke.py",
+      "tests/test_run_support_smoke.py"
     ]
   },
   "checks_considered": [
@@ -27,36 +30,29 @@
     { "name": "secret_scan", "status": "pass" },
     { "name": "ruff", "status": "pass" },
     { "name": "mypy", "status": "pass" },
+    { "name": "direct_cli_smoke", "status": "pass" },
     { "name": "json_validity", "status": "pass" },
-    { "name": "gpp_next_guard_flags", "status": "pass" },
     { "name": "diff_whitespace", "status": "pass" },
-    { "name": "changelog", "status": "pass" },
-    { "name": "schema_doc_alignment", "status": "pass" },
-    { "name": "draft_2020_12_schema", "status": "pass" },
-    { "name": "strict_closed_schema", "status": "pass" },
-    { "name": "local_refs_only", "status": "pass" },
-    { "name": "eighteen_condition_order", "status": "pass" },
-    { "name": "guard_flags_const_false", "status": "pass" },
-    { "name": "no_proposed_state_field", "status": "pass" },
-    { "name": "no_workflow_mutation", "status": "pass" },
-    { "name": "no_runtime_mutation", "status": "pass" },
-    { "name": "no_live_adapter_execution", "status": "pass" },
-    { "name": "no_support_widening", "status": "pass" },
-    { "name": "no_production_claim", "status": "pass" },
+    { "name": "gpp_next_guard_flags", "status": "pass" },
     { "name": "claude_review", "status": "pass" },
-    { "name": "mavis_verifier_review", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" }
+    { "name": "cross_provider_review", "status": "pass" },
+    { "name": "no_guard_flag_flip", "status": "pass" },
+    { "name": "no_workflow_or_ruleset_mutation", "status": "pass" },
+    { "name": "no_dot_ao_mutation", "status": "pass" },
+    { "name": "runtime_kill_switch", "status": "pass" },
+    { "name": "direct_script_repo_root_resolution", "status": "pass" }
   ],
   "findings": [
-    "Claude Anthropic returned AGREE for E-2-7 after reviewing the checklist doc, schema, tests, and changelog diff.",
-    "Mavis MiniMax verifier session mvs_bf6be63b50b744ec8fa2cd185ba5a194 returned VERDICT AGREE after checking the 18 conditions, doc/schema alignment, local refs, guard flags, proposal-state absence, workflow/runtime absence, and changelog accuracy.",
-    "The schema is Draft 2020-12, uses only local refs, and closes root and checklist item objects against unknown fields.",
-    "The schema pins all 18 required conditions in order and the markdown checklist mirrors the same condition names.",
-    "The schema keeps support_widening, production_platform_claim, live_adapter_execution, and live_adapter_execution_current_state const false.",
-    "The schema intentionally omits live_adapter_execution_proposed_state and proposed_state; Epic 9 owns any future proposal-state schema.",
-    "The tests cover valid payload acceptance, condition order and cardinality, guard flag rejection, authority pins, strict closure, local refs only, proposal-state absence, markdown alignment, and plan alignment.",
-    "The change is infrastructure-only and does not mutate workflows, runtime adapter code, branch protection, release authority, support tier, production claim language, or guard flags.",
-    "A broader test probe exposed an existing test_cli migration failure on origin/main; Mavis confirmed that failure pre-existed and is not negative drift from E-2-7."
+    "Claude Anthropic returned VERDICT AGREE for E-3-2 after reviewing the current diff against origin/main.",
+    "Claude confirmed the change is infrastructure-only: no support_widening flip, no production_platform_claim, no live_adapter_execution, no workflow or ruleset mutation, and no .ao mutation path.",
+    "Claude confirmed the harness pins support_widening, production_platform_claim, and live_adapter_execution false in every emitted support_widening_evidence.v1 payload.",
+    "Claude confirmed scripts/run_support_smoke.py resolves the repository root itself, so direct CLI execution does not rely on PYTHONPATH or an editable install pointing at the right worktree.",
+    "Claude confirmed the runtime kill-switch guards socket, http client, urllib, requests/httpx when importable, subprocess, shell, dynamic import, and secret environment access paths.",
+    "The kill-switch uses an allowlist-only environment model; credential-class keys that do not match a secret-looking regex are still denied.",
+    "The runner rejects evidence_out paths under .ao and writes artifacts owner-only with fchmod after open, preserving the read-only workspace contract.",
+    "Local validation passed: direct CLI smoke wrote schema-valid evidence, pytest passed 38 tests with 1 expected skip, ruff passed, targeted mypy passed, and branch commit secret scan passed.",
+    "The E-3-2 diff only adds the smoke harness plan, internal support_widening harness package, CLI script, tests, changelog entry, and this local review evidence file.",
+    "No secrets were recorded in the review prompt, review output, evidence file, or local validation artifacts."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
