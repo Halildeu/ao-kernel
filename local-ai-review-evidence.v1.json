@@ -1,9 +1,9 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-919-setup-gcloud-3",
+  "work_package": "AO-MA-921-actions-checkout-6",
   "implementer": {
-    "agent": "codex-setup-gcloud-3",
+    "agent": "codex-actions-checkout-6",
     "provider": "openai"
   },
   "reviewer": {
@@ -13,10 +13,11 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/dependabot/github_actions/google-github-actions/setup-gcloud-3",
+    "head_ref": "refs/heads/dependabot/github_actions/actions/checkout-6",
     "changed_files": [
-      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
-      ".github/workflows/policy-service-deploy-cloud-run.yml",
+      ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+      ".github/workflows/bc10-real-adapter-usage-cost.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
@@ -29,6 +30,14 @@
       "status": "pass"
     },
     {
+      "name": "bc1_bc10_invariant_tests",
+      "status": "pass"
+    },
+    {
+      "name": "workflow_sha256_bindings",
+      "status": "pass"
+    },
+    {
       "name": "secret_scan",
       "status": "pass"
     },
@@ -37,15 +46,11 @@
       "status": "pass"
     },
     {
-      "name": "tag_sha_resolve",
-      "status": "pass"
-    },
-    {
       "name": "permission_surface",
       "status": "pass"
     },
     {
-      "name": "deploy_guard_audit",
+      "name": "protected_environment_audit",
       "status": "pass"
     },
     {
@@ -53,16 +58,17 @@
       "status": "pass"
     },
     {
-      "name": "git_diff_check",
+      "name": "changelog",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude AGREE: PR #919 changes only the two trusted Cloud Run deploy workflows from setup-gcloud v2 to v3 plus current changelog and review evidence.",
-    "Claude AGREE: google-github-actions/setup-gcloud tag v3 resolves to aa5489c8933f4cc7a4f7d45035b3b1440c9c10db.",
-    "Claude AGREE: workflow triggers, OIDC permission surface, Cloud Run deploy guards, and required configuration validation remain unchanged.",
-    "Claude AGREE: no secret exposure, release authority bypass, branch-protection mutation, support widening, production platform claim, or live adapter execution is introduced.",
-    "Claude AGREE: deployment evidence guard flags remain false."
+    "Claude AGREE: PR #921 changes only the two protected live-adapter workflows from actions/checkout v4 to v6 plus SSOT hash bindings, changelog, and review evidence.",
+    "Claude AGREE: BC-1 and BC-10 keep fetch-depth: 0, read-only checkout posture, existing triggers, permissions, protected execution windows, and pre-step guards.",
+    "Claude AGREE: BC-10 keeps environment ao-kernel-bc10-real-adapter-usage-cost; BC-1 keeps its current code-level preprod autonomous posture.",
+    "Claude AGREE: top-level guard flags remain false and the scoped supersession live_adapter_execution_allowed=true values are unchanged.",
+    "Claude AGREE: workflow_content_sha256 values match the live workflow files: BC-1 f9bbf86b1981a34ea70daa77959ba34aa436c4ed9f00bfb070e981fa1ae0ece3 and BC-10 dd1b7621c2509904b7424f272d895b9ffbf96f02e59848fef4f2acd1a6d195ff.",
+    "Claude AGREE: no secret exposure, release-authority bypass, branch-protection mutation, support widening, production platform claim, or live adapter execution is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
