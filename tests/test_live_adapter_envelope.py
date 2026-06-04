@@ -46,6 +46,7 @@ def _valid_envelope() -> dict[str, Any]:
     return {
         "schema_version": "live-adapter-envelope.v1",
         "artifact_kind": "live_adapter_envelope",
+        "envelope_digest": "e" * 64,
         "mode": "dry_run",
         "live_adapter_execution": False,
         "request": {
@@ -120,18 +121,30 @@ def test_mode_live_is_forbidden() -> None:
 # ---- 3. strict closure + required scope (2) ----------------------------
 
 
-def test_additional_properties_rejected_at_every_object() -> None:
-    # top-level
-    top = _valid_envelope()
-    top["unexpected_field"] = "x"
-    assert not _is_valid(top), "top-level additionalProperties must be rejected"
-    # nested
-    nested = _valid_envelope()
-    nested["request"]["unexpected_field"] = "x"
-    assert not _is_valid(nested), "nested additionalProperties must be rejected"
-    cost = _valid_envelope()
-    cost["cost"]["unexpected_field"] = "x"
-    assert not _is_valid(cost), "cost additionalProperties must be rejected"
+@pytest.mark.parametrize(
+    "path",
+    [
+        (),
+        ("request",),
+        ("request", "params"),
+        ("response",),
+        ("response", "usage"),
+        ("cost",),
+        ("circuit_breaker",),
+        ("timestamps",),
+    ],
+)
+def test_additional_properties_rejected_at_every_object(path: tuple[str, ...]) -> None:
+    """Strict closure must hold at EVERY object, not just the top level —
+    a stray field anywhere (including objects touched by allOf conditionals
+    like 'response' and 'circuit_breaker') must be rejected."""
+    payload = _valid_envelope()
+    target: Any = payload
+    for key in path:
+        target = target[key]
+    target["unexpected_field"] = "x"
+    location = "top-level" if not path else ".".join(path)
+    assert not _is_valid(payload), f"additionalProperties at {location} must be rejected"
 
 
 @pytest.mark.parametrize(
@@ -139,6 +152,7 @@ def test_additional_properties_rejected_at_every_object() -> None:
     [
         "schema_version",
         "artifact_kind",
+        "envelope_digest",
         "mode",
         "live_adapter_execution",
         "request",
@@ -233,7 +247,40 @@ def test_digest_patterns_enforced() -> None:
     assert not _is_valid(payload2), "pricing_source_digest must carry sha256: prefix"
 
 
-# ---- 7. governance: no workflow mutation (1) ---------------------------
+def test_envelope_digest_is_bare_sha256() -> None:
+    payload = _valid_envelope()
+    payload["envelope_digest"] = "sha256:" + ("e" * 64)  # bare hex required, no prefix
+    assert not _is_valid(payload), "envelope_digest must be bare 64-hex (no sha256: prefix)"
+    payload2 = _valid_envelope()
+    payload2["envelope_digest"] = "xyz"
+    assert not _is_valid(payload2), "malformed envelope_digest must be rejected"
+
+
+# ---- 7. timestamp fail-closed (RFC3339 regex, not format-only) (1) ------
+
+
+def test_timestamps_are_fail_closed_via_regex() -> None:
+    """jsonschema does not enforce `format: date-time` by default, so the
+    schema carries an explicit RFC3339 `pattern`. A non-date string must be
+    rejected at every timestamp field (Codex E-2-1 review absorb)."""
+    # created_at + finalized_at
+    for field in ("created_at", "finalized_at"):
+        payload = _valid_envelope()
+        payload["timestamps"][field] = "not-a-date"
+        assert not _is_valid(payload), f"timestamps.{field} must reject a non-RFC3339 string"
+    # last_failure_at string branch (null is still allowed)
+    cb = _valid_envelope()
+    cb["circuit_breaker"]["state"] = "OPEN"
+    cb["circuit_breaker"]["failure_count"] = 1
+    cb["circuit_breaker"]["last_failure_at"] = "also-not-a-date"
+    assert not _is_valid(cb), "circuit_breaker.last_failure_at must reject a non-RFC3339 string"
+    # null remains valid
+    ok = _valid_envelope()
+    ok["circuit_breaker"]["last_failure_at"] = None
+    assert _is_valid(ok), "last_failure_at=null must remain valid"
+
+
+# ---- 8. governance: no workflow mutation (1) ---------------------------
 
 
 def test_no_workflow_mutation_in_diff() -> None:

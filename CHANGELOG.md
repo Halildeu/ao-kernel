@@ -25,10 +25,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   (would-be) LLM provider call — request/response/cost/circuit-breaker shape
   with strict closure (`additionalProperties:false` + `unevaluatedProperties:false`
   on every object), `mode` pinned to `{stub, dry_run}` (`live` forbidden),
-  decimal-string cost (8 dp, never float), sha256 digest patterns, and
-  conditional invariants (mode↔status coupling; CLOSED breaker ⇒ 0 failures).
+  a required bare-sha256 `envelope_digest` content-address (E-2-2 foreign-key),
+  decimal-string cost (8 dp, never float), sha256 digest patterns, RFC3339
+  timestamp regex (fail-closed; `format` alone is not enforced by jsonschema),
+  and conditional invariants (mode↔status coupling; CLOSED breaker ⇒ 0 failures).
   Infrastructure-only: `live_adapter_execution` is `const false` and no real
-  network call is represented. 24 machine-enforced invariants
+  network call is represented. 35 machine-enforced invariants
   (`tests/test_live_adapter_envelope.py`). No guard-flag flip; the `live` mode
   and any flip live in a separate v2 schema gated by the Epic 9 supersession PR.
 - **E-4-2b multi-tenant matrix final seal** (V5 Epic 4): promoted the

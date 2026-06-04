@@ -19,6 +19,7 @@ envelope as the canonical call-shape.
 |---|---|---|
 | `schema_version` | const `live-adapter-envelope.v1` | v2 (which adds `live`) is a separate file |
 | `artifact_kind` | const `live_adapter_envelope` | artifact discriminator |
+| `envelope_digest` | required, bare 64-hex | content-address that E-2-2 per-call audit records foreign-key to |
 | `mode` | enum `{stub, dry_run}` | `live` is **forbidden** here; real execution is Epic 9 only |
 | `live_adapter_execution` | const `false` | guard-flag pin (ADR-0002 recompute-not-trust) |
 | `support_widening` / `production_platform_claim` | const `false` if present | optional affirmations, never `true` |
@@ -33,8 +34,13 @@ invariants.
 - Cost fields are **decimal strings** matching `^[0-9]+\.[0-9]{8}$` (8 dp). Floats
   are rejected to avoid precision drift (BC-10 pattern). `actual_cost_usd` is the
   computed total; `*_cost_per_1k_usd` are the unit rates.
-- `pricing_source_digest` carries the `sha256:` prefix; message/text digests are
-  bare 64-hex. No raw prompt/response text is ever stored — only digests.
+- `pricing_source_digest` carries the `sha256:` prefix; message/text/envelope
+  digests are bare 64-hex. No raw prompt/response text is ever stored — only
+  digests.
+- Timestamps (`created_at`, `finalized_at`, `last_failure_at`) carry an explicit
+  RFC3339 `pattern` in addition to `format: date-time`: `jsonschema` does not
+  enforce `format` by default, so the regex is what makes a malformed timestamp
+  fail-closed.
 
 ## Conditional invariants (`allOf`)
 
@@ -52,10 +58,12 @@ invariants.
 
 ## Verification
 
-`tests/test_live_adapter_envelope.py` — 24 machine-enforced invariants: schema
-health, guard-flag pins, strict closure, required-field enforcement
-(parametrized one-field-removed), const/enum pins, conditional `allOf`
-coupling, decimal/sha pattern enforcement, and a no-workflow-mutation guard.
+`tests/test_live_adapter_envelope.py` — 35 machine-enforced invariants: schema
+health, guard-flag pins, strict closure enforced at **every** object path
+(parametrized), required-field enforcement (parametrized one-field-removed),
+const/enum pins, conditional `allOf` coupling, decimal/sha pattern enforcement,
+RFC3339 timestamp fail-closed (regex, not format-only), and a
+no-workflow-mutation guard.
 
 ## Cross-references
 
