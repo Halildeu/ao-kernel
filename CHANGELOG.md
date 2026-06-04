@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **V5 E-1-7 CI shadow-skip status sync**: recorded PR #937 (`c7e5709`)
+  as the permanent fix for the required-check shadow-skip issue originally
+  tracked by PR #764, keeping `.github/workflows/test.yml` high-risk behavior
+  pinned by `tests/test_required_check_workflow_trigger_shape.py` and updating
+  the V5 roadmap/mirror without touching guard flags.
 - **Local Opencode plugin ignore hygiene**: added `.opencode/` to the
   repository root ignore patterns so operator-local Opencode CLI plugin
   installs cannot accidentally become tracked as project source.
