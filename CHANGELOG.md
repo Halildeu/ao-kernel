@@ -26,6 +26,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 Epic 4 Kubernetes Helm + multi-tenant plan**: added the
+  Epic 4 plan for an operator-installable Helm chart skeleton,
+  multi-tenant advisory boundary contract, operator-owned database and
+  secret patterns, observability runbooks, NetworkPolicy/PSS baseline,
+  and helm-unittest runbook sequencing while preserving zero workflow
+  mutation, no live cluster execution, and the three guard flags as
+  false.
 - **V5 Epic 2 live-adapter infrastructure plan**: added the Epic 2
   plan for envelope schema, per-call audit, cost ceiling, dry-run
   harness, secret discipline, advisory CI, and pre-supersession
