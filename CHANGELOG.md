@@ -7,6 +7,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- **V5 Epic 2 + Epic 3 roadmap reframe**: reframed live-adapter
+  execution and support-widening work as infrastructure-only slices,
+  with the actual guard-flag flip authority consolidated into the
+  future operator-bound Epic 9 PR-Xfinal path.
+
 ### Fixed
 
 - **test_pre_commit_changelog_gate::test_no_workflow_mutation introducer-PR detection**:
