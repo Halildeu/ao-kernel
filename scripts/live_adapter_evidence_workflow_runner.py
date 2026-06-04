@@ -37,6 +37,7 @@ FORBIDDEN_SECRET_ENV_NAMES: tuple[str, ...] = (
     "AO_GITHUB_APP_PRIVATE_KEY",
     "AO_RELEASE_GATE_WEBHOOK_SECRET",
 )
+FAILURE_STDERR_MESSAGE = "live-adapter advisory evidence failed: advisory CI boundary check failed"
 
 
 class WorkflowEvidenceError(RuntimeError):
@@ -167,8 +168,8 @@ def main(argv: list[str] | None = None) -> int:
             model=args.model,
             intent=args.intent,
         )
-    except (DryRunKillSwitchError, DryRunSchemaError, WorkflowEvidenceError, OSError, ValueError) as exc:
-        print(f"live-adapter advisory evidence failed: {exc}", file=sys.stderr)
+    except (DryRunKillSwitchError, DryRunSchemaError, WorkflowEvidenceError, OSError, ValueError):
+        print(FAILURE_STDERR_MESSAGE, file=sys.stderr)
         return 1
     if args.output_format == "json":
         print(json.dumps(_stdout_summary_payload(), indent=2, sort_keys=True))
