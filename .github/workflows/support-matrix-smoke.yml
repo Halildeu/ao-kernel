@@ -1,0 +1,117 @@
+name: support-matrix-smoke
+
+# V5 Epic 3 E-3-3 — advisory support-widening smoke matrix.
+#
+# Boundaries:
+# - opt-in only: pull_request label `support-matrix-smoke` or workflow_dispatch
+# - advisory evidence artifacts only; not a required check
+# - no secrets context, no environment binding, no live provider calls
+# - guard flags remain false; this is not support widening
+
+on:
+  pull_request:
+    types: [opened, labeled, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: support-matrix-smoke-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  support-matrix-smoke-advisory:
+    name: support-matrix-smoke-advisory (${{ matrix.surface_class }})
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || contains(github.event.pull_request.labels.*.name, 'support-matrix-smoke')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        surface_class:
+          - provider
+          - python_version
+          - os_platform
+          - db_backend
+          - deployment_topology
+    steps:
+      - name: Checkout PR head or dispatch ref
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install ao-kernel core
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Run advisory support matrix smoke
+        run: |
+          mkdir -p support-matrix-smoke
+          python3 scripts/run_support_smoke.py \
+            --surface "${{ matrix.surface_class }}" \
+            --evidence-out "support-matrix-smoke/${{ matrix.surface_class }}.support-widening-evidence.v1.json"
+
+      - name: Upload advisory support matrix evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: support-matrix-smoke-${{ matrix.surface_class }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: support-matrix-smoke/${{ matrix.surface_class }}.support-widening-evidence.v1.json
+          if-no-files-found: error
+
+      - name: Add advisory matrix summary
+        if: always()
+        run: |
+          {
+            echo "### support-matrix-smoke advisory"
+            echo ""
+            echo "- surface_class: ${{ matrix.surface_class }}"
+            echo "- simulated_only: true"
+            echo "- live_call_made: false"
+            echo "- support_widening: false"
+            echo "- production_platform_claim: false"
+            echo "- live_adapter_execution: false"
+            echo "- required_check: false"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  support-matrix-smoke-advisory-summary:
+    name: support-matrix-smoke-advisory-summary
+    needs: [support-matrix-smoke-advisory]
+    if: >-
+      always()
+      && (github.event_name == 'workflow_dispatch'
+          || contains(github.event.pull_request.labels.*.name, 'support-matrix-smoke'))
+      && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - name: Post advisory PR review comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: "COMMENT",
+              body: [
+                "support-matrix-smoke advisory completed.",
+                "",
+                "This opt-in run emits simulated-only support-widening evidence artifacts.",
+                "It is not a required check, support widening, production platform claim, or live adapter execution."
+              ].join("\n")
+            });

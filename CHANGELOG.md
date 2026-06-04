@@ -32,6 +32,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-3-3 advisory support matrix workflow** (V5 Epic 3, #855): added
+  `.github/workflows/support-matrix-smoke.yml` as an opt-in, advisory-only
+  workflow that runs the E-3-2 stub smoke harness across all five support
+  surface classes and uploads per-surface `support_widening_evidence.v1`
+  artifacts. The workflow is label/manual-dispatch gated, `continue-on-error`,
+  and pinned by `tests/test_support_matrix_smoke_workflow.py` for trigger shape,
+  minimal permissions, no secret/environment surface, no guard-flag flip, no
+  protected-workflow/ruleset mutation, and no required-check collision. No
+  support widening, production platform claim, live adapter execution, or
+  branch-protection mutation is introduced.
 - **E-3-5 supersession consensus checklist** (V5 Epic 3, #857): added
   `widening-supersession-checklist.schema.v1.json`,
   `widening-supersession-checklist.v1.json`, and

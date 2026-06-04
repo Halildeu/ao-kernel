@@ -261,9 +261,12 @@ def test_cost_ceiling_no_unrelated_workflow_mutation_in_diff() -> None:
     if proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
     touched = [p for p in proc.stdout.split() if p]
-    # E-2-3 itself must not mutate workflow files. E-2-6 is the first
-    # explicitly authorized workflow slice in the same Epic-2 chain, so keep the
-    # older guard but narrow it to unrelated workflow drift.
-    allowed = {".github/workflows/live-adapter-evidence-emit.yml"}
+    # E-2-3 itself must not mutate workflow files. Later slices may add
+    # explicitly authorized advisory workflows, so keep the older guard but
+    # narrow it to unrelated workflow drift.
+    allowed = {
+        ".github/workflows/live-adapter-evidence-emit.yml",
+        ".github/workflows/support-matrix-smoke.yml",
+    }
     unexpected = [p for p in touched if p not in allowed]
     assert not unexpected, f"Epic 2 has unrelated workflow mutations. Touched: {unexpected}"
