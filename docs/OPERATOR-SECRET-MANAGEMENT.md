@@ -63,6 +63,13 @@ way — it only needs the resulting `Secret` name + keys.
 
 In your operator-owned `values.yaml` overlay (NOT committed with real values):
 
+The `postgresql` block is the **single** way to wire the database — when
+`enabled: true`, the chart automatically renders the `AO_KERNEL_DB_HOST`,
+`AO_KERNEL_DB_PORT`, `AO_KERNEL_DB_NAME`, `AO_KERNEL_DB_SSLMODE` (plain env) and
+`AO_KERNEL_DB_USERNAME` / `AO_KERNEL_DB_PASSWORD` (`secretKeyRef`) variables.
+**Do NOT also add these to `env.secretRefs` / `env.plain`** — that would
+duplicate (and conflict with) the auto-rendered DB env (Codex E-4-3 review).
+
 ```yaml
 postgresql:
   enabled: true
@@ -75,29 +82,13 @@ postgresql:
   secretName: "ao-kernel-db"
   usernameKey: "username"
   passwordKey: "password"
-
-env:
-  secretRefs:
-    - name: AO_KERNEL_DB_USERNAME
-      secretName: ao-kernel-db
-      secretKey: username
-    - name: AO_KERNEL_DB_PASSWORD
-      secretName: ao-kernel-db
-      secretKey: password
-  plain:
-    - name: AO_KERNEL_DB_HOST
-      value: "ao-kernel-db.example.internal"
-    - name: AO_KERNEL_DB_PORT
-      value: "5432"
-    - name: AO_KERNEL_DB_NAME
-      value: "ao_kernel"
-    - name: AO_KERNEL_DB_SSLMODE
-      value: "require"
 ```
 
 The chart renders `AO_KERNEL_DB_USERNAME` / `AO_KERNEL_DB_PASSWORD` via
 `secretKeyRef` (see `templates/deployment.yaml`); connection coordinates are
-plain env (non-secret).
+plain env (non-secret). The `env.secretRefs` / `env.plain` lists remain for
+**other** secrets (e.g. LLM provider API keys) — not for the DB, which the
+`postgresql` block owns.
 
 ## 5. Rotation
 

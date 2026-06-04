@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **E-4-3 follow-up: dedup DB env in operator runbook** (Codex review absorb):
+  docs/OPERATOR-SECRET-MANAGEMENT.md showed the DB env twice (postgresql block
+  + env.secretRefs/env.plain), which would duplicate/conflict with the
+  auto-rendered DB env. The postgresql block is now documented as the single
+  way; env.secretRefs/env.plain remain for non-DB secrets (e.g. LLM keys).
+
 ### Added
 
 - **E-7-4 provider rate limit production tuning (per-tenant)** (V5 Epic 7,
