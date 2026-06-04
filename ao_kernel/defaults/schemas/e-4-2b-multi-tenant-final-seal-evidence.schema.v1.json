@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/e-4-2b-multi-tenant-final-seal-evidence.v1.json",
+  "title": "V5 Epic 4 E-4-2b multi-tenant final seal evidence",
+  "description": "Strict evidence artifact for the E-4-2b final tenant matrix seal. It requires exact write-set accounting, final matrix status, advisory-only constants, no workflow mutation, and a 3-provider quorum: OpenAI implementation plus independent Anthropic and MiniMax reviews.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "slice_id",
+    "epic_id",
+    "decision",
+    "decision_summary",
+    "write_set",
+    "checks_completed",
+    "guard_flags",
+    "matrix_final_seal",
+    "downstream_evidence_refs",
+    "provider_participants",
+    "implementation_evidence",
+    "review_evidence",
+    "no_workflow_mutation",
+    "no_pyproject_change",
+    "no_runtime_module_change",
+    "evidence_ref"
+  ],
+  "properties": {
+    "schema_version": { "const": "e-4-2b-multi-tenant-final-seal.v1" },
+    "artifact_kind": { "const": "epic-4-slice-decision-record" },
+    "slice_id": { "const": "E-4-2b" },
+    "epic_id": { "const": "EPIC-4" },
+    "decision": { "enum": ["accepted", "rejected", "deferred"] },
+    "decision_summary": { "type": "string", "minLength": 30 },
+    "write_set": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "not": { "pattern": "^\\.github/workflows/" }
+      }
+    },
+    "checks_completed": {
+      "type": "array",
+      "minItems": 11,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "shape",
+          "matrix_final_status",
+          "all_entries_filled",
+          "downstream_refs_exist",
+          "downstream_refs_cover_e_4_3_e_4_4_e_4_5",
+          "advisory_const_fields",
+          "no_overclaim_language",
+          "no_live_cluster_commands",
+          "no_workflow_mutation",
+          "write_set_exact_match",
+          "evidence_validates",
+          "matrix_validates"
+        ]
+      }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "support_widening",
+        "production_platform_claim",
+        "live_adapter_execution"
+      ],
+      "properties": {
+        "support_widening": { "const": false },
+        "production_platform_claim": { "const": false },
+        "live_adapter_execution": { "const": false }
+      }
+    },
+    "matrix_final_seal": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "advisory_only",
+        "runtime_enforced_global",
+        "live_validated_global",
+        "matrix_status",
+        "dimensions_count",
+        "all_entries_filled",
+        "all_entries_have_downstream_evidence_ref"
+      ],
+      "properties": {
+        "advisory_only": { "const": true },
+        "runtime_enforced_global": { "const": false },
+        "live_validated_global": { "const": false },
+        "matrix_status": { "const": "e_4_2b_final_seal" },
+        "dimensions_count": { "const": 7 },
+        "all_entries_filled": { "const": true },
+        "all_entries_have_downstream_evidence_ref": { "const": true }
+      }
+    },
+    "downstream_evidence_refs": {
+      "type": "array",
+      "minItems": 7,
+      "uniqueItems": false,
+      "items": { "type": "string", "minLength": 5 }
+    },
+    "provider_participants": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["anthropic", "openai", "minimax"] },
+      "allOf": [
+        { "contains": { "const": "openai" }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "const": "anthropic" }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "const": "minimax" }, "minContains": 1, "maxContains": 1 }
+      ]
+    },
+    "implementation_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["agent", "provider", "role", "notes"],
+      "properties": {
+        "agent": { "const": "codex" },
+        "provider": { "const": "openai" },
+        "role": { "const": "implementer" },
+        "notes": { "type": "string", "minLength": 10 }
+      }
+    },
+    "review_evidence": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/review_record" },
+      "allOf": [
+        {
+          "contains": { "properties": { "provider": { "const": "anthropic" }, "verdict": { "const": "AGREE" } }, "required": ["provider", "verdict"] },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": { "properties": { "provider": { "const": "minimax" }, "verdict": { "const": "AGREE" } }, "required": ["provider", "verdict"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "no_workflow_mutation": { "const": true },
+    "no_pyproject_change": { "const": true },
+    "no_runtime_module_change": { "const": true },
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "plan_doc",
+        "test_file",
+        "write_set_test_file",
+        "matrix_json",
+        "matrix_schema",
+        "final_matrix_schema",
+        "deployment_doc"
+      ],
+      "properties": {
+        "plan_doc": { "const": ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.md" },
+        "test_file": { "const": "tests/test_epic_4_2b_matrix_invariants.py" },
+        "write_set_test_file": { "const": "tests/test_epic_4_2b_write_set_invariant.py" },
+        "matrix_json": { "const": ".claude/plans/tenant_isolation_matrix.v1.json" },
+        "matrix_schema": { "const": "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json" },
+        "final_matrix_schema": { "const": "ao_kernel/defaults/schemas/e-4-2b-tenant-isolation-matrix.schema.v1.json" },
+        "deployment_doc": { "const": "docs/MULTI-TENANT-DEPLOYMENT.md" }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 10 }
+    }
+  },
+  "$defs": {
+    "review_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["agent", "provider", "verdict", "evidence_kind", "notes"],
+      "properties": {
+        "agent": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string", "enum": ["anthropic", "minimax"] },
+        "verdict": { "const": "AGREE" },
+        "evidence_kind": { "type": "string", "enum": ["cli_review", "subagent_review", "manual_transcribed_review"] },
+        "notes": { "type": "string", "minLength": 10 }
+      }
+    }
+  }
+}

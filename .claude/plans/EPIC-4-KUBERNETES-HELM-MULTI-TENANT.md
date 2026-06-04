@@ -125,7 +125,7 @@ tests/test_epic_4_2a_write_set_invariant.py
 ### E-4-2b — Multi-Tenant Matrix Final Seal (Late, 3-Way Cross-AI)
 
 **Risk:** high (cross-tenant boundary final seal; pattern yanlış dökümanlanırsa operator yanlış kurar)
-**Cross-AI:** Implementer Claude · Reviewer Codex (OpenAI) + **Mavis (MiniMax)** — 3-way zorunlu (cross-tenant boundary kritik)
+**Cross-AI:** 3-provider zorunlu (cross-tenant boundary kritik). Original plan default was Implementer Claude · Reviewer Codex (OpenAI) + **Mavis (MiniMax)**. E-4-2b implementation PR executes with Codex/OpenAI as implementer, so independent review evidence is Anthropic/Claude + MiniMax/Mavis; OpenAI self-review may be used as adversarial feedback only and MUST NOT be counted as an independent cross-provider reviewer for this PR.
 **Bağımlılık:** E-4-2a (contract base) + E-4-5 (NetworkPolicy rendered) + E-4-4 (Observability rendered) + E-4-3 (DB/secret pattern doc)
 
 **Amaç:** E-4-2a contract'ında pin'lenmiş 7 dimension için **gerçek matrix değerleri** + downstream slice'larla cross-reference + 3-way cross-AI consensus final seal.
@@ -369,7 +369,7 @@ tests/test_epic_4_helm_template_idempotency_epic_wide.py  # F7: 3-render sha256 
 | E-4-3 | Claude (Anthropic) | Codex (OpenAI) | DDL ownership doc; standart iki-gate |
 | E-4-5 | Claude (Anthropic) | Codex (OpenAI) | NetworkPolicy/PSS pattern; tek-reviewer yeterli |
 | E-4-4 | Claude (Anthropic) | Codex (OpenAI) | Teams/Slack pattern doğrulamak için; tek-reviewer yeterli |
-| E-4-2b | Claude (Anthropic) | Codex (OpenAI) + **Mavis (MiniMax)** | **3-way zorunlu**; cross-tenant kritik boundary final seal |
+| E-4-2b | Claude (Anthropic) by default; actual implementation PR may be Codex (OpenAI) if recorded honestly | Independent reviewers MUST be providers distinct from the implementer; for Codex-implemented PR: Claude (Anthropic) + **Mavis (MiniMax)**. OpenAI self-review is advisory only. | **3-provider zorunlu**; cross-tenant kritik boundary final seal |
 | E-4-6 | Claude (Anthropic) | Codex (OpenAI) | runbook only; tek-reviewer yeterli |
 
 **CC-2 invariant** (HARD RULE Cross-AI Peer Review): aynı sağlayıcı code yazıp review etmez. Anthropic Claude impl + Anthropic Claude review **YASAK** (aynı sağlayıcı = aynı blind spot). Cross-provider AGREE zorunlu.
