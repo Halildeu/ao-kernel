@@ -39,6 +39,14 @@
       "superseded_by": null,
       "supersedes": [],
       "title": "Keep-a-Changelog per-PR discipline (Unreleased entry or chore-no-changelog opt-out)"
+    },
+    {
+      "filename": "ADR-0006-cost-ceiling-enforcement.md",
+      "id": "ADR-0006",
+      "status": "accepted",
+      "superseded_by": null,
+      "supersedes": [],
+      "title": "Cost ceiling enforcement for V5 Epic 2 infrastructure"
     }
   ],
   "schema_version": "ao-ma-adr-index.v1"

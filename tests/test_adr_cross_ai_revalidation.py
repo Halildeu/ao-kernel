@@ -312,7 +312,7 @@ def test_no_adr_decision_section_mutation() -> None:
     import subprocess
 
     proc = subprocess.run(
-        ["git", "diff", "origin/main...HEAD", "--", ".claude/plans/adr/"],
+        ["git", "diff", "origin/main...HEAD", "--", ":(glob).claude/plans/adr/ADR-*.md"],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
@@ -324,10 +324,17 @@ def test_no_adr_decision_section_mutation() -> None:
     # Every removed/added line outside the frontmatter is a violation
     in_frontmatter = False
     frontmatter_closes_seen = 0
+    new_adr_file = False
     for raw in diff.splitlines():
         if raw.startswith("diff --git"):
             in_frontmatter = False
             frontmatter_closes_seen = 0
+            new_adr_file = False
+            continue
+        if raw.startswith("new file mode"):
+            new_adr_file = True
+            continue
+        if new_adr_file:
             continue
         if raw.startswith("@@"):
             in_frontmatter = False

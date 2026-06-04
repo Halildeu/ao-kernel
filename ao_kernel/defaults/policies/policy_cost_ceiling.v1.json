@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "currency": "USD",
+  "soft_usd": "0.10000000",
+  "hard_usd": "1.00000000",
+  "live_adapter_execution": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "_comment": "V5 Epic 2 E-2-3 infrastructure-only default. CostCeiling uses Decimal arithmetic, returns soft_breached above soft_usd, and raises CostCeilingExceeded above hard_usd. This policy does not authorize live adapter execution, support widening, or production platform claims."
+}

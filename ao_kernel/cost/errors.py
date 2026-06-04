@@ -18,6 +18,39 @@ class CostTrackingError(Exception):
     """
 
 
+class CostCeilingExceeded(CostTrackingError):
+    """Raised when E-2-3 cost ceiling hard limit would be exceeded.
+
+    The attempted spend is rejected fail-closed. In workspace mode the
+    ceiling module records a hard-breach state row before raising; when a
+    per-call audit row template is supplied, it also writes the E-2-2
+    ``hard_breached`` audit row before this exception reaches the caller.
+    """
+
+    def __init__(
+        self,
+        *,
+        session_id: str,
+        attempted_cost_usd: object,
+        cumulative_before_usd: object,
+        attempted_cumulative_usd: object,
+        hard_usd: object,
+        state_path: object | None,
+    ) -> None:
+        self.session_id = session_id
+        self.attempted_cost_usd = attempted_cost_usd
+        self.cumulative_before_usd = cumulative_before_usd
+        self.attempted_cumulative_usd = attempted_cumulative_usd
+        self.hard_usd = hard_usd
+        self.state_path = state_path
+        super().__init__(
+            "cost ceiling hard breach: "
+            f"session={session_id!r} attempted_cost_usd={attempted_cost_usd} "
+            f"cumulative_before_usd={cumulative_before_usd} "
+            f"attempted_cumulative_usd={attempted_cumulative_usd} hard_usd={hard_usd}"
+        )
+
+
 class CostTrackingDisabledError(CostTrackingError):
     """Raised when a cost public API is invoked while policy.enabled=false.
 
@@ -284,4 +317,5 @@ __all__ = [
     "LLMUsageMissingError",
     "BudgetExhaustedError",
     "RoutingCatalogMissingError",
+    "CostCeilingExceeded",
 ]
