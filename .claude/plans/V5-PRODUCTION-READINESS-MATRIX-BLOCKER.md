@@ -35,7 +35,7 @@ The V5 production readiness matrix is **not complete**.
 | public support matrix | partial | current support-boundary preflight bundle exists; final v5 public support tier and claim-language sync missing |
 | protected real provider live calls | not_ready | 7-day live window and protected environment evidence missing |
 | cost/rate/circuit breaker evidence | partial | live cost/breach/rollback evidence missing |
-| observability production tunables | partial | final claim-bound observability/alerting evidence missing |
+| observability production tunables | partial | current observability preflight bundle exists; final claim-bound observability/alerting evidence missing |
 | security/SBOM/license scans | partial | current preflight bundle exists; final release-bound SBOM/license/security bundle missing |
 | install/deploy lifecycle smoke | partial | v5.0.0 tag/publish and release-artifact smoke missing |
 | multi-tenancy isolation | not_ready | tenant isolation and per-tenant quota/cost evidence missing |
@@ -78,3 +78,13 @@ security/SBOM/license preflight bundle:
 
 That bundle binds CodeQL, Trivy, SBOM tooling, and license inventory evidence
 without treating them as final release-bound evidence.
+
+The `observability_production_tunables` dimension now has a current-state
+observability production tunables preflight bundle:
+
+- `.claude/plans/V5-OBSERVABILITY-PRODUCTION-TUNABLES-PREFLIGHT-BUNDLE.md`
+- `tests/fixtures/epic9/v5-observability-production-tunables-preflight.current.json`
+
+That bundle binds Grafana dashboard shape, SLI/SLO catalog discipline, and
+advisory performance policy evidence without treating them as final
+claim-bound observability smoke or alert escalation evidence.
