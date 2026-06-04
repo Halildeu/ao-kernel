@@ -32,6 +32,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-3-2 per-surface support-widening smoke harness** (V5 Epic 3, #854): added
+  `scripts/run_support_smoke.py --surface <class>` + `ao_kernel/_internal/support_widening/harnesses/`
+  (`killswitch.py` dominant runtime kill-switch, `runner.py` per-surface stub
+  registry). Library-mode, stub-adapter-only smoke that emits an E-3-1
+  `support_widening_evidence.v1` artifact per surface class with `simulated_only:
+  true` / `live_call_made: false` / `support_widening: false`. The kill-switch
+  fails closed on socket / http / urllib / requests / httpx / subprocess / shell /
+  forbidden dynamic-import / secret-env access (sanitized allowlisted `os.environ`
+  view + `os.getenv` guard) and restores all originals on exit. Evidence written
+  `0o600`. 15 pytest cases (parametrized per-surface + kill-switch negatives). No
+  network call; no `.ao/` mutation; no guard-flag flip.
 - **E-2-7 pre-supersession checklist artifact** (V5 Epic 2, #852):
   added `EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md` and
   `pre_supersession_checklist.schema.v1.json` as the infrastructure-only
