@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-install-deploy-lifecycle-preflight-bundle:v1",
+  "title": "V5 install deploy lifecycle preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 install/deploy lifecycle dimension. It records existing packaging smoke, deployment guide, operator runbook, Helm, publish workflow, and migration-guide evidence while keeping final release-artifact evidence and all production guard flags fail-closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "final_release_bound",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "standalone_install_smoke",
+    "deployment_guide",
+    "operator_runbooks",
+    "helm_lifecycle",
+    "publish_lifecycle",
+    "migration_guide",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": { "const": "v5_install_deploy_lifecycle_preflight_bundle.v1" },
+    "artifact_kind": { "const": "v5_install_deploy_lifecycle_preflight_bundle" },
+    "repo": { "const": "Halildeu/ao-kernel" },
+    "work_package": { "const": "E-9-1" },
+    "dimension": { "const": "install_deploy_lifecycle_smoke" },
+    "evidence_class": { "const": "preflight_current_state" },
+    "final_release_bound": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "standalone_install_smoke": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "script_path",
+        "ci_workflow_path",
+        "ri7_packaging_smoke_test_path",
+        "wheel_installed_smoke_present",
+        "release_artifact_bound",
+        "dist_cleanup_required"
+      ],
+      "properties": {
+        "script_path": { "const": "scripts/packaging_smoke.py" },
+        "ci_workflow_path": { "const": ".github/workflows/test.yml" },
+        "ri7_packaging_smoke_test_path": {
+          "const": "tests/test_ri7_scan_index_query_packaging_smoke_invariant.py"
+        },
+        "wheel_installed_smoke_present": { "const": true },
+        "release_artifact_bound": { "const": false },
+        "dist_cleanup_required": { "const": true }
+      }
+    },
+    "deployment_guide": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "test_path",
+        "standalone_pattern",
+        "docker_pattern",
+        "kubernetes_pattern",
+        "operator_bound_supersession_required",
+        "guard_flags_const_false_documented"
+      ],
+      "properties": {
+        "doc_path": { "const": "docs/PRODUCTION-DEPLOYMENT-GUIDE.md" },
+        "test_path": { "const": "tests/test_production_deployment_guide.py" },
+        "standalone_pattern": { "const": true },
+        "docker_pattern": { "const": true },
+        "kubernetes_pattern": { "const": true },
+        "operator_bound_supersession_required": { "const": true },
+        "guard_flags_const_false_documented": { "const": true }
+      }
+    },
+    "operator_runbooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "operator_runbook_path",
+        "operator_runbook_test_path",
+        "operator_action_readme_path",
+        "operator_action_checklist_path",
+        "operator_action_checklist_schema_path",
+        "operator_action_checklist_test_path",
+        "operator_action_required",
+        "agent_executed_external_action"
+      ],
+      "properties": {
+        "operator_runbook_path": { "const": "docs/OPERATOR-RUNBOOK.md" },
+        "operator_runbook_test_path": { "const": "tests/test_operator_runbook.py" },
+        "operator_action_readme_path": { "const": "docs/operator-runbooks/README.md" },
+        "operator_action_checklist_path": {
+          "const": "docs/operator-runbooks/operator-action-checklist.v1.json"
+        },
+        "operator_action_checklist_schema_path": {
+          "const": "ao_kernel/defaults/schemas/operator-action-checklist.schema.v1.json"
+        },
+        "operator_action_checklist_test_path": { "const": "tests/test_operator_runbooks.py" },
+        "operator_action_required": { "const": true },
+        "agent_executed_external_action": { "const": false }
+      }
+    },
+    "helm_lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "deployment_template_path",
+        "helm_unittest_suite_path",
+        "helm_testing_runbook_path",
+        "default_safe_single_replica",
+        "non_root_security_context_pinned",
+        "operator_run_plugin_smoke_only",
+        "release_artifact_bound"
+      ],
+      "properties": {
+        "deployment_template_path": { "const": "deploy/helm/ao-kernel/templates/deployment.yaml" },
+        "helm_unittest_suite_path": { "const": "deploy/helm/ao-kernel/tests/deployment_test.yaml" },
+        "helm_testing_runbook_path": { "const": "docs/HELM-TESTING.md" },
+        "default_safe_single_replica": { "const": true },
+        "non_root_security_context_pinned": { "const": true },
+        "operator_run_plugin_smoke_only": { "const": true },
+        "release_artifact_bound": { "const": false }
+      }
+    },
+    "publish_lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "workflow_path",
+        "workflow_test_path",
+        "operator_runbook_path",
+        "trusted_publishing_environment",
+        "workflow_dispatch_ref_required",
+        "v_tag_guard_present",
+        "strict_dist_globs",
+        "v5_tag_evidence_present",
+        "v5_publish_evidence_present"
+      ],
+      "properties": {
+        "workflow_path": { "const": ".github/workflows/publish.yml" },
+        "workflow_test_path": { "const": "tests/test_publish_workflow.py" },
+        "operator_runbook_path": { "const": "docs/operator-runbooks/01-pypi-publish.md" },
+        "trusted_publishing_environment": { "const": "pypi" },
+        "workflow_dispatch_ref_required": { "const": true },
+        "v_tag_guard_present": { "const": true },
+        "strict_dist_globs": { "const": true },
+        "v5_tag_evidence_present": { "const": false },
+        "v5_publish_evidence_present": { "const": false }
+      }
+    },
+    "migration_guide": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "test_path",
+        "target_version",
+        "downgrade_pin",
+        "guard_flags_const_false_documented",
+        "release_shipped"
+      ],
+      "properties": {
+        "doc_path": { "const": "docs/MIGRATION-V5.md" },
+        "test_path": { "const": "tests/test_migration_v5_doc.py" },
+        "target_version": { "const": "5.0.0" },
+        "downgrade_pin": { "const": "ao-kernel==4.1.0" },
+        "guard_flags_const_false_documented": { "const": true },
+        "release_shipped": { "const": false }
+      }
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "minItems": 5,
+      "contains": { "const": "v5.0.0 tag evidence" },
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "issue_refs": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/775" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/776" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/782" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/895" }
+      ],
+      "minItems": 4,
+      "maxItems": 4,
+      "items": false
+    }
+  }
+}

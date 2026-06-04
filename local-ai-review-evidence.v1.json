@@ -13,16 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v5-cost-rate-circuit-breaker-preflight-bundle",
+    "head_ref": "refs/heads/codex/v5-install-deploy-lifecycle-preflight-bundle",
     "changed_files": [
-      ".claude/plans/V5-COST-RATE-CIRCUIT-BREAKER-PREFLIGHT-BUNDLE.md",
+      ".claude/plans/V5-INSTALL-DEPLOY-LIFECYCLE-PREFLIGHT-BUNDLE.md",
       ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/v5-cost-rate-circuit-breaker-preflight-bundle.schema.v1.json",
+      "ao_kernel/defaults/schemas/v5-install-deploy-lifecycle-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/fixtures/epic9/v5-cost-rate-circuit-breaker-preflight.current.json",
+      "tests/fixtures/epic9/v5-install-deploy-lifecycle-preflight.current.json",
       "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/test_v5_cost_rate_circuit_breaker_preflight_bundle.py"
+      "tests/test_v5_install_deploy_lifecycle_preflight_bundle.py"
     ]
   },
   "checks_considered": [
@@ -31,7 +31,7 @@
       "status": "pass"
     },
     {
-      "name": "pytest_cost_rate_circuit_breaker_preflight_bundle",
+      "name": "pytest_install_deploy_lifecycle_preflight_bundle",
       "status": "pass"
     },
     {
@@ -60,12 +60,13 @@
     }
   ],
   "findings": [
-    "Claude (Anthropic) reviewed the staged V5 cost/rate/circuit-breaker preflight bundle and returned VERDICT AGREE.",
-    "The reviewer confirmed the bundle is bounded to current-state preflight evidence and does not authorize support widening, production platform claim, live adapter execution, PR-Xfinal, tag, release, or live provider calls.",
-    "The reviewer confirmed schema strictness: object nodes are closed, issue refs and dimension values are pinned, residual missing evidence remains required, and guard flips are rejected.",
-    "The reviewer confirmed the evidence claims are defensible from repo-local artifacts covering dormant cost policy, cost ceiling, per-call audit, simulated usage-cost evidence, rate limiter, circuit breaker, pricing digest, SLI, and incident-response references.",
-    "Local validation before review: 110 tests passed for the cost/rate/circuit-breaker preflight bundle, production readiness matrix invariants, cost policy, cost ceiling, usage-cost evidence, rate limiter, and circuit breaker.",
-    "Staged secret scan passed with no leaks found.",
+    "Claude (Anthropic) reviewed the staged V5 install/deploy lifecycle preflight bundle and returned VERDICT AGREE.",
+    "The reviewer confirmed the bundle is bounded to current-state preflight evidence and does not authorize support widening, production platform claim, live adapter execution, PR-Xfinal, v5.0.0 tag or publish, or final release-artifact smoke.",
+    "The reviewer confirmed schema strictness: object nodes are closed, guard flags and nested release claims are const false, issue refs are pinned, residual missing evidence remains required, and release-claim flips are rejected.",
+    "The reviewer confirmed the evidence claims are defensible from repo-local artifacts covering packaging smoke, deployment guide, operator runbooks, Helm render/runbook surface, publish workflow safeguards, and migration-guide downgrade discipline.",
+    "The reviewer confirmed the matrix integration keeps install_deploy_lifecycle_smoke partial, matrix_complete false, and missing v5.0.0 tag/publish/final lifecycle smoke evidence explicit.",
+    "Local validation before review: 119 tests passed for the install/deploy lifecycle preflight bundle, production readiness matrix invariants, deployment guide, publish workflow, operator runbooks, RI-7 packaging smoke, and migration guide.",
+    "Staged diff secret scan passed with no leaks found.",
     "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
   ],
   "secrets_recorded": false,

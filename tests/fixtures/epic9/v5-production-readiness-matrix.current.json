@@ -137,6 +137,13 @@
       ],
       "current_evidence_refs": [
         "docs/MIGRATION-V5.md",
+        ".claude/plans/V5-INSTALL-DEPLOY-LIFECYCLE-PREFLIGHT-BUNDLE.md",
+        "tests/fixtures/epic9/v5-install-deploy-lifecycle-preflight.current.json",
+        "scripts/packaging_smoke.py",
+        ".github/workflows/publish.yml",
+        "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
+        "docs/OPERATOR-RUNBOOK.md",
+        "deploy/helm/ao-kernel/tests/deployment_test.yaml",
         "tests/test_production_deployment_guide.py",
         "tests/test_migration_v5_doc.py"
       ],

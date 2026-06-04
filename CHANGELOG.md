@@ -43,6 +43,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 install/deploy lifecycle preflight bundle** (V5 Epic 9, #895): added
+  `V5-INSTALL-DEPLOY-LIFECYCLE-PREFLIGHT-BUNDLE.md`,
+  `v5-install-deploy-lifecycle-preflight-bundle.schema.v1.json`, and a
+  current-state fixture/test suite that binds standalone packaging smoke,
+  deployment-guide coverage, operator runbooks, Helm render/runbook evidence,
+  publish workflow safeguards, and migration-guide downgrade discipline to the
+  `install_deploy_lifecycle_smoke` production-readiness dimension. This is
+  preflight evidence only: final v5.0.0 tag/publish evidence, release-artifact
+  install smoke, deployment lifecycle smoke, and rollback/downgrade smoke
+  remain missing while `support_widening` / `production_platform_claim` /
+  `live_adapter_execution` remain false.
 - **V5 cost/rate/circuit breaker preflight bundle** (V5 Epic 9, #895): added
   `V5-COST-RATE-CIRCUIT-BREAKER-PREFLIGHT-BUNDLE.md`,
   `v5-cost-rate-circuit-breaker-preflight-bundle.schema.v1.json`, and a
