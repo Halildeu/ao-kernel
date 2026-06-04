@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-2-1-LIVE-ADAPTER-ENVELOPE-SCHEMA",
+  "work_package": "E-2-2-PER-CALL-AUDIT",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,13 +13,13 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/epic-2-1-live-adapter-envelope-schema",
+    "head_ref": "refs/heads/feat/epic-2-2-per-call-audit",
     "changed_files": [
-      ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/live_adapter_envelope.schema.v1.json",
-      "docs/LIVE-ADAPTER-ENVELOPE.md",
-      "tests/test_live_adapter_envelope.py",
+      "ao_kernel/_internal/evidence/per_call_audit.py",
+      "ao_kernel/defaults/schemas/per_call_audit.schema.v1.json",
+      "docs/PER-CALL-AUDIT.md",
+      "tests/test_per_call_audit.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -30,14 +30,16 @@
     { "name": "mypy", "status": "pass" },
     { "name": "schema_valid_draft_2020_12", "status": "pass" },
     { "name": "guard_flags_const_false", "status": "pass" },
-    { "name": "strict_closure_every_object", "status": "pass" },
+    { "name": "e23_forward_compat", "status": "pass" },
+    { "name": "writer_fail_closed", "status": "pass" },
+    { "name": "concurrent_append_line_atomic", "status": "pass" },
     { "name": "no_workflow_mutation", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "E-2-1 live adapter envelope schema (infrastructure-only). 4-iter Codex (OpenAI) cross-AI review on thread 019e92a5; all REVISE findings absorbed: (1) envelope_digest spec drift fixed (added required bare-sha256 content-address, plan §2 aligned to §702); (2) date-time fail-closed via explicit RFC3339 pattern (jsonschema does not enforce format by default); (3) closure test parametrized over every object path; (4) range-aware then calendar month/day-coupling regex (Feb<=29, 30-day months<=30); (5) leap-year validity reasoned-deferred to E-2-4 recompute-time with explicit boundary test + precise doc (no overclaim), justified by CLAUDE.md core-dependency minimalism.",
-    "Guard flags pinned const false at both schema (live_adapter_execution const false; optional support_widening/production_platform_claim const false) and evidence level. mode enum is exactly {stub, dry_run}; 'live' forbidden. No real network call represented; no guard flag flipped. Flip authority remains Epic 9 PR-Xfinal.",
-    "36 machine-enforced invariants; ruff + mypy + pytest green. Codex final verdict AGREE (iter-4). Follow-up recorded for E-2-4: dry-run harness must datetime-parse timestamps so schema-accepted-but-calendar-invalid values (e.g. non-leap 2026-02-29) fail-closed at runtime — E-2-4 acceptance blocker, not E-2-1."
+    "E-2-2 per-call audit schema + fail-closed writer (infrastructure-only). 2-iter Codex (OpenAI) cross-AI review on thread 019e92bf; all 4 REVISE findings absorbed: (1) hard-breach contract — cost_breach_handling is oneOf[object,null], allOf enforces hard=>status error + handling null (was object-only, would have broken E-2-3's hard write); (2) soft handling shape aligned to E-2-3 contract {decision, decided_by(enum), decided_at}; (3) atomic append via os.open(O_WRONLY|O_CREAT|O_APPEND) + single os.write + fsync; (4) test gaps closed — hard-null valid, hard-object invalid, soft decided_by enum, schema-invalid-no-linecount-change, concurrent 20-writer line-atomic.",
+    "Writer is a pure serializer: validate-before-write (schema-invalid row raises before any disk write), library-mode skips persistence, workspace-mode atomic JSONL append; hard_breached cross-referenced to cost_hard_breach.jsonl. Does NOT raise CostCeilingExceeded (that is E-2-3) — no forward dependency. Foreign-keys to E-2-1 envelope via envelope_digest.",
+    "40 machine-enforced invariants; ruff + mypy + pytest green. Guard flags const false at schema + evidence level; no network call; no guard flip. Codex final verdict AGREE (iter-2); E-2-3 forward-compat confirmed by reviewer payload validation."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
