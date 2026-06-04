@@ -16,6 +16,7 @@
     "head_ref": "refs/heads/feat/gate-c-dim9-bypassless-governance-preflight-cc-0605",
     "changed_files": [
       ".claude/plans/V5-BYPASSLESS-GOVERNANCE-PREFLIGHT-BUNDLE.md",
+      "CHANGELOG.md",
       "ao_kernel/defaults/schemas/v5-bypassless-governance-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "tests/fixtures/epic9/v5-bypassless-governance-preflight.current.json",
@@ -49,6 +50,10 @@
     },
     {
       "name": "cross_provider_review",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_enforcement",
       "status": "pass"
     }
   ],

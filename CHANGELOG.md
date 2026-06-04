@@ -43,6 +43,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 bypassless governance preflight bundle** (V5 Epic 9 Gate C, #960):
+  added `V5-BYPASSLESS-GOVERNANCE-PREFLIGHT-BUNDLE.md`,
+  `v5-bypassless-governance-preflight-bundle.schema.v1.json`, a current-state
+  fixture, and 10 invariant tests for production-readiness matrix dimension 9
+  (`bypassless_release_governance`). Records the already-active repo
+  merge-governance controls (source-pinned `ao-release-gate-technical` +
+  `ao-release-gate-review` required checks, zero bypass actors, autonomous
+  low-risk merge trail with no `--admin`, cross-provider review for guarded
+  changes). Preflight current-state evidence only: it does not advance the
+  matrix dimension to complete (stays `partial`), open PR-Xfinal, or flip any
+  guard flag; the final ruleset source-pin and required-check uniqueness
+  evidence remain PR-Xfinal-bound. Non-colliding (does not edit the matrix
+  fixture). Cross-AI review: Codex (OpenAI) AGREE. Guard flags stay false.
 - **V5 public support matrix preflight bundle** (V5 Epic 9, #895): added
   `V5-PUBLIC-SUPPORT-MATRIX-PREFLIGHT-BUNDLE.md`,
   `v5-public-support-matrix-preflight-bundle.schema.v1.json`, and a
