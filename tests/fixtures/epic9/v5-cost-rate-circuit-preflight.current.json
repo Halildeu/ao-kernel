@@ -1,0 +1,66 @@
+{
+  "schema_version": "v5_cost_rate_circuit_preflight_bundle.v1",
+  "artifact_kind": "v5_cost_rate_circuit_preflight_bundle",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "dimension": "cost_rate_circuit_breaker_evidence",
+  "evidence_class": "preflight_current_state",
+  "final_release_bound": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "current_boundary": {
+    "cost_ceiling_module_present": true,
+    "soft_and_hard_breach_modeled": true,
+    "circuit_breaker_per_provider_present": true,
+    "rate_limiter_per_provider_present": true,
+    "per_call_audit_present": true,
+    "dry_run_cost_evidence_harness_present": true,
+    "live_cost_evidence_bound_to_pr_xfinal": false
+  },
+  "cost_control_modules": {
+    "cost_ceiling_module_path": "ao_kernel/_internal/cost_ceiling.py",
+    "cost_ceiling_policy_path": "ao_kernel/defaults/policies/policy_cost_ceiling.v1.json",
+    "circuit_breaker_path": "ao_kernel/_internal/prj_kernel_api/circuit_breaker.py",
+    "rate_limiter_path": "ao_kernel/_internal/prj_kernel_api/rate_limiter.py",
+    "per_call_audit_doc_path": "docs/PER-CALL-AUDIT.md",
+    "dry_run_harness_path": "ao_kernel/_internal/live_adapter_dryrun.py"
+  },
+  "cost_controls": [
+    {
+      "control": "cost_ceiling_enforcement_module",
+      "current_state": "active_in_current_repo_runtime",
+      "future_prerequisite_under_pr_xfinal": "Bind live cost-ceiling enforcement evidence (soft and hard breach actually triggered) from a protected operator run into the PR-Xfinal evidence aggregate."
+    },
+    {
+      "control": "circuit_breaker_per_provider",
+      "current_state": "active_in_current_repo_runtime",
+      "future_prerequisite_under_pr_xfinal": "Confirm per-provider circuit-breaker open/half-open/close transitions under the protected live window are captured in the PR-Xfinal evidence."
+    },
+    {
+      "control": "rate_limiter_per_provider",
+      "current_state": "active_in_current_repo_runtime",
+      "future_prerequisite_under_pr_xfinal": "Confirm per-provider token-bucket rate limiting under real provider load is captured in the PR-Xfinal evidence."
+    },
+    {
+      "control": "per_call_audit_schema",
+      "current_state": "active_in_current_repo_runtime",
+      "future_prerequisite_under_pr_xfinal": "Bind the per-call audit JSONL retention and SHA-256 chain evidence from the protected live window into PR-Xfinal."
+    },
+    {
+      "control": "dry_run_cost_evidence_harness",
+      "current_state": "active_in_current_repo_runtime",
+      "future_prerequisite_under_pr_xfinal": "Promote the dry-run cost evidence harness to a protected live run with a fresh pricing-source snapshot under PR-Xfinal operator authorization."
+    }
+  ],
+  "residual_missing_evidence": [
+    "live cost evidence bound to the protected operator window (replacing the dry-run harness output)",
+    "soft and hard breach plus rollback evidence captured from a protected run",
+    "fresh pricing-source snapshot (SHA-256 pinned, not older than 30 days) bound to PR-Xfinal"
+  ],
+  "issue_refs": [
+    "#775",
+    "#782",
+    "#895"
+  ]
+}

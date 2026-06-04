@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-cost-rate-circuit-preflight-bundle:v1",
+  "title": "V5 cost / rate / circuit-breaker preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 cost, rate, and circuit-breaker readiness dimension (production readiness matrix dimension 3). It records the already-present cost-control runtime modules (cost ceiling enforcement with soft/hard breach, per-provider circuit breaker, per-provider rate limiter, per-call audit schema, dry-run cost evidence harness) while keeping final promotion and all production guard flags fail-closed. It is not promotion authority; live cost evidence over a protected window, breach evidence from a protected run, and a fresh pricing-source snapshot remain bound to PR-Xfinal.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "final_release_bound",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "current_boundary",
+    "cost_control_modules",
+    "cost_controls",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": { "const": "v5_cost_rate_circuit_preflight_bundle.v1" },
+    "artifact_kind": { "const": "v5_cost_rate_circuit_preflight_bundle" },
+    "repo": { "const": "Halildeu/ao-kernel" },
+    "work_package": { "const": "E-9-1" },
+    "dimension": { "const": "cost_rate_circuit_breaker_evidence" },
+    "evidence_class": { "const": "preflight_current_state" },
+    "final_release_bound": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "current_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "cost_ceiling_module_present",
+        "soft_and_hard_breach_modeled",
+        "circuit_breaker_per_provider_present",
+        "rate_limiter_per_provider_present",
+        "per_call_audit_present",
+        "dry_run_cost_evidence_harness_present",
+        "live_cost_evidence_bound_to_pr_xfinal"
+      ],
+      "properties": {
+        "cost_ceiling_module_present": { "const": true },
+        "soft_and_hard_breach_modeled": { "const": true },
+        "circuit_breaker_per_provider_present": { "const": true },
+        "rate_limiter_per_provider_present": { "const": true },
+        "per_call_audit_present": { "const": true },
+        "dry_run_cost_evidence_harness_present": { "const": true },
+        "live_cost_evidence_bound_to_pr_xfinal": { "const": false }
+      }
+    },
+    "cost_control_modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "cost_ceiling_module_path",
+        "cost_ceiling_policy_path",
+        "circuit_breaker_path",
+        "rate_limiter_path",
+        "per_call_audit_doc_path",
+        "dry_run_harness_path"
+      ],
+      "properties": {
+        "cost_ceiling_module_path": { "const": "ao_kernel/_internal/cost_ceiling.py" },
+        "cost_ceiling_policy_path": { "const": "ao_kernel/defaults/policies/policy_cost_ceiling.v1.json" },
+        "circuit_breaker_path": { "const": "ao_kernel/_internal/prj_kernel_api/circuit_breaker.py" },
+        "rate_limiter_path": { "const": "ao_kernel/_internal/prj_kernel_api/rate_limiter.py" },
+        "per_call_audit_doc_path": { "const": "docs/PER-CALL-AUDIT.md" },
+        "dry_run_harness_path": { "const": "ao_kernel/_internal/live_adapter_dryrun.py" }
+      }
+    },
+    "cost_controls": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": [
+          "control",
+          "current_state",
+          "future_prerequisite_under_pr_xfinal"
+        ],
+        "properties": {
+          "control": {
+            "type": "string",
+            "enum": [
+              "cost_ceiling_enforcement_module",
+              "circuit_breaker_per_provider",
+              "rate_limiter_per_provider",
+              "per_call_audit_schema",
+              "dry_run_cost_evidence_harness"
+            ]
+          },
+          "current_state": {
+            "type": "string",
+            "enum": ["active_in_current_repo_runtime"]
+          },
+          "future_prerequisite_under_pr_xfinal": { "type": "string", "minLength": 1 }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": { "control": { "const": "cost_ceiling_enforcement_module" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "control": { "const": "circuit_breaker_per_provider" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "control": { "const": "rate_limiter_per_provider" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "control": { "const": "per_call_audit_schema" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "control": { "const": "dry_run_cost_evidence_harness" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "allOf": [
+        { "contains": { "type": "string", "pattern": "(?i)live cost" }, "minContains": 1 },
+        { "contains": { "type": "string", "pattern": "(?i)breach" }, "minContains": 1 },
+        { "contains": { "type": "string", "pattern": "(?i)pricing" }, "minContains": 1 }
+      ]
+    },
+    "issue_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^#[0-9]+$" }
+    }
+  }
+}
