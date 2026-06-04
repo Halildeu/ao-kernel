@@ -31,6 +31,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 Epic 7 E-7-5 pgvector semantic backend**: added the
+  opt-in semantic backend protocol with an in-memory implementation and
+  a lazy-import pgvector backend that requires operator-provided DSN
+  configuration, without live adapter execution, support widening, or
+  production platform claims.
 - **V5 Epic 4 E-4-2a multi-tenant advisory boundary contract**:
   added the early seven-dimension multi-tenant boundary contract,
   placeholder tenant isolation matrix, strict evidence/matrix schemas,

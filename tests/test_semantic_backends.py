@@ -249,7 +249,7 @@ def test_no_workflow_mutation() -> None:
 
     repo_root = Path(__file__).resolve().parents[1]
     proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD"],
+        ["git", "diff", "--name-only", "origin/main...HEAD", "--", ".github/workflows"],
         cwd=repo_root,
         capture_output=True,
         text=True,
@@ -257,6 +257,5 @@ def test_no_workflow_mutation() -> None:
     )
     if proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = proc.stdout.split()
-    for path in changed:
-        assert not path.startswith(".github/workflows/"), f"E-7-5 must not touch workflows: {path}"
+    workflow_changes = proc.stdout.split()
+    assert workflow_changes == [], f"E-7-5 must not touch workflows: {workflow_changes}"
