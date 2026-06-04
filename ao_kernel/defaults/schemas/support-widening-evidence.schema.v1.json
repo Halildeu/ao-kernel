@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:support-widening-evidence:v1",
+  "title": "Support Widening Evidence (v1, infrastructure-only)",
+  "description": "Records, in library/simulated mode, the evidence a future support-widening decision would need per surface class. Infrastructure-only: support_widening is const false (a true value requires the separate v2 supersession schema). No remote $ref (local #/$defs only); per-class evidence shapes are strict-closed $defs; recompute_inputs may not carry any widening-flag key.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generated_at",
+    "repo",
+    "surface_class",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "register_authority",
+    "github_write_authorized",
+    "simulated_only",
+    "live_call_made",
+    "evidence_dimensions",
+    "reviewer_providers",
+    "recompute_inputs"
+  ],
+  "properties": {
+    "schema_version": { "const": "support_widening_evidence.v1" },
+    "artifact_kind": { "const": "support_widening_evidence" },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|1[0-9]|2[0-9]))T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+    },
+    "repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+    "surface_class": {
+      "type": "string",
+      "enum": ["provider", "python_version", "os_platform", "db_backend", "deployment_topology"]
+    },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "register_authority": { "const": "evidence_record_only" },
+    "github_write_authorized": { "const": false },
+    "simulated_only": { "const": true },
+    "live_call_made": { "const": false },
+    "evidence_dimensions": {
+      "type": "object",
+      "comment": "Shape is delegated to a per-surface-class $defs entry via the root allOf (a base additionalProperties:false here would reject the allOf-supplied keys — the classic JSON-Schema sibling-applicator trap)."
+    },
+    "reviewer_providers": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": ["provider", "verdict"],
+        "properties": {
+          "provider": { "type": "string", "minLength": 1 },
+          "verdict": { "type": "string", "enum": ["AGREE", "REVISE", "RED"] }
+        }
+      }
+    },
+    "recompute_inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["raw_dimensions"],
+      "description": "Raw inputs from which evidence_dimensions is re-derivable. NOT a widening back-door: no key may match the forbidden-widening regex at any depth (module + test enforced).",
+      "properties": {
+        "raw_dimensions": {
+          "type": "object",
+          "comment": "Mirrors evidence_dimensions; per-class shape delegated to the same $defs entry via the root allOf."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "provider_dims": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["integration_tests", "stub_adapter_ids", "note"],
+      "properties": {
+        "integration_tests": {
+          "type": "object",
+          "additionalProperties": false,
+          "unevaluatedProperties": false,
+          "required": ["count"],
+          "properties": { "count": { "type": "integer", "minimum": 0 } }
+        },
+        "stub_adapter_ids": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "note": { "type": "string" }
+      }
+    },
+    "python_version_dims": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["matrix", "pytest_passed"],
+      "properties": {
+        "matrix": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["3.11", "3.12", "3.13"] },
+          "uniqueItems": true
+        },
+        "pytest_passed": { "type": "boolean" }
+      }
+    },
+    "os_platform_dims": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["platform", "smoke_passed"],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": ["linux-x86_64", "linux-arm64", "macos-x86_64", "macos-arm64", "windows-amd64"]
+        },
+        "smoke_passed": { "type": "boolean" }
+      }
+    },
+    "db_backend_dims": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["backend", "round_trip_passed"],
+      "properties": {
+        "backend": { "type": "string", "enum": ["sqlite_in_memory", "pgvector", "future_other"] },
+        "round_trip_passed": { "type": "boolean" }
+      }
+    },
+    "deployment_topology_dims": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["topology", "isolation_passed"],
+      "properties": {
+        "topology": {
+          "type": "string",
+          "enum": ["library", "single_tenant_container", "k8s_helm", "multi_tenant_saas"]
+        },
+        "isolation_passed": { "type": "boolean" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "required": ["surface_class"], "properties": { "surface_class": { "const": "provider" } } },
+      "then": {
+        "properties": {
+          "evidence_dimensions": { "$ref": "#/$defs/provider_dims" },
+          "recompute_inputs": { "properties": { "raw_dimensions": { "$ref": "#/$defs/provider_dims" } } }
+        }
+      }
+    },
+    {
+      "if": { "required": ["surface_class"], "properties": { "surface_class": { "const": "python_version" } } },
+      "then": {
+        "properties": {
+          "evidence_dimensions": { "$ref": "#/$defs/python_version_dims" },
+          "recompute_inputs": { "properties": { "raw_dimensions": { "$ref": "#/$defs/python_version_dims" } } }
+        }
+      }
+    },
+    {
+      "if": { "required": ["surface_class"], "properties": { "surface_class": { "const": "os_platform" } } },
+      "then": {
+        "properties": {
+          "evidence_dimensions": { "$ref": "#/$defs/os_platform_dims" },
+          "recompute_inputs": { "properties": { "raw_dimensions": { "$ref": "#/$defs/os_platform_dims" } } }
+        }
+      }
+    },
+    {
+      "if": { "required": ["surface_class"], "properties": { "surface_class": { "const": "db_backend" } } },
+      "then": {
+        "properties": {
+          "evidence_dimensions": { "$ref": "#/$defs/db_backend_dims" },
+          "recompute_inputs": { "properties": { "raw_dimensions": { "$ref": "#/$defs/db_backend_dims" } } }
+        }
+      }
+    },
+    {
+      "if": { "required": ["surface_class"], "properties": { "surface_class": { "const": "deployment_topology" } } },
+      "then": {
+        "properties": {
+          "evidence_dimensions": { "$ref": "#/$defs/deployment_topology_dims" },
+          "recompute_inputs": { "properties": { "raw_dimensions": { "$ref": "#/$defs/deployment_topology_dims" } } }
+        }
+      }
+    }
+  ]
+}

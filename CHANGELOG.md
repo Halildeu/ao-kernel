@@ -25,6 +25,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-3-1 support widening evidence schema + validator** (V5 Epic 3, #853):
+  added `support-widening-evidence.schema.v1.json` (per-`surface_class` evidence
+  shapes via `$defs`+`allOf`; recursive strict closure on every shape-defining
+  node; no remote `$ref`; `recompute_inputs` shadow-widening guard) + the pure
+  `ao_kernel/_internal/support_widening/evidence.py` (`parse_v1` with runtime
+  guard-pin re-assert, `recompute_v1` recompute-not-trust, `verify_v1` on-disk
+  re-hash) + read-only CLI `ao-kernel support-widening evidence validate <path>
+  [--recompute]`. 17 test functions / 20 collected pytest cases (machine-enforced
+  invariants). Infrastructure-only:
+  `support_widening` / `production_platform_claim` / `live_adapter_execution`
+  all `const false` at schema and re-asserted at runtime; no guard flip (a true
+  value requires the separate v2 supersession schema, Epic 9).
 - **E-2-5 secret resolution discipline module** (V5 Epic 2, #850): added
   `ao_kernel._internal.secrets.SecretResolutionDiscipline` and
   `SecretTaintSet` as the env-var-only, value-based taint primitive for future
