@@ -16,6 +16,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Cloud Run deploy gcloud setup action**: updated the two trusted Cloud Run
+  deployment workflows from `google-github-actions/setup-gcloud@v2` to `@v3`,
+  keeping the existing workflow triggers, OIDC permission surface, pre-cutover
+  deploy guards, required configuration validation, and deployment evidence guard
+  flags unchanged.
 - **scorecard baseline artifact download action pin**: updated the
   SHA-pinned `dawidd6/action-download-artifact` scorecard baseline
   downloader to the v21 tag commit and kept the workflow comment in

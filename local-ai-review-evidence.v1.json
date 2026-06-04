@@ -1,9 +1,9 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-920-action-download-artifact-21",
+  "work_package": "AO-MA-919-setup-gcloud-3",
   "implementer": {
-    "agent": "codex-action-download-artifact-21",
+    "agent": "codex-setup-gcloud-3",
     "provider": "openai"
   },
   "reviewer": {
@@ -13,9 +13,10 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/dependabot/github_actions/dawidd6/action-download-artifact-21",
+    "head_ref": "refs/heads/dependabot/github_actions/google-github-actions/setup-gcloud-3",
     "changed_files": [
-      ".github/workflows/test.yml",
+      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
+      ".github/workflows/policy-service-deploy-cloud-run.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
@@ -44,6 +45,10 @@
       "status": "pass"
     },
     {
+      "name": "deploy_guard_audit",
+      "status": "pass"
+    },
+    {
       "name": "guard_flag_audit",
       "status": "pass"
     },
@@ -53,11 +58,11 @@
     }
   ],
   "findings": [
-    "Claude AGREE: diff scope is limited to the scorecard baseline artifact downloader pin/comment update, changelog entry, and current PR review evidence files.",
-    "Claude AGREE: dawidd6/action-download-artifact tag v21 resolves to b6e2e70617bc3265edd6dab6c906732b2f1ae151, matching the committed SHA pin.",
-    "Claude AGREE: no workflow permission expansion, required-check promotion, release authority bypass, or branch-protection mutation is introduced.",
-    "Claude AGREE: no secret material is added, and existing GitHub token usage is unchanged.",
-    "Claude AGREE: support_widening, production_platform_claim, and live_adapter_execution remain false."
+    "Claude AGREE: PR #919 changes only the two trusted Cloud Run deploy workflows from setup-gcloud v2 to v3 plus current changelog and review evidence.",
+    "Claude AGREE: google-github-actions/setup-gcloud tag v3 resolves to aa5489c8933f4cc7a4f7d45035b3b1440c9c10db.",
+    "Claude AGREE: workflow triggers, OIDC permission surface, Cloud Run deploy guards, and required configuration validation remain unchanged.",
+    "Claude AGREE: no secret exposure, release authority bypass, branch-protection mutation, support widening, production platform claim, or live adapter execution is introduced.",
+    "Claude AGREE: deployment evidence guard flags remain false."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
