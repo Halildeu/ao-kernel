@@ -7,16 +7,23 @@
     {
       "name": "secret_scan",
       "status": "pass"
+    },
+    {
+      "name": "guard_invariants",
+      "status": "pass"
+    },
+    {
+      "name": "scope_alignment",
+      "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI reviewer verdict AGREE: no blocking issue in the V5 E-9-1 security/SBOM/license preflight evidence bundle.",
-    "Diff is limited to the intended preflight doc/schema/fixture/test, matrix blocker cross-reference, matrix fixture evidence refs, changelog entry, and review evidence files.",
-    "Fail-closed guard state verified: final_release_bound=false, support_widening=false, production_platform_claim=false, live_adapter_execution=false, matrix_complete=false, and production_platform_claim=false in the matrix.",
-    "Production claim and live adapter execution are not introduced; no workflow, ruleset, runtime, release, tag, or publish mutation appears in the diff.",
-    "Matrix linkage is present: security_sbom_license_scans remains partial, links the new preflight doc/fixture, and still records final SBOM/license/security bundle residual gaps.",
-    "Tests considered: python3 -m pytest tests/test_v5_security_sbom_license_preflight_bundle.py tests/test_v5_production_readiness_matrix_blocker.py => 18 passed.",
-    "Secret scan considered: gitleaks over the working diff reported no leaks."
+    "OpenAI reviewer verdict AGREE: V5 E-9-1 public support matrix preflight scope is aligned.",
+    "Current public support boundary is recorded as preflight evidence only; no promoted support tier is introduced.",
+    "Guard state remains fail-closed: support_widening=false, production_platform_claim=false, live_adapter_execution=false, and final_release_bound=false.",
+    "The V5 production readiness matrix keeps public_support_matrix partial and preserves residual PR-Xfinal blockers.",
+    "Schema, fixture, tests, and changelog are limited to current-state evidence and do not mutate workflow, ruleset, runtime, release, tag, or publish surfaces.",
+    "Local validation considered: targeted pytest passed, git diff whitespace check passed, and gitleaks over the diff reported no leaks."
   ],
   "implementer": {
     "agent": "codex",
@@ -35,17 +42,17 @@
     "base_ref": "refs/heads/main",
     "changed_files": [
       ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
-      ".claude/plans/V5-SECURITY-SBOM-LICENSE-PREFLIGHT-BUNDLE.md",
+      ".claude/plans/V5-PUBLIC-SUPPORT-MATRIX-PREFLIGHT-BUNDLE.md",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/v5-security-sbom-license-preflight-bundle.schema.v1.json",
+      "ao_kernel/defaults/schemas/v5-public-support-matrix-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/fixtures/epic9/v5-security-sbom-license-preflight.current.json",
-      "tests/test_v5_security_sbom_license_preflight_bundle.py"
+      "tests/fixtures/epic9/v5-public-support-matrix-preflight.current.json",
+      "tests/test_v5_public_support_matrix_preflight_bundle.py"
     ],
-    "head_ref": "refs/heads/codex/v5-security-sbom-license-preflight-bundle"
+    "head_ref": "refs/heads/codex/v5-public-support-matrix-preflight-bundle-wt"
   },
   "secrets_recorded": false,
   "support_widening": false,

@@ -1,0 +1,73 @@
+{
+  "schema_version": "v5_public_support_matrix_preflight_bundle.v1",
+  "artifact_kind": "v5_public_support_matrix_preflight_bundle",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "dimension": "public_support_matrix",
+  "evidence_class": "preflight_current_state",
+  "final_release_bound": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "current_boundary": {
+    "stable_boundary_authority": "docs/PUBLIC-BETA.md",
+    "stable_support_layer": "shipped_baseline_only",
+    "stable_public_doc_version": "v4.0.0",
+    "support_widening_allowed": false,
+    "public_claim_widened": false,
+    "future_v5_support_matrix_present": false
+  },
+  "support_documents": {
+    "public_beta_path": "docs/PUBLIC-BETA.md",
+    "support_boundary_path": "docs/SUPPORT-BOUNDARY.md",
+    "support_surface_inventory_path": "docs/SUPPORT-SURFACE-INVENTORY.md"
+  },
+  "surface_inventory": [
+    {
+      "surface_class": "provider",
+      "current_state": "inventory_only_or_existing_boundary",
+      "future_widening_prerequisite": "provider live integration evidence and operator authorization under PR-Xfinal",
+      "live_evidence_required": true,
+      "operator_authorization_required": true
+    },
+    {
+      "surface_class": "python_version",
+      "current_state": "inventory_only_or_existing_boundary",
+      "future_widening_prerequisite": "full pytest matrix evidence for every promoted Python version under PR-Xfinal",
+      "live_evidence_required": true,
+      "operator_authorization_required": true
+    },
+    {
+      "surface_class": "os_platform",
+      "current_state": "inventory_only_or_existing_boundary",
+      "future_widening_prerequisite": "platform smoke evidence for every promoted OS or architecture under PR-Xfinal",
+      "live_evidence_required": true,
+      "operator_authorization_required": true
+    },
+    {
+      "surface_class": "db_backend",
+      "current_state": "inventory_only_or_existing_boundary",
+      "future_widening_prerequisite": "backend round-trip evidence on the test corpus under PR-Xfinal",
+      "live_evidence_required": true,
+      "operator_authorization_required": true
+    },
+    {
+      "surface_class": "deployment_topology",
+      "current_state": "inventory_only_or_existing_boundary",
+      "future_widening_prerequisite": "deployment and isolation evidence for every promoted topology under PR-Xfinal",
+      "live_evidence_required": true,
+      "operator_authorization_required": true
+    }
+  ],
+  "residual_missing_evidence": [
+    "final v5.0.0 public support matrix with promoted support tier",
+    "operator-authorized public claim language sync",
+    "support-widening live evidence pack under issue 776",
+    "PR-Xfinal all-or-none authorization for support widening and production platform claim"
+  ],
+  "issue_refs": [
+    "https://github.com/Halildeu/ao-kernel/issues/776",
+    "https://github.com/Halildeu/ao-kernel/issues/782",
+    "https://github.com/Halildeu/ao-kernel/issues/895"
+  ]
+}

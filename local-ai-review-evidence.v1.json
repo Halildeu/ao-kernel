@@ -7,16 +7,23 @@
     {
       "name": "secret_scan",
       "status": "pass"
+    },
+    {
+      "name": "guard_invariants",
+      "status": "pass"
+    },
+    {
+      "name": "scope_alignment",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic reviewer verdict AGREE: no blocking issue in the V5 E-9-1 security/SBOM/license preflight evidence bundle.",
-    "Fail-closed guard state verified: schema and fixture pin final_release_bound=false, support_widening=false, production_platform_claim=false, and live_adapter_execution=false.",
-    "Matrix linkage verified: security_sbom_license_scans remains partial and links the new preflight bundle while final release-bound SBOM/license/security evidence remains missing.",
-    "Schema strictness verified: Draft 2020-12 schema closes object nodes with additionalProperties=false and unevaluatedProperties=false.",
-    "No workflow, ruleset, runtime, release, tag, publish, support widening, production claim, or live adapter execution mutation observed.",
-    "Tests considered: python3 -m pytest tests/test_v5_security_sbom_license_preflight_bundle.py tests/test_v5_production_readiness_matrix_blocker.py tests/test_sbom_generation.py tests/test_license_compliance.py -q => 79 passed, 1 skipped.",
-    "Secret scan considered: gitleaks over the working diff reported no leaks."
+    "Anthropic reviewer verdict AGREE: no blocking issue in the V5 E-9-1 public support matrix preflight bundle.",
+    "Schema strictness and fixture validation are pinned by tests; object nodes close additionalProperties and unevaluatedProperties.",
+    "The bundle links PUBLIC-BETA, SUPPORT-BOUNDARY, and SUPPORT-SURFACE-INVENTORY without widening public support.",
+    "Matrix linkage is correct: public_support_matrix gains current evidence refs while status remains partial and PR-Xfinal remains blocked.",
+    "No production-ready claim, support-widening authorization, live adapter execution, v5.0.0 tag, publish, or release authority change is introduced.",
+    "Local validation considered: 26 passed, 1 skipped; secret scan passed; guard invariants passed."
   ],
   "implementer": {
     "agent": "codex",
@@ -26,7 +33,7 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "claude-opus-4-6-anthropic-reviewer",
+    "agent": "claude-sonnet-4-6-anthropic-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
@@ -35,17 +42,17 @@
     "base_ref": "refs/heads/main",
     "changed_files": [
       ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
-      ".claude/plans/V5-SECURITY-SBOM-LICENSE-PREFLIGHT-BUNDLE.md",
+      ".claude/plans/V5-PUBLIC-SUPPORT-MATRIX-PREFLIGHT-BUNDLE.md",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/v5-security-sbom-license-preflight-bundle.schema.v1.json",
+      "ao_kernel/defaults/schemas/v5-public-support-matrix-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/fixtures/epic9/v5-security-sbom-license-preflight.current.json",
-      "tests/test_v5_security_sbom_license_preflight_bundle.py"
+      "tests/fixtures/epic9/v5-public-support-matrix-preflight.current.json",
+      "tests/test_v5_public_support_matrix_preflight_bundle.py"
     ],
-    "head_ref": "refs/heads/codex/v5-security-sbom-license-preflight-bundle"
+    "head_ref": "refs/heads/codex/v5-public-support-matrix-preflight-bundle-wt"
   },
   "secrets_recorded": false,
   "support_widening": false,

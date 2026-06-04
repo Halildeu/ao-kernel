@@ -32,7 +32,7 @@ The V5 production readiness matrix is **not complete**.
 
 | Dimension | Current status | Reason PR-Xfinal remains blocked |
 |---|---|---|
-| public support matrix | partial | final v5 public support tier and claim-language sync missing |
+| public support matrix | partial | current support-boundary preflight bundle exists; final v5 public support tier and claim-language sync missing |
 | protected real provider live calls | not_ready | 7-day live window and protected environment evidence missing |
 | cost/rate/circuit breaker evidence | partial | live cost/breach/rollback evidence missing |
 | observability production tunables | partial | final claim-bound observability/alerting evidence missing |
@@ -59,6 +59,16 @@ the only safe action is evidence collection under the existing issue refs:
 - `#895` all-or-none PR-Xfinal.
 
 ## Current Evidence Bundle Cross-Refs
+
+The `public_support_matrix` dimension now has a current-state public support
+matrix preflight bundle:
+
+- `.claude/plans/V5-PUBLIC-SUPPORT-MATRIX-PREFLIGHT-BUNDLE.md`
+- `tests/fixtures/epic9/v5-public-support-matrix-preflight.current.json`
+
+This public support matrix preflight bundle binds the existing public support boundary, support surface
+inventory, and residual PR-Xfinal support-widening gaps without treating them
+as final promoted public support.
 
 The `security_sbom_license_scans` dimension now has a current-state
 security/SBOM/license preflight bundle:

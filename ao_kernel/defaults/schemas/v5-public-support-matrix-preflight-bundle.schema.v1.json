@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-public-support-matrix-preflight-bundle:v1",
+  "title": "V5 public support matrix preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 public support matrix dimension. It records the existing support boundary documents and surface inventory while keeping final support-tier promotion and all production guard flags fail-closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "final_release_bound",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "current_boundary",
+    "support_documents",
+    "surface_inventory",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": { "const": "v5_public_support_matrix_preflight_bundle.v1" },
+    "artifact_kind": { "const": "v5_public_support_matrix_preflight_bundle" },
+    "repo": { "const": "Halildeu/ao-kernel" },
+    "work_package": { "const": "E-9-1" },
+    "dimension": { "const": "public_support_matrix" },
+    "evidence_class": { "const": "preflight_current_state" },
+    "final_release_bound": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "current_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "stable_boundary_authority",
+        "stable_support_layer",
+        "stable_public_doc_version",
+        "support_widening_allowed",
+        "public_claim_widened",
+        "future_v5_support_matrix_present"
+      ],
+      "properties": {
+        "stable_boundary_authority": { "const": "docs/PUBLIC-BETA.md" },
+        "stable_support_layer": { "const": "shipped_baseline_only" },
+        "stable_public_doc_version": { "const": "v4.0.0" },
+        "support_widening_allowed": { "const": false },
+        "public_claim_widened": { "const": false },
+        "future_v5_support_matrix_present": { "const": false }
+      }
+    },
+    "support_documents": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "public_beta_path",
+        "support_boundary_path",
+        "support_surface_inventory_path"
+      ],
+      "properties": {
+        "public_beta_path": { "const": "docs/PUBLIC-BETA.md" },
+        "support_boundary_path": { "const": "docs/SUPPORT-BOUNDARY.md" },
+        "support_surface_inventory_path": { "const": "docs/SUPPORT-SURFACE-INVENTORY.md" }
+      }
+    },
+    "surface_inventory": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/surface_dimension" },
+      "allOf": [
+        { "contains": { "properties": { "surface_class": { "const": "provider" } }, "required": ["surface_class"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "surface_class": { "const": "python_version" } }, "required": ["surface_class"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "surface_class": { "const": "os_platform" } }, "required": ["surface_class"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "surface_class": { "const": "db_backend" } }, "required": ["surface_class"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "surface_class": { "const": "deployment_topology" } }, "required": ["surface_class"] }, "minContains": 1, "maxContains": 1 }
+      ]
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "minItems": 4,
+      "items": { "type": "string", "minLength": 1 },
+      "contains": { "const": "final v5.0.0 public support matrix with promoted support tier" }
+    },
+    "issue_refs": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/776" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/782" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/895" }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    }
+  },
+  "$defs": {
+    "surface_dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "surface_class",
+        "current_state",
+        "future_widening_prerequisite",
+        "live_evidence_required",
+        "operator_authorization_required"
+      ],
+      "properties": {
+        "surface_class": {
+          "enum": [
+            "provider",
+            "python_version",
+            "os_platform",
+            "db_backend",
+            "deployment_topology"
+          ]
+        },
+        "current_state": { "const": "inventory_only_or_existing_boundary" },
+        "future_widening_prerequisite": { "type": "string", "minLength": 1 },
+        "live_evidence_required": { "const": true },
+        "operator_authorization_required": { "const": true }
+      }
+    }
+  }
+}
