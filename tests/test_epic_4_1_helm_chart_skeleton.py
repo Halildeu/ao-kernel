@@ -394,9 +394,12 @@ def test_evidence_validates_against_schema() -> None:
 
 
 def test_write_set_exact_match_git_diff() -> None:
+    git_diff = _changed_files_against_origin_main()
+    evidence_path = str(_EVIDENCE_PATH.relative_to(_REPO_ROOT))
+    if evidence_path not in git_diff:
+        pytest.skip("E-4-1 write_set exactness applies only when the E-4-1 evidence artifact is in the PR diff")
     evidence = json.loads(_EVIDENCE_PATH.read_text(encoding="utf-8"))
     evidence_write_set = sorted(set(evidence["write_set"]))
-    git_diff = _changed_files_against_origin_main()
     assert evidence_write_set == git_diff, (
         "evidence.write_set diverges from git diff --name-only origin/main..HEAD\n"
         f"  evidence: {evidence_write_set}\n"
