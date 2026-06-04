@@ -20,6 +20,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-4-5 NetworkPolicy + PodSecurityStandards baseline** (V5 Epic 4,
+  #864): added an opt-in default-deny NetworkPolicy and PSS restricted
+  namespace-label guidance for the ao-kernel Helm chart. DNS egress is scoped
+  to the configured kube-dns namespace, operator egress widening is explicit
+  in values, and no live cluster command, workflow mutation, guard-flag flip,
+  or production readiness claim is introduced.
 - **E-4-4 observability surface** (V5 Epic 4, #863): opt-in Prometheus
   Operator ServiceMonitor CRD + optional hardened OTEL collector sidecar in
   the ao-kernel Helm chart (both disabled by default). Chart does not install

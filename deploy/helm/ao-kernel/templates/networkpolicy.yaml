@@ -1,0 +1,61 @@
+{{- if .Values.networkPolicy.enabled }}
+# NetworkPolicy (V5 Epic 4 E-4-5) — default-deny baseline.
+#
+# OPT-IN: rendered only when networkPolicy.enabled=true. Default-deny ingress
+# + scoped egress (DNS + operator-allowed CIDRs). The operator MUST review and
+# widen egress for the LLM provider endpoints their deployment actually uses.
+# The chart ships a least-privilege baseline; it does not assume internet-wide
+# egress.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ao-kernel.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ao-kernel.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ao-kernel.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    {{- if .Values.networkPolicy.ingress.allowSameNamespace }}
+    # Allow ingress from same-namespace pods (e.g. a scraping Prometheus).
+    - from:
+        - podSelector: {}
+      ports:
+        - port: http
+          protocol: TCP
+    {{- end }}
+    {{- with .Values.networkPolicy.ingress.extraFrom }}
+    - from:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+  egress:
+    # DNS resolution — scoped to the kube-dns namespace ONLY (Codex E-4-5
+    # review absorb): an empty all-namespaces selector would open UDP/TCP 53
+    # to EVERY namespace's pods, not just the cluster DNS. We scope to the
+    # well-known `kube-system` namespace via its immutable metadata label.
+    # Operators whose DNS lives elsewhere override dnsNamespace.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.egress.dnsNamespace | quote }}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- with .Values.networkPolicy.egress.allowCidrs }}
+    # Operator-allowed egress CIDRs (e.g. LLM provider ranges). Operator MUST
+    # scope these to the providers actually used; default is empty (no egress
+    # beyond DNS until the operator widens).
+    - to:
+        {{- range . }}
+        - ipBlock:
+            cidr: {{ . | quote }}
+        {{- end }}
+    {{- end }}
+{{- end }}

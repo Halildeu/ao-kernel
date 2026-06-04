@@ -226,6 +226,9 @@ _VALUES_SCHEMA_FREEFORM_PATHS = frozenset(
         # E-4-4: ServiceMonitor additionalLabels is a free-form k8s label map
         # (operator labels the ServiceMonitor so a per-tenant Prometheus selects it).
         "$.properties.monitoring.properties.serviceMonitor.properties.additionalLabels",
+        # E-4-5: extraFrom items are free-form k8s NetworkPolicyPeer objects
+        # (podSelector/namespaceSelector/ipBlock); operator supplies the shape.
+        "$.properties.networkPolicy.properties.ingress.properties.extraFrom.items",
     }
 )
 

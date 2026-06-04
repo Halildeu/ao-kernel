@@ -389,6 +389,59 @@
           "type": "string"
         }
       }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "ingress": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allowSameNamespace": {
+              "type": "boolean"
+            },
+            "extraFrom": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "egress": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dnsNamespace": {
+              "type": "string"
+            },
+            "allowCidrs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "podSecurityStandards": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enforceProfile": {
+          "type": "string",
+          "enum": [
+            "privileged",
+            "baseline",
+            "restricted"
+          ]
+        }
+      }
     }
   },
   "$defs": {
