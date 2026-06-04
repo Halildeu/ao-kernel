@@ -47,6 +47,14 @@
       "superseded_by": null,
       "supersedes": [],
       "title": "Cost ceiling enforcement for V5 Epic 2 infrastructure"
+    },
+    {
+      "filename": "ADR-0007-secret-resolution-discipline.md",
+      "id": "ADR-0007",
+      "status": "accepted",
+      "superseded_by": null,
+      "supersedes": [],
+      "title": "Secret resolution discipline for V5 Epic 2 infrastructure"
     }
   ],
   "schema_version": "ao-ma-adr-index.v1"
