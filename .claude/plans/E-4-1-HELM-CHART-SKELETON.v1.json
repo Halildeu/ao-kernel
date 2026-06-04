@@ -8,6 +8,7 @@
   "write_set": [
     ".claude/plans/E-4-1-HELM-CHART-SKELETON.md",
     ".claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json",
+    "CHANGELOG.md",
     "ao_kernel/defaults/schemas/e-4-1-helm-chart-evidence.schema.v1.json",
     "deploy/helm/ao-kernel/Chart.yaml",
     "deploy/helm/ao-kernel/README.md",

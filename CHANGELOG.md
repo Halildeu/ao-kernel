@@ -26,6 +26,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 Epic 4 E-4-1 Helm chart skeleton**: added the first
+  operator-installable `deploy/helm/ao-kernel/` chart skeleton with
+  render-only templates, strict `values.schema.json`, namespace-scoped
+  RBAC, no workflow mutation, no live cluster command guidance, and
+  explicit guard-flag preservation for the Kubernetes/multi-tenant
+  roadmap.
 - **V5 Epic 4 Kubernetes Helm + multi-tenant plan**: added the
   Epic 4 plan for an operator-installable Helm chart skeleton,
   multi-tenant advisory boundary contract, operator-owned database and

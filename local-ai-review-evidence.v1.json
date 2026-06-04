@@ -13,29 +13,33 @@
       "status": "pass"
     },
     {
-      "name": "epic_4_plan_boundary",
+      "name": "helm_chart_skeleton_invariants",
+      "status": "pass"
+    },
+    {
+      "name": "cross_ai_review",
       "status": "pass"
     }
   ],
   "findings": [
-    "Plan is documentation-only for Epic 4 Kubernetes Helm and multi-tenant sequencing.",
-    "The PR scope is limited to the Epic 4 plan document, CHANGELOG entry, and this local review evidence.",
-    "No runtime code, workflow, CODEOWNERS, branch-protection, ruleset, webhook, or secret surfaces are changed by this PR.",
-    "The plan preserves zero-touch .github/workflows discipline and requires machine-enforced write-set invariants for future slices.",
-    "Guard flags live_adapter_execution, support_widening, and production_platform_claim remain false and are not authorized by this plan.",
-    "The plan records Codex iter-2 AGREE for the plan PR and keeps per-slice implementation review requirements in force.",
-    "E-4-2b remains explicitly high-risk and requires 3-way Codex plus Mavis/MiniMax evidence before final multi-tenant matrix sealing.",
-    "No live Helm install, kubectl apply, production readiness claim, support widening, or live adapter execution is introduced."
+    "The PR scope is the V5 Epic 4 E-4-1 Helm chart skeleton: chart files, evidence schema, plan evidence, slice tests, changelog entry, and this local review evidence.",
+    "The Helm chart remains render-only and operator-installable; no live cluster command, workflow mutation, CODEOWNERS change, ruleset change, pyproject change, webhook change, or runtime public API change is introduced.",
+    "Codex post-implementation review thread 019e87c9-c6b9-7e43-bd89-6ef7d21704b7 returned REVISE for untyped rbac.rules/tolerations arrays and premature verdict wording; both findings were absorbed before this AGREE evidence.",
+    "Typed values.schema.json definitions now fail closed for invalid rbac.rules and tolerations payloads, with tests covering both static no-untyped-arrays walking and helm template negative paths.",
+    "The write set is machine-pinned by tests/test_epic_4_1_helm_chart_skeleton.py against git diff origin/main...HEAD, including CHANGELOG.md and local-ai-review-evidence.v1.json.",
+    "Guard flags live_adapter_execution, support_widening, and production_platform_claim remain false and are not authorized by this slice.",
+    "No secret material is recorded; chart values use secretKeyRef indirection and the chart/tests include secret-pattern scanning.",
+    "Provider-level separation is preserved: implementer is anthropic and reviewer is openai; AI output remains evidence only, not release authority."
   ],
   "implementer": {
-    "agent": "claude-opus-4.7-epic-4-plan",
+    "agent": "claude-opus-4.7-helm-chart-skeleton",
     "provider": "anthropic"
   },
   "live_adapter_execution": false,
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "codex-epic-4-plan-rebase-reviewer",
+    "agent": "codex-post-impl-reviewer-019e87c9",
     "provider": "openai",
     "verdict": "AGREE"
   },
@@ -43,13 +47,27 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+      ".claude/plans/E-4-1-HELM-CHART-SKELETON.md",
+      ".claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json",
       "CHANGELOG.md",
-      "local-ai-review-evidence.v1.json"
+      "ao_kernel/defaults/schemas/e-4-1-helm-chart-evidence.schema.v1.json",
+      "deploy/helm/ao-kernel/Chart.yaml",
+      "deploy/helm/ao-kernel/README.md",
+      "deploy/helm/ao-kernel/templates/NOTES.txt",
+      "deploy/helm/ao-kernel/templates/_helpers.tpl",
+      "deploy/helm/ao-kernel/templates/configmap.yaml",
+      "deploy/helm/ao-kernel/templates/deployment.yaml",
+      "deploy/helm/ao-kernel/templates/rbac.yaml",
+      "deploy/helm/ao-kernel/templates/service.yaml",
+      "deploy/helm/ao-kernel/templates/serviceaccount.yaml",
+      "deploy/helm/ao-kernel/values.schema.json",
+      "deploy/helm/ao-kernel/values.yaml",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_epic_4_1_helm_chart_skeleton.py"
     ],
-    "head_ref": "refs/heads/codex/epic-4-helm-plan"
+    "head_ref": "refs/heads/codex/epic-4-1-helm-chart"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-825-epic-4-kubernetes-helm-plan"
+  "work_package": "AO-MA-829-helm-chart-skeleton"
 }
