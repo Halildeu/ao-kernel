@@ -12,8 +12,8 @@
     "verdict": "AGREE"
   },
   "scope_reviewed": {
-    "base_ref": "origin/main",
-    "head_ref": "HEAD",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/e-1-7-shadow-skip-status-sync",
     "changed_files": [
       ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       ".claude/plans/v5_subissues_mirror.v1.json",
