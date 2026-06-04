@@ -1,29 +1,26 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-824-pgvector-backend",
+  "work_package": "AO-MA-917-release-gate-dependabot-scope",
   "implementer": {
-    "agent": "codex-gpt-5-e7-5-pgvector-rebase-fix",
+    "agent": "codex-gpt-5-release-gate-dependabot-scope",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-code-reviewer-pr824-e75-final",
+    "agent": "claude-code-independent-reviewer-dependabot-scope",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-7-5-pgvector-backend",
+    "head_ref": "refs/heads/codex/ao-release-gate-dependabot-scope",
     "changed_files": [
-      ".claude/plans/EPIC-7-5-PGVECTOR-BACKEND.md",
       "CHANGELOG.md",
-      "ao_kernel/context/semantic_backends/__init__.py",
-      "ao_kernel/context/semantic_backends/base.py",
-      "ao_kernel/context/semantic_backends/in_memory.py",
-      "ao_kernel/context/semantic_backends/pgvector.py",
-      "tests/test_semantic_backends.py",
-      "tests/test_epic_4_2a_multi_tenant_boundary.py",
-      "local-ai-review-evidence.v1.json"
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "scripts/ao_release_gate_build_payload.py",
+      "tests/test_ao_release_gate_build_payload.py"
     ]
   },
   "checks_considered": [
@@ -36,42 +33,43 @@
       "status": "pass"
     },
     {
-      "name": "lazy_import_discipline",
+      "name": "exact_path_not_prefix_widening",
       "status": "pass"
     },
     {
-      "name": "guard_flag_const_false",
+      "name": "workflow_governance_unchanged",
       "status": "pass"
     },
     {
-      "name": "operator_dsn_env_boundary",
+      "name": "codeowners_governance_unchanged",
       "status": "pass"
     },
     {
-      "name": "table_identifier_validation",
+      "name": "ruleset_governance_unchanged",
       "status": "pass"
     },
     {
-      "name": "workflow_mutation_guard",
+      "name": "live_adapter_gate_unchanged",
+      "status": "pass"
+    },
+    {
+      "name": "support_widening_claim_unchanged",
+      "status": "pass"
+    },
+    {
+      "name": "production_platform_claim_unchanged",
       "status": "pass"
     },
     {
       "name": "changelog_discipline",
       "status": "pass"
-    },
-    {
-      "name": "scope_containment",
-      "status": "pass"
-    },
-    {
-      "name": "e42a_slice_invariant_scope_fix",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Advisory: search() SQL binds query_embedding 3x via separate %s placeholders; suboptimal but functionally correct and safe.",
-    "CI fix: E-4-2a slice-specific pyproject/runtime/write_set invariants now skip unless the E-4-2a evidence artifact is in the PR diff; Claude re-review verdict AGREE.",
-    "No blocking findings. All 7 review criteria pass."
+    "Claude independent review returned AGREE for the exact .github/dependabot.yml release-gate scope fix.",
+    "The patch adds only an exact Dependabot config path, not a generic .github/ prefix.",
+    "Workflow, CODEOWNERS, ruleset, branch-protection, live-adapter, support-widening, and production-claim surfaces remain independently governed.",
+    "Local verification reported 20 focused tests passed and git diff --check clean before evidence regeneration."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
