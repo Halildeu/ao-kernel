@@ -1,28 +1,4 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "E-9-1",
-  "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/gate-c-dim9-bypassless-governance-preflight-cc-0605",
-    "changed_files": [
-      ".claude/plans/V5-BYPASSLESS-GOVERNANCE-PREFLIGHT-BUNDLE.md",
-      "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/v5-bypassless-governance-preflight-bundle.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "tests/fixtures/epic9/v5-bypassless-governance-preflight.current.json",
-      "tests/test_v5_bypassless_governance_preflight_bundle.py"
-    ]
-  },
   "checks_considered": [
     {
       "name": "tests",
@@ -62,13 +38,37 @@
     "Codex iter-1 REVISE: governance_controls did not pin exactly the 4 canonical controls (uniqueItems compared whole objects); residual_missing_evidence was only minItems=1. Both absorbed.",
     "Absorb: governance_controls now uses allOf contains + minContains/maxContains (dim#1 pattern) to require each of the 4 controls exactly once; residual_missing_evidence pins exactly 2 slots with source-pin and uniqueness concept patterns.",
     "Codex iter-2: AGREE, no further findings; confirmed non-colliding (no edit to v5-production-readiness-matrix.current.json), matrix stays matrix_complete=false with dim#9 not_ready|partial, and no hidden complete/flip path.",
-    "Codex confirmed the current_state 'active_in_current_repo_governance' claim is defensible from repo-local evidence (AO-MA-10A0 snapshot dual required checks + bypass_actors_count=0; low-risk autonomous lane PR #737 no --admin).",
+    "Codex confirmed the current_state active_in_current_repo_governance claim is defensible from repo-local evidence (AO-MA-10A0 snapshot dual required checks + bypass_actors_count=0; low-risk autonomous lane PR #737 no --admin).",
     "Boundary: preflight current-state evidence only; does not open PR-Xfinal, flip guard flags, or advance the matrix dimension to complete. The final ruleset source-pin and required-check uniqueness evidence remain PR-Xfinal-bound.",
     "Local validation: 10 invariant tests passed; schema valid (Draft 2020-12, strict); fixture validates; ruff clean; epic9/preflight test group 76 passed (no regression to #956/#958).",
     "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/V5-BYPASSLESS-GOVERNANCE-PREFLIGHT-BUNDLE.md",
+      "CHANGELOG.md",
+      "ao_kernel/defaults/schemas/v5-bypassless-governance-preflight-bundle.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/fixtures/epic9/v5-bypassless-governance-preflight.current.json",
+      "tests/test_v5_bypassless_governance_preflight_bundle.py"
+    ],
+    "head_ref": "refs/heads/feat/gate-c-dim9-bypassless-governance-preflight-cc-0605"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "E-9-1"
 }

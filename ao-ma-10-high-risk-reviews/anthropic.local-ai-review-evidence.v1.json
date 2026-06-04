@@ -18,12 +18,12 @@
     }
   ],
   "findings": [
-    "Anthropic reviewer verdict AGREE: no blocking issue in the V5 E-9-1 public support matrix preflight bundle.",
-    "Schema strictness and fixture validation are pinned by tests; object nodes close additionalProperties and unevaluatedProperties.",
-    "The bundle links PUBLIC-BETA, SUPPORT-BOUNDARY, and SUPPORT-SURFACE-INVENTORY without widening public support.",
-    "Matrix linkage is correct: public_support_matrix gains current evidence refs while status remains partial and PR-Xfinal remains blocked.",
-    "No production-ready claim, support-widening authorization, live adapter execution, v5.0.0 tag, publish, or release authority change is introduced.",
-    "Local validation considered: 26 passed, 1 skipped; secret scan passed; guard invariants passed."
+    "Anthropic reviewer verdict AGREE: no blocking issue in the V5 E-9-1 observability production tunables preflight bundle.",
+    "Schema strictness is adequate: root and nested object nodes close additionalProperties and unevaluatedProperties.",
+    "Fixture validates and preserves preflight_current_state semantics; residual PR-Xfinal observability evidence remains missing.",
+    "Tests cover guard flips, schema strictness, fixture validation, Grafana, SLI/SLO, performance policy, matrix linkage, and positive-claim token discipline.",
+    "The V5 matrix keeps observability_production_tunables partial and preserves matrix_complete=false.",
+    "No support widening, production platform claim, live adapter execution, v5 tag, publish, workflow, ruleset, runtime, or release authority change is introduced."
   ],
   "implementer": {
     "agent": "codex",
@@ -41,18 +41,18 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
+      ".claude/plans/V5-OBSERVABILITY-PRODUCTION-TUNABLES-PREFLIGHT-BUNDLE.md",
       ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
-      ".claude/plans/V5-PUBLIC-SUPPORT-MATRIX-PREFLIGHT-BUNDLE.md",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/v5-public-support-matrix-preflight-bundle.schema.v1.json",
+      "ao_kernel/defaults/schemas/v5-observability-production-tunables-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
+      "tests/fixtures/epic9/v5-observability-production-tunables-preflight.current.json",
       "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/fixtures/epic9/v5-public-support-matrix-preflight.current.json",
-      "tests/test_v5_public_support_matrix_preflight_bundle.py"
+      "tests/test_v5_observability_production_tunables_preflight_bundle.py"
     ],
-    "head_ref": "refs/heads/codex/v5-public-support-matrix-preflight-bundle-wt"
+    "head_ref": "refs/heads/codex/v5-observability-preflight-bundle"
   },
   "secrets_recorded": false,
   "support_widening": false,

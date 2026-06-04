@@ -43,6 +43,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 observability production tunables preflight bundle** (V5 Epic 9,
+  #895): added `V5-OBSERVABILITY-PRODUCTION-TUNABLES-PREFLIGHT-BUNDLE.md`,
+  `v5-observability-production-tunables-preflight-bundle.schema.v1.json`, and
+  a current-state fixture/test suite that binds Grafana dashboard shape,
+  SLI/SLO catalog discipline, and advisory performance policy evidence to the
+  `observability_production_tunables` production-readiness dimension. This is
+  preflight evidence only: final claim-bound observability smoke,
+  alert/escalation evidence, and PR-Xfinal runbook sync remain missing while
+  `support_widening` / `production_platform_claim` / `live_adapter_execution`
+  remain false.
 - **V5 bypassless governance preflight bundle** (V5 Epic 9 Gate C, #960):
   added `V5-BYPASSLESS-GOVERNANCE-PREFLIGHT-BUNDLE.md`,
   `v5-bypassless-governance-preflight-bundle.schema.v1.json`, a current-state

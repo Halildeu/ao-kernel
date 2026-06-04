@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-observability-production-tunables-preflight-bundle:v1",
+  "title": "V5 observability production tunables preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 observability production tunables dimension. It records existing Grafana, SLI/SLO, and performance policy evidence while keeping final claim-bound smoke, alert escalation evidence, and all production guard flags fail-closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "final_release_bound",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "grafana_dashboard",
+    "sli_catalog",
+    "performance_policy",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "v5_observability_production_tunables_preflight_bundle.v1"
+    },
+    "artifact_kind": {
+      "const": "v5_observability_production_tunables_preflight_bundle"
+    },
+    "repo": {
+      "const": "Halildeu/ao-kernel"
+    },
+    "work_package": {
+      "const": "E-9-1"
+    },
+    "dimension": {
+      "const": "observability_production_tunables"
+    },
+    "evidence_class": {
+      "const": "preflight_current_state"
+    },
+    "final_release_bound": {
+      "const": false
+    },
+    "support_widening": {
+      "const": false
+    },
+    "production_platform_claim": {
+      "const": false
+    },
+    "live_adapter_execution": {
+      "const": false
+    },
+    "grafana_dashboard": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "dashboard_path",
+        "dashboard_readme_path",
+        "dashboard_shape_test_path",
+        "documented_panel_count",
+        "datasource_variable",
+        "advanced_overlay_required",
+        "final_claim_bound"
+      ],
+      "properties": {
+        "dashboard_path": {
+          "const": "docs/grafana/ao_kernel_default.v1.json"
+        },
+        "dashboard_readme_path": {
+          "const": "docs/grafana/README.md"
+        },
+        "dashboard_shape_test_path": {
+          "const": "tests/test_grafana_dashboard_shape.py"
+        },
+        "documented_panel_count": {
+          "const": 8
+        },
+        "datasource_variable": {
+          "const": "DS_PROMETHEUS"
+        },
+        "advanced_overlay_required": {
+          "const": false
+        },
+        "final_claim_bound": {
+          "const": false
+        }
+      }
+    },
+    "sli_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "catalog_path",
+        "catalog_schema_path",
+        "catalog_doc_path",
+        "catalog_test_path",
+        "indicator_count",
+        "hard_slo_count",
+        "advisory_sli_count",
+        "budget_objective_count",
+        "uptime_in_scope",
+        "operator_owned",
+        "contractual_sla",
+        "alerting_or_escalation_evidence_present"
+      ],
+      "properties": {
+        "catalog_path": {
+          "const": "docs/sli-catalog.v1.json"
+        },
+        "catalog_schema_path": {
+          "const": "ao_kernel/defaults/schemas/sli-catalog.schema.v1.json"
+        },
+        "catalog_doc_path": {
+          "const": "docs/SLI-SLO.md"
+        },
+        "catalog_test_path": {
+          "const": "tests/test_sli_slo_catalog.py"
+        },
+        "indicator_count": {
+          "const": 6
+        },
+        "hard_slo_count": {
+          "const": 3
+        },
+        "advisory_sli_count": {
+          "const": 2
+        },
+        "budget_objective_count": {
+          "const": 1
+        },
+        "uptime_in_scope": {
+          "const": false
+        },
+        "operator_owned": {
+          "const": true
+        },
+        "contractual_sla": {
+          "const": false
+        },
+        "alerting_or_escalation_evidence_present": {
+          "const": false
+        }
+      }
+    },
+    "performance_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "readme_path",
+        "baseline_path",
+        "threshold_path",
+        "scenario_catalog_path",
+        "performance_test_path",
+        "enforcement_mode",
+        "candidate_baseline",
+        "sample_count",
+        "final_claim_bound",
+        "ci_blocking_enforced"
+      ],
+      "properties": {
+        "readme_path": {
+          "const": "docs/performance/README.md"
+        },
+        "baseline_path": {
+          "const": "docs/performance/baseline.v1.json"
+        },
+        "threshold_path": {
+          "const": "docs/performance/performance-regression-threshold.v1.json"
+        },
+        "scenario_catalog_path": {
+          "const": "docs/performance/performance-scenario-catalog.v1.json"
+        },
+        "performance_test_path": {
+          "const": "tests/test_performance_baseline.py"
+        },
+        "enforcement_mode": {
+          "const": "advisory"
+        },
+        "candidate_baseline": {
+          "const": true
+        },
+        "sample_count": {
+          "const": 1
+        },
+        "final_claim_bound": {
+          "const": false
+        },
+        "ci_blocking_enforced": {
+          "const": false
+        }
+      }
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "contains": {
+        "const": "final claim-bound observability smoke"
+      }
+    },
+    "issue_refs": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "const": "https://github.com/Halildeu/ao-kernel/issues/782"
+        },
+        {
+          "const": "https://github.com/Halildeu/ao-kernel/issues/895"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    }
+  }
+}

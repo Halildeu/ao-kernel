@@ -18,16 +18,17 @@
     }
   ],
   "findings": [
-    "OpenAI reviewer verdict AGREE: V5 E-9-1 public support matrix preflight scope is aligned.",
-    "Current public support boundary is recorded as preflight evidence only; no promoted support tier is introduced.",
-    "Guard state remains fail-closed: support_widening=false, production_platform_claim=false, live_adapter_execution=false, and final_release_bound=false.",
-    "The V5 production readiness matrix keeps public_support_matrix partial and preserves residual PR-Xfinal blockers.",
-    "Schema, fixture, tests, and changelog are limited to current-state evidence and do not mutate workflow, ruleset, runtime, release, tag, or publish surfaces.",
-    "Local validation considered: targeted pytest passed, git diff whitespace check passed, and gitleaks over the diff reported no leaks."
+    "OpenAI reviewer verdict AGREE: V5 E-9-1 observability preflight scope is aligned.",
+    "The 7-file slice plus 3 review evidence files is current-state observability evidence only.",
+    "Schema is strict and pins final_release_bound=false plus support_widening=false, production_platform_claim=false, and live_adapter_execution=false.",
+    "Sub-claim guards fail closed for alert/escalation evidence, CI-blocking performance enforcement, and Grafana final-claim binding.",
+    "Matrix linkage is correct: observability_production_tunables stays partial and matrix_complete remains false.",
+    "No workflow, ruleset, runtime, release, tag, publish, or PR-Xfinal surface is changed.",
+    "Local validation considered: targeted pytest passed, JSON parse passed, git diff whitespace check passed, guard invariants passed, and secret scan over the diff passed."
   ],
   "implementer": {
     "agent": "codex",
-    "provider": "openai"
+    "kind": "human"
   },
   "live_adapter_execution": false,
   "production_platform_claim": false,
@@ -41,18 +42,18 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
+      ".claude/plans/V5-OBSERVABILITY-PRODUCTION-TUNABLES-PREFLIGHT-BUNDLE.md",
       ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
-      ".claude/plans/V5-PUBLIC-SUPPORT-MATRIX-PREFLIGHT-BUNDLE.md",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/v5-public-support-matrix-preflight-bundle.schema.v1.json",
+      "ao_kernel/defaults/schemas/v5-observability-production-tunables-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
+      "tests/fixtures/epic9/v5-observability-production-tunables-preflight.current.json",
       "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/fixtures/epic9/v5-public-support-matrix-preflight.current.json",
-      "tests/test_v5_public_support_matrix_preflight_bundle.py"
+      "tests/test_v5_observability_production_tunables_preflight_bundle.py"
     ],
-    "head_ref": "refs/heads/codex/v5-public-support-matrix-preflight-bundle-wt"
+    "head_ref": "refs/heads/codex/v5-observability-preflight-bundle"
   },
   "secrets_recorded": false,
   "support_widening": false,
