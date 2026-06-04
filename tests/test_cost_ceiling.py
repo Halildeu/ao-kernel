@@ -250,7 +250,7 @@ def test_reservation_hard_breach_rejected(tmp_path: Path) -> None:
     assert rows[-1]["accepted"] is False
 
 
-def test_cost_ceiling_no_workflow_mutation_in_diff() -> None:
+def test_cost_ceiling_no_unrelated_workflow_mutation_in_diff() -> None:
     proc = subprocess.run(
         ["git", "diff", "--name-only", "origin/main...HEAD", "--", ".github/workflows/"],
         cwd=_REPO_ROOT,
@@ -261,4 +261,9 @@ def test_cost_ceiling_no_workflow_mutation_in_diff() -> None:
     if proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
     touched = [p for p in proc.stdout.split() if p]
-    assert not touched, f"E-2-3 must not touch .github/workflows/. Touched: {touched}"
+    # E-2-3 itself must not mutate workflow files. E-2-6 is the first
+    # explicitly authorized workflow slice in the same Epic-2 chain, so keep the
+    # older guard but narrow it to unrelated workflow drift.
+    allowed = {".github/workflows/live-adapter-evidence-emit.yml"}
+    unexpected = [p for p in touched if p not in allowed]
+    assert not unexpected, f"Epic 2 has unrelated workflow mutations. Touched: {unexpected}"
