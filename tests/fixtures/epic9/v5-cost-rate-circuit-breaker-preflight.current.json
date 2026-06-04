@@ -1,0 +1,89 @@
+{
+  "schema_version": "v5_cost_rate_circuit_breaker_preflight_bundle.v1",
+  "artifact_kind": "v5_cost_rate_circuit_breaker_preflight_bundle",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "dimension": "cost_rate_circuit_breaker_evidence",
+  "evidence_class": "preflight_current_state",
+  "final_release_bound": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "cost_tracking_policy": {
+    "doc_path": "docs/COST-MODEL.md",
+    "policy_path": "ao_kernel/defaults/policies/policy_cost_tracking.v1.json",
+    "policy_schema_path": "ao_kernel/defaults/schemas/policy-cost-tracking.schema.v1.json",
+    "policy_test_path": "tests/test_cost_policy.py",
+    "bundled_default_enabled": false,
+    "fail_closed_on_exhaust": true,
+    "fail_closed_on_missing_usage": true,
+    "routing_by_cost_enabled": false,
+    "strict_freshness": false
+  },
+  "cost_ceiling": {
+    "module_path": "ao_kernel/_internal/cost_ceiling.py",
+    "policy_path": "ao_kernel/defaults/policies/policy_cost_ceiling.v1.json",
+    "test_path": "tests/test_cost_ceiling.py",
+    "soft_usd": "0.10000000",
+    "hard_usd": "1.00000000",
+    "hard_breach_raises": true,
+    "hard_breach_audit_write": true,
+    "workspace_state_jsonl": "evidence/cost_ceiling_state.jsonl",
+    "concurrency_lock_serialized": true,
+    "guard_flags_pinned_false": true
+  },
+  "per_call_audit": {
+    "doc_path": "docs/PER-CALL-AUDIT.md",
+    "schema_path": "ao_kernel/defaults/schemas/per_call_audit.schema.v1.json",
+    "writer_path": "ao_kernel/_internal/evidence/per_call_audit.py",
+    "test_path": "tests/test_per_call_audit.py",
+    "actual_cost_required_decimal_string": true,
+    "hard_breach_cross_reference_jsonl": "evidence/cost_hard_breach.jsonl",
+    "provider_call_made": false
+  },
+  "usage_cost_evidence": {
+    "script_path": "scripts/real_adapter_usage_evidence.py",
+    "schema_path": "ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json",
+    "test_path": "tests/test_real_adapter_usage_cost_evidence.py",
+    "autonomous_evidence_class": "simulated",
+    "live_evidence_available": false,
+    "linked_spend_ledger_supported": true
+  },
+  "rate_and_circuit_breaker": {
+    "rate_limiter_path": "ao_kernel/_internal/prj_kernel_api/rate_limiter.py",
+    "rate_limiter_test_path": "tests/test_rate_limiter.py",
+    "circuit_breaker_path": "ao_kernel/_internal/prj_kernel_api/circuit_breaker.py",
+    "circuit_breaker_test_path": "tests/test_circuit_breaker.py",
+    "rate_limiter_registry_reset_tested": true,
+    "circuit_breaker_transitions_tested": true,
+    "final_traffic_policy_evidence_present": false
+  },
+  "incident_response": {
+    "cost_burn_scenario_path": "docs/incident-response/scenarios/04-cost-burn-breach.md",
+    "sli_catalog_path": "docs/sli-catalog.v1.json",
+    "indicator_name": "monthly_cost_burn_projection_usd",
+    "objective_kind": "budget_objective",
+    "active_firing_alert_present": false,
+    "operator_alarm_overlay_required": true
+  },
+  "pricing_snapshot": {
+    "snapshot_path": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json",
+    "snapshot_sha256": "sha256:b0c0baa62cf6f8c79b0ed2e4b751fcc00929eab1e128dbac4ab0d8705f4a4480",
+    "source_authority": "operator_pinned",
+    "currency": "USD",
+    "precision_decimal_places": 8,
+    "final_fresh_pricing_snapshot": false
+  },
+  "residual_missing_evidence": [
+    "live cost evidence bound to the authorized 7-day provider window",
+    "soft and hard breach evidence from a protected live run",
+    "rollback evidence and budget follow-up issue automation from that run",
+    "fresh pricing-source snapshot bound to PR-Xfinal",
+    "operator-authorized budget alarm overlay and escalation evidence for the promoted tier"
+  ],
+  "issue_refs": [
+    "https://github.com/Halildeu/ao-kernel/issues/775",
+    "https://github.com/Halildeu/ao-kernel/issues/782",
+    "https://github.com/Halildeu/ao-kernel/issues/895"
+  ]
+}

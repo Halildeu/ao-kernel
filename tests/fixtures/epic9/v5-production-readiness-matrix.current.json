@@ -67,7 +67,9 @@
       "current_evidence_refs": [
         "docs/PER-CALL-AUDIT.md",
         "scripts/real_adapter_usage_evidence.py",
-        "scripts/live_adapter_evidence_workflow_runner.py"
+        "scripts/live_adapter_evidence_workflow_runner.py",
+        ".claude/plans/V5-COST-RATE-CIRCUIT-BREAKER-PREFLIGHT-BUNDLE.md",
+        "tests/fixtures/epic9/v5-cost-rate-circuit-breaker-preflight.current.json"
       ],
       "missing_evidence": [
         "live cost evidence bound to 7-day window",

@@ -34,7 +34,7 @@ The V5 production readiness matrix is **not complete**.
 |---|---|---|
 | public support matrix | partial | current support-boundary preflight bundle exists; final v5 public support tier and claim-language sync missing |
 | protected real provider live calls | not_ready | 7-day live window and protected environment evidence missing |
-| cost/rate/circuit breaker evidence | partial | live cost/breach/rollback evidence missing |
+| cost/rate/circuit breaker evidence | partial | current cost/rate/circuit breaker preflight bundle exists; live cost/breach/rollback evidence missing |
 | observability production tunables | partial | current observability preflight bundle exists; final claim-bound observability/alerting evidence missing |
 | security/SBOM/license scans | partial | current preflight bundle exists; final release-bound SBOM/license/security bundle missing |
 | install/deploy lifecycle smoke | partial | v5.0.0 tag/publish and release-artifact smoke missing |
@@ -78,6 +78,17 @@ security/SBOM/license preflight bundle:
 
 That bundle binds CodeQL, Trivy, SBOM tooling, and license inventory evidence
 without treating them as final release-bound evidence.
+
+The `cost_rate_circuit_breaker_evidence` dimension now has a current-state
+cost/rate/circuit breaker preflight bundle:
+
+- `.claude/plans/V5-COST-RATE-CIRCUIT-BREAKER-PREFLIGHT-BUNDLE.md`
+- `tests/fixtures/epic9/v5-cost-rate-circuit-breaker-preflight.current.json`
+
+That bundle binds dormant cost tracking defaults, cost ceiling enforcement,
+per-call audit, simulated usage/cost evidence, rate limiter, circuit breaker,
+budget-burn incident, and pricing snapshot evidence without treating them as
+live cost-window evidence or final rollback evidence.
 
 The `observability_production_tunables` dimension now has a current-state
 observability production tunables preflight bundle:

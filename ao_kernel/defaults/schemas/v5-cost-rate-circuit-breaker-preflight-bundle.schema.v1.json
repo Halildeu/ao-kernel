@@ -1,0 +1,357 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-cost-rate-circuit-breaker-preflight-bundle:v1",
+  "title": "V5 cost rate circuit breaker preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 cost/rate/circuit-breaker dimension. It records existing cost policy, ceiling, audit, usage evidence, rate limiter, circuit breaker, incident, and pricing evidence while keeping final live cost evidence and all production guard flags fail-closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "final_release_bound",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "cost_tracking_policy",
+    "cost_ceiling",
+    "per_call_audit",
+    "usage_cost_evidence",
+    "rate_and_circuit_breaker",
+    "incident_response",
+    "pricing_snapshot",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "v5_cost_rate_circuit_breaker_preflight_bundle.v1"
+    },
+    "artifact_kind": {
+      "const": "v5_cost_rate_circuit_breaker_preflight_bundle"
+    },
+    "repo": {
+      "const": "Halildeu/ao-kernel"
+    },
+    "work_package": {
+      "const": "E-9-1"
+    },
+    "dimension": {
+      "const": "cost_rate_circuit_breaker_evidence"
+    },
+    "evidence_class": {
+      "const": "preflight_current_state"
+    },
+    "final_release_bound": {
+      "const": false
+    },
+    "support_widening": {
+      "const": false
+    },
+    "production_platform_claim": {
+      "const": false
+    },
+    "live_adapter_execution": {
+      "const": false
+    },
+    "cost_tracking_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "policy_path",
+        "policy_schema_path",
+        "policy_test_path",
+        "bundled_default_enabled",
+        "fail_closed_on_exhaust",
+        "fail_closed_on_missing_usage",
+        "routing_by_cost_enabled",
+        "strict_freshness"
+      ],
+      "properties": {
+        "doc_path": {
+          "const": "docs/COST-MODEL.md"
+        },
+        "policy_path": {
+          "const": "ao_kernel/defaults/policies/policy_cost_tracking.v1.json"
+        },
+        "policy_schema_path": {
+          "const": "ao_kernel/defaults/schemas/policy-cost-tracking.schema.v1.json"
+        },
+        "policy_test_path": {
+          "const": "tests/test_cost_policy.py"
+        },
+        "bundled_default_enabled": {
+          "const": false
+        },
+        "fail_closed_on_exhaust": {
+          "const": true
+        },
+        "fail_closed_on_missing_usage": {
+          "const": true
+        },
+        "routing_by_cost_enabled": {
+          "const": false
+        },
+        "strict_freshness": {
+          "const": false
+        }
+      }
+    },
+    "cost_ceiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "module_path",
+        "policy_path",
+        "test_path",
+        "soft_usd",
+        "hard_usd",
+        "hard_breach_raises",
+        "hard_breach_audit_write",
+        "workspace_state_jsonl",
+        "concurrency_lock_serialized",
+        "guard_flags_pinned_false"
+      ],
+      "properties": {
+        "module_path": {
+          "const": "ao_kernel/_internal/cost_ceiling.py"
+        },
+        "policy_path": {
+          "const": "ao_kernel/defaults/policies/policy_cost_ceiling.v1.json"
+        },
+        "test_path": {
+          "const": "tests/test_cost_ceiling.py"
+        },
+        "soft_usd": {
+          "const": "0.10000000"
+        },
+        "hard_usd": {
+          "const": "1.00000000"
+        },
+        "hard_breach_raises": {
+          "const": true
+        },
+        "hard_breach_audit_write": {
+          "const": true
+        },
+        "workspace_state_jsonl": {
+          "const": "evidence/cost_ceiling_state.jsonl"
+        },
+        "concurrency_lock_serialized": {
+          "const": true
+        },
+        "guard_flags_pinned_false": {
+          "const": true
+        }
+      }
+    },
+    "per_call_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "schema_path",
+        "writer_path",
+        "test_path",
+        "actual_cost_required_decimal_string",
+        "hard_breach_cross_reference_jsonl",
+        "provider_call_made"
+      ],
+      "properties": {
+        "doc_path": {
+          "const": "docs/PER-CALL-AUDIT.md"
+        },
+        "schema_path": {
+          "const": "ao_kernel/defaults/schemas/per_call_audit.schema.v1.json"
+        },
+        "writer_path": {
+          "const": "ao_kernel/_internal/evidence/per_call_audit.py"
+        },
+        "test_path": {
+          "const": "tests/test_per_call_audit.py"
+        },
+        "actual_cost_required_decimal_string": {
+          "const": true
+        },
+        "hard_breach_cross_reference_jsonl": {
+          "const": "evidence/cost_hard_breach.jsonl"
+        },
+        "provider_call_made": {
+          "const": false
+        }
+      }
+    },
+    "usage_cost_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "script_path",
+        "schema_path",
+        "test_path",
+        "autonomous_evidence_class",
+        "live_evidence_available",
+        "linked_spend_ledger_supported"
+      ],
+      "properties": {
+        "script_path": {
+          "const": "scripts/real_adapter_usage_evidence.py"
+        },
+        "schema_path": {
+          "const": "ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json"
+        },
+        "test_path": {
+          "const": "tests/test_real_adapter_usage_cost_evidence.py"
+        },
+        "autonomous_evidence_class": {
+          "const": "simulated"
+        },
+        "live_evidence_available": {
+          "const": false
+        },
+        "linked_spend_ledger_supported": {
+          "const": true
+        }
+      }
+    },
+    "rate_and_circuit_breaker": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "rate_limiter_path",
+        "rate_limiter_test_path",
+        "circuit_breaker_path",
+        "circuit_breaker_test_path",
+        "rate_limiter_registry_reset_tested",
+        "circuit_breaker_transitions_tested",
+        "final_traffic_policy_evidence_present"
+      ],
+      "properties": {
+        "rate_limiter_path": {
+          "const": "ao_kernel/_internal/prj_kernel_api/rate_limiter.py"
+        },
+        "rate_limiter_test_path": {
+          "const": "tests/test_rate_limiter.py"
+        },
+        "circuit_breaker_path": {
+          "const": "ao_kernel/_internal/prj_kernel_api/circuit_breaker.py"
+        },
+        "circuit_breaker_test_path": {
+          "const": "tests/test_circuit_breaker.py"
+        },
+        "rate_limiter_registry_reset_tested": {
+          "const": true
+        },
+        "circuit_breaker_transitions_tested": {
+          "const": true
+        },
+        "final_traffic_policy_evidence_present": {
+          "const": false
+        }
+      }
+    },
+    "incident_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "cost_burn_scenario_path",
+        "sli_catalog_path",
+        "indicator_name",
+        "objective_kind",
+        "active_firing_alert_present",
+        "operator_alarm_overlay_required"
+      ],
+      "properties": {
+        "cost_burn_scenario_path": {
+          "const": "docs/incident-response/scenarios/04-cost-burn-breach.md"
+        },
+        "sli_catalog_path": {
+          "const": "docs/sli-catalog.v1.json"
+        },
+        "indicator_name": {
+          "const": "monthly_cost_burn_projection_usd"
+        },
+        "objective_kind": {
+          "const": "budget_objective"
+        },
+        "active_firing_alert_present": {
+          "const": false
+        },
+        "operator_alarm_overlay_required": {
+          "const": true
+        }
+      }
+    },
+    "pricing_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "snapshot_path",
+        "snapshot_sha256",
+        "source_authority",
+        "currency",
+        "precision_decimal_places",
+        "final_fresh_pricing_snapshot"
+      ],
+      "properties": {
+        "snapshot_path": {
+          "const": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json"
+        },
+        "snapshot_sha256": {
+          "const": "sha256:b0c0baa62cf6f8c79b0ed2e4b751fcc00929eab1e128dbac4ab0d8705f4a4480"
+        },
+        "source_authority": {
+          "const": "operator_pinned"
+        },
+        "currency": {
+          "const": "USD"
+        },
+        "precision_decimal_places": {
+          "const": 8
+        },
+        "final_fresh_pricing_snapshot": {
+          "const": false
+        }
+      }
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "contains": {
+        "const": "live cost evidence bound to the authorized 7-day provider window"
+      }
+    },
+    "issue_refs": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "const": "https://github.com/Halildeu/ao-kernel/issues/775"
+        },
+        {
+          "const": "https://github.com/Halildeu/ao-kernel/issues/782"
+        },
+        {
+          "const": "https://github.com/Halildeu/ao-kernel/issues/895"
+        }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    }
+  }
+}
