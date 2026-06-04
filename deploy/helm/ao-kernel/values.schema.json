@@ -348,6 +348,47 @@
           }
         }
       }
+    },
+    "postgresql": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Operator-owned EXTERNAL PostgreSQL connection (E-4-3).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "dbname": {
+          "type": "string"
+        },
+        "sslmode": {
+          "type": "string",
+          "enum": [
+            "disable",
+            "allow",
+            "prefer",
+            "require",
+            "verify-ca",
+            "verify-full"
+          ]
+        },
+        "secretName": {
+          "type": "string"
+        },
+        "usernameKey": {
+          "type": "string"
+        },
+        "passwordKey": {
+          "type": "string"
+        }
+      }
     }
   },
   "$defs": {

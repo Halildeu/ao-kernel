@@ -120,10 +120,29 @@ def test_otel_sidecar_gated_and_hardened() -> None:
 def test_otel_sidecar_endpoint_via_plain_env_no_secretkeyref() -> None:
     text = _DEPLOYMENT.read_text(encoding="utf-8")
     idx = text.find("name: otel-collector")
-    window = text[idx : idx + 500]
+    window = text[idx : idx + 600]
     assert "OTEL_EXPORTER_OTLP_ENDPOINT" in window
     # Endpoint is non-secret coordinate (value:), not a secretKeyRef.
     assert "otelSidecar.otlpEndpoint" in window
+
+
+def test_otel_sidecar_image_pinned_not_latest() -> None:
+    """Codex E-4-4 review absorb: the sidecar image must be PINNED, never
+    :latest (reproducible, supply-chain-safe)."""
+    vals = _load_values()
+    image = vals["monitoring"]["otelSidecar"]["image"]
+    assert ":" in image and not image.endswith(":latest"), f"sidecar image must be pinned, got {image!r}"
+
+
+def test_otel_sidecar_claim_narrowed_to_skeleton() -> None:
+    """Codex E-4-4 review absorb: the chart does NOT auto-wire the main
+    container or ship a collector config; the sidecar block is a SKELETON and
+    must say so (no overclaim that it 'forwards to backend' out of the box)."""
+    text = _DEPLOYMENT.read_text(encoding="utf-8")
+    idx = text.find("Optional OpenTelemetry Collector sidecar")
+    window = text[idx : idx + 600]
+    assert "SKELETON" in window, "sidecar comment must mark it a skeleton"
+    assert "operator MUST" in window, "comment must state operator wiring responsibility"
 
 
 # ---- 5. Teams primary, no Slack receiver (1) ----------------------------

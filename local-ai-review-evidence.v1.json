@@ -62,6 +62,14 @@
     {
       "name": "cross_provider_review",
       "status": "pass"
+    },
+    {
+      "name": "otel_image_pinned",
+      "status": "pass"
+    },
+    {
+      "name": "otel_claim_narrowed_skeleton",
+      "status": "pass"
     }
   ],
   "findings": [
@@ -69,7 +77,8 @@
     "13 invariants pass. OTLP endpoint plain env (no secret); sidecar securityContext hardened (no privilege escalation, readonly rootfs, drop ALL).",
     "Low-risk lane: deploy/helm/ + tests/ + plan + CHANGELOG. NO .github/workflows/, governance, runtime mutation.",
     "3 guard flags const false; no production claim.",
-    "E-4-1 strict-closure allowlist: monitoring.serviceMonitor.additionalLabels free-form k8s label map added to documented allowlist (test_epic_4_1 _VALUES_SCHEMA_FREEFORM_PATHS)."
+    "E-4-1 strict-closure allowlist: monitoring.serviceMonitor.additionalLabels free-form k8s label map added to documented allowlist (test_epic_4_1 _VALUES_SCHEMA_FREEFORM_PATHS).",
+    "Codex E-4-4 review absorb (thread 019e91c6): OTEL sidecar claim narrowed to SKELETON (operator supplies collector config + main-container OTLP wiring; chart provides slot+hardened-securityContext+pinned-image+endpoint-env only). Image pinned 0.96.0 (no :latest). Restored postgresql schema block dropped by rebase. 2 new invariants (image-pinned, claim-narrowed)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

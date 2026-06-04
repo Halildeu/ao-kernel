@@ -120,11 +120,13 @@ monitoring:
     scrapeTimeout: "10s"
     additionalLabels: {}
   otelSidecar:
-    # Optional OpenTelemetry Collector sidecar (disabled by default).
-    # When enabled, the operator supplies the collector image + the OTLP
-    # endpoint via plain env; no secret is embedded by this block.
+    # Optional OTEL Collector sidecar SKELETON (disabled by default; Codex
+    # review absorb). When enabled the chart adds the container slot with a
+    # hardened securityContext + pinned image + OTLP endpoint env ONLY. The
+    # operator MUST supply the collector config (mounted ConfigMap + --config)
+    # AND wire the main container's OTLP exporter to localhost:4317. No secret.
     enabled: false
-    image: "otel/opentelemetry-collector-contrib:latest"
+    image: "otel/opentelemetry-collector-contrib:0.96.0"
     # OTLP endpoint the sidecar forwards to (operator-owned backend).
     otlpEndpoint: ""
 
