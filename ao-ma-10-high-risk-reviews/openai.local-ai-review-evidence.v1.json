@@ -1,9 +1,9 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-920-action-download-artifact-21",
+  "work_package": "AO-MA-919-setup-gcloud-3",
   "implementer": {
-    "agent": "codex-action-download-artifact-21",
+    "agent": "codex-setup-gcloud-3",
     "provider": "openai"
   },
   "reviewer": {
@@ -13,9 +13,10 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/dependabot/github_actions/dawidd6/action-download-artifact-21",
+    "head_ref": "refs/heads/dependabot/github_actions/google-github-actions/setup-gcloud-3",
     "changed_files": [
-      ".github/workflows/test.yml",
+      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
+      ".github/workflows/policy-service-deploy-cloud-run.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
@@ -48,17 +49,22 @@
       "status": "pass"
     },
     {
+      "name": "deploy_guard_audit",
+      "status": "pass"
+    },
+    {
       "name": "git_diff_check",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI AGREE: workflow semantics are limited to the scorecard baseline downloader SHA pin moving from v20 to v21 with the inline comment kept in lockstep.",
-    "OpenAI AGREE: dawidd6/action-download-artifact v21 resolves to b6e2e70617bc3265edd6dab6c906732b2f1ae151 and remains a full SHA pin.",
-    "OpenAI AGREE: scorecard job permissions are unchanged, with no new pull_request_target, OIDC/id-token, write permission widening, or ruleset mutation.",
-    "OpenAI AGREE: the changed step remains advisory scorecard surface with continue-on-error and no ao-release-gate release-authority bypass.",
-    "OpenAI AGREE: no new secret context is introduced and existing GH_TOKEN usage is unchanged.",
-    "OpenAI AGREE: changelog records the v21 pin update, Node 24 compatibility context, and absence of new write permissions or required-check promotion."
+    "OpenAI AGREE: diff scope is limited to setup-gcloud v2-to-v3 in ao-release-gate and policy-service Cloud Run deploy workflows plus changelog and current review evidence.",
+    "OpenAI AGREE: setup-gcloud v3 resolves to aa5489c8933f4cc7a4f7d45035b3b1440c9c10db and action metadata keeps the same input class while moving to node24.",
+    "OpenAI AGREE: triggers remain workflow_run and workflow_dispatch only, with automatic deploy still gated by successful main workflow_run and CLOUD_RUN_AUTO_DEPLOY_ENABLED == true.",
+    "OpenAI AGREE: workflow permissions remain contents:read, packages:read, and id-token:write with no added write surface.",
+    "OpenAI AGREE: workflows still read Secret Manager secret names through vars and do not expose secret material.",
+    "OpenAI AGREE: config validation remains before auth/mirror/deploy steps and fails closed when required variables or source SHA are missing.",
+    "OpenAI AGREE: no release authority bypass, ruleset mutation, support widening, production platform claim, or live adapter execution is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
