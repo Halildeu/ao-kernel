@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-2-3-COST-CEILING",
+  "work_package": "E-2-4-DRY-RUN-HARNESS",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,17 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-2-3-cost-ceiling",
+    "head_ref": "refs/heads/codex/epic-2-4-dry-run-harness",
     "changed_files": [
-      ".claude/plans/adr/ADR-0006-cost-ceiling-enforcement.md",
-      ".claude/plans/adr/index.json",
       "CHANGELOG.md",
       "ao_kernel/_internal/cost_ceiling.py",
-      "ao_kernel/cost/__init__.py",
-      "ao_kernel/cost/errors.py",
-      "ao_kernel/defaults/policies/policy_cost_ceiling.v1.json",
-      "tests/test_adr_cross_ai_revalidation.py",
-      "tests/test_cost_ceiling.py",
+      "ao_kernel/_internal/live_adapter_dryrun.py",
+      "docs/LIVE-ADAPTER-DRY-RUN.md",
+      "scripts/run_live_adapter_dryrun.py",
+      "tests/test_dryrun_import_denylist.py",
+      "tests/test_dryrun_killswitch_bypass.py",
+      "tests/test_live_adapter_dryrun.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -36,17 +35,20 @@
     { "name": "gpp_next_guard_flags", "status": "pass" },
     { "name": "diff_whitespace", "status": "pass" },
     { "name": "workflow_mutation_guard", "status": "pass" },
-    { "name": "hard_breach_fail_closed", "status": "pass" },
-    { "name": "workspace_lock_serialization", "status": "pass" },
+    { "name": "dry_run_no_network_killswitch", "status": "pass" },
+    { "name": "envelope_schema_validation", "status": "pass" },
+    { "name": "per_call_audit_binding", "status": "pass" },
+    { "name": "cost_ceiling_integration", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Claude Anthropic cross-provider review returned AGREE for E-2-3 cost ceiling enforcement. Scope reviewed: cost ceiling primitive, public cost facade exports, policy JSON, ADR-0006, changelog, and tests.",
-    "Decimal-only arithmetic, explicit ok/soft_breached states, hard-breach CostCeilingExceeded behavior, reservation/settle semantics, and workspace JSONL locking were reviewed as correct.",
-    "Hard-breach audit integration is fail-closed: when the optional E-2-2 audit row is invalid, the primary CostCeilingExceeded exception is still raised with the audit validation error as cause.",
-    "Guard flags remain false in policy, state rows, and ADR metadata. No live adapter execution, support widening, production platform claim, workflow mutation, or secret recording is introduced.",
-    "The existing E-1-6 ADR body-mutation invariant was narrowed to existing ADR markdown files and now skips newly added ADR files; this preserves the original guard while avoiding false positives for ADR-0006 creation and ADR index updates.",
-    "Reviewer noted a non-blocking performance observation: workspace mode rereads JSONL state on each locked operation; acceptable for E-2-3 infrastructure-only scope and can be revisited if live execution is later superseded."
+    "Claude Anthropic cross-provider review returned AGREE for E-2-4 live adapter dry-run harness after an initial full review and a follow-up review of advisory hardening changes.",
+    "Scope reviewed: dry-run harness module, CLI wrapper, kill-switch bypass tests, import denylist tests, live adapter dry-run tests, docs, changelog, and the Decimal formatting fix in the E-2-3 cost ceiling module.",
+    "The harness emits schema-valid E-2-1 dry-run envelopes and E-2-2 per-call audit rows with deterministic stub output, prompt digesting, no prompt serialization, and no provider network call.",
+    "Runtime kill-switches block raw sockets, subprocess, shell, spawn and exec families, stdlib HTTP, optional httpx/urllib3/requests/aiohttp clients, and native ctypes/cffi escape hatches while dry-run evidence is built.",
+    "Follow-up hardening absorbed reviewer observations: overlapping kill-switch contexts now restore only after the last exit; os.exec family is patched; envelope writes use tmp file, fsync, os.replace, directory fsync, and final 0600 permissions.",
+    "E-2-3 cost ceiling integration is reviewed as correct for simulated dry-run cost: zero cost records not_applicable, hard breach exits 2 and records fail-closed cost evidence without writing the envelope artifact.",
+    "Guard flags remain false in envelope, audit row, CLI output, and gpp_next status. No workflow mutation, secret readback, live adapter execution, support widening, or production platform claim is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

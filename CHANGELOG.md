@@ -25,6 +25,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-2-4 live adapter dry-run harness** (V5 Epic 2, #849): added
+  `scripts/run_live_adapter_dryrun.py` plus
+  `ao_kernel._internal.live_adapter_dryrun` to emit schema-valid E-2-1
+  envelopes and E-2-2 per-call audit rows with deterministic stub output and
+  no provider network call. The harness installs a runtime kill-switch covering
+  raw sockets, subprocess and shell exec families, stdlib HTTP, optional HTTP
+  clients (`httpx`, `urllib3`, `requests`, `aiohttp` when installed), and
+  native escape hatches (`ctypes.CDLL`, `cffi.FFI`). It integrates E-2-3 cost
+  ceiling recording for simulated dry-run cost and exits `2` on hard breach.
+  Documentation: `docs/LIVE-ADAPTER-DRY-RUN.md`. Guard flags remain false; no
+  workflow mutation, secret readback, support widening, production claim, or
+  live adapter execution.
 - **E-2-3 cost ceiling enforcement module** (V5 Epic 2, #848): added
   `ao_kernel._internal.cost_ceiling.CostCeiling` plus the public
   `ao_kernel.cost` facade export for Decimal-only soft/hard USD ceiling
