@@ -9,53 +9,57 @@
       "status": "pass"
     },
     {
-      "name": "lint",
+      "name": "changelog_discipline",
       "status": "pass"
     },
     {
-      "name": "typecheck",
+      "name": "multi_tenant_boundary_invariants",
       "status": "pass"
     },
     {
-      "name": "coverage",
-      "status": "pass"
-    },
-    {
-      "name": "packaging",
+      "name": "cross_ai_review",
       "status": "pass"
     }
   ],
   "findings": [
-    "Skip predicate correctly uses _EVIDENCE_PATH.relative_to(_REPO_ROOT) producing .claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json, matching git diff path format.",
-    "Invariant still fires when the E-4-1 evidence artifact is in the PR diff; this is scope narrowing, not masking.",
-    "No runtime, workflow, ruleset, CODEOWNERS, public API, or guard-flag changes.",
-    "No secrets recorded or exposed in the diff.",
-    "CHANGELOG entry accurately describes the fix and its rationale.",
-    "Pattern is consistent with existing slice-scoped skip predicates in the test suite."
+    "The PR scope is the V5 Epic 4 E-4-2a multi-tenant advisory boundary contract: boundary docs, tenant isolation matrix placeholder, strict schemas, slice tests, changelog entry, and this local review evidence.",
+    "The matrix is explicitly advisory and placeholder-only: runtime_enforced is false, live_validated is false, operator_enforceable is true, and operator_action_required is true for every dimension.",
+    "Codex post-implementation review thread 019e87e7-d796-7682-80e4-2be2662b7979 returned AGREE with no blocking findings after probing exact-once-per-dimension schema behavior, evidence schema closure, forward-compatible filled matrix shape, write-set exactness, and advisory language discipline.",
+    "The PR does not touch .github/workflows, pyproject.toml, runtime Python modules, Helm chart templates, CODEOWNERS, rulesets, webhooks, branch protection, or public SDK signatures.",
+    "The write set is machine-pinned by tests/test_epic_4_2a_multi_tenant_boundary.py against git diff origin/main...HEAD, including CHANGELOG.md and local-ai-review-evidence.v1.json.",
+    "Guard flags live_adapter_execution, support_widening, and production_platform_claim remain false and are not authorized by this slice.",
+    "No secret material is recorded; the new artifacts are docs, JSON schemas, matrix evidence, tests, changelog, and local review evidence only.",
+    "Provider-level separation is preserved: implementer is anthropic and reviewer is openai; AI output remains evidence only, not release authority."
   ],
   "implementer": {
-    "agent": "codex-gpt-5-e41-write-set-scope-fix",
-    "provider": "openai"
+    "agent": "claude-opus-4.7-multi-tenant-boundary",
+    "provider": "anthropic"
   },
   "live_adapter_execution": false,
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "claude-code-reviewer-pr916",
-    "provider": "anthropic",
+    "agent": "codex-post-impl-reviewer-019e87e7",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
+      ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md",
+      ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.v1.json",
+      ".claude/plans/tenant_isolation_matrix.v1.json",
       "CHANGELOG.md",
+      "ao_kernel/defaults/schemas/e-4-2a-multi-tenant-boundary-contract.schema.v1.json",
+      "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
+      "docs/MULTI-TENANT-DEPLOYMENT.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_epic_4_1_helm_chart_skeleton.py"
+      "tests/test_epic_4_2a_multi_tenant_boundary.py"
     ],
-    "head_ref": "refs/heads/codex/e41-write-set-scope-fix"
+    "head_ref": "refs/heads/codex/epic-4-2a-multi-tenant-boundary"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-916-e41-write-set-scope-fix"
+  "work_package": "AO-MA-830-multi-tenant-boundary"
 }

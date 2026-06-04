@@ -9,6 +9,7 @@
     ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md",
     ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.v1.json",
     ".claude/plans/tenant_isolation_matrix.v1.json",
+    "CHANGELOG.md",
     "ao_kernel/defaults/schemas/e-4-2a-multi-tenant-boundary-contract.schema.v1.json",
     "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
     "docs/MULTI-TENANT-DEPLOYMENT.md",
