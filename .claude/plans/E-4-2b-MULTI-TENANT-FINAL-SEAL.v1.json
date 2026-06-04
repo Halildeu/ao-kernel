@@ -1,0 +1,106 @@
+{
+  "schema_version": "e-4-2b-multi-tenant-final-seal.v1",
+  "artifact_kind": "epic-4-slice-decision-record",
+  "slice_id": "E-4-2b",
+  "epic_id": "EPIC-4",
+  "decision": "accepted",
+  "decision_summary": "V5 Epic 4 E-4-2b final advisory seal promotes the tenant isolation matrix from placeholder state to filled state, binds seven dimensions to existing downstream evidence refs, preserves advisory-only constants, and records a 3-provider quorum with OpenAI/Codex implementation plus independent Anthropic/Claude and MiniMax/Mavis reviews. It does not mutate workflows, claim runtime enforcement, claim live validation, widen support, claim production platform readiness, or execute live adapters.",
+  "write_set": [
+    ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.md",
+    ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.v1.json",
+    ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
+    ".claude/plans/tenant_isolation_matrix.v1.json",
+    "CHANGELOG.md",
+    "ao_kernel/defaults/schemas/e-4-2b-multi-tenant-final-seal-evidence.schema.v1.json",
+    "ao_kernel/defaults/schemas/e-4-2b-tenant-isolation-matrix.schema.v1.json",
+    "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
+    "docs/MULTI-TENANT-DEPLOYMENT.md",
+    "local-ai-review-evidence.v1.json",
+    "tests/test_epic_4_2a_multi_tenant_boundary.py",
+    "tests/test_epic_4_2b_matrix_invariants.py",
+    "tests/test_epic_4_2b_write_set_invariant.py"
+  ],
+  "checks_completed": [
+    "shape",
+    "matrix_final_status",
+    "all_entries_filled",
+    "downstream_refs_exist",
+    "downstream_refs_cover_e_4_3_e_4_4_e_4_5",
+    "advisory_const_fields",
+    "no_overclaim_language",
+    "no_live_cluster_commands",
+    "no_workflow_mutation",
+    "write_set_exact_match",
+    "evidence_validates",
+    "matrix_validates"
+  ],
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "matrix_final_seal": {
+    "advisory_only": true,
+    "runtime_enforced_global": false,
+    "live_validated_global": false,
+    "matrix_status": "e_4_2b_final_seal",
+    "dimensions_count": 7,
+    "all_entries_filled": true,
+    "all_entries_have_downstream_evidence_ref": true
+  },
+  "downstream_evidence_refs": [
+    ".claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json",
+    ".claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json",
+    ".claude/plans/E-4-3-POSTGRES-PROVISIONING.md",
+    ".claude/plans/E-4-5-NETWORKPOLICY-PSS.md",
+    "deploy/helm/ao-kernel/values.yaml",
+    ".claude/plans/E-4-4-OBSERVABILITY-SURFACE.md",
+    ".claude/plans/E-4-4-OBSERVABILITY-SURFACE.md"
+  ],
+  "provider_participants": [
+    "anthropic",
+    "openai",
+    "minimax"
+  ],
+  "implementation_evidence": {
+    "agent": "codex",
+    "provider": "openai",
+    "role": "implementer",
+    "notes": "Codex/OpenAI implemented the E-4-2b final seal in this PR; OpenAI self-review is not counted as independent release evidence."
+  },
+  "review_evidence": [
+    {
+      "agent": "claude",
+      "provider": "anthropic",
+      "verdict": "AGREE",
+      "evidence_kind": "cli_review",
+      "notes": "Claude CLI review returned VERDICT: AGREE and verified lifecycle, downstream refs, advisory constants, no overclaim language, no live cluster commands, schema/test shape, and boundary discipline."
+    },
+    {
+      "agent": "mavis",
+      "provider": "minimax",
+      "verdict": "AGREE",
+      "evidence_kind": "cli_review",
+      "notes": "Mavis/MiniMax review identified the missing evidence JSON and pre-commit write-set mismatch; those findings were absorbed by adding this evidence artifact and making write-set detection include committed, staged, unstaged, and untracked files."
+    }
+  ],
+  "no_workflow_mutation": true,
+  "no_pyproject_change": true,
+  "no_runtime_module_change": true,
+  "evidence_ref": {
+    "plan_doc": ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.md",
+    "test_file": "tests/test_epic_4_2b_matrix_invariants.py",
+    "write_set_test_file": "tests/test_epic_4_2b_write_set_invariant.py",
+    "matrix_json": ".claude/plans/tenant_isolation_matrix.v1.json",
+    "matrix_schema": "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
+    "final_matrix_schema": "ao_kernel/defaults/schemas/e-4-2b-tenant-isolation-matrix.schema.v1.json",
+    "deployment_doc": "docs/MULTI-TENANT-DEPLOYMENT.md"
+  },
+  "notes": [
+    "AI output is evidence only; release authority remains ao-release-gate plus GitHub ruleset enforcement.",
+    "The final seal is advisory only and does not authorize production platform claim, support widening, or live adapter execution.",
+    "Resource quota remains operator-applied; the matrix ref to values.yaml covers pod resource requests/limits only, not a rendered ResourceQuota manifest.",
+    "Namespace and RBAC refs bind to E-4-1 chart skeleton because those boundaries are chart foundation behavior rather than E-4-3/E-4-4/E-4-5 follow-up artifacts.",
+    "E-4-2b updates the parent Epic 4 plan only to record the actual provider-role model for this PR; no runtime or workflow scope is widened."
+  ]
+}

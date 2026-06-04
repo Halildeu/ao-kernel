@@ -1,6 +1,6 @@
 # Multi-Tenant Deployment — Advisory Boundary Pattern (V5 Epic 4)
 
-> **Status:** ADVISORY boundary contract (early seal — V5 Epic 4 slice E-4-2a). Per-dimension entries are PLACEHOLDER in this slice; E-4-2b will fill the final matrix with downstream evidence references after E-4-3 / E-4-4 / E-4-5 land.
+> **Status:** ADVISORY boundary contract (final seal — V5 Epic 4 slice E-4-2b). Per-dimension entries are FILLED in the matrix artifact with downstream evidence references to existing repository artifacts from E-4-1 / E-4-3 / E-4-4 / E-4-5.
 > **Audience:** operators who install the ao-kernel Helm chart (`deploy/helm/ao-kernel/`) into a multi-tenant Kubernetes cluster.
 > **Authority boundary:** This document declares an advisory boundary pattern, not a guarantee. The ao-kernel runtime does NOT enforce multi-tenant isolation; the enforcement is Kubernetes-native and operator-installed. No live cross-tenant attack test has run in Epic 4 (`live_validated: false`); live validation is deferred to V5 Epic 9 operator-bound supersession.
 
@@ -31,7 +31,7 @@ The advisory boundary holds when (a) the chart is installed per the runbook, (b)
 
 ## 2. The 7-Dimension Advisory Matrix
 
-The `tenant_isolation_matrix.v1.json` advisory matrix (`.claude/plans/tenant_isolation_matrix.v1.json`) declares 7 dimensions of multi-tenant boundary pattern. In V5 Epic 4 slice E-4-2a (this slice), every entry is in **placeholder** state — the shape is locked, downstream evidence references are reserved. In V5 Epic 4 slice E-4-2b, the matrix will be promoted to `entry_status: "filled"` with concrete downstream evidence references to E-4-3 (database + secret pattern), E-4-4 (observability surface), and E-4-5 (NetworkPolicy + PodSecurityStandards baseline).
+The `tenant_isolation_matrix.v1.json` advisory matrix (`.claude/plans/tenant_isolation_matrix.v1.json`) declares 7 dimensions of multi-tenant boundary pattern. In V5 Epic 4 slice E-4-2b, every entry is in **filled** state and carries a concrete downstream evidence reference to committed repository artifacts. These references bind the matrix to E-4-1 chart skeleton evidence, E-4-3 database + secret pattern, E-4-4 observability surface, and E-4-5 NetworkPolicy + PodSecurityStandards baseline.
 
 ---
 
@@ -81,7 +81,7 @@ Anchor: `#network-policy`
 
 **Const fields:** `runtime_enforced: false`, `operator_enforceable: true`, `operator_action_required: true`, `live_validated: false`. The enforcement_mechanism is NetworkPolicy default-deny + operator-extended allowlist + CNI enforcement.
 
-**Cross-reference reserved:** E-4-5 (NetworkPolicy + PSS baseline) will supply the rendered NetworkPolicy template. E-4-2b will set the downstream_evidence_ref to E-4-5 evidence.
+**Cross-reference:** `downstream_evidence_ref` is `.claude/plans/E-4-5-NETWORKPOLICY-PSS.md`.
 
 ---
 
@@ -123,18 +123,30 @@ Anchor: `#cost-tracking-advisory`
 
 ---
 
-## 3. Why this slice is EARLY (E-4-2a) and what comes LATER (E-4-2b)
+## 3. E-4-2a → E-4-2b lifecycle
 
 V5 Epic 4 plan iter-2 (Codex thread `019e879d`) split the original E-4-2 work into two slices:
 
-- **E-4-2a (this slice):** early advisory boundary contract — schema + matrix placeholder + advisory dil discipline. 2-way cross-AI review (Claude implementer + Codex reviewer). Low-medium risk. Lands before E-4-3 / E-4-4 / E-4-5 so that downstream slices can reference the boundary contract.
-- **E-4-2b (later slice):** final matrix seal — promotes `matrix_status` to `e_4_2b_final_seal`; promotes every entry to `entry_status: "filled"`; supplies `downstream_evidence_ref` to E-4-3 + E-4-4 + E-4-5 evidence. 3-way cross-AI review (Claude implementer + Codex reviewer + Mavis/MiniMax additional reviewer). High risk (cross-tenant boundary final seal).
+- **E-4-2a:** early advisory boundary contract — schema + matrix placeholder + advisory dil discipline. 2-way cross-AI review (Claude implementer + Codex reviewer). Low-medium risk. Landed before E-4-3 / E-4-4 / E-4-5 so downstream slices could reference the boundary contract.
+- **E-4-2b (this slice):** final matrix seal — promotes `matrix_status` to `e_4_2b_final_seal`; promotes every entry to `entry_status: "filled"`; supplies `downstream_evidence_ref` values to committed E-4-1 / E-4-3 / E-4-4 / E-4-5 artifacts. 3-way review evidence is recorded for Anthropic/Claude, OpenAI/Codex, and MiniMax/Mavis. High risk because this is the final advisory cross-tenant boundary matrix.
 
-This split serves two purposes per Codex iter-2 F1 absorb: (1) downstream slices (E-4-3, E-4-4, E-4-5) need the boundary contract pinned before they can claim alignment; (2) the final matrix seal carries higher risk and warrants a 3-way cross-AI review that this early advisory contract does not require.
+This split serves two purposes per Codex iter-2 F1 absorb: (1) downstream slices (E-4-3, E-4-4, E-4-5) needed the boundary contract pinned before they could claim alignment; (2) the final matrix seal carries higher risk and warrants 3-way review evidence.
+
+## 4. Final Matrix Evidence Map
+
+| Dimension | Matrix downstream evidence ref | Operator meaning |
+|---|---|---|
+| Namespace isolation | `.claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json` | chart skeleton keeps tenant releases namespace-scoped |
+| RBAC scope | `.claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json` | chart skeleton keeps workload RBAC namespace-scoped |
+| Secret isolation | `.claude/plans/E-4-3-POSTGRES-PROVISIONING.md` | database credentials stay operator-owned and secretKeyRef-only |
+| Network policy | `.claude/plans/E-4-5-NETWORKPOLICY-PSS.md` | NetworkPolicy + PSS baseline is chart-rendered/operator-enabled |
+| Resource quota | `deploy/helm/ao-kernel/values.yaml` | pod resource requests/limits are chart values; Namespace quota remains operator-applied |
+| Audit boundary | `.claude/plans/E-4-4-OBSERVABILITY-SURFACE.md` | observability surface records per-tenant telemetry inputs |
+| Cost tracking advisory | `.claude/plans/E-4-4-OBSERVABILITY-SURFACE.md` | telemetry surface supports operator-side cost dashboards; cost capability stays unchanged |
 
 ---
 
-## 4. What this slice does NOT promise
+## 5. What this slice does NOT promise
 
 - No live cross-tenant attack test has been executed. The advisory boundary is a pattern, not a proof.
 - ao-kernel runtime does not enforce isolation; the Kubernetes-native primitives do (when the operator installs them).
@@ -143,10 +155,14 @@ This split serves two purposes per Codex iter-2 F1 absorb: (1) downstream slices
 
 ---
 
-## 5. References
+## 6. References
 
-- **Matrix artifact:** `.claude/plans/tenant_isolation_matrix.v1.json` (advisory; placeholder state)
+- **Matrix artifact:** `.claude/plans/tenant_isolation_matrix.v1.json` (advisory; final seal state)
 - **Matrix schema:** `ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json` (strict Draft 2020-12)
+- **E-4-2b final matrix schema:** `ao_kernel/defaults/schemas/e-4-2b-tenant-isolation-matrix.schema.v1.json`
+- **E-4-2b evidence schema:** `ao_kernel/defaults/schemas/e-4-2b-multi-tenant-final-seal-evidence.schema.v1.json`
+- **E-4-2b slice plan:** `.claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.md`
+- **E-4-2b slice evidence:** `.claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.v1.json`
 - **Slice plan doc:** `.claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md`
 - **Slice evidence:** `.claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.v1.json`
 - **Slice evidence schema:** `ao_kernel/defaults/schemas/e-4-2a-multi-tenant-boundary-contract.schema.v1.json`

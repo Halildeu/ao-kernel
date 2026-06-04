@@ -22,6 +22,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-4-2b multi-tenant matrix final seal** (V5 Epic 4): promoted the
+  advisory tenant isolation matrix from E-4-2a placeholder state to final
+  seal state with seven filled dimensions, downstream evidence refs to
+  committed Epic 4 artifacts, lifecycle-aware schema checks, and 3-way review
+  evidence discipline. The seal remains advisory only: no live validation,
+  no runtime enforcement claim, no workflow mutation, and no guard-flag flip.
 - **E-4-3 operator-owned PostgreSQL provisioning + secret management** (V5
   Epic 4, #862): Helm chart `postgresql` block (external, operator-owned,
   `enabled:false` default) + `secretKeyRef`-only credential wiring in

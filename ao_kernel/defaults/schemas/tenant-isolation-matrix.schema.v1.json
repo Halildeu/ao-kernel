@@ -63,6 +63,48 @@
   },
   "allOf": [
     {
+      "if": {
+        "properties": {
+          "matrix_status": { "const": "e_4_2a_contract_placeholder" }
+        },
+        "required": ["matrix_status"]
+      },
+      "then": {
+        "properties": {
+          "dimensions": {
+            "items": {
+              "properties": {
+                "entry_status": { "const": "placeholder" },
+                "downstream_evidence_ref": { "type": "null" }
+              },
+              "required": ["entry_status", "downstream_evidence_ref"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "matrix_status": { "const": "e_4_2b_final_seal" }
+        },
+        "required": ["matrix_status"]
+      },
+      "then": {
+        "properties": {
+          "dimensions": {
+            "items": {
+              "properties": {
+                "entry_status": { "const": "filled" },
+                "downstream_evidence_ref": { "type": "string", "minLength": 5 }
+              },
+              "required": ["entry_status", "downstream_evidence_ref"]
+            }
+          }
+        }
+      }
+    },
+    {
       "description": "Each of the 7 dimension enum values MUST appear exactly once in the dimensions array (allOf+contains pattern).",
       "allOf": [
         {

@@ -295,13 +295,16 @@ def test_deployment_doc_does_not_embed_live_cluster_commands() -> None:
 
 def test_matrix_status_is_e_4_2a_contract_placeholder() -> None:
     matrix = _load_json(_MATRIX_PATH)
-    assert matrix.get("matrix_status") == "e_4_2a_contract_placeholder", (
-        f"matrix_status MUST be 'e_4_2a_contract_placeholder'; got {matrix.get('matrix_status')!r}"
+    assert matrix.get("matrix_status") in {"e_4_2a_contract_placeholder", "e_4_2b_final_seal"}, (
+        "matrix_status must stay inside the E-4-2 lifecycle enum; "
+        f"got {matrix.get('matrix_status')!r}"
     )
 
 
 def test_matrix_all_entries_status_placeholder() -> None:
     matrix = _load_json(_MATRIX_PATH)
+    if matrix.get("matrix_status") == "e_4_2b_final_seal":
+        pytest.skip("E-4-2b final seal intentionally promotes all entries from placeholder to filled")
     for entry in matrix.get("dimensions", []):
         assert entry.get("entry_status") == "placeholder", (
             f"dimension {entry.get('dimension')!r}: entry_status MUST be 'placeholder' in E-4-2a; got {entry.get('entry_status')!r}"
@@ -311,6 +314,8 @@ def test_matrix_all_entries_status_placeholder() -> None:
 def test_matrix_all_entries_downstream_evidence_ref_null() -> None:
     """In E-4-2a all downstream_evidence_ref values are null (E-4-2b will set them)."""
     matrix = _load_json(_MATRIX_PATH)
+    if matrix.get("matrix_status") == "e_4_2b_final_seal":
+        pytest.skip("E-4-2b final seal intentionally fills downstream_evidence_ref")
     for entry in matrix.get("dimensions", []):
         if "downstream_evidence_ref" in entry:
             assert entry["downstream_evidence_ref"] is None, (

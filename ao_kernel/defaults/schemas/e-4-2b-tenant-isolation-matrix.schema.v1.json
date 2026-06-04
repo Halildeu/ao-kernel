@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/e-4-2b-tenant-isolation-matrix.v1.json",
+  "title": "V5 Epic 4 E-4-2b final tenant isolation advisory matrix",
+  "description": "Strict final-state overlay for tenant-isolation-matrix.v1.json after E-4-2b. This schema requires matrix_status=e_4_2b_final_seal, seven filled entries, non-null downstream evidence refs, and the advisory constants runtime_enforced=false, operator_enforceable=true, operator_action_required=true, live_validated=false. It does not claim runtime enforcement or live validation.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "epic_id",
+    "matrix_status",
+    "advisory_only",
+    "runtime_enforced_global",
+    "live_validated_global",
+    "dimensions",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": { "const": "tenant-isolation-matrix.v1" },
+    "artifact_kind": { "const": "multi-tenant-isolation-advisory-matrix" },
+    "epic_id": { "const": "EPIC-4" },
+    "matrix_status": { "const": "e_4_2b_final_seal" },
+    "advisory_only": { "const": true },
+    "runtime_enforced_global": { "const": false },
+    "live_validated_global": { "const": false },
+    "dimensions": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": { "$ref": "#/$defs/final_dimension_entry" }
+    },
+    "notes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 10 }
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "dimensions": {
+          "contains": { "properties": { "dimension": { "const": "namespace_isolation" } }, "required": ["dimension"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "dimensions": {
+          "contains": { "properties": { "dimension": { "const": "rbac_scope" } }, "required": ["dimension"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "dimensions": {
+          "contains": { "properties": { "dimension": { "const": "secret_isolation" } }, "required": ["dimension"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "dimensions": {
+          "contains": { "properties": { "dimension": { "const": "network_policy" } }, "required": ["dimension"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "dimensions": {
+          "contains": { "properties": { "dimension": { "const": "resource_quota" } }, "required": ["dimension"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "dimensions": {
+          "contains": { "properties": { "dimension": { "const": "audit_boundary" } }, "required": ["dimension"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "dimensions": {
+          "contains": { "properties": { "dimension": { "const": "cost_tracking_advisory" } }, "required": ["dimension"] },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "final_dimension_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "dimension",
+        "runtime_enforced",
+        "operator_enforceable",
+        "operator_action_required",
+        "live_validated",
+        "enforcement_mechanism",
+        "operator_runbook_section",
+        "entry_status",
+        "downstream_evidence_ref"
+      ],
+      "properties": {
+        "dimension": {
+          "type": "string",
+          "enum": [
+            "namespace_isolation",
+            "rbac_scope",
+            "secret_isolation",
+            "network_policy",
+            "resource_quota",
+            "audit_boundary",
+            "cost_tracking_advisory"
+          ]
+        },
+        "runtime_enforced": { "const": false },
+        "operator_enforceable": { "const": true },
+        "operator_action_required": { "const": true },
+        "live_validated": { "const": false },
+        "enforcement_mechanism": { "type": "string", "minLength": 20 },
+        "operator_runbook_section": { "type": "string", "pattern": "^#[a-z0-9-]+$" },
+        "entry_status": { "const": "filled" },
+        "downstream_evidence_ref": {
+          "type": "string",
+          "minLength": 5,
+          "not": { "pattern": "^https?://" },
+          "description": "Repo-relative path to an existing committed downstream artifact. E-4-2b tests verify path existence."
+        }
+      }
+    }
+  }
+}
