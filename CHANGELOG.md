@@ -43,6 +43,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 public support matrix preflight bundle** (V5 Epic 9, #895): added
+  `V5-PUBLIC-SUPPORT-MATRIX-PREFLIGHT-BUNDLE.md`,
+  `v5-public-support-matrix-preflight-bundle.schema.v1.json`, and a
+  current-state fixture/test suite that binds `PUBLIC-BETA.md`,
+  `SUPPORT-BOUNDARY.md`, and `SUPPORT-SURFACE-INVENTORY.md` to the
+  `public_support_matrix` production-readiness dimension. This is preflight
+  evidence only: final v5 public support tier, public claim language sync, and
+  support-widening live evidence remain missing, while `support_widening` /
+  `production_platform_claim` / `live_adapter_execution` remain false.
 - **V5 security/SBOM/license preflight bundle** (V5 Epic 9, #895): added
   `V5-SECURITY-SBOM-LICENSE-PREFLIGHT-BUNDLE.md`,
   `v5-security-sbom-license-preflight-bundle.schema.v1.json`, and a

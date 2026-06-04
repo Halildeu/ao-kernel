@@ -21,7 +21,9 @@
       "current_evidence_refs": [
         "docs/SUPPORT-BOUNDARY.md",
         "docs/SUPPORT-SURFACE-INVENTORY.md",
-        "docs/PUBLIC-BETA.md"
+        "docs/PUBLIC-BETA.md",
+        ".claude/plans/V5-PUBLIC-SUPPORT-MATRIX-PREFLIGHT-BUNDLE.md",
+        "tests/fixtures/epic9/v5-public-support-matrix-preflight.current.json"
       ],
       "missing_evidence": [
         "final v5.0.0 public support matrix with promoted support tier",
