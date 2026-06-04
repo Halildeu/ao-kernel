@@ -1,0 +1,61 @@
+{
+  "schema_version": "v5_bypassless_governance_preflight_bundle.v1",
+  "artifact_kind": "v5_bypassless_governance_preflight_bundle",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "dimension": "bypassless_release_governance",
+  "evidence_class": "preflight_current_state",
+  "final_release_bound": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "current_boundary": {
+    "required_check_authority": "github_branch_ruleset",
+    "required_checks": [
+      "ao-release-gate-technical",
+      "ao-release-gate-review"
+    ],
+    "bypass_actors_count": 0,
+    "admin_merge_used": false,
+    "autonomous_merge_for_low_risk": true,
+    "cross_provider_review_for_guarded_changes": true,
+    "final_ruleset_source_pin_bound_to_pr_xfinal": false
+  },
+  "governance_documents": {
+    "repo_governance_path": ".github/REPO-GOVERNANCE.md",
+    "hardening_program_status_path": ".claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md",
+    "gpp_status_path": ".claude/plans/gpp_status.v1.json"
+  },
+  "governance_controls": [
+    {
+      "control": "ao_release_gate_required_check_source_pin",
+      "current_state": "active_in_current_repo_governance",
+      "future_prerequisite_under_pr_xfinal": "Re-confirm both ao-release-gate-technical and ao-release-gate-review remain source-pinned required checks at PR-Xfinal pre-merge and post-merge, recording the ruleset SHA-256 on both sides."
+    },
+    {
+      "control": "empty_bypass_actors",
+      "current_state": "active_in_current_repo_governance",
+      "future_prerequisite_under_pr_xfinal": "Re-confirm the branch ruleset bypass actor list is empty at PR-Xfinal merge time so no actor can satisfy the gate without the required checks."
+    },
+    {
+      "control": "autonomous_merge_trail_low_risk",
+      "current_state": "active_in_current_repo_governance",
+      "future_prerequisite_under_pr_xfinal": "Bind the low-risk autonomous merge trail (local AI review evidence + operator_may_merge decision, no --admin) into the PR-Xfinal evidence aggregate."
+    },
+    {
+      "control": "cross_provider_review_guarded_changes",
+      "current_state": "active_in_current_repo_governance",
+      "future_prerequisite_under_pr_xfinal": "Supply provider-distinct (implementer != reviewer) cross-AI AGREE evidence for the guard-flag-flipping PR-Xfinal itself, since that change is high-risk."
+    }
+  ],
+  "residual_missing_evidence": [
+    "PR-Xfinal pre-merge and post-merge ruleset source-pin SHA-256 evidence",
+    "final required-check name uniqueness and source-collision evidence bound to PR-Xfinal"
+  ],
+  "issue_refs": [
+    "#775",
+    "#776",
+    "#782",
+    "#895"
+  ]
+}
