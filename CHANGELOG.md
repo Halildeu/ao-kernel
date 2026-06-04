@@ -42,6 +42,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 Epic 6 E-6-5 CodeQL advisory baseline**: added a
+  GitHub-native CodeQL Security Analysis workflow plus explicit
+  CodeQL config for Python source scanning, with minimum Actions
+  permissions, no pull_request_target, no setup-python step, no
+  explicit secret usage, build-less PR merge-result analysis, and
+  advisory-only semantics.
 - **V5 Epic 6 E-6-2 vulnerability scanning baseline**: added the
   advisory Dependabot and Trivy filesystem scanning baseline with
   minimum GitHub Actions permissions, exact Trivy action pinning,

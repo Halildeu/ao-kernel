@@ -1,26 +1,28 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-918-release-gate-codeql-config-scope",
+  "work_package": "AO-MA-796-codeql-workflow",
   "implementer": {
-    "agent": "codex-gpt-5-release-gate-codeql-config-scope",
+    "agent": "codex-gpt-5-codeql-workflow-rebase-integrator",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "openai-subagent-independent-reviewer-codeql-config-scope",
+    "agent": "openai-subagent-independent-reviewer-pr796-codeql-final",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-release-gate-codeql-config-scope",
+    "head_ref": "refs/heads/codex/epic-6-e6-5-codeql-workflow",
     "changed_files": [
+      ".claude/plans/EPIC-6-E6-5-CODEQL-WORKFLOW.md",
+      ".github/codeql/codeql-config.yml",
+      ".github/workflows/codeql.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "tests/test_codeql_workflow_shape.py"
     ]
   },
   "checks_considered": [
@@ -33,23 +35,47 @@
       "status": "pass"
     },
     {
-      "name": "exact_path_not_prefix_widening",
+      "name": "advisory_only_no_required_check_promotion",
       "status": "pass"
     },
     {
-      "name": "generic_github_prefix_absent",
+      "name": "no_pull_request_target",
       "status": "pass"
     },
     {
-      "name": "generic_codeql_prefix_absent",
+      "name": "no_explicit_secrets",
       "status": "pass"
     },
     {
-      "name": "release_gate_diff_scope_regression",
+      "name": "minimum_permissions",
       "status": "pass"
     },
     {
-      "name": "changelog_discipline",
+      "name": "no_contents_write",
+      "status": "pass"
+    },
+    {
+      "name": "no_id_token_write",
+      "status": "pass"
+    },
+    {
+      "name": "no_setup_python",
+      "status": "pass"
+    },
+    {
+      "name": "config_security_extended_only",
+      "status": "pass"
+    },
+    {
+      "name": "scoped_paths_and_ignores",
+      "status": "pass"
+    },
+    {
+      "name": "invariant_tests_cover_shape",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_records_baseline",
       "status": "pass"
     },
     {
@@ -58,11 +84,11 @@
     }
   ],
   "findings": [
-    "OpenAI independent review returned AGREE for the exact .github/codeql/codeql-config.yml release-gate scope fix.",
-    "The patch adds only an exact CodeQL config path, not a generic .github/codeql/ or .github/ prefix.",
-    "The invariant test asserts exact path presence and absence of both generic directory prefixes.",
-    "The change does not alter workflows, CODEOWNERS, rulesets, branch protection, runtime adapter code, support-widening authority, production-platform claims, or live adapter execution.",
-    "The changelog note accurately describes the reviewed CodeQL advisory baseline scope and no-widening boundary."
+    "OpenAI independent review returned AGREE for the inspected CodeQL advisory baseline slice.",
+    "The workflow is advisory/static-analysis only and does not use pull_request_target, explicit secrets, contents: write, id-token: write, or setup-python.",
+    "The CodeQL config declares security-extended only, keeps default queries enabled, and scopes paths/ignores to ao_kernel, scripts, tests/defaults/pycache/pyc boundaries.",
+    "Invariant tests cover workflow/config shape, no extra write permissions, no explicit secrets, and PR merge-result checkout semantics.",
+    "The changelog records the advisory baseline without overclaiming, and the only review note about plan-doc test-count drift was corrected before final evidence."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

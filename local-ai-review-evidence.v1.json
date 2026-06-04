@@ -1,26 +1,28 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-918-release-gate-codeql-config-scope",
+  "work_package": "AO-MA-796-codeql-workflow",
   "implementer": {
-    "agent": "codex-gpt-5-release-gate-codeql-config-scope",
+    "agent": "codex-gpt-5-codeql-workflow-rebase-integrator",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-code-independent-reviewer-codeql-config-scope",
+    "agent": "claude-code-independent-reviewer-pr796-codeql-final",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-release-gate-codeql-config-scope",
+    "head_ref": "refs/heads/codex/epic-6-e6-5-codeql-workflow",
     "changed_files": [
+      ".claude/plans/EPIC-6-E6-5-CODEQL-WORKFLOW.md",
+      ".github/codeql/codeql-config.yml",
+      ".github/workflows/codeql.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "tests/test_codeql_workflow_shape.py"
     ]
   },
   "checks_considered": [
@@ -33,55 +35,60 @@
       "status": "pass"
     },
     {
-      "name": "exact_path_not_prefix_widening",
+      "name": "advisory_only_no_required_check_promotion",
       "status": "pass"
     },
     {
-      "name": "generic_github_prefix_absent",
+      "name": "no_pull_request_target",
       "status": "pass"
     },
     {
-      "name": "generic_codeql_prefix_absent",
+      "name": "no_explicit_secrets",
       "status": "pass"
     },
     {
-      "name": "workflow_governance_unchanged",
+      "name": "minimum_permissions",
       "status": "pass"
     },
     {
-      "name": "codeowners_governance_unchanged",
+      "name": "no_contents_write",
       "status": "pass"
     },
     {
-      "name": "ruleset_governance_unchanged",
+      "name": "no_id_token_write",
       "status": "pass"
     },
     {
-      "name": "branch_protection_unchanged",
+      "name": "no_setup_python",
       "status": "pass"
     },
     {
-      "name": "live_adapter_gate_unchanged",
+      "name": "config_security_extended_only",
       "status": "pass"
     },
     {
-      "name": "support_widening_claim_unchanged",
+      "name": "scoped_paths_and_ignores",
       "status": "pass"
     },
     {
-      "name": "production_platform_claim_unchanged",
+      "name": "invariant_tests_cover_shape",
       "status": "pass"
     },
     {
-      "name": "changelog_discipline",
+      "name": "changelog_records_baseline",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_const_false",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude AGREE: exact path .github/codeql/codeql-config.yml was added, not a generic .github/codeql/ or .github/ prefix.",
-    "Claude AGREE: the invariant test asserts exact path presence and rejects both .github/codeql/ and .github/ prefix leakage.",
-    "Claude AGREE: workflow, CODEOWNERS, ruleset, branch-protection, runtime, live-adapter, support-widening, and production-claim surfaces are untouched.",
-    "Focused local verification passed: tests/test_ao_release_gate_build_payload.py plus the closed dry-run decision smoke test, compileall, git diff --check, and a no-match secret-pattern scan."
+    "Claude AGREE: CodeQL workflow is advisory-only and does not promote branch-protection required checks in this slice.",
+    "Claude AGREE: workflow excludes pull_request_target, explicit secrets.X references, contents: write, id-token: write, and setup-python.",
+    "Claude AGREE: CodeQL config is the single query source-of-truth, uses security-extended only, scopes paths to ao_kernel and scripts, and ignores tests/defaults/pycache/pyc noise.",
+    "Claude AGREE: 24 invariant tests pin workflow/config shape, including PR merge-result checkout semantics and no extra write permissions.",
+    "OpenAI reviewer AGREE: no runtime, live-adapter, support-widening, production-claim, branch-protection, ruleset, or CODEOWNERS mutation; doc drift on invariant count was corrected before final evidence."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

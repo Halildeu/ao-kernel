@@ -1,0 +1,65 @@
+name: CodeQL Security Analysis
+
+# V5 Epic 6 E-6-5 — CodeQL static analysis (Codex 019e8350 absorb).
+#
+# This workflow runs CodeQL queries against Python source. It is
+# **advisory** for the V5.0.0 release; alerts are reviewed but the
+# check does NOT block merges via branch protection in this slice.
+# A follow-up exit decision will evaluate promoting the workflow to
+# a required status check once the alert baseline stabilizes.
+#
+# Reasoning (Codex 019e8350 absorb):
+# - CodeQL workflow green ≠ "no alerts"; it only means the analysis
+#   pipeline + SARIF upload succeeded. Required-check promotion
+#   requires explicit operator decision per Epic 6 governance.
+# - Queries pinned to ``security-extended`` baseline only. The
+#   broader ``security-and-quality`` pack is deferred to a follow-up
+#   slice once the initial baseline is triaged.
+# - Single query source-of-truth: workflow specifies only
+#   ``config-file``; ``.github/codeql/codeql-config.yml`` owns the
+#   queries list. This avoids drift between two declarations.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly Monday 03:17 UTC (06:17 İstanbul most of the year).
+    # Low-traffic window to avoid contention with active PR runs.
+    - cron: "17 3 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze Python
+    runs-on: ubuntu-latest
+    # Codex 019e8350 absorb: 30 min cap (was: GitHub default 360).
+    # Python CodeQL build-less; expected runtime 5-15 min.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
