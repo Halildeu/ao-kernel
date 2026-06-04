@@ -306,44 +306,46 @@
     "podAnnotations": {
       "type": "object"
     },
-    "postgresql": {
+    "monitoring": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Operator-owned EXTERNAL PostgreSQL connection (E-4-3). Chart does NOT deploy the DB nor create its Secret; credentials via secretKeyRef only.",
+      "description": "Observability surface (E-4-4): opt-in ServiceMonitor + optional OTEL sidecar. Chart does not install Prometheus Operator.",
       "properties": {
-        "enabled": {
-          "type": "boolean"
+        "serviceMonitor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string"
+            },
+            "interval": {
+              "type": "string"
+            },
+            "scrapeTimeout": {
+              "type": "string"
+            },
+            "additionalLabels": {
+              "type": "object"
+            }
+          }
         },
-        "host": {
-          "type": "string"
-        },
-        "port": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 65535
-        },
-        "dbname": {
-          "type": "string"
-        },
-        "sslmode": {
-          "type": "string",
-          "enum": [
-            "disable",
-            "allow",
-            "prefer",
-            "require",
-            "verify-ca",
-            "verify-full"
-          ]
-        },
-        "secretName": {
-          "type": "string"
-        },
-        "usernameKey": {
-          "type": "string"
-        },
-        "passwordKey": {
-          "type": "string"
+        "otelSidecar": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "image": {
+              "type": "string"
+            },
+            "otlpEndpoint": {
+              "type": "string"
+            }
+          }
         }
       }
     }

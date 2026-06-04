@@ -1,0 +1,34 @@
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+# ServiceMonitor (Prometheus Operator CRD) — V5 Epic 4 E-4-4.
+#
+# OPT-IN: rendered only when monitoring.serviceMonitor.enabled=true AND the
+# operator's cluster has the Prometheus Operator (monitoring.coreos.com) CRDs
+# installed. The chart does NOT install Prometheus Operator; it only emits the
+# ServiceMonitor that an operator-owned Prometheus scrapes.
+#
+# Alert routing is Microsoft Teams primary (operator wires Alertmanager →
+# Teams Power Automate; see docs/observability). This template only declares
+# the scrape target; it does not embed any alert receiver or secret.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "ao-kernel.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ao-kernel.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "ao-kernel.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: {{ .Values.monitoring.serviceMonitor.path | quote }}
+      interval: {{ .Values.monitoring.serviceMonitor.interval | quote }}
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout | quote }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}

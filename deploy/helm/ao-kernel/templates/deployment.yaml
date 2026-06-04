@@ -110,6 +110,28 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.monitoring.otelSidecar.enabled }}
+        # Optional OpenTelemetry Collector sidecar (E-4-4). Operator-owned
+        # OTLP backend endpoint via plain env; no secret embedded. The main
+        # container exports OTLP to localhost; the sidecar forwards to the
+        # operator's collector/backend.
+        - name: otel-collector
+          image: {{ .Values.monitoring.otelSidecar.image | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.monitoring.otelSidecar.otlpEndpoint | quote }}
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
