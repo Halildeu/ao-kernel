@@ -99,3 +99,14 @@ observability production tunables preflight bundle:
 That bundle binds Grafana dashboard shape, SLI/SLO catalog discipline, and
 advisory performance policy evidence without treating them as final
 claim-bound observability smoke or alert escalation evidence.
+
+The `install_deploy_lifecycle_smoke` dimension now has a current-state
+install/deploy lifecycle preflight bundle:
+
+- `.claude/plans/V5-INSTALL-DEPLOY-LIFECYCLE-PREFLIGHT-BUNDLE.md`
+- `tests/fixtures/epic9/v5-install-deploy-lifecycle-preflight.current.json`
+
+That bundle binds standalone packaging smoke, deployment guide, operator
+runbook, Helm render/runbook surface, publish workflow, and migration-guide
+evidence without treating them as v5.0.0 release-artifact smoke, final tag or
+publish evidence, or final deployment lifecycle evidence.
