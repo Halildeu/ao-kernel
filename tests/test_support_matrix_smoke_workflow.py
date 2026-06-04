@@ -289,6 +289,9 @@ def test_live_ruleset_required_contexts_do_not_reference_support_matrix_smoke() 
 
 def test_slice_diff_only_adds_expected_workflow_supporting_artifacts() -> None:
     changed = set(_git_diff_names(["."]))
+    if ".github/workflows/support-matrix-smoke.yml" not in changed:
+        pytest.skip("support-matrix-smoke workflow not changed by this PR")
+
     expected = {
         ".github/workflows/support-matrix-smoke.yml",
         ".claude/plans/EPIC-3-E-3-3-CI-MATRIX.md",
