@@ -43,6 +43,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **Epic 9 PR-Xfinal readiness blocker guardrail** (V5 Epic 9, #895):
+  added `EPIC-9-FINAL-SUPERSESSION-PR.md`,
+  `epic9-xfinal-readiness-blocker.schema.v1.json`, and a current-state
+  fixture/test suite that pins `PR-Xfinal` as not ready to open, all three
+  gates as `not_ready`, `partial_flip_allowed=false`, and
+  `support_widening` / `production_platform_claim` / `live_adapter_execution`
+  as false. This closes the roadmap reference gap without opening the final
+  promotion path, authorizing a guard flip, publishing v5.0.0, or changing
+  rulesets/workflows.
 - **E-3-6 recompute-not-trust validator** (V5 Epic 3, #858): added
   `ao_kernel/_internal/support_widening/validator.py`,
   `scripts/validate_widening_evidence.py`, and
