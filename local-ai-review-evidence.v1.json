@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "CHORE-OPENCODE-GITIGNORE",
+  "work_package": "E-2-1-LIVE-ADAPTER-ENVELOPE-SCHEMA",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,53 +13,31 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/chore/opencode-gitignore",
+    "head_ref": "refs/heads/feat/epic-2-1-live-adapter-envelope-schema",
     "changed_files": [
-      ".gitignore",
+      ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "CHANGELOG.md",
+      "ao_kernel/defaults/schemas/live_adapter_envelope.schema.v1.json",
+      "docs/LIVE-ADAPTER-ENVELOPE.md",
+      "tests/test_live_adapter_envelope.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "gitignore_pattern_matches_target",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_required_check_name_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_guard_flip",
-      "status": "pass"
-    },
-    {
-      "name": "scope_in_allowlist",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_review",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
+    { "name": "ruff", "status": "pass" },
+    { "name": "mypy", "status": "pass" },
+    { "name": "schema_valid_draft_2020_12", "status": "pass" },
+    { "name": "guard_flags_const_false", "status": "pass" },
+    { "name": "strict_closure_every_object", "status": "pass" },
+    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Defensive hygiene: add `.opencode/` to repo root .gitignore. Context: `.opencode/` is a local install of the Opencode CLI plugin (`@opencode-ai/plugin`); it contains package.json + package-lock.json + node_modules/. The directory was created by a separate tool on the operator's machine, not by ao-kernel. Today its children are already ignored via the sub-.gitignore under .opencode/ (which lists package.json) plus the natural untracked status of node_modules/. But the directory itself is NOT ignored at the repo root, so a future .opencode/<anything>.py (or similar) could become accidentally tracked. This PR adds a single root-level pattern .opencode/ so the directory is unconditionally out of repo scope going forward.",
-    "Change set: 3 files (.gitignore + CHANGELOG.md + local-ai-review-evidence.v1.json). New block added under the existing `Claude Code runtime artifacts` section, with a 3-line comment documenting the rationale and the relationship to the existing sub-.gitignore.",
-    "Validation: running `git check-ignore -v` against `.opencode/` now resolves to the new root .gitignore rule (was previously: no match at repo-root level; only sub-.gitignore covered children). `.gitignore` is inside ao-release-gate allowed_path_prefixes (verified against #907 payload audit artifact), so the diff is in scope for the autonomous release gate. No invariant test reads .gitignore content, so no test update needed.",
-    "Cross-AI review: Codex thread 019e91a0 post-impl iter-1 -> REVISE (raw control character in JSON broke parse; reviewer field initially same provider as implementer). Absorbed: evidence rewritten without raw tabs; reviewer provider set to codex/openai per the actual review outcome. iter-2 expected AGREE.",
-    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime change, no defaults/ change, no scripts/ change, no .ao/ workspace write, no branch protection mutation, no ruleset mutation, no secret material."
+    "E-2-1 live adapter envelope schema (infrastructure-only). 4-iter Codex (OpenAI) cross-AI review on thread 019e92a5; all REVISE findings absorbed: (1) envelope_digest spec drift fixed (added required bare-sha256 content-address, plan §2 aligned to §702); (2) date-time fail-closed via explicit RFC3339 pattern (jsonschema does not enforce format by default); (3) closure test parametrized over every object path; (4) range-aware then calendar month/day-coupling regex (Feb<=29, 30-day months<=30); (5) leap-year validity reasoned-deferred to E-2-4 recompute-time with explicit boundary test + precise doc (no overclaim), justified by CLAUDE.md core-dependency minimalism.",
+    "Guard flags pinned const false at both schema (live_adapter_execution const false; optional support_widening/production_platform_claim const false) and evidence level. mode enum is exactly {stub, dry_run}; 'live' forbidden. No real network call represented; no guard flag flipped. Flip authority remains Epic 9 PR-Xfinal.",
+    "36 machine-enforced invariants; ruff + mypy + pytest green. Codex final verdict AGREE (iter-4). Follow-up recorded for E-2-4: dry-run harness must datetime-parse timestamps so schema-accepted-but-calendar-invalid values (e.g. non-leap 2026-02-29) fail-closed at runtime — E-2-4 acceptance blocker, not E-2-1."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
