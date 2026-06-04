@@ -1,28 +1,26 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11A-2-environment-wiring-closeout",
+  "work_package": "AO-MA-E-7-4-rate-limit-tuning",
   "implementer": {
-    "agent": "codex-ao-ma-11a-2-environment-wiring-closeout",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "anthropic-claude-opus-4-6-independent-reviewer",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-11a-2-plan-approval-env",
+    "head_ref": "refs/heads/codex/epic-7-4-rate-limit-tuning",
     "changed_files": [
-      ".claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json",
-      ".claude/plans/AO-MA-ROADMAP-STATUS.md",
-      ".claude/plans/ao_ma_status.v1.json",
+      ".claude/plans/E-7-4-RATE-LIMIT-TUNING.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/ao-ma-11a-2-environment-wiring-evidence.schema.v1.json",
-      "tests/test_ao_ma11a2_environment_wiring_evidence.py",
-      "tests/test_ao_ma_11e_status_tracking.py",
-      "local-ai-review-evidence.v1.json"
+      "ao_kernel/llm.py",
+      "docs/RATE-LIMIT-TUNING.md",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_epic_7_4_rate_limit_tuning.py"
     ]
   },
   "checks_considered": [
@@ -35,37 +33,39 @@
       "status": "pass"
     },
     {
-      "name": "ao_ma_next",
+      "name": "mypy",
       "status": "pass"
     },
     {
-      "name": "gpp_next_progress",
+      "name": "ruff",
       "status": "pass"
     },
     {
-      "name": "status_consistency",
+      "name": "facade_backward_compatible",
       "status": "pass"
     },
     {
-      "name": "evidence_schema_binding",
+      "name": "per_tenant_isolation_verified",
       "status": "pass"
     },
     {
-      "name": "guard_flags",
+      "name": "no_workflow_mutation",
       "status": "pass"
     },
     {
-      "name": "changelog",
+      "name": "no_guard_flip",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude AGREE: no blocking findings for AO-MA-11A-2 environment wiring closeout.",
-    "Claude reviewed the corrected eight-file scope including local-ai-review-evidence.v1.json as audit metadata for strict gate binding.",
-    "Claude accepted the live GitHub Environment evidence recording as governance-only and schema-bound.",
-    "Claude accepted status progression to AO-MA 6/7 phases done and 8/9 slices merged with AO-MA-11E-2 as next V5 Epic 1 action.",
-    "Claude noted json.tool, ao_ma_next drift none, git diff --check, and 108 targeted tests passed.",
-    "Claude found no secret exposure, support widening, production platform claim, live adapter execution, runtime mutation, or release authority bypass."
+    "E-7-4 (#886) rate limit production tuning per-tenant. docs/RATE-LIMIT-TUNING.md runbook + optional rps arg on get_rate_limiter public facade (backward-compatible; _internal already supported rps).",
+    "8 invariants pass incl. REAL per-tenant isolation test (drain tenant A does not starve tenant B) + same-key-same-bucket. mypy + ruff clean. Facade regression: 20 existing rate_limit tests still pass.",
+    "Public facade widened (llm.py); _internal limiter unchanged. Request shaping independent of live-call auth \u2014 no guard flag.",
+    "3 guard flags const false; backward-compatible (rps default 1.0)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

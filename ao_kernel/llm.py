@@ -97,20 +97,20 @@ def build_request(
     try:
         from ao_kernel.config import workspace_root as _ws_root
         from pathlib import Path as _Path
+
         ws = _ws_root()
         if ws:
             guardrails_path = _Path(ws) / "policies" / "policy_llm_providers_guardrails.v1.json"
             if guardrails_path.exists():
                 from ao_kernel.governance import check_policy
+
                 guardrails = check_policy(
                     "policy_llm_providers_guardrails.v1.json",
                     {"provider_id": provider_id, "model": model},
                     workspace=_Path(ws),
                 )
                 if not guardrails.get("allowed", True):
-                    raise ValueError(
-                        f"Provider guardrails denied: {guardrails.get('reason_codes', [])}"
-                    )
+                    raise ValueError(f"Provider guardrails denied: {guardrails.get('reason_codes', [])}")
     except (FileNotFoundError, ImportError):
         pass
 
@@ -239,15 +239,21 @@ def get_circuit_breaker(provider_id: str) -> Any:
     return _get(provider_id)
 
 
-def get_rate_limiter(provider_id: str) -> Any:
-    """Get or create per-provider rate limiter.
+def get_rate_limiter(provider_id: str, rps: float = 1.0) -> Any:
+    """Get or create a per-provider (or per-tenant) rate limiter.
+
+    ``provider_id`` is a free-form registry key. For per-tenant isolation
+    within one process, namespace it as ``f"{tenant}:{provider}"`` (V5 Epic 7
+    E-7-4; see docs/RATE-LIMIT-TUNING.md). ``rps`` sets the token-bucket refill
+    rate the FIRST time a key is created; subsequent calls with the same key
+    return the existing limiter (a created bucket's ``rps`` is fixed).
 
     Returns the limiter instance from the internal module (typed as Any because
     the internal type is not part of the public API).
     """
     from ao_kernel._internal.prj_kernel_api.rate_limiter import get_rate_limiter as _get
 
-    return _get(provider_id)
+    return _get(provider_id, rps)
 
 
 # ── Token Counting ───────────────────────────────────────────────────
@@ -320,6 +326,7 @@ def build_request_with_context(
             try:
                 from ao_kernel.context.canonical_store import query as query_canonical
                 import json
+
                 canonical_items = query_canonical(Path(workspace_root))
                 canonical_dict = {item["key"]: item for item in canonical_items} if canonical_items else None
             except Exception:
@@ -454,10 +461,7 @@ def governed_call(
     # ledger work — so the error surface is transparent and the run
     # state never diverges from the ledger schema.
     if attempt is not None and attempt < 1:
-        raise ValueError(
-            f"attempt must be >= 1 (got {attempt!r}); "
-            f"ledger idempotency schema constraint"
-        )
+        raise ValueError(f"attempt must be >= 1 (got {attempt!r}); ledger idempotency schema constraint")
 
     # 1. Capability check (BEFORE cost, BEFORE transport).
     cap_ok, _, missing = check_capabilities(
@@ -477,19 +481,13 @@ def governed_call(
         }
 
     # 2. Cost gate — all 4 identity + ws + policy.enabled.
-    cost_active = all(
-        [workspace_root, run_id, step_id, attempt is not None]
-    )
+    cost_active = all([workspace_root, run_id, step_id, attempt is not None])
     cost_policy = None
     if cost_active:
         from pathlib import Path
         from ao_kernel.cost.policy import load_cost_policy
 
-        ws_path = (
-            workspace_root
-            if isinstance(workspace_root, Path)
-            else Path(str(workspace_root))
-        )
+        ws_path = workspace_root if isinstance(workspace_root, Path) else Path(str(workspace_root))
         cost_policy = load_cost_policy(ws_path)
         cost_active = cost_policy.enabled
 
@@ -538,11 +536,7 @@ def governed_call(
         from pathlib import Path
         from ao_kernel.cost.middleware import pre_dispatch_reserve
 
-        ws_path = (
-            workspace_root
-            if isinstance(workspace_root, Path)
-            else Path(str(workspace_root))
-        )
+        ws_path = workspace_root if isinstance(workspace_root, Path) else Path(str(workspace_root))
         est_cost, catalog_entry = pre_dispatch_reserve(
             workspace_root=ws_path,
             run_id=str(run_id),
@@ -592,11 +586,7 @@ def governed_call(
         from pathlib import Path
         from ao_kernel.cost.middleware import post_response_reconcile
 
-        ws_path = (
-            workspace_root
-            if isinstance(workspace_root, Path)
-            else Path(str(workspace_root))
-        )
+        ws_path = workspace_root if isinstance(workspace_root, Path) else Path(str(workspace_root))
         # PR-B5 C2b: thread transport ``elapsed_ms`` into the
         # reconcile → emit path so ``llm_spend_recorded`` carries
         # ``duration_ms`` for the PR-B5 metrics derivation. Pure
@@ -675,7 +665,9 @@ def process_response_with_context(
             tool_output = tr.get("output", tr)
             if isinstance(tool_output, dict):
                 decisions = extract_from_tool_result(
-                    tool_name, tool_output, request_id=request_id,
+                    tool_name,
+                    tool_output,
+                    request_id=request_id,
                 )
                 for d in decisions:
                     upsert_decision(
