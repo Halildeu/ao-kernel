@@ -19,6 +19,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 AO-MA-SPM tutorial**: added the Epic 8 E-8-5 tutorial for
+  building a governed multi-AI autonomous program with stub workers,
+  cross-AI consensus, evidence verification, PR gating, and explicit
+  guard-flag preservation without live provider execution.
 - **V5 production deployment guide**: added the Epic 8 E-8-1
   deployment guide covering standalone Python package, Docker, and
   Kubernetes operator-deployable patterns while preserving the three

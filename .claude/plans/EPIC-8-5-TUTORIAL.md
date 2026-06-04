@@ -1,7 +1,7 @@
 # V5 Epic 8 E-8-5: Build Your Own AO-MA-SPM Program Tutorial
 
 > **Risk class:** conservative low-risk (docs-only)
-> **Implementer:** Anthropic Claude / **Reviewer:** OpenAI Codex (post-impl)
+> **Implementer:** OpenAI Codex / **Reviewer:** Anthropic Claude (post-impl)
 
 ## 1. Scope
 

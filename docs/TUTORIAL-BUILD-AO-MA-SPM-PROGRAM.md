@@ -74,8 +74,9 @@ Print "hello ao-ma" via the ao-kernel governed runtime.
 - ao-kernel native-import a worker result envelope
   produced by a canned stub
 - evidence trail records the import event
-- 2 reviewer evidence files in ao-ma-10-high-risk-reviews/
-  (skipped here because this slice has no .github/ mutation)
+- no AO-MA-10 high-risk review evidence is required for this tutorial
+  slice, because it does not mutate `.github/`, branch protection,
+  CODEOWNERS, rulesets, or release-gate policy
 ```
 
 ## 5. Step 3 — Plan-Time Cross-AI Consensus
@@ -110,19 +111,36 @@ ao-kernel ships an import-only worker contract (ADR-0003): the kernel
 never spawns the LLM; it imports the result envelope produced by your
 worker (CLI subprocess, Claude Code session, Mavis run, etc.).
 
+For this tutorial, keep the provider boundary outside the kernel and
+feed the governance plane with a canned worker envelope. The exact
+import helper depends on the worker adapter you wire later; the key
+invariant is that the kernel consumes already-produced evidence and
+does not execute a live provider call.
+
+Run `ao-kernel init` first, as shown in Step 1, so the `.ao/`
+workspace and evidence stream exist before opening the client context.
+
 ```python
 from ao_kernel import AoKernelClient
 
+stub_worker_result = {
+    "provider": "stub",
+    "intent": "FAST_TEXT",
+    "text": "hello ao-ma",
+    "evidence_class": "canned",
+}
+
 with AoKernelClient(workspace_root=".") as client:
-    result = client.llm_call(
-        messages=[{"role": "user", "content": "print hello ao-ma"}],
-        intent="FAST_TEXT",
-    )
-    print(result.text)
+    # The client owns the workspace/evidence context. Record or import this
+    # envelope through your program's ADR-0003 worker-adapter boundary.
+    # Entering the context does not issue an outbound provider request.
+    # No client method is invoked here; your concrete adapter import call is
+    # wired later. Do not call a live provider in this tutorial.
+    print(stub_worker_result["text"])
 ```
 
-If you do not have `[llm]` extra installed, the call falls back to a
-no-op path that still exercises the governance pipeline.
+Live provider execution remains a separate E-2-1 operator-bound
+supersession path and requires `live_adapter_execution=true` authority.
 
 ## 7. Step 5 — Verify Evidence
 
@@ -141,7 +159,9 @@ The release-gate workflow (`ao-release-gate`) inspects:
 
 1. The local-ai-review-evidence.v1.json file (single-AI baseline)
 2. For high-risk paths, the supersession evidence pair in
-   `ao-ma-10-high-risk-reviews/` (openai + anthropic — both AGREE)
+   the AO-MA-10 high-risk review evidence directory
+   (openai + anthropic — both AGREE). This tutorial does not create
+   those files because its scope avoids high-risk path classes.
 3. The branch protection ruleset (no admin merge, no force-push)
 
 Auto-merge with `--auto` triggers as soon as both technical and review
@@ -155,6 +175,7 @@ plan-consensus bundle for each cycle. This is the canonical
 Plan Consensus Autonomy gate (HARD RULE 2026-04-17).
 
 ```yaml
+# Example only. This tutorial does not create or modify this workflow.
 # .github/workflows/ao-ma-plan-consensus.yml — high-risk; requires
 # CODEOWNER review before any change. See E-1-1 wiring for reference.
 ```
@@ -185,7 +206,8 @@ This tutorial is descriptive; it does NOT:
 
 Per HARD RULE Cross-AI Peer Review (2026-05-05 + 2026-05-14):
 
-- Implementer Anthropic Claude → Reviewer OpenAI Codex (post-impl).
+- This slice's implementation evidence records OpenAI Codex as implementer
+  and Anthropic Claude as independent reviewer.
 - Plan-time consensus required for any change to tutorial language that
   could read as a production claim.
 - Plan doc at
