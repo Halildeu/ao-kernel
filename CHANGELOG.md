@@ -16,6 +16,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **AO-MA roadmap status human mirror drift**: refreshed the
+  operator-facing AO-MA roadmap status table to match the machine-readable
+  `ao_ma_status.v1.json` / `ao_ma_next.py` state: 5/7 phases done, 7/9
+  slices merged, AO-MA-11H/11F/4.6/11G marked done, and remaining work
+  limited to demand-driven 11A-2, 11E-2, and 11G-2 follow-up slices.
 - **Protected live-adapter checkout action pins**: updated the BC-1
   protected live-adapter attestation and BC-10 real-adapter usage/cost
   workflows from `actions/checkout@v4` to `@v6`, keeping
