@@ -5,6 +5,7 @@
 **Parent roadmap:** `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`
 **Current blocker artifact schema:** `ao_kernel/defaults/schemas/epic9-xfinal-readiness-blocker.schema.v1.json`
 **Current blocker fixture:** `tests/fixtures/epic9/xfinal-readiness-blocker.current.json`
+**Production matrix blocker:** `.claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md`
 
 This document records the shape and current readiness boundary for the future
 Epic 9 PR-Xfinal. It closes the roadmap reference gap without opening the final
@@ -36,7 +37,7 @@ PR-Xfinal is **not ready to open**.
 |---|---|---|
 | `live_adapter_execution` | not ready | Epic 9 pre-supersession checklist conditions remain unmet |
 | `support_widening` | not ready | future support-widening live evidence pack missing |
-| `production_platform_claim` | not ready | 9-dimensional V5 production readiness matrix incomplete |
+| `production_platform_claim` | not ready | 9-dimensional V5 production readiness matrix incomplete; current blocker artifact recorded in `.claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md` |
 
 The v1 blocker artifact intentionally pins:
 
@@ -111,6 +112,12 @@ complete across the roadmap's nine dimensions:
 7. multi-tenancy isolation;
 8. docs and runbooks;
 9. bypassless `ao-release-gate` and GitHub ruleset trail.
+
+Current-state tracking for this gate is recorded by
+`v5-production-readiness-matrix-blocker.schema.v1.json` and
+`tests/fixtures/epic9/v5-production-readiness-matrix.current.json`. The v1
+blocker pins `matrix_complete=false`, `pr_xfinal_open_allowed=false`, and all
+three guard flags false.
 
 Only after all three gates are complete may a future PR-Xfinal bind the evidence
 refs, record the exact operator authorization, update public claim language,

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-production-readiness-matrix-blocker:v1",
+  "title": "V5 production readiness matrix blocker v1",
+  "description": "Current-state blocker artifact for the Epic 9 production-platform-claim gate. It records that the 9-dimensional V5 production readiness matrix is incomplete and cannot authorize PR-Xfinal, support widening, live adapter execution, or a production platform claim.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "authority",
+    "matrix_complete",
+    "pr_xfinal_open_allowed",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "operator_bound_supersession_required",
+    "dimensions",
+    "issue_refs",
+    "next_safe_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "v5_production_readiness_matrix_blocker.v1" },
+    "artifact_kind": { "const": "v5_production_readiness_matrix_blocker" },
+    "repo": { "type": "string", "const": "Halildeu/ao-kernel" },
+    "work_package": { "type": "string", "const": "E-9-1" },
+    "authority": { "type": "string", "const": "epic_9_pr_xfinal_only" },
+    "matrix_complete": { "type": "boolean", "const": false },
+    "pr_xfinal_open_allowed": { "type": "boolean", "const": false },
+    "support_widening": { "type": "boolean", "const": false },
+    "production_platform_claim": { "type": "boolean", "const": false },
+    "live_adapter_execution": { "type": "boolean", "const": false },
+    "operator_bound_supersession_required": { "type": "boolean", "const": true },
+    "dimensions": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": { "$ref": "#/$defs/dimension" },
+      "allOf": [
+        { "contains": { "properties": { "id": { "const": "public_support_matrix" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "protected_real_provider_live_calls" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "cost_rate_circuit_breaker_evidence" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "observability_production_tunables" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "security_sbom_license_scans" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "install_deploy_lifecycle_smoke" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "multi_tenancy_isolation" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "docs_runbooks" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "id": { "const": "bypassless_release_governance" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 }
+      ]
+    },
+    "issue_refs": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "prefixItems": [
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/775" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/776" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/782" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/895" }
+      ],
+      "items": false
+    },
+    "next_safe_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "id",
+        "status",
+        "required_evidence",
+        "current_evidence_refs",
+        "missing_evidence",
+        "source_documents"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "public_support_matrix",
+            "protected_real_provider_live_calls",
+            "cost_rate_circuit_breaker_evidence",
+            "observability_production_tunables",
+            "security_sbom_license_scans",
+            "install_deploy_lifecycle_smoke",
+            "multi_tenancy_isolation",
+            "docs_runbooks",
+            "bypassless_release_governance"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["not_ready", "partial"]
+        },
+        "required_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "current_evidence_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "missing_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "source_documents": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
