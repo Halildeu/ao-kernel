@@ -36,9 +36,12 @@ Operator boundary:
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 from .base import SemanticBackend, SemanticBackendError, SemanticSearchResult
+
+_TABLE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$")
 
 
 class PgVectorBackend:
@@ -59,6 +62,8 @@ class PgVectorBackend:
     ) -> None:
         if embedding_dim < 1:
             raise ValueError("embedding_dim must be >= 1")
+        if not _TABLE_NAME_RE.fullmatch(table):
+            raise ValueError("table must be an unquoted SQL identifier or schema-qualified identifier")
         self._dsn_env_var = dsn_env_var
         self._table = table
         self._embedding_dim = embedding_dim

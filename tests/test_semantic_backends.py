@@ -185,6 +185,19 @@ def test_pgvector_embedding_dim_validated() -> None:
         backend.upsert("d1", [1.0, 0.0], {})  # length 2 != 384
 
 
+def test_pgvector_search_embedding_dim_validated_before_connect() -> None:
+    backend = PgVectorBackend(embedding_dim=384)
+    with pytest.raises(ValueError):
+        backend.search([1.0, 0.0])
+
+
+def test_pgvector_table_name_validated() -> None:
+    PgVectorBackend(table="ao_semantic_decisions")
+    PgVectorBackend(table="public.ao_semantic_decisions")
+    with pytest.raises(ValueError):
+        PgVectorBackend(table="ao_semantic_decisions; DROP TABLE ao_semantic_decisions")
+
+
 # ---- 4. Live pgvector exercise (operator opt-in; usually skipped) ------
 
 
@@ -225,7 +238,8 @@ def test_pgvector_module_does_not_import_psycopg2_at_top_level() -> None:
     so the [pgvector] extra stays opt-in."""
     from ao_kernel.context.semantic_backends import pgvector as pg_mod
 
-    src = open(pg_mod.__file__).read()
+    with open(pg_mod.__file__, encoding="utf-8") as fp:
+        src = fp.read()
     # The imports inside _import_extras / _connect bodies are OK; the
     # module-level import section must not reference psycopg2 / pgvector
     module_top = src.split("class PgVectorBackend")[0]
