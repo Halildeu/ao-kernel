@@ -63,11 +63,36 @@ config:
   # Optional log level (operator override).
   logLevel: "INFO"
 
+# PostgreSQL backend (V5 Epic 4 E-4-3) — OPERATOR-OWNED, EXTERNAL.
+#
+# The chart does NOT deploy PostgreSQL and does NOT create its Secret. The
+# operator provisions the database out-of-band (managed service, in-cluster
+# operator, or StatefulSet) and a Kubernetes Secret with the application
+# role credentials. The chart only references them via secretKeyRef.
+# Full runbook: docs/OPERATOR-SECRET-MANAGEMENT.md
+#
+# Connection coordinates (host/port/dbname/sslmode) are non-secret plain env.
+# Username/password are resolved via secretKeyRef ONLY — never inline here.
+postgresql:
+  # Disabled by default: ao-kernel runs in library/in-memory mode without a DB.
+  # Operator sets enabled:true + provides connection coordinates + secret refs.
+  enabled: false
+  # Non-secret connection coordinates (operator overrides):
+  host: ""
+  port: 5432
+  dbname: "ao_kernel"
+  # require | verify-full recommended for production (verify-full needs CA mount).
+  sslmode: "require"
+  # Secret reference for the application role (chart does NOT create this Secret).
+  secretName: ""
+  usernameKey: "username"
+  passwordKey: "password"
+
 # Environment variables.
 #
 # Secrets MUST be referenced via secretKeyRef ONLY (NEVER inline values).
 # Operator pre-provisions Kubernetes Secret out-of-band; the chart does not create secrets.
-# See docs/OPERATOR-SECRET-MANAGEMENT.md (delivered in E-4-3 future slice) for pattern.
+# See docs/OPERATOR-SECRET-MANAGEMENT.md for the PostgreSQL + secret pattern (E-4-3).
 env:
   # Plain env vars (non-secret) — operator may add freely; example:
   plain: []

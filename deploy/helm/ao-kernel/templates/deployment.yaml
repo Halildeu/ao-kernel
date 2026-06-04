@@ -64,6 +64,30 @@ spec:
                   name: {{ .secretName }}
                   key: {{ .secretKey }}
             {{- end }}
+            {{- if .Values.postgresql.enabled }}
+            # PostgreSQL backend (E-4-3): operator-owned EXTERNAL database.
+            # Connection coordinates are non-secret plain env; the application
+            # role username/password are resolved via secretKeyRef ONLY from
+            # the operator-provisioned Secret (chart does NOT create it).
+            - name: AO_KERNEL_DB_HOST
+              value: {{ .Values.postgresql.host | quote }}
+            - name: AO_KERNEL_DB_PORT
+              value: {{ .Values.postgresql.port | quote }}
+            - name: AO_KERNEL_DB_NAME
+              value: {{ .Values.postgresql.dbname | quote }}
+            - name: AO_KERNEL_DB_SSLMODE
+              value: {{ .Values.postgresql.sslmode | quote }}
+            - name: AO_KERNEL_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.secretName }}
+                  key: {{ .Values.postgresql.usernameKey }}
+            - name: AO_KERNEL_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.secretName }}
+                  key: {{ .Values.postgresql.passwordKey }}
+            {{- end }}
           {{- if .Values.probes.liveness.enabled }}
           livenessProbe:
             httpGet:
