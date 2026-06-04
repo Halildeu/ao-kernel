@@ -1,0 +1,223 @@
+{
+  "schema_version": "v5_production_readiness_matrix_blocker.v1",
+  "artifact_kind": "v5_production_readiness_matrix_blocker",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "authority": "epic_9_pr_xfinal_only",
+  "matrix_complete": false,
+  "pr_xfinal_open_allowed": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "operator_bound_supersession_required": true,
+  "dimensions": [
+    {
+      "id": "public_support_matrix",
+      "status": "partial",
+      "required_evidence": [
+        "public support matrix with OS, Python, provider, database, and deployment topology support tiers",
+        "public language synced only after final PR-Xfinal authorization"
+      ],
+      "current_evidence_refs": [
+        "docs/SUPPORT-BOUNDARY.md",
+        "docs/SUPPORT-SURFACE-INVENTORY.md",
+        "docs/PUBLIC-BETA.md"
+      ],
+      "missing_evidence": [
+        "final v5.0.0 public support matrix with promoted support tier",
+        "operator-authorized public claim language sync"
+      ],
+      "source_documents": [
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md"
+      ]
+    },
+    {
+      "id": "protected_real_provider_live_calls",
+      "status": "not_ready",
+      "required_evidence": [
+        "7-day bounded live provider execution window",
+        "per-call audit aggregate with protected environment reviewer proof",
+        "post-window deauthorization and secret-scope removal evidence"
+      ],
+      "current_evidence_refs": [
+        ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+        "ao_kernel/defaults/schemas/pre_supersession_checklist.schema.v1.json"
+      ],
+      "missing_evidence": [
+        "live evidence-class provider calls",
+        "protected environment reviewer proof",
+        "post-window deauthorization evidence"
+      ],
+      "source_documents": [
+        ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
+        ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md"
+      ]
+    },
+    {
+      "id": "cost_rate_circuit_breaker_evidence",
+      "status": "partial",
+      "required_evidence": [
+        "cost ceiling enforcement over live window",
+        "soft and hard breach evidence",
+        "rollback path and budget follow-up issue automation"
+      ],
+      "current_evidence_refs": [
+        "docs/PER-CALL-AUDIT.md",
+        "scripts/real_adapter_usage_evidence.py",
+        "scripts/live_adapter_evidence_workflow_runner.py"
+      ],
+      "missing_evidence": [
+        "live cost evidence bound to 7-day window",
+        "breach and rollback evidence from protected run",
+        "fresh pricing-source snapshot"
+      ],
+      "source_documents": [
+        ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+      ]
+    },
+    {
+      "id": "observability_production_tunables",
+      "status": "partial",
+      "required_evidence": [
+        "OTEL traces and metrics production tunables",
+        "dashboard and alerting evidence",
+        "production-like smoke evidence bound to final claim"
+      ],
+      "current_evidence_refs": [
+        "docs/grafana/ao_kernel_default.v1.json",
+        "docs/sli-catalog.v1.json",
+        "docs/performance/README.md"
+      ],
+      "missing_evidence": [
+        "final claim-bound observability smoke",
+        "alerting or escalation evidence for promoted tier"
+      ],
+      "source_documents": [
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+      ]
+    },
+    {
+      "id": "security_sbom_license_scans",
+      "status": "partial",
+      "required_evidence": [
+        "CodeQL, vulnerability, SBOM, and license scan evidence",
+        "clean final release security surface"
+      ],
+      "current_evidence_refs": [
+        ".github/workflows/codeql.yml",
+        ".github/workflows/trivy.yml",
+        "docs/KNOWN-BUGS.md"
+      ],
+      "missing_evidence": [
+        "final v5 release-bound SBOM artifact",
+        "final release license compliance artifact",
+        "final security scan evidence bundle"
+      ],
+      "source_documents": [
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+      ]
+    },
+    {
+      "id": "install_deploy_lifecycle_smoke",
+      "status": "partial",
+      "required_evidence": [
+        "standalone package install smoke",
+        "deployment lifecycle smoke",
+        "v5.0.0 release tag and publish evidence"
+      ],
+      "current_evidence_refs": [
+        "docs/MIGRATION-V5.md",
+        "tests/test_production_deployment_guide.py",
+        "tests/test_migration_v5_doc.py"
+      ],
+      "missing_evidence": [
+        "v5.0.0 tag and publish evidence",
+        "final install and deployment lifecycle smoke bound to release artifact"
+      ],
+      "source_documents": [
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+      ]
+    },
+    {
+      "id": "multi_tenancy_isolation",
+      "status": "not_ready",
+      "required_evidence": [
+        "tenant isolation test suite",
+        "RBAC, secret, quota, and audit isolation evidence",
+        "per-tenant cost tracking and rate limit evidence"
+      ],
+      "current_evidence_refs": [
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+      ],
+      "missing_evidence": [
+        "tenant isolation implementation evidence",
+        "cross-tenant leak prevention test evidence",
+        "per-tenant cost and quota evidence"
+      ],
+      "source_documents": [
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+      ]
+    },
+    {
+      "id": "docs_runbooks",
+      "status": "partial",
+      "required_evidence": [
+        "deployment guide",
+        "operator runbook",
+        "incident response and rollback procedure",
+        "API reference and migration guide"
+      ],
+      "current_evidence_refs": [
+        "docs/OPERATOR-RUNBOOK.md",
+        "docs/operator-runbooks/README.md",
+        "docs/MIGRATION-V5.md",
+        "docs/api/README.md"
+      ],
+      "missing_evidence": [
+        "final PR-Xfinal claim language sync",
+        "final release notes and v5.0.0 runbook update"
+      ],
+      "source_documents": [
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md"
+      ]
+    },
+    {
+      "id": "bypassless_release_governance",
+      "status": "partial",
+      "required_evidence": [
+        "ao-release-gate required check source-pin proof",
+        "empty bypass actors",
+        "autonomous merge trail for low-risk changes",
+        "cross-provider high-risk evidence for guarded changes"
+      ],
+      "current_evidence_refs": [
+        ".claude/plans/gpp_status.v1.json",
+        "ao_kernel/defaults/schemas/ao-ma-10-github-readiness-snapshot.schema.v1.json",
+        "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json"
+      ],
+      "missing_evidence": [
+        "PR-Xfinal pre-merge and post-merge ruleset source-pin evidence",
+        "final required-check uniqueness and source-collision evidence bound to PR-Xfinal"
+      ],
+      "source_documents": [
+        ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+        ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md"
+      ]
+    }
+  ],
+  "issue_refs": [
+    "https://github.com/Halildeu/ao-kernel/issues/775",
+    "https://github.com/Halildeu/ao-kernel/issues/776",
+    "https://github.com/Halildeu/ao-kernel/issues/782",
+    "https://github.com/Halildeu/ao-kernel/issues/895"
+  ],
+  "next_safe_actions": [
+    "keep production_platform_claim false until all nine dimensions are complete",
+    "collect live evidence for protected real provider calls under issue 775",
+    "collect support-widening live evidence under issue 776",
+    "prepare PR-Xfinal only after matrix_complete can be proven true in a future operator-bound schema"
+  ]
+}

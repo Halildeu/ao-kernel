@@ -43,6 +43,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 production readiness matrix blocker** (V5 Epic 9, #895): added
+  `V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md`,
+  `v5-production-readiness-matrix-blocker.schema.v1.json`, and a current-state
+  fixture/test suite that makes the roadmap's 9-dimensional production claim
+  matrix machine-checkable while pinning `matrix_complete=false`,
+  `pr_xfinal_open_allowed=false`, and
+  `support_widening` / `production_platform_claim` / `live_adapter_execution`
+  false. This is Gate C blocker infrastructure only; it does not open
+  PR-Xfinal, authorize a guard flip, publish/tag v5.0.0, or claim production
+  readiness.
 - **Epic 9 PR-Xfinal readiness blocker guardrail** (V5 Epic 9, #895):
   added `EPIC-9-FINAL-SUPERSESSION-PR.md`,
   `epic9-xfinal-readiness-blocker.schema.v1.json`, and a current-state
