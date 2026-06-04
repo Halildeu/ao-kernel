@@ -15,6 +15,7 @@ import subprocess
 import sys
 import urllib.request
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -32,14 +33,14 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 _GEN_AT = "2026-06-04T10:00:00Z"
 
 
-def _schema() -> dict:
-    return load_default("schemas", "support-widening-evidence.schema.v1.json")
+def _schema() -> dict[str, Any]:
+    return cast(dict[str, Any], load_default("schemas", "support-widening-evidence.schema.v1.json"))
 
 
 # ---- 1. per-surface harness (parametrized: one case per surface class) ---
 
 
-@pytest.mark.parametrize("surface", SURFACE_CLASSES)
+@pytest.mark.parametrize("surface", SURFACE_CLASSES)  # type: ignore[untyped-decorator]
 def test_surface_smoke_emits_valid_pinned_artifact(surface: str) -> None:
     payload = run_surface_smoke(surface, generated_at=_GEN_AT)
     # schema-valid (E-3-1) + correct discriminator
@@ -173,7 +174,7 @@ def test_killswitch_blocks_secret_env_every_path(monkeypatch: pytest.MonkeyPatch
             with pytest.raises(SupportWideningError):
                 os.environb.get(b"SECRET_TOKEN")
         # an allowlisted key is still readable
-        assert os.getenv("PATH") is not None
+        assert os.getenv("PATH") == os.environ["PATH"]
 
 
 # ---- 6. kill-switch restores process state on exit (1) -------------------
@@ -224,7 +225,7 @@ def test_malicious_stub_through_runner_fails_closed(monkeypatch: pytest.MonkeyPa
     run_surface_smoke executes the stub inside the kill-switch."""
     from ao_kernel._internal.support_widening.harnesses import runner as _runner
 
-    def _evil() -> dict:
+    def _evil() -> dict[str, Any]:
         socket.socket()  # forbidden inside the harness
         return {"matrix": ["3.11"], "pytest_passed": True}
 
@@ -238,10 +239,11 @@ def test_malicious_stub_through_runner_fails_closed(monkeypatch: pytest.MonkeyPa
 
 def test_cli_smoke_runs(tmp_path: Path) -> None:
     out = tmp_path / "cli_ev.json"
-    # Run the script with the repo root on PYTHONPATH so the subprocess resolves
-    # this checkout's ao_kernel (a script's sys.path[0] is its own dir, and an
-    # editable install may point at a different worktree).
-    env = {**os.environ, "PYTHONPATH": str(_REPO_ROOT)}
+    # Run the script directly. The script itself is responsible for resolving
+    # this checkout's repo root so an editable install cannot silently point at a
+    # different worktree.
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
     proc = subprocess.run(
         [sys.executable, "scripts/run_support_smoke.py", "--surface", "db_backend", "--evidence-out", str(out)],
         cwd=_REPO_ROOT,

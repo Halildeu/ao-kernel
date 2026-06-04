@@ -21,9 +21,13 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ao_kernel._internal.support_widening.evidence import SupportWideningEvidenceError
-from ao_kernel._internal.support_widening.harnesses.killswitch import SupportWideningError
-from ao_kernel._internal.support_widening.harnesses.runner import SURFACE_CLASSES, run_surface_smoke
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from ao_kernel._internal.support_widening.evidence import SupportWideningEvidenceError  # noqa: E402
+from ao_kernel._internal.support_widening.harnesses.killswitch import SupportWideningError  # noqa: E402
+from ao_kernel._internal.support_widening.harnesses.runner import SURFACE_CLASSES, run_surface_smoke  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
