@@ -1,0 +1,18 @@
+{
+  "schema_version": "ao-ma-github-mirror-drift-report.v1",
+  "projection_manifest": ".claude/plans/v5_issue_projection.v1.json",
+  "manifest_sha256": "sha256:b081c9b828d3593bb49bde8802ddc7177eaa6aa15c4e319f69ffb2f1d072b102",
+  "checked_at": "2026-06-04T08:25:15Z",
+  "network_allowed": true,
+  "token_env": "GH_TOKEN",
+  "token_present": true,
+  "github_owner": "Halildeu",
+  "github_repo": "ao-kernel",
+  "expected_counts": {
+    "issues": 75,
+    "labels": 23,
+    "project_items": 71
+  },
+  "drift": [],
+  "exit_decision": "synced"
+}

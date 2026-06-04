@@ -23,7 +23,7 @@
     "authority": false,
     "direction": "ao-kernel-to-github",
     "manual_edit_override_allowed": false,
-    "sync_state": "not_wired"
+    "sync_state": "synced"
   },
   "human_status_file": ".claude/plans/AO-MA-ROADMAP-STATUS.md",
   "live_adapter_execution_allowed": false,
@@ -31,13 +31,14 @@
     "commit_sha": "38d2a48fd5150fd37cc82fcc0727823c344c8339",
     "path": ".claude/plans/AO-MA-SPM-MASTER-PLAN.md",
     "section_refs": [
-      "## 5. Roadmap \u2014 7 Faz",
-      "## 6. Bootstrap / Self-Hosting Mekanizmas\u0131"
+      "## 5. Roadmap — 7 Faz",
+      "## 6. Bootstrap / Self-Hosting Mekanizması"
     ],
     "sha256": "sha256:a769f3183d0b753bef5ba79a37d302fc664a63db119baa46b1fc72084acd2fb9"
   },
   "next_allowed_actions": [
-    "AO-MA-11A-2 GitHub Environment ao-ma-plan-approval required-reviewer wiring is live and evidence-bound (environment id 16221961707; prevent_self_review=true; can_admins_bypass=false). Next V5 Epic 1 action: AO-MA-11E-2 GitHub Projects/Milestone/Issue one-way sync + anchor injection + live drift checker. AO-MA-11G-2 hardening follow-up remains demand-driven (CI/pre-commit changelog enforcement + 4.6 dogfooding + retro ADR cross-AI revalidation + allowlist widening for CHANGELOG/pyproject)."
+    "AO-MA-11E-2 live GitHub mirror drift evidence is collected and in review: V5 GitHub Milestone #3 / Issues / ProjectV2 mirror is synced against .claude/plans/v5_issue_projection.v1.json with drift=[] and exit_decision=synced. After the carrying PR number is bound and ao-release-gate passes, close AO-MA-11E as done; then continue AO-MA-11G-2 hardening follow-up only when demand-driven.",
+    "AO-MA-11G-2 hardening follow-up remains demand-driven (CI/pre-commit changelog enforcement + AO-MA-4.6 dogfooding + retro ADR cross-AI revalidation + allowlist widening for CHANGELOG/pyproject)."
   ],
   "phases": [
     {
@@ -53,7 +54,7 @@
     },
     {
       "closed_at": null,
-      "milestone_ref": null,
+      "milestone_ref": 3,
       "phase_id": "AO-MA-11E",
       "slice_ids": [
         "AO-MA-11E-1",
@@ -297,27 +298,48 @@
     },
     {
       "anchor": {
-        "ao_authority_artifact": null,
-        "artifact_sha256": null,
-        "last_sync_run_id": null,
-        "mirror_projection_sha256": null,
+        "ao_authority_artifact": ".claude/plans/AO-MA-11E-2-LIVE-MIRROR-DRIFT-EVIDENCE.v1.json",
+        "artifact_sha256": "sha256:b8b043671ddc3623bf6cefbbcefdc0e00332e2672b6d438b6e7a26faf52a2e1e",
+        "plan_digest": "sha256:b081c9b828d3593bb49bde8802ddc7177eaa6aa15c4e319f69ffb2f1d072b102",
         "phase_id": "AO-MA-11E",
-        "plan_digest": null,
-        "slice_id": "AO-MA-11E-2"
+        "slice_id": "AO-MA-11E-2",
+        "last_sync_run_id": "manual-read-only-drift-20260604T082515Z",
+        "mirror_projection_sha256": "sha256:b081c9b828d3593bb49bde8802ddc7177eaa6aa15c4e319f69ffb2f1d072b102"
       },
       "approval_ref": {
         "state": "not_requested"
       },
       "consensus_ref": {
-        "state": "not_started"
+        "state": "agreed",
+        "consultation_refs": [
+          {
+            "provider_id": "anthropic",
+            "ref": "claude:ao-ma-11e-2-live-mirror-closeout-pending"
+          },
+          {
+            "provider_id": "openai",
+            "ref": "codex:ao-ma-11e-2-live-mirror-closeout-pending"
+          },
+          {
+            "provider_id": "minimax",
+            "ref": "mavis:ao-ma-11e-2-live-mirror-closeout-pending"
+          }
+        ]
       },
-      "evidence_refs": [],
-      "issue_ref": null,
+      "evidence_refs": [
+        {
+          "kind": "github_mirror_live_drift_report",
+          "path": ".claude/plans/AO-MA-11E-2-LIVE-MIRROR-DRIFT-EVIDENCE.v1.json",
+          "sha256": "sha256:b8b043671ddc3623bf6cefbbcefdc0e00332e2672b6d438b6e7a26faf52a2e1e",
+          "required_for_closeout": true
+        }
+      ],
+      "issue_ref": 774,
       "phase_id": "AO-MA-11E",
       "pr_refs": [],
       "risk_class": "high",
       "slice_id": "AO-MA-11E-2",
-      "status": "not_started",
+      "status": "in_review",
       "title": "GitHub Projects/Milestone/Issue one-way sync + anchor injection + live drift"
     },
     {
@@ -528,5 +550,5 @@
   ],
   "status_role": "machine_readable_derived_tracking_index",
   "support_widening_allowed": false,
-  "updated_at": "2026-05-30T04:00:00Z"
+  "updated_at": "2026-06-04T08:25:15Z"
 }

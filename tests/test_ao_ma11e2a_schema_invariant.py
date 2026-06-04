@@ -23,6 +23,7 @@ from ao_kernel._internal.ao_ma.github_mirror_drift import (
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SCHEMA_PATH = _REPO_ROOT / "ao_kernel" / "defaults" / "schemas" / "ao-ma-github-mirror-drift-report.schema.v1.json"
+_LIVE_EVIDENCE_PATH = _REPO_ROOT / ".claude" / "plans" / "AO-MA-11E-2-LIVE-MIRROR-DRIFT-EVIDENCE.v1.json"
 
 
 def _load_schema() -> dict:
@@ -187,6 +188,27 @@ def test_schema_enforces_sha256_pattern() -> None:
     }
     errors = list(validator.iter_errors(bad))
     assert errors, "schema MUST reject invalid SHA pattern"
+
+
+def test_committed_live_mirror_evidence_validates_and_is_synced() -> None:
+    schema = _load_schema()
+    validator = jsonschema.Draft202012Validator(schema)
+    evidence = json.loads(_LIVE_EVIDENCE_PATH.read_text(encoding="utf-8"))
+
+    errors = list(validator.iter_errors(evidence))
+    assert errors == [], f"live mirror evidence schema errors: {[e.message for e in errors]}"
+    assert evidence["projection_manifest"] == ".claude/plans/v5_issue_projection.v1.json"
+    assert evidence["manifest_sha256"] == (
+        "sha256:b081c9b828d3593bb49bde8802ddc7177eaa6aa15c4e319f69ffb2f1d072b102"
+    )
+    assert evidence["expected_counts"] == {"issues": 75, "labels": 23, "project_items": 71}
+    assert evidence["exit_decision"] == "synced"
+    assert evidence["drift"] == []
+    assert evidence["token_env"] == "GH_TOKEN"
+    serialized = json.dumps(evidence)
+    assert "gho_" not in serialized
+    assert "ghp_" not in serialized
+    assert "github_pat_" not in serialized
 
 
 @pytest.mark.parametrize(
