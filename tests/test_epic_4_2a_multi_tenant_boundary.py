@@ -105,6 +105,12 @@ def _changed_files_against_origin_main() -> list[str]:
     return files
 
 
+def _skip_unless_e42a_evidence_in_diff(changed: list[str], invariant_name: str) -> None:
+    evidence_path = str(_EVIDENCE_PATH.relative_to(_REPO_ROOT))
+    if evidence_path not in changed:
+        pytest.skip(f"E-4-2a {invariant_name} applies only when the E-4-2a evidence artifact is in the PR diff")
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     data: Any = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(data, dict), f"expected JSON object at {path}; got {type(data).__name__}"
@@ -316,9 +322,7 @@ def test_matrix_all_entries_downstream_evidence_ref_null() -> None:
 
 def test_write_set_exact_match_git_diff() -> None:
     git_diff = _changed_files_against_origin_main()
-    evidence_path = str(_EVIDENCE_PATH.relative_to(_REPO_ROOT))
-    if evidence_path not in git_diff:
-        pytest.skip("E-4-2a write_set exactness applies only when the E-4-2a evidence artifact is in the PR diff")
+    _skip_unless_e42a_evidence_in_diff(git_diff, "write_set exactness")
     evidence = _load_json(_EVIDENCE_PATH)
     evidence_write_set = sorted(set(evidence.get("write_set", [])))
     assert evidence_write_set == git_diff, (
@@ -359,6 +363,7 @@ def test_matrix_json_validates_against_matrix_schema() -> None:
 
 def test_no_pyproject_change_in_slice() -> None:
     changed = _changed_files_against_origin_main()
+    _skip_unless_e42a_evidence_in_diff(changed, "pyproject boundary")
     assert "pyproject.toml" not in changed, "pyproject.toml MUST NOT change in E-4-2a (Epic 4 invariant)"
 
 
@@ -370,6 +375,7 @@ def test_no_runtime_python_module_change_in_slice() -> None:
     It MUST NOT modify any existing ao_kernel/*.py file or any other
     non-schema file under ao_kernel/."""
     changed = _changed_files_against_origin_main()
+    _skip_unless_e42a_evidence_in_diff(changed, "runtime module boundary")
     ao_kernel_paths = [p for p in changed if p.startswith("ao_kernel/")]
     illegal = [p for p in ao_kernel_paths if not (p.startswith("ao_kernel/defaults/schemas/") and p.endswith(".json"))]
     assert illegal == [], (
