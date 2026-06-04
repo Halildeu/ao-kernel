@@ -19,7 +19,8 @@
   - **Epic 5 E-5-2** Prometheus + Grafana dashboard **DONE-DISCOVERED** (PR-B5 baseline `docs/grafana/ao_kernel_default.v1.json` 8 panels + README + shape test)
   - **Epic 8 E-8-6** Migration guide v4.x → v5.0.0 **THIS PR** (`docs/MIGRATION-V5.md`)
   - **P0-4** ao-release-gate finding taxonomy fix **MERGED-PENDING** (PR #793 — CI green, awaiting auto-merge)
-- **Pending operator action:** PR #764 CI shadow-skip permanent fix (operator review; PR #793 unblocks the dual check-run semantic), 11A-2 GH Environment setup (operator UI), 11E-2b PAT secret + workflow_dispatch (operator).
+- **Resolved after original snapshot:** E-1-7 / P0-GATE-2 CI shadow-skip permanent fix was superseded by PR #937 (`c7e5709`), which made `pull_request: edited` run the full required-check surface and added `tests/test_required_check_workflow_trigger_shape.py` to pin the invariant. Historical PR #764 remains closed/unmerged.
+- **Pending operator action:** 11A-2 GH Environment setup (operator UI), 11E-2b PAT secret + workflow_dispatch (operator).
 
 ## 2. "Tam production" semantiği (Codex iter-1 invariant #1)
 
@@ -59,7 +60,7 @@ Final operator-bound decision PR tüm evidence refs'i bağlar — flag flip ANCA
 - E-1-4 AO-MA-11G-2d: Pre-commit hook for changelog (lokal yardımcı; release authority değil)
 - E-1-5 AO-MA-4.6-2: native-import operator dogfooding (operator claude-cli ile worker_result üret → ao-kernel native-import ingest)
 - E-1-6 Retro ADR cross-AI revalidation: ADR-0001..0004 Codex+Mavis ile `cross_ai_validated` review_status
-- E-1-7 PR #764: CI shadow-skip permanent fix (operator gate; halen pending)
+- E-1-7 CI shadow-skip permanent fix: **MERGED via PR #937** (`c7e5709`; supersedes closed/unmerged PR #764). `pull_request: edited` and review-change triggers now run the full required-check surface; `tests/test_required_check_workflow_trigger_shape.py` pins the no-shadow-skip invariant.
 
 ### Epic 2 (Live Adapter Execution Infrastructure — flag flip ITSELF Epic 9'da)
 
@@ -280,7 +281,7 @@ Codex iter-1 invariant #7: ilk dalgada 80 issue açma; epic + P0 gate issues + s
 9. Epic 8 — Documentation + onboarding (parent)
 10. Epic 9 — Final promotion decision (parent; **3 guard flag flip authority — per-flag independent gate; consolidates Epic 2/3 flip authority**)
 11. P0-GATE-1: v4.1.0 PyPI publish workflow fix (`.github/workflows/publish.yml` twine check JSON-distribution false-positive; high-risk operator gate)
-12. P0-GATE-2: PR #764 CI shadow-skip permanent fix (high-risk `.github/workflows/test.yml` operator gate)
+12. P0-GATE-2: CI shadow-skip permanent fix (high-risk `.github/workflows/test.yml`; resolved via PR #937, superseding closed/unmerged PR #764)
 13. P0-GATE-3: V5 GitHub mirror create (PR-X2 manuel mirror NOW path; AO-MA-11E-2 drift checker LATER binding adapter)
 
 Alt issues lazy expand: her epic'in sub-issue'ları E-N-M ID ile epic issue body'sinde checklist olarak listelenir; gerçek sub-issue açılışı epic in_progress'a girdiğinde.

@@ -604,17 +604,17 @@
       "slice_id": "E-1-7",
       "title": "[E-1-7] PR #764 CI shadow-skip permanent fix",
       "risk": "high",
-      "status": "pending",
-      "status_ref": "pending PR #764 (operator gate; .github high-risk)",
+      "status": "merged",
+      "status_ref": "merged PR #937 (c7e5709), superseding closed/unmerged PR #764",
       "labels": [
         "epic-1",
         "risk:high",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
-      "deps": "operator gate",
-      "description": "Operator CODEOWNER review pending — .github/workflows/test.yml high-risk path."
+      "deps": "operator gate satisfied by PR #937",
+      "description": "PR #937 made pull_request: edited run the full required-check surface and added tests/test_required_check_workflow_trigger_shape.py to pin the no-shadow-skip invariant. PR #764 is historical and closed/unmerged."
     },
     "E-2-1": {
       "issue_number": 846,

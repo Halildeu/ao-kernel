@@ -1,21 +1,22 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "CHORE-OPENCODE-GITIGNORE",
+  "work_package": "E-1-7-status-sync",
   "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
+    "agent": "codex",
+    "provider": "openai"
   },
   "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
+    "agent": "claude",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/chore/opencode-gitignore",
+    "base_ref": "origin/main",
+    "head_ref": "HEAD",
     "changed_files": [
-      ".gitignore",
+      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      ".claude/plans/v5_subissues_mirror.v1.json",
       "CHANGELOG.md",
       "local-ai-review-evidence.v1.json"
     ]
@@ -30,15 +31,11 @@
       "status": "pass"
     },
     {
-      "name": "gitignore_pattern_matches_target",
+      "name": "status_sync_accuracy",
       "status": "pass"
     },
     {
-      "name": "no_runtime_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_required_check_name_change",
+      "name": "no_runtime_or_workflow_change",
       "status": "pass"
     },
     {
@@ -46,20 +43,19 @@
       "status": "pass"
     },
     {
-      "name": "scope_in_allowlist",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_review",
+      "name": "changelog_entry",
       "status": "pass"
     }
   ],
   "findings": [
-    "Defensive hygiene: add `.opencode/` to repo root .gitignore. Context: `.opencode/` is a local install of the Opencode CLI plugin (`@opencode-ai/plugin`); it contains package.json + package-lock.json + node_modules/. The directory was created by a separate tool on the operator's machine, not by ao-kernel. Today its children are already ignored via the sub-.gitignore under .opencode/ (which lists package.json) plus the natural untracked status of node_modules/. But the directory itself is NOT ignored at the repo root, so a future .opencode/<anything>.py (or similar) could become accidentally tracked. This PR adds a single root-level pattern .opencode/ so the directory is unconditionally out of repo scope going forward.",
-    "Change set: 3 files (.gitignore + CHANGELOG.md + local-ai-review-evidence.v1.json). New block added under the existing `Claude Code runtime artifacts` section, with a 3-line comment documenting the rationale and the relationship to the existing sub-.gitignore.",
-    "Validation: running `git check-ignore -v` against `.opencode/` now resolves to the new root .gitignore rule (was previously: no match at repo-root level; only sub-.gitignore covered children). `.gitignore` is inside ao-release-gate allowed_path_prefixes (verified against #907 payload audit artifact), so the diff is in scope for the autonomous release gate. No invariant test reads .gitignore content, so no test update needed.",
-    "Cross-AI review: Codex thread 019e91a0 post-impl iter-1 -> REVISE (raw control character in JSON broke parse; reviewer field initially same provider as implementer). Absorbed: evidence rewritten without raw tabs; reviewer provider set to codex/openai per the actual review outcome. iter-2 expected AGREE.",
-    "ZERO TOUCH on guard-controlled surfaces: no guard flag flip (support_widening / production_platform_claim / live_adapter_execution all remain false), no ao_kernel/ runtime change, no defaults/ change, no scripts/ change, no .ao/ workspace write, no branch protection mutation, no ruleset mutation, no secret material."
+    "E-1-7 status correctly transitions from pending/blocked to merged/done referencing PR #937 c7e5709; no overclaim of production readiness",
+    "PR #764 consistently described as closed/unmerged historical reference across all three plan files",
+    "Mirror JSON status changed pending to merged and label status:blocked to status:done; deps updated to reflect operator gate satisfied; all consistent",
+    "Roadmap pending-operator-action line correctly drops E-1-7 entry since it is no longer pending",
+    "No .github/, ao_kernel/, or test runtime files in diff; pure plan/changelog status sync",
+    "No guard flag references modified; gpp_next.py confirms all three flags remain false",
+    "Changelog entry is under Fixed in Unreleased, accurately scoped to status-sync with no runtime claim",
+    "No secrets, tokens, webhook URLs, or PII in diff content"
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
