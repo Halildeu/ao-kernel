@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **AO-MA-11E-2 post-merge mirror tracking closeout**: after PR #933
+  merged through `app/github-actions`, moved the AO-MA tracking mirrors to
+  `merged` / `done` and kept guard flags false with no runtime mutation.
 - **E-4-3 follow-up: dedup DB env in operator runbook** (Codex review absorb):
   docs/OPERATOR-SECRET-MANAGEMENT.md showed the DB env twice (postgresql block
   + env.secretRefs/env.plain), which would duplicate/conflict with the
@@ -54,9 +57,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   schema-bound read-only live drift report proving the V5 GitHub Milestone
   #3 / Issues / ProjectV2 mirror is synced against
   `.claude/plans/v5_issue_projection.v1.json` (`drift=[]`,
-  `exit_decision=synced`, 75 issues, 23 labels, 71 project items). The AO-MA
-  tracking mirror is moved to `in_review` until the carrying PR number is
-  bound and `ao-release-gate` proves the high-risk evidence/update path.
+  `exit_decision=synced`, 75 issues, 23 labels, 71 project items), binding
+  the carrying PR #933 and closing AO-MA progress at 7/7 phases done and 9/9
+  slices merged without support widening, production platform claim, or live
+  adapter execution.
 - **AO-MA-11A-2 environment wiring status drift**: recorded the live
   GitHub Environment `ao-ma-plan-approval` configuration as a schema-bound
   evidence artifact, pinning required reviewer `Halildeu`,
