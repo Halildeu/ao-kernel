@@ -2,11 +2,11 @@
 
 > **Statü:** PROPOSED · V5 roadmap'in 4. epic'i. PR-X0 (`V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`) ile mühürlenmiş E-4-1..E-4-6 sub-slice tabanı bu plana göre genişletilir.
 > **Parent:** `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md` §3 Epic 4
-> **Owner:** Halil Kocoglu · **Cross-AI consensus:** TBD per-slice (Codex MCP plan-time iter; Mavis/MiniMax kritik slice'larda 3-way)
+> **Owner:** Halil Kocoglu · **Cross-AI consensus:** Codex plan-time iter-2 AGREE for this plan PR; Mavis/MiniMax remains required for the E-4-2b final cross-tenant matrix seal.
 > **Bağımlılık:** Epic 1 (sistem mod aktivasyon) + Epic 2 paralel (live adapter envelope opsiyonel; bu epic'in template'leri için **gerekli değil** — operator-side runbook olarak yayınlanır)
 > **Risk:** high (cross-tenant isolation pattern + multi-namespace pattern docs) · **Forecast:** 4-6 hafta lazy infaza yayılır
 
-> **Iter-2 NOT (2026-06-02):** Bu doc Codex MCP thread `019e879d` iter-1 REVISE verdict'inde tespit edilen 8 finding (F1-F8) absorb edilerek revize edilmiştir. Per-finding fix mapping §13'te. Iter-2 review thread pending; AGREE alınana kadar impl YASAK.
+> **Iter-2 NOT (2026-06-04 rebase refresh):** Bu doc Codex MCP thread `019e879d` iter-1 REVISE verdict'inde tespit edilen 8 finding (F1-F8) absorb edilerek revize edilmiştir. Per-finding fix mapping §13'te. Rebase sonrası Codex plan review sonucu **AGREE** olarak kaydedildi; implementation slice'ları ancak bu plan PR merge olduktan ve ilgili slice'ın kendi plan/post-impl review kapıları yeşillendikten sonra açılır.
 
 > **Authority hatırlatması (V5 invariant #1):** Bu epic **hiçbir guard flag flip ETMEZ**. Helm chart + multi-tenant pattern + operator runbook'lar **operator-side artifact** olarak yayınlanır. `live_adapter_execution` / `support_widening` / `production_platform_claim` üçü de **const false** kalır. Final guard flag flip yetkisi **PR-Xfinal** operator-bound supersession decision'da. Epic 4'ün hiçbir slice'ı tek başına bu yetkiyi taşımaz.
 
@@ -617,4 +617,4 @@ Bu doc Codex MCP thread `019e879d` iter-1 REVISE verdict'inde tespit edilen **8 
 - Yeni dil disiplini: "operator_enforceable" + 3 fail-state const (runtime_enforced:false, live_validated:false, operator_action_required:true) — F4 absorb
 - Yeni test kategorileri: write_set_diff_match (F3), no_guard_flag_key (F2), no_psp_manifest (F6), slack_absence_in_rendered (F5), secret_leak_scan (F7), no_live_cluster_commands_in_runbooks (F7), no_deprecated_k8s_api (F7), helm_template_idempotency_epic_wide (F7), no_pyproject_k8s_helm_extra (F8), egress_allowlist_values_present (F6), dns_only_default_beta_documented (F6), all_4_const_fields_per_dimension (F4), no_alertmanager_in_chart_templates (F5)
 
-**Iter-2 gönderim:** Codex MCP thread `019e879d` `codex-reply` ile bu revize edilmiş plan'a review istenecek. AGREE alınana kadar impl YASAK (Plan Consensus Autonomy: cross-AI consensus zorunlu).
+**Iter-2 outcome:** Rebase refresh sırasında Codex plan review sonucu **AGREE** olarak kaydedildi. Bu AGREE yalnız bu Epic 4 plan PR'ı içindir; implementation slice'ları için ilgili slice'ın kendi plan-time/post-impl review kapıları zorunlu kalır. E-4-2b final cross-tenant matrix seal için 3-way Codex + Mavis/MiniMax evidence zorunluluğu korunur.
