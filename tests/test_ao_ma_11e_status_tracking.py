@@ -500,6 +500,33 @@ def test_ao_ma_11a_2_status_is_bound_to_environment_wiring_evidence() -> None:
     )
 
 
+def test_ao_ma_11e_2_status_is_bound_to_live_mirror_drift_evidence() -> None:
+    payload = _load_status()
+    target = next(s for s in payload["slices"] if s["slice_id"] == "AO-MA-11E-2")
+
+    assert target["status"] == "in_review"
+    assert target["risk_class"] == "high"
+    assert target["issue_ref"] == 774
+    assert target["pr_refs"] == []
+    assert target["consensus_ref"]["state"] == "agreed"
+    assert target["approval_ref"]["state"] == "not_requested"
+
+    evidence = target["evidence_refs"]
+    assert evidence == [
+        {
+            "kind": "github_mirror_live_drift_report",
+            "path": ".claude/plans/AO-MA-11E-2-LIVE-MIRROR-DRIFT-EVIDENCE.v1.json",
+            "required_for_closeout": True,
+            "sha256": "sha256:b8b043671ddc3623bf6cefbbcefdc0e00332e2672b6d438b6e7a26faf52a2e1e",
+        }
+    ]
+    assert target["anchor"]["ao_authority_artifact"] == evidence[0]["path"]
+    assert target["anchor"]["artifact_sha256"] == evidence[0]["sha256"]
+    assert target["anchor"]["mirror_projection_sha256"] == (
+        "sha256:b081c9b828d3593bb49bde8802ddc7177eaa6aa15c4e319f69ffb2f1d072b102"
+    )
+
+
 def test_main_text_exit_zero_on_clean(capsys: pytest.CaptureFixture[str]) -> None:
     rc = ao_ma_next.main(["--status", str(_STATUS)])
     out = capsys.readouterr().out

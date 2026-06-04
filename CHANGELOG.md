@@ -42,6 +42,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **AO-MA-11E-2 live GitHub mirror drift evidence**: recorded a
+  schema-bound read-only live drift report proving the V5 GitHub Milestone
+  #3 / Issues / ProjectV2 mirror is synced against
+  `.claude/plans/v5_issue_projection.v1.json` (`drift=[]`,
+  `exit_decision=synced`, 75 issues, 23 labels, 71 project items). The AO-MA
+  tracking mirror is moved to `in_review` until the carrying PR number is
+  bound and `ao-release-gate` proves the high-risk evidence/update path.
 - **AO-MA-11A-2 environment wiring status drift**: recorded the live
   GitHub Environment `ao-ma-plan-approval` configuration as a schema-bound
   evidence artifact, pinning required reviewer `Halildeu`,
