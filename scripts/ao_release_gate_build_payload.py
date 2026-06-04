@@ -82,6 +82,18 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     # not yet recognize `.github/ISSUE_TEMPLATE/` as an allowed GitHub
     # metadata surface.
     ".github/ISSUE_TEMPLATE/",
+    # Dependabot security baseline config is an exact GitHub metadata file,
+    # not a workflow, CODEOWNERS rule, ruleset, branch-protection setting,
+    # runtime adapter path, support-widening claim, or production-platform
+    # claim. Keep this as an exact path rather than widening to `.github/`
+    # so unrelated GitHub governance surfaces remain independently gated.
+    # Regression: PR #798 (E-6-2 Dependabot + Trivy advisory baseline)
+    # carried reviewed high-risk evidence for `.github/dependabot.yml` and
+    # `.github/workflows/trivy.yml`, but the protected-base builder denied
+    # the diff with `ao_release_gate_diff_out_of_scope` because Dependabot
+    # config was not yet recognized as an allowed GitHub security metadata
+    # file.
+    ".github/dependabot.yml",
     ".github/CODEOWNERS",
     "deploy/",
     "docs/",

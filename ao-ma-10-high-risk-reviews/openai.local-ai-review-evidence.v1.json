@@ -1,4 +1,28 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "AO-MA-917-release-gate-dependabot-scope",
+  "implementer": {
+    "agent": "codex-gpt-5-release-gate-dependabot-scope",
+    "provider": "openai"
+  },
+  "reviewer": {
+    "agent": "openai-governance-review-dependabot-scope",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ao-release-gate-dependabot-scope",
+    "changed_files": [
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "scripts/ao_release_gate_build_payload.py",
+      "tests/test_ao_release_gate_build_payload.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
@@ -7,43 +31,32 @@
     {
       "name": "secret_scan",
       "status": "pass"
+    },
+    {
+      "name": "exact_path_not_prefix_widening",
+      "status": "pass"
+    },
+    {
+      "name": "release_gate_diff_scope_regression",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_discipline",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_const_false",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Product/governance scope is limited to the V5 projection manifest, the new V5 sub-issue mirror manifest, and the narrow ADR-0005 CHANGELOG.md Unreleased record; the remaining changed paths are review-evidence artifacts identified as provisional regeneration inputs.",
-    "The projection manifest only adds runtime_created_state.sub_issues_mirror_ref and keeps guard_flags.support_widening, guard_flags.production_platform_claim, and guard_flags.live_adapter_execution false.",
-    "The new mirror manifest is internally consistent at the reviewed level: total_created is 62, per-epic counts sum to 62, issue_number_range 834-895 covers 62 issues, and projection parent_to_sub_count matches the mirror counts.",
-    "The mirror preserves register_authority as evidence_record_only and visibility_mode as one_way_mirror_repo_authority_wins; it does not claim release authority, production-platform readiness, support widening, or live-adapter execution.",
-    "No workflow, ruleset, branch protection, CODEOWNERS, PR template, runtime binding, or secret-bearing implementation path is changed in the supplied diff.",
-    "The supplied validation is sufficient for this mirror/projection change: both plan JSON files parsed, targeted manifest/project-sync tests reported 23 passed, git diff --check passed, changelog enforcement passed, and the changed-file secret scan reported no matches.",
-    "Minor non-blocking formatting note: v5_subissues_mirror.v1.json is shown without a trailing newline, but supplied git diff --check passed and this does not affect governance semantics."
+    "OpenAI implementation review: exact .github/dependabot.yml allowlist entry is narrower than a .github/ prefix and directly targets PR #798's ao_release_gate_diff_out_of_scope blocker.",
+    "The invariant test asserts both presence of .github/dependabot.yml and absence of generic .github/ prefix.",
+    "The change does not alter workflows, CODEOWNERS, rulesets, branch protection, runtime adapter code, support-widening authority, production-platform claims, or live adapter execution.",
+    "Focused local verification passed: tests/test_ao_release_gate_build_payload.py plus the baseline allow decision smoke test."
   ],
-  "implementer": {
-    "agent": "codex-v5-subissues-mirror-rebase",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "openai-governance-review",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-      ".claude/plans/v5_issue_projection.v1.json",
-      ".claude/plans/v5_subissues_mirror.v1.json",
-      "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json"
-    ],
-    "head_ref": "refs/heads/codex/v5-subissues-mirror"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-896-v5-mirror-sub-issues"
+  "production_platform_claim": false
 }

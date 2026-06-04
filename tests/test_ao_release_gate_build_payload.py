@@ -605,6 +605,7 @@ def test_build_payload_allowed_path_prefixes_repo_owned_not_pr_supplied(tmp_path
     assert ".claude/scripts/" in prefixes
     assert ".github/workflows/" in prefixes
     assert ".github/ISSUE_TEMPLATE/" in prefixes
+    assert ".github/dependabot.yml" in prefixes
     # GPP-2D-3c bootstrap prerequisite: the ao-release-gate enforce
     # job reads the raw reviewer evidence file committed at the repo
     # head and generates the head-bound gate evidence file at CI
@@ -692,6 +693,31 @@ def test_build_payload_allowed_path_prefixes_includes_issue_templates(
     mod.main(_build_argv(tmp_path, output=output))
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert ".github/ISSUE_TEMPLATE/" in payload["allowed_path_prefixes"]
+
+
+def test_build_payload_allowed_path_prefixes_includes_dependabot_config(
+    tmp_path: Path,
+) -> None:
+    """`.github/dependabot.yml` is pinned as an exact base-ref allowlist
+    entry so reviewed security-baseline config PRs do not trigger
+    ao_release_gate_diff_out_of_scope.
+
+    Regression for PR #798 (E-6-2 Dependabot + Trivy advisory baseline):
+    the PR carried valid high-risk supersession evidence for
+    `.github/dependabot.yml` and `.github/workflows/trivy.yml`, but the
+    protected-base builder denied the diff because Dependabot metadata was
+    not in the allowlist. This must stay an exact path, not a `.github/`
+    prefix, so workflow, CODEOWNERS, ruleset, branch-protection, runtime,
+    support-widening, and production-claim surfaces remain separately
+    governed.
+    """
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    mod.main(_build_argv(tmp_path, output=output))
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    prefixes = payload["allowed_path_prefixes"]
+    assert ".github/dependabot.yml" in prefixes
+    assert ".github/" not in prefixes
 
 
 def test_build_payload_allowed_path_prefixes_includes_release_lifecycle_files(

@@ -16,6 +16,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **ao-release-gate Dependabot config diff-scope**: added the exact
+  `.github/dependabot.yml` path to the protected-base release-gate
+  allowlist so reviewed vulnerability-scanning baseline PRs can merge
+  without widening generic `.github/**`, workflow, CODEOWNERS, ruleset,
+  support, live-adapter, or production-claim surfaces.
 - **test_epic_4_1_helm_chart_skeleton write-set scope**:
   scoped the E-4-1 write-set exactness invariant to PRs that actually
   update the E-4-1 decision evidence artifact, so the global test suite
