@@ -130,6 +130,27 @@ monitoring:
     # OTLP endpoint the sidecar forwards to (operator-owned backend).
     otlpEndpoint: ""
 
+# NetworkPolicy + PodSecurityStandards (V5 Epic 4 E-4-5) — OPT-IN baseline.
+#
+# networkPolicy: default-deny ingress + scoped egress (DNS + operator CIDRs).
+# Operator MUST widen egress for the LLM provider endpoints actually used.
+# podSecurityStandards: the chart's containerSecurityContext already meets the
+# 'restricted' PSS profile; the operator applies the namespace ENFORCE label
+# out-of-band (chart does not manage the namespace). See README / NOTES.
+networkPolicy:
+  enabled: false
+  ingress:
+    allowSameNamespace: true
+    extraFrom: []
+  egress:
+    # Operator-allowed egress CIDRs (LLM providers etc). Empty = DNS-only.
+    allowCidrs: []
+podSecurityStandards:
+  # The chart's pod/container securityContext satisfies 'restricted'. The
+  # operator labels the namespace: pod-security.kubernetes.io/enforce=restricted
+  # (chart does NOT manage the namespace; see docs/MULTI-TENANT-DEPLOYMENT.md).
+  enforceProfile: "restricted"
+
 # ServiceAccount (namespace-scoped; ClusterRole forbidden).
 serviceAccount:
   create: true
