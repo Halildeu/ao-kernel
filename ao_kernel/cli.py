@@ -616,6 +616,47 @@ def _parse_repo_export_targets(raw: str | None) -> list[str]:
     return targets
 
 
+def _cmd_support_widening_evidence_validate(args: argparse.Namespace) -> int:
+    """V5 Epic 3 E-3-1: validate a support_widening_evidence.v1 artifact.
+
+    Read-only — no mutation. Validates against the schema + re-asserts the runtime
+    guard pins; with --recompute, also re-derives evidence_dimensions from
+    recompute_inputs (recompute-not-trust). Exit 0 on valid, 1 on failure.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel._internal.support_widening.evidence import (
+        SupportWideningEvidenceError,
+        parse_v1,
+        recompute_v1,
+    )
+    from ao_kernel.config import load_default
+
+    path = _Path(args.path)
+    if not path.is_file():
+        print(f"error: evidence file not found: {args.path}", file=sys.stderr)
+        return 1
+    try:
+        payload = _json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"error: cannot read/parse evidence JSON: {exc}", file=sys.stderr)
+        return 1
+
+    schema = load_default("schemas", "support-widening-evidence.schema.v1.json")
+    try:
+        parse_v1(payload, schema=schema)
+        if getattr(args, "recompute", False):
+            recompute_v1(payload)
+    except SupportWideningEvidenceError as exc:
+        print(f"INVALID: {exc}", file=sys.stderr)
+        return 1
+
+    suffix = " (+recompute)" if getattr(args, "recompute", False) else ""
+    print(f"VALID: {args.path}{suffix} — support_widening pinned false; surface_class={payload.get('surface_class')}")
+    return 0
+
+
 def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
     """v3.4.0 CLI: scan ledger for orphan spend entries and stamp
     missing markers. Idempotent + cursor-based."""
@@ -1886,6 +1927,25 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Project root (default: cwd)",
     )
 
+    # V5 Epic 3 E-3-1: support-widening evidence validation (read-only)
+    sw_p = sub.add_parser(
+        "support-widening",
+        help="Support-widening evidence (infrastructure-only; read-only validation)",
+    )
+    sw_sub = sw_p.add_subparsers(dest="support_widening_command")
+    sw_ev_p = sw_sub.add_parser("evidence", help="Support-widening evidence commands")
+    sw_ev_sub = sw_ev_p.add_subparsers(dest="support_widening_evidence_command")
+    sw_validate_p = sw_ev_sub.add_parser(
+        "validate",
+        help="Validate a support_widening_evidence.v1 artifact (read-only; no mutation)",
+    )
+    sw_validate_p.add_argument("path", help="Path to the evidence JSON artifact")
+    sw_validate_p.add_argument(
+        "--recompute",
+        action="store_true",
+        help="Also re-derive evidence_dimensions from recompute_inputs (recompute-not-trust)",
+    )
+
     # v3.5 D3: scorecard subcommand
     scorecard_p = sub.add_parser(
         "scorecard",
@@ -2093,6 +2153,18 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_cost_compact_markers(args)
         print(
             "Usage: ao-kernel cost {reconcile|compact-markers}",
+            file=sys.stderr,
+        )
+        return 1
+
+    # V5 Epic 3 E-3-1: support-widening evidence validation (read-only)
+    if cmd == "support-widening":
+        sw_cmd = getattr(args, "support_widening_command", None)
+        sw_ev_cmd = getattr(args, "support_widening_evidence_command", None)
+        if sw_cmd == "evidence" and sw_ev_cmd == "validate":
+            return _cmd_support_widening_evidence_validate(args)
+        print(
+            "Usage: ao-kernel support-widening evidence validate <path> [--recompute]",
             file=sys.stderr,
         )
         return 1
