@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:epic9-xfinal-readiness-blocker:v1",
+  "title": "Epic 9 PR-Xfinal readiness blocker v1",
+  "description": "Current-state guardrail artifact for E-9-1. It records that the final all-or-none V5 supersession PR-Xfinal is not ready to open yet. This v1 schema is blocker-only: it cannot authorize a guard flip, support widening, live adapter execution, or a production platform claim.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "authority",
+    "pr_xfinal_open_allowed",
+    "all_or_none_atomic_flip",
+    "partial_flip_allowed",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "operator_boundary",
+    "gates",
+    "issue_refs",
+    "next_safe_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "epic9_xfinal_readiness_blocker.v1" },
+    "artifact_kind": { "const": "epic9_xfinal_readiness_blocker" },
+    "repo": { "type": "string", "const": "Halildeu/ao-kernel" },
+    "work_package": { "type": "string", "const": "E-9-1" },
+    "authority": { "type": "string", "const": "epic_9_pr_xfinal_only" },
+    "pr_xfinal_open_allowed": { "type": "boolean", "const": false },
+    "all_or_none_atomic_flip": { "type": "boolean", "const": true },
+    "partial_flip_allowed": { "type": "boolean", "const": false },
+    "support_widening": { "type": "boolean", "const": false },
+    "production_platform_claim": { "type": "boolean", "const": false },
+    "live_adapter_execution": { "type": "boolean", "const": false },
+    "operator_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "operator_bound_supersession_required",
+        "ai_output_is_release_authority",
+        "repo_owned_required_check_is_release_authority",
+        "exact_operator_authorization_required"
+      ],
+      "properties": {
+        "operator_bound_supersession_required": { "type": "boolean", "const": true },
+        "ai_output_is_release_authority": { "type": "boolean", "const": false },
+        "repo_owned_required_check_is_release_authority": { "type": "boolean", "const": true },
+        "exact_operator_authorization_required": { "type": "boolean", "const": true }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "live_adapter_execution",
+        "support_widening",
+        "production_platform_claim"
+      ],
+      "properties": {
+        "live_adapter_execution": {
+          "allOf": [
+            { "$ref": "#/$defs/gate" },
+            { "properties": { "flag": { "const": "live_adapter_execution" } } }
+          ]
+        },
+        "support_widening": {
+          "allOf": [
+            { "$ref": "#/$defs/gate" },
+            { "properties": { "flag": { "const": "support_widening" } } }
+          ]
+        },
+        "production_platform_claim": {
+          "allOf": [
+            { "$ref": "#/$defs/gate" },
+            { "properties": { "flag": { "const": "production_platform_claim" } } }
+          ]
+        }
+      }
+    },
+    "issue_refs": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "prefixItems": [
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/775" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/776" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/782" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/895" }
+      ],
+      "items": false
+    },
+    "next_safe_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "flag",
+        "status",
+        "required_evidence",
+        "missing_evidence",
+        "source_documents"
+      ],
+      "properties": {
+        "flag": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "const": "not_ready" },
+        "required_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "missing_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "source_documents": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

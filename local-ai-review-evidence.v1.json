@@ -1,49 +1,7 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "TEST-QUALITY-ADV001",
-  "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/adv001-recognize-assert-helpers-cc-0604",
-    "changed_files": [
-      "CHANGELOG.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/conftest.py",
-      "tests/test_conftest_quality_gate.py"
-    ]
-  },
   "checks_considered": [
     {
       "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "pytest_conftest_quality_gate_self_tests",
-      "status": "pass"
-    },
-    {
-      "name": "pytest_full_suite",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy_conftest",
-      "status": "pass"
-    },
-    {
-      "name": "diff_whitespace",
       "status": "pass"
     },
     {
@@ -51,28 +9,72 @@
       "status": "pass"
     },
     {
-      "name": "cross_provider_review",
+      "name": "guard_flag_integrity",
       "status": "pass"
     },
     {
-      "name": "changelog_enforcement",
+      "name": "schema_strict_closure",
+      "status": "pass"
+    },
+    {
+      "name": "work_package_scope_match",
+      "status": "pass"
+    },
+    {
+      "name": "forbidden_positive_claim_scan",
+      "status": "pass"
+    },
+    {
+      "name": "operator_boundary_integrity",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review_evidence",
       "status": "pass"
     }
   ],
   "findings": [
-    "Codex (OpenAI) returned VERDICT AGREE (thread 019e9449) after reviewing the ADV-001 detector change in tests/conftest.py and the gate self-tests, with no blocking findings.",
-    "Codex confirmed the change is consistent with the existing assert_called* mock-signal recognition and the raises/warns/fail call-name recognition; it only adds a call-name convention signal and does not relax any blocking rule.",
-    "Codex confirmed assert True remains caught by BLK-002 (matched on an ast.Assert node, not a call), so the relaxation does not weaken any blocking gate.",
-    "Codex confirmed _is_assertion_helper_name does not mask assertion-free tests: a bare validator (check_schema/validate_*) and an ordinary non-assert helper still fire ADV-001, verified by precision-guard tests.",
-    "Codex assessed the false-negative risk (an assert-prefixed no-op helper) as an acceptable precision/recall trade-off for an advisory-level gate.",
-    "Codex's two non-blocking test suggestions (assert_valid Name-form positive, Draft202012Validator.check_schema attribute-form negative) were absorbed as additional guard tests.",
-    "Local validation passed: conftest gate self-tests (45 passed), full suite (6792 passed, 122 skipped), ruff clean, mypy clean on conftest, diff whitespace clean.",
-    "ADV-001 advisory count dropped from 166 to 63; the residual 63 are bare validate-by-raise patterns that intentionally remain advisory.",
-    "Change is test-infrastructure only: no ao_kernel/ source, no .github/ workflow, no branch-protection or ruleset surface touched.",
-    "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
+    "Work package E-9-1 scope verified: blocker guardrail only, no scope creep into runtime, workflow, or ruleset surfaces.",
+    "Schema epic9-xfinal-readiness-blocker.schema.v1.json uses Draft 2020-12 strict closure (additionalProperties false + unevaluatedProperties false) on root, operator_boundary, gates, and $defs/gate \u2014 no uncontrolled field injection possible.",
+    "All guard flags const-pinned false (support_widening, production_platform_claim, live_adapter_execution); pr_xfinal_open_allowed const false; partial_flip_allowed const false; all_or_none_atomic_flip const true \u2014 v1 schema structurally cannot authorize any flip.",
+    "Gate status pinned to const not_ready via $defs/gate \u2014 schema rejects any ready claim; test_schema_rejects_ready_gate_claims_in_blocker_v1 confirms for all three gates.",
+    "issue_refs array locked to exactly 4 entries via prefixItems + items:false + minItems/maxItems 4 \u2014 cardinality drift blocked at schema level.",
+    "operator_boundary pins ai_output_is_release_authority const false and operator_bound_supersession_required const true \u2014 AI output cannot claim release authority; test_schema_rejects_operator_boundary_drift covers all 4 boundary fields.",
+    "Plan doc EPIC-9-FINAL-SUPERSESSION-PR.md declares explicit Non-Authority Boundary section and lists 6 forbidden actions; test_doc_does_not_authorize_forbidden_positive_claims scans for positive-claim tokens.",
+    "Test suite covers 11 distinct invariant categories: schema validity/strictness, blocked state pins, flip rejection (5 fields), ready-claim rejection (3 gates), cardinality/extra-field rejection, source document existence, forbidden claim scan, operator boundary drift, future final schema absence guard.",
+    "Fixture source_documents all reference existing repo paths; test_fixture_source_documents_exist verifies at test time.",
+    "No .github/workflows change, no branch-protection/ruleset mutation, no runtime code change, no provider HTTP call, no secret in diff or evidence artifacts.",
+    "CHANGELOG entry accurately describes scope and explicitly enumerates what is not introduced.",
+    "Advisory: openai.local-ai-review-evidence.v1.json lists same-provider reviewer (codex-openai-reviewer/openai) as implementer (codex/openai); cross-provider coverage is satisfied by the anthropic review evidence (claude-opus-4-6-reviewer/anthropic AGREE)."
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "claude-opus-4-6-reviewer",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md",
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/defaults/schemas/epic9-xfinal-readiness-blocker.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/fixtures/epic9/xfinal-readiness-blocker.current.json",
+      "tests/test_epic9_xfinal_readiness_blocker.py"
+    ],
+    "head_ref": "refs/heads/codex/epic9-xfinal-draft-guardrail"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "EPIC-9-XFINAL-READINESS-BLOCKER"
 }

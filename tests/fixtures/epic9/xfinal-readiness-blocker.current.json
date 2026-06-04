@@ -1,0 +1,93 @@
+{
+  "schema_version": "epic9_xfinal_readiness_blocker.v1",
+  "artifact_kind": "epic9_xfinal_readiness_blocker",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "authority": "epic_9_pr_xfinal_only",
+  "pr_xfinal_open_allowed": false,
+  "all_or_none_atomic_flip": true,
+  "partial_flip_allowed": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "operator_boundary": {
+    "operator_bound_supersession_required": true,
+    "ai_output_is_release_authority": false,
+    "repo_owned_required_check_is_release_authority": true,
+    "exact_operator_authorization_required": true
+  },
+  "gates": {
+    "live_adapter_execution": {
+      "flag": "live_adapter_execution",
+      "status": "not_ready",
+      "required_evidence": [
+        "all 18 Epic 9 pre-supersession checklist items marked met with evidence refs and attestors",
+        "7-day live test window with per-call audit aggregate and pinned cost evidence",
+        "protected environment reviewer proof and post-window deauthorization evidence"
+      ],
+      "missing_evidence": [
+        "operator authority block",
+        "7-day live test window evidence",
+        "secret rotation and deauthorization evidence",
+        "protected environment reviewer proof",
+        "audit retention and tamper evidence"
+      ],
+      "source_documents": [
+        ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+        "ao_kernel/defaults/schemas/pre_supersession_checklist.schema.v1.json",
+        ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md"
+      ]
+    },
+    "support_widening": {
+      "flag": "support_widening",
+      "status": "not_ready",
+      "required_evidence": [
+        "operator authorization phrase AUTHORIZE_SUPPORT_WIDENING_SUPERSESSION",
+        "live evidence-class artifacts over a seven-day window",
+        "provider-distinct reviewer verdicts bound to plan digest, final diff digest, and PR head SHA"
+      ],
+      "missing_evidence": [
+        "operator-bound support-widening authorization",
+        "live evidence pack",
+        "per-surface live evidence aggregate",
+        "provider-distinct final AGREE verdict set"
+      ],
+      "source_documents": [
+        ".claude/plans/EPIC-3-E-3-5-SUPERSESSION-CONSENSUS-PROTOCOL.md",
+        ".claude/plans/EPIC-3-E-3-6-RECOMPUTE-VALIDATOR.md",
+        "ao_kernel/defaults/schemas/widening-supersession-evidence-pack.schema.v1.json"
+      ]
+    },
+    "production_platform_claim": {
+      "flag": "production_platform_claim",
+      "status": "not_ready",
+      "required_evidence": [
+        "9-dimensional V5 production readiness evidence matrix complete",
+        "public claim language sync after final authorization",
+        "v5.0.0 release notes, tag, and publish evidence"
+      ],
+      "missing_evidence": [
+        "complete 9-dimensional production readiness matrix",
+        "public claim language sync",
+        "v5.0.0 release/tag/publish evidence",
+        "operator-bound final supersession authorization"
+      ],
+      "source_documents": [
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md"
+      ]
+    }
+  },
+  "issue_refs": [
+    "https://github.com/Halildeu/ao-kernel/issues/775",
+    "https://github.com/Halildeu/ao-kernel/issues/776",
+    "https://github.com/Halildeu/ao-kernel/issues/782",
+    "https://github.com/Halildeu/ao-kernel/issues/895"
+  ],
+  "next_safe_actions": [
+    "keep E-9-1 blocked until all three gates are green",
+    "collect live-adapter execution evidence under issue 775",
+    "collect support-widening evidence under issue 776",
+    "prepare PR-Xfinal only after all independent gates are complete"
+  ]
+}
