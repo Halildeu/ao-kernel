@@ -1,0 +1,25 @@
+# helm-unittest suite for the ao-kernel deployment (V5 Epic 4 E-4-6).
+# Run: helm unittest deploy/helm/ao-kernel
+# CI invocation + local runbook: docs/HELM-TESTING.md
+suite: deployment invariants
+templates:
+  - templates/deployment.yaml
+tests:
+  - it: renders a single Deployment with replicas >= 1
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 1
+  - it: pins a non-root, read-only-rootfs container security context
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+  - it: does not render DB env when postgresql disabled (default)
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AO_KERNEL_DB_PASSWORD
