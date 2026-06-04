@@ -223,6 +223,9 @@ _VALUES_SCHEMA_FREEFORM_PATHS = frozenset(
         "$.properties.affinity",
         "$.properties.podLabels",
         "$.properties.podAnnotations",
+        # E-4-4: ServiceMonitor additionalLabels is a free-form k8s label map
+        # (operator labels the ServiceMonitor so a per-tenant Prometheus selects it).
+        "$.properties.monitoring.properties.serviceMonitor.properties.additionalLabels",
     }
 )
 

@@ -306,10 +306,53 @@
     "podAnnotations": {
       "type": "object"
     },
+    "monitoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Observability surface (E-4-4): opt-in ServiceMonitor + optional OTEL sidecar. Chart does not install Prometheus Operator.",
+      "properties": {
+        "serviceMonitor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string"
+            },
+            "interval": {
+              "type": "string"
+            },
+            "scrapeTimeout": {
+              "type": "string"
+            },
+            "additionalLabels": {
+              "type": "object"
+            }
+          }
+        },
+        "otelSidecar": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "image": {
+              "type": "string"
+            },
+            "otlpEndpoint": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "postgresql": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Operator-owned EXTERNAL PostgreSQL connection (E-4-3). Chart does NOT deploy the DB nor create its Secret; credentials via secretKeyRef only.",
+      "description": "Operator-owned EXTERNAL PostgreSQL connection (E-4-3).",
       "properties": {
         "enabled": {
           "type": "boolean"

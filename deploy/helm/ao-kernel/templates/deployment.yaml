@@ -110,6 +110,32 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.monitoring.otelSidecar.enabled }}
+        # Optional OpenTelemetry Collector sidecar SKELETON (E-4-4; Codex
+        # review absorb — claim narrowed). The chart provides ONLY: the
+        # container slot, a hardened securityContext, a pinned image, and the
+        # OTLP endpoint env. The operator MUST still: (1) supply the collector
+        # config (e.g. mount a ConfigMap with receivers/exporters and pass
+        # `--config`), and (2) wire the MAIN container's OTLP exporter to
+        # localhost:4317. The chart does NOT auto-wire the main container and
+        # does NOT ship a collector config. No secret embedded.
+        - name: otel-collector
+          image: {{ .Values.monitoring.otelSidecar.image | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.monitoring.otelSidecar.otlpEndpoint | quote }}
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -20,29 +20,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- **E-7-4 provider rate limit production tuning (per-tenant)** (V5 Epic 7,
-  #886): docs/RATE-LIMIT-TUNING.md operator runbook (per-tenant key pattern,
-  rps sizing, retry/circuit-breaker interaction, measurement) + optional
-  backward-compatible `rps` argument on the `get_rate_limiter` public facade.
-  8 invariants incl. real per-tenant bucket isolation. No guard flag.
-
-### Added
-
-- **E-4-6 helm chart testing runbook + helm-unittest suites** (V5 Epic 4,
-  #865): docs/HELM-TESTING.md (Python CI invariant layer + operator-run
-  helm-unittest render suites + local render smoke + epic-wide idempotency
-  contract) + deployment/service helm-unittest suites. Closes the Epic 4
-  chart-hardening track. 8 invariants. No guard flag touched.
-
-### Added
-
-- **E-4-3 operator-owned PostgreSQL provisioning + secret management** (V5
-  Epic 4, #862): Helm chart `postgresql` block (external, operator-owned,
-  `enabled:false` default) + `secretKeyRef`-only credential wiring in
-  `deployment.yaml` + closed `values.schema.json` block +
-  `docs/OPERATOR-SECRET-MANAGEMENT.md` operator runbook. The chart never
-  deploys a database and never holds secret material. 16 invariants in
-  `tests/test_epic_4_3_postgres_provisioning.py`. No guard flag touched.
+- **E-4-4 observability surface** (V5 Epic 4, #863): opt-in Prometheus
+  Operator ServiceMonitor CRD + optional hardened OTEL collector sidecar in
+  the ao-kernel Helm chart (both disabled by default). Chart does not install
+  Prometheus Operator; alert routing is Microsoft Teams primary (no Slack
+  receiver embedded). 13 invariants. No guard flag touched.
 
 ### Changed
 

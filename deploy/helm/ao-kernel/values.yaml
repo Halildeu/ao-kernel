@@ -104,6 +104,32 @@ env:
   #     secretName: ao-kernel-llm-secrets
   #     secretKey: openai_api_key
 
+# Monitoring / observability (V5 Epic 4 E-4-4) — OPT-IN.
+#
+# ServiceMonitor (Prometheus Operator CRD) is rendered only when enabled AND
+# the cluster has monitoring.coreos.com CRDs. The chart does NOT install
+# Prometheus Operator. Alert routing is Microsoft Teams primary (operator
+# wires Alertmanager → Teams; chart only declares the scrape target).
+# Optional OTEL collector sidecar exports traces to an operator-owned endpoint.
+monitoring:
+  serviceMonitor:
+    # Disabled by default (requires Prometheus Operator CRDs in-cluster).
+    enabled: false
+    path: "/metrics"
+    interval: "30s"
+    scrapeTimeout: "10s"
+    additionalLabels: {}
+  otelSidecar:
+    # Optional OTEL Collector sidecar SKELETON (disabled by default; Codex
+    # review absorb). When enabled the chart adds the container slot with a
+    # hardened securityContext + pinned image + OTLP endpoint env ONLY. The
+    # operator MUST supply the collector config (mounted ConfigMap + --config)
+    # AND wire the main container's OTLP exporter to localhost:4317. No secret.
+    enabled: false
+    image: "otel/opentelemetry-collector-contrib:0.96.0"
+    # OTLP endpoint the sidecar forwards to (operator-owned backend).
+    otlpEndpoint: ""
+
 # ServiceAccount (namespace-scoped; ClusterRole forbidden).
 serviceAccount:
   create: true
