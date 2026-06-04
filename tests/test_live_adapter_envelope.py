@@ -263,17 +263,19 @@ def test_timestamps_are_fail_closed_via_regex() -> None:
     """jsonschema does not enforce `format: date-time` by default, so the
     schema carries an explicit RFC3339 `pattern`. A non-date string must be
     rejected at every timestamp field (Codex E-2-1 review absorb)."""
-    # created_at + finalized_at
+    # created_at + finalized_at: free-text AND range-invalid (e.g. month 99) must fail
     for field in ("created_at", "finalized_at"):
-        payload = _valid_envelope()
-        payload["timestamps"][field] = "not-a-date"
-        assert not _is_valid(payload), f"timestamps.{field} must reject a non-RFC3339 string"
+        for bad in ("not-a-date", "2026-99-99T99:99:99+99:99"):
+            payload = _valid_envelope()
+            payload["timestamps"][field] = bad
+            assert not _is_valid(payload), f"timestamps.{field} must reject {bad!r} (range-aware RFC3339)"
     # last_failure_at string branch (null is still allowed)
-    cb = _valid_envelope()
-    cb["circuit_breaker"]["state"] = "OPEN"
-    cb["circuit_breaker"]["failure_count"] = 1
-    cb["circuit_breaker"]["last_failure_at"] = "also-not-a-date"
-    assert not _is_valid(cb), "circuit_breaker.last_failure_at must reject a non-RFC3339 string"
+    for bad in ("also-not-a-date", "2026-13-40T25:61:61Z"):
+        cb = _valid_envelope()
+        cb["circuit_breaker"]["state"] = "OPEN"
+        cb["circuit_breaker"]["failure_count"] = 1
+        cb["circuit_breaker"]["last_failure_at"] = bad
+        assert not _is_valid(cb), f"circuit_breaker.last_failure_at must reject {bad!r}"
     # null remains valid
     ok = _valid_envelope()
     ok["circuit_breaker"]["last_failure_at"] = None

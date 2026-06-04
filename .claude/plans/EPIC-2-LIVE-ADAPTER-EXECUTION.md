@@ -61,6 +61,7 @@ Bu HARD STOP CLAUDE.md HARD RULE Uzun Vadeli Kalıcı Çözüm (2026-05-27) + SS
 
 - `schema_version` const `"live-adapter-envelope.v1"`
 - `artifact_kind` const `"live_adapter_envelope"`
+- `envelope_digest` (sha256, bare 64-hex) — content-address of the canonical envelope content excluding this field; the foreign-key that E-2-2 per-call audit records reference (§702 alignment, Codex iter-2 absorb)
 - `mode` enum `["stub", "dry_run"]` — `"live"` **YASAK** (Epic 9 farklı schema versiyonu)
 - `live_adapter_execution` const `false` (guard flag pin — ADR-0002 recompute-not-trust)
 - `request` object: `provider_id`, `model`, `request_id` (uuid), `intent`, `messages_digest` (sha256), `params` (temperature/max_tokens/...)
