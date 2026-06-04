@@ -19,6 +19,7 @@
       "CHANGELOG.md",
       "docs/performance/BENCHMARK-SUITE.md",
       "local-ai-review-evidence.v1.json",
+      "tests/test_epic_4_2b_write_set_invariant.py",
       "tests/test_epic_7_1_benchmark_suite.py"
     ]
   },

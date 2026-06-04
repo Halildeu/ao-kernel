@@ -7,8 +7,11 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _EVIDENCE_PATH = _REPO_ROOT / ".claude" / "plans" / "E-4-2b-MULTI-TENANT-FINAL-SEAL.v1.json"
+_EVIDENCE_REPO_PATH = _EVIDENCE_PATH.relative_to(_REPO_ROOT).as_posix()
 
 
 def _run_git(*args: str) -> str:
@@ -38,8 +41,14 @@ def _load_json(path: Path) -> dict[str, Any]:
     return data
 
 
+def _skip_unless_current_e42b_pr(changed: list[str]) -> None:
+    if _EVIDENCE_REPO_PATH not in changed:
+        pytest.skip("E-4-2b write-set invariant only applies to active E-4-2b PR diffs")
+
+
 def test_write_set_exactly_matches_git_diff() -> None:
     changed = _changed_files_against_origin_main()
+    _skip_unless_current_e42b_pr(changed)
     evidence = _load_json(_EVIDENCE_PATH)
     evidence_write_set = sorted(set(evidence["write_set"]))
     assert evidence_write_set == changed, (
@@ -53,6 +62,7 @@ def test_write_set_exactly_matches_git_diff() -> None:
 
 def test_no_workflow_or_pyproject_mutation() -> None:
     changed = _changed_files_against_origin_main()
+    _skip_unless_current_e42b_pr(changed)
     workflow_changes = [path for path in changed if path.startswith(".github/workflows/")]
     assert workflow_changes == [], f"E-4-2b must not mutate workflows: {workflow_changes}"
     assert "pyproject.toml" not in changed, "E-4-2b must not mutate pyproject.toml"
@@ -60,6 +70,7 @@ def test_no_workflow_or_pyproject_mutation() -> None:
 
 def test_no_runtime_python_module_mutation() -> None:
     changed = _changed_files_against_origin_main()
+    _skip_unless_current_e42b_pr(changed)
     ao_kernel_paths = [path for path in changed if path.startswith("ao_kernel/")]
     illegal = [
         path
