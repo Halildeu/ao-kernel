@@ -26,6 +26,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 Epic 2 live-adapter infrastructure plan**: added the Epic 2
+  plan for envelope schema, per-call audit, cost ceiling, dry-run
+  harness, secret discipline, advisory CI, and pre-supersession
+  checklist work while keeping live adapter execution flag authority in
+  the future operator-bound Epic 9 PR-Xfinal path.
 - **V5 AO-MA-SPM tutorial**: added the Epic 8 E-8-5 tutorial for
   building a governed multi-AI autonomous program with stub workers,
   cross-AI consensus, evidence verification, PR gating, and explicit
