@@ -66,6 +66,14 @@ _ANCHOR_REQUIRED_FIELDS = (
     "artifact_sha256",
     "plan_digest",
 )
+_ANCHOR_KNOWN_OPTIONAL_FIELDS = (
+    "risk_class_source",
+    "evidence_classes",
+    "consensus_state",
+)
+_ANCHOR_KNOWN_FIELDS = frozenset(
+    (*_ANCHOR_REQUIRED_FIELDS, *_ANCHOR_KNOWN_OPTIONAL_FIELDS)
+)
 
 _SHA_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _PLACEHOLDER_PATTERN = re.compile(r"^\{[^}]+\}$")
@@ -180,6 +188,27 @@ _ANCHOR_LINE_PATTERN = re.compile(
 _BACKTICK_STRIP = re.compile(r"^`(.+)`$")
 
 
+def _normalize_anchor_value(value: str) -> str:
+    """Normalize a markdown anchor value.
+
+    GitHub mirror bodies may include an inline explanation after a backticked
+    value, for example:
+        `sha256:<digest>` (manifest `.claude/plans/...`)
+
+    The digest validator should evaluate the bound value, not the explanatory
+    prose that follows it.
+    """
+    value = value.strip()
+    if value.startswith("`"):
+        closing = value.find("`", 1)
+        if closing > 1:
+            return value[1:closing]
+    bt = _BACKTICK_STRIP.match(value)
+    if bt:
+        return bt.group(1)
+    return value
+
+
 def parse_issue_anchor(body: str) -> AnchorParseResult:
     """Strict-parse anchor fields from an issue body markdown list.
 
@@ -213,10 +242,8 @@ def parse_issue_anchor(body: str) -> AnchorParseResult:
             continue
         field_name = m.group("field").lower()
         value = m.group("value").strip()
-        bt = _BACKTICK_STRIP.match(value)
-        if bt:
-            value = bt.group(1)
-        if field_name not in _ANCHOR_REQUIRED_FIELDS:
+        value = _normalize_anchor_value(value)
+        if field_name not in _ANCHOR_KNOWN_FIELDS:
             unknown.append(field_name)
             continue
         if field_name in fields:
@@ -259,6 +286,93 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     return data
 
 
+def _resolve_manifest_ref(projection_manifest_path: Path, manifest_ref: str) -> Path | None:
+    """Resolve a manifest-relative path from the projection manifest.
+
+    Historical V5 manifests store refs as repo-root relative paths such as
+    `.claude/plans/v5_subissues_mirror.v1.json`. The core module only receives
+    the projection manifest path, so resolve conservatively by walking ancestors
+    and returning the first existing candidate.
+    """
+    ref_path = Path(manifest_ref)
+    if ref_path.is_absolute():
+        return ref_path if ref_path.is_file() else None
+    for ancestor in (projection_manifest_path.parent, *projection_manifest_path.parents):
+        candidate = ancestor / ref_path
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _load_optional_subissues_manifest(
+    projection_manifest_path: Path,
+    runtime_state: dict[str, Any],
+) -> dict[str, Any] | None:
+    ref = runtime_state.get("sub_issues_mirror_ref", {})
+    manifest_ref = ref.get("mirror_manifest_path")
+    if not isinstance(manifest_ref, str) or not manifest_ref.strip():
+        return None
+    subissues_path = _resolve_manifest_ref(projection_manifest_path, manifest_ref)
+    if subissues_path is None:
+        return None
+    return _load_manifest(subissues_path)
+
+
+def _expected_issue_inventory(
+    projection_manifest_path: Path,
+    manifest: dict[str, Any],
+    runtime_state: dict[str, Any],
+) -> dict[int, dict[str, Any]]:
+    """Build expected issue metadata from parent + optional sub-issue manifests.
+
+    `v5_issue_projection.v1.json` originally carried only the first-wave parent
+    issues. `v5_subissues_mirror.v1.json` later became repo authority for the
+    retroactive sub-slice issue mirror. The drift checker must include both, or
+    it will incorrectly classify canonical sub-issues as `extra_issue`.
+    """
+    expected_first_wave_by_id = {
+        issue["id"]: issue for issue in manifest.get("first_wave_issues", [])
+    }
+    inventory: dict[int, dict[str, Any]] = {}
+
+    for anchor_id, issue_number in runtime_state.get("issues_created", {}).items():
+        if not isinstance(issue_number, int):
+            continue
+        expected_meta = expected_first_wave_by_id.get(anchor_id, {})
+        inventory[issue_number] = {
+            "id": anchor_id,
+            "labels": list(expected_meta.get("labels", [])),
+            "anchor_required": True,
+        }
+
+    subissues_manifest = _load_optional_subissues_manifest(
+        projection_manifest_path, runtime_state
+    )
+    if subissues_manifest is None:
+        return inventory
+
+    subissues = subissues_manifest.get("sub_issues", {})
+    if not isinstance(subissues, dict):
+        return inventory
+    for slice_id, meta in subissues.items():
+        if not isinstance(meta, dict):
+            continue
+        issue_number = meta.get("issue_number")
+        if not isinstance(issue_number, int):
+            continue
+        inventory[issue_number] = {
+            "id": slice_id,
+            "labels": list(meta.get("labels", [])),
+            # Retroactive sub-slice mirror issues were created from a compact
+            # body template, not the parent V5 Anchor block. Keep label/inventory
+            # checking strict without manufacturing anchor drift for canonical
+            # sub-issues.
+            "anchor_required": False,
+        }
+
+    return inventory
+
+
 def _safe_call(gh_api_caller: Callable[[str, str], Any], method: str, api_path: str) -> tuple[Any, Optional[str]]:
     """Call gh_api_caller and capture API errors.
 
@@ -295,9 +409,13 @@ def check_github_mirror_drift(
     checked_at = now_iso or _utcnow_isoformat()
     manifest_sha = _file_sha256(projection_manifest_path)
     manifest = _load_manifest(projection_manifest_path)
+    runtime_state = manifest.get("runtime_created_state", {})
+    expected_issue_inventory = _expected_issue_inventory(
+        projection_manifest_path, manifest, runtime_state
+    )
 
     expected_counts = {
-        "issues": len(manifest.get("first_wave_issues", [])),
+        "issues": len(expected_issue_inventory),
         "labels": len(manifest.get("labels", [])),
         "project_items": (manifest.get("runtime_created_state", {}).get("project_board", {}).get("items_count", 0)),
     }
@@ -317,8 +435,6 @@ def check_github_mirror_drift(
     if not network_allowed:
         report.exit_decision = ExitDecision.NETWORK_NOT_ALLOWED
         return report
-
-    runtime_state = manifest.get("runtime_created_state", {})
 
     # 1. Milestone presence + metadata
     expected_ms = runtime_state.get("milestone", {})
@@ -370,9 +486,7 @@ def check_github_mirror_drift(
                 )
 
     # 2. Issue inventory + 3. labels + 4. anchors
-    expected_issues = runtime_state.get("issues_created", {})
-    expected_issue_numbers = set(expected_issues.values())
-    expected_first_wave_by_id = {i["id"]: i for i in manifest.get("first_wave_issues", [])}
+    expected_issue_numbers = set(expected_issue_inventory)
 
     if expected_ms_number is not None:
         issues_resp, err = _safe_call(
@@ -416,15 +530,9 @@ def check_github_mirror_drift(
             num = iss["number"]
             if num not in expected_issue_numbers:
                 continue
-            # Find anchor id key (reverse map)
-            anchor_id = None
-            for aid, n in expected_issues.items():
-                if n == num:
-                    anchor_id = aid
-                    break
-            if anchor_id is None or anchor_id not in expected_first_wave_by_id:
+            expected_meta = expected_issue_inventory.get(num)
+            if expected_meta is None:
                 continue
-            expected_meta = expected_first_wave_by_id[anchor_id]
             expected_labels = set(expected_meta.get("labels", []))
             actual_labels = {lab["name"] for lab in iss.get("labels", [])}
             if expected_labels != actual_labels:
@@ -438,6 +546,9 @@ def check_github_mirror_drift(
                         actual=sorted(actual_labels),
                     )
                 )
+
+            if not expected_meta.get("anchor_required", True):
+                continue
 
             # Anchor parse
             anchor = parse_issue_anchor(iss.get("body", "") or "")
@@ -516,7 +627,14 @@ def check_github_mirror_drift(
                 )
             )
         else:
-            actual_item_count = len(items_resp.get("items", []))
+            # ProjectV2 can contain non-issue items such as drafts. The V5
+            # mirror manifest's `items_count` tracks issue-backed mirror items,
+            # so ignore non-issue project entries here.
+            actual_item_count = sum(
+                1
+                for item in items_resp.get("items", [])
+                if (item.get("content") or {}).get("number") is not None
+            )
             if actual_item_count != expected_item_count:
                 report.drift.append(
                     DriftFinding(

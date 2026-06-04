@@ -2,7 +2,7 @@
   "schema_version": "v5-subissues-mirror.v1",
   "parent_manifest": ".claude/plans/v5_issue_projection.v1.json",
   "parent_plan": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
-  "milestone": "v5.0.0 \u2014 Full Production Promotion",
+  "milestone": "v5.0.0 — Full Production Promotion",
   "milestone_number": 3,
   "created_at": "2026-06-02",
   "created_by": "Halildeu (operator-driven mirror via Claude session)",
@@ -14,7 +14,7 @@
     "production_platform_claim": false,
     "live_adapter_execution": false
   },
-  "rationale": "Full retroactive sub-slice mirror created 2026-06-02; 62 sub-issues across 10 parents (P0 + Epic 1-9). User explicit \"full retro mirror\" requirement (not lazy expansion). Each sub-issue carries parent ref + plan path + risk + status + DoD; Epic 9 E-9-1 alone carries all 3 guard-flip labels (atomic all-or-none flip).",
+  "rationale": "Full retroactive sub-slice mirror created 2026-06-02; 62 sub-issues across 10 parents (P0 + Epic 1-9). User explicit \"full retro mirror\" requirement (not lazy expansion). Each sub-issue carries parent ref + plan path + risk + status + mirror:authority + DoD; Epic 9 E-9-1 alone carries all 3 guard-flip labels (atomic all-or-none flip).",
   "sub_issues_by_parent": {
     "epic_p0": {
       "parent_issue_number": 773,
@@ -371,7 +371,7 @@
         {
           "slice_id": "E-8-6",
           "issue_number": 894,
-          "title": "[E-8-6] Migration guide v4.x \u2192 v5.0.0"
+          "title": "[E-8-6] Migration guide v4.x → v5.0.0"
         }
       ]
     },
@@ -400,7 +400,8 @@
       "labels": [
         "epic-p0",
         "risk:low",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "None (foundational)",
@@ -418,7 +419,8 @@
       "labels": [
         "epic-p0",
         "risk:low",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-P0-1",
@@ -436,7 +438,8 @@
       "labels": [
         "epic-p0",
         "risk:low",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-P0-1 + E-P0-2",
@@ -454,7 +457,8 @@
       "labels": [
         "epic-p0",
         "risk:low",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-P0-4-README-V5-ROADMAP-BADGE.md",
       "deps": "E-P0-1",
@@ -472,11 +476,12 @@
       "labels": [
         "epic-p0",
         "risk:low",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/v5_issue_projection.v1.json",
       "deps": "E-P0-3",
-      "description": "Issue forms (YAML): zorunlu spm_anchor + ao_authority_artifact + artifact_sha256 + plan_digest + slice_id + risk_class_source + evidence_classes; risk field manuel d\u00fc\u015f\u00fcr\u00fclemez (computed)."
+      "description": "Issue forms (YAML): zorunlu spm_anchor + ao_authority_artifact + artifact_sha256 + plan_digest + slice_id + risk_class_source + evidence_classes; risk field manuel düşürülemez (computed)."
     },
     "E-1-1": {
       "issue_number": 839,
@@ -490,7 +495,8 @@
       "labels": [
         "epic-1",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "P0 runway",
@@ -508,11 +514,12 @@
       "labels": [
         "epic-1",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "P0 runway",
-      "description": "GH Projects/Milestone/Issue one-way sync + anchor injection + drift checker (mirror_drift_detected \u2192 otonom DUR); V5 mirror write sync + PAT fallback."
+      "description": "GH Projects/Milestone/Issue one-way sync + anchor injection + drift checker (mirror_drift_detected → otonom DUR); V5 mirror write sync + PAT fallback."
     },
     "E-1-3": {
       "issue_number": 841,
@@ -526,7 +533,8 @@
       "labels": [
         "epic-1",
         "risk:normal",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-1-1",
@@ -544,11 +552,12 @@
       "labels": [
         "epic-1",
         "risk:low",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-1-3",
-      "description": "AO-MA-11G-2d: lokal yard\u0131mc\u0131 pre-commit hook (release authority de\u011fil)."
+      "description": "AO-MA-11G-2d: lokal yardımcı pre-commit hook (release authority değil)."
     },
     "E-1-5": {
       "issue_number": 843,
@@ -562,11 +571,12 @@
       "labels": [
         "epic-1",
         "risk:normal",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-1-1",
-      "description": "Operator claude-cli ile worker_result \u00fcret \u2192 ao-kernel native-import ingest."
+      "description": "Operator claude-cli ile worker_result üret → ao-kernel native-import ingest."
     },
     "E-1-6": {
       "issue_number": 844,
@@ -580,7 +590,8 @@
       "labels": [
         "epic-1",
         "risk:low",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "P0 runway",
@@ -598,11 +609,12 @@
       "labels": [
         "epic-1",
         "risk:high",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "operator gate",
-      "description": "Operator CODEOWNER review pending \u2014 .github/workflows/test.yml high-risk path."
+      "description": "Operator CODEOWNER review pending — .github/workflows/test.yml high-risk path."
     },
     "E-2-1": {
       "issue_number": 846,
@@ -616,7 +628,8 @@
       "labels": [
         "epic-2",
         "risk:low",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "deps": "PR #828 (V5 amend) + PR #827 (Epic 2 plan) + PR #826 (Epic 3 plan) all merged",
@@ -634,7 +647,8 @@
       "labels": [
         "epic-2",
         "risk:low",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "deps": "E-2-1",
@@ -652,7 +666,8 @@
       "labels": [
         "epic-2",
         "risk:normal",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "deps": "E-2-1 + E-2-2",
@@ -670,7 +685,8 @@
       "labels": [
         "epic-2",
         "risk:normal",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "deps": "E-2-1 + E-2-2 + E-2-3",
@@ -688,7 +704,8 @@
       "labels": [
         "epic-2",
         "risk:normal",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "deps": "E-2-1",
@@ -706,7 +723,8 @@
       "labels": [
         "epic-2",
         "risk:normal",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "deps": "E-2-1..E-2-5",
@@ -724,7 +742,8 @@
       "labels": [
         "epic-2",
         "risk:low",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "deps": "E-2-1..E-2-6",
@@ -742,7 +761,8 @@
       "labels": [
         "epic-3",
         "risk:low",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "deps": "V5 amend PR #828 + Epic 3 plan PR #826 + Epic 2 plan PR #827 all merged",
@@ -760,7 +780,8 @@
       "labels": [
         "epic-3",
         "risk:normal",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "deps": "E-3-1",
@@ -778,7 +799,8 @@
       "labels": [
         "epic-3",
         "risk:normal",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "deps": "E-3-1 + E-3-2",
@@ -796,7 +818,8 @@
       "labels": [
         "epic-3",
         "risk:low",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "deps": "E-3-1",
@@ -814,7 +837,8 @@
       "labels": [
         "epic-3",
         "risk:low",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "deps": "E-3-1",
@@ -832,7 +856,8 @@
       "labels": [
         "epic-3",
         "risk:low",
-        "status:blocked"
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
       "deps": "E-3-1..E-3-5",
@@ -850,7 +875,8 @@
       "labels": [
         "epic-4",
         "risk:low",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
       "deps": "P0 mirror",
@@ -868,7 +894,8 @@
       "labels": [
         "epic-4",
         "risk:low",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
       "deps": "E-4-1",
@@ -886,7 +913,8 @@
       "labels": [
         "epic-4",
         "risk:high",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
       "deps": "E-4-2a + E-4-3 + E-4-4 + E-4-5",
@@ -904,11 +932,12 @@
       "labels": [
         "epic-4",
         "risk:normal",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
       "deps": "E-4-1 + E-4-2a",
-      "description": "Operator DDL responsibility; ao-kernel hi\u00e7bir DDL execute etmez; env-only secret resolution (D11); secret kaynak \u00f6ncelik tablosu."
+      "description": "Operator DDL responsibility; ao-kernel hiçbir DDL execute etmez; env-only secret resolution (D11); secret kaynak öncelik tablosu."
     },
     "E-4-4": {
       "issue_number": 863,
@@ -922,7 +951,8 @@
       "labels": [
         "epic-4",
         "risk:normal",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
       "deps": "E-4-1 + E-4-2a",
@@ -940,7 +970,8 @@
       "labels": [
         "epic-4",
         "risk:normal",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
       "deps": "E-4-1 + E-4-2a",
@@ -958,7 +989,8 @@
       "labels": [
         "epic-4",
         "risk:low",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
       "deps": "E-4-1..E-4-5",
@@ -976,7 +1008,8 @@
       "labels": [
         "epic-5",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "None",
@@ -994,7 +1027,8 @@
       "labels": [
         "epic-5",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-5-1",
@@ -1012,7 +1046,8 @@
       "labels": [
         "epic-5",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-5-E5-3-DISTRIBUTED-TRACING.md",
       "deps": "E-5-1",
@@ -1030,7 +1065,8 @@
       "labels": [
         "epic-5",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-5-E5-3B-CONSULTATION-TRACING.md",
       "deps": "E-5-3",
@@ -1048,7 +1084,8 @@
       "labels": [
         "epic-5",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-5-E5-4-SLI-SLO-DEFINITIONS.md",
       "deps": "E-5-1",
@@ -1066,7 +1103,8 @@
       "labels": [
         "epic-5",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-5-E5-5-ALERTMANAGER-RULE-TEMPLATES.md",
       "deps": "E-5-2",
@@ -1084,7 +1122,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-6-E6-1-SBOM-GENERATION.md",
       "deps": "None",
@@ -1102,7 +1141,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "None",
@@ -1120,7 +1160,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-6-E6-3-SOC2-ISO-COMPLIANCE-DOCS.md",
       "deps": "None",
@@ -1138,7 +1179,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-6-E6-3B-HIPAA-CONTROL-MAPPING.md",
       "deps": "E-6-3",
@@ -1156,7 +1198,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-6-E6-3C-GDPR-DPIA-TEMPLATE.md",
       "deps": "E-6-3",
@@ -1174,7 +1217,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-6-E6-3D-PCI-DSS-MAPPING.md",
       "deps": "E-6-3",
@@ -1192,7 +1236,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-6-3",
@@ -1210,7 +1255,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-6-E6-4-LICENSE-COMPLIANCE.md",
       "deps": "None",
@@ -1228,7 +1274,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "None",
@@ -1246,7 +1293,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-6-E6-6-INCIDENT-RESPONSE-PLAYBOOK.md",
       "deps": "None",
@@ -1264,7 +1312,8 @@
       "labels": [
         "epic-6",
         "risk:high",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-6-E6-6B-VENDOR-ESCALATION-MATRIX.md",
       "deps": "E-6-6",
@@ -1282,7 +1331,8 @@
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-7-PERFORMANCE-BASELINE.md",
       "deps": "None",
@@ -1300,7 +1350,8 @@
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-7-1",
@@ -1318,7 +1369,8 @@
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-7-3-MEMORY-PROFILING.md",
       "deps": "E-7-1",
@@ -1336,7 +1388,8 @@
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "Epic 4",
@@ -1354,7 +1407,8 @@
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "None",
@@ -1372,7 +1426,8 @@
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-7X-CI-PROMOTION-TRACK.md",
       "deps": "None",
@@ -1390,7 +1445,8 @@
       "labels": [
         "epic-8",
         "risk:low",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "Epic 4",
@@ -1408,7 +1464,8 @@
       "labels": [
         "epic-8",
         "risk:low",
-        "status:planned"
+        "status:planned",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-4-3",
@@ -1426,7 +1483,8 @@
       "labels": [
         "epic-8",
         "risk:low",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "Epic 4 + Epic 6",
@@ -1444,7 +1502,8 @@
       "labels": [
         "epic-8",
         "risk:low",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-8-4-API-REFERENCE-SPHINX.md",
       "deps": "None",
@@ -1462,7 +1521,8 @@
       "labels": [
         "epic-8",
         "risk:low",
-        "status:in_progress"
+        "status:in_progress",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "None",
@@ -1473,14 +1533,15 @@
       "url": "https://github.com/Halildeu/ao-kernel/issues/894",
       "parent": 781,
       "slice_id": "E-8-6",
-      "title": "[E-8-6] Migration guide v4.x \u2192 v5.0.0",
+      "title": "[E-8-6] Migration guide v4.x → v5.0.0",
       "risk": "low",
       "status": "merged",
       "status_ref": "merged PR #807",
       "labels": [
         "epic-8",
         "risk:low",
-        "status:done"
+        "status:done",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "None",
@@ -1497,11 +1558,12 @@
       "status_ref": "planned (deps Epic 1-8 complete)",
       "labels": [
         "epic-9",
-        "risk:critical",
         "guard-flip:live_adapter",
-        "guard-flip:support_widening",
         "guard-flip:production_platform_claim",
-        "status:blocked"
+        "guard-flip:support_widening",
+        "risk:critical",
+        "status:blocked",
+        "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "Epic 1-8 all complete (evidence packs A + B + C)",

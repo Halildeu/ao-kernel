@@ -68,6 +68,36 @@ def _make_manifest(tmp_path: Path) -> Path:
     return path
 
 
+def _attach_subissues_manifest(
+    projection_manifest: Path,
+    *,
+    issue_number: int = 900,
+    labels: list[str] | None = None,
+) -> Path:
+    """Attach a minimal v5_subissues_mirror manifest to a projection fixture."""
+    subissues = {
+        "schema_version": "v5-subissues-mirror.v1",
+        "sub_issues": {
+            "E-1-1": {
+                "issue_number": issue_number,
+                "slice_id": "E-1-1",
+                "labels": labels or ["epic-1", "risk:normal", "status:done"],
+            }
+        },
+    }
+    subissues_path = projection_manifest.parent / "v5_subissues_mirror.v1.json"
+    subissues_path.write_text(json.dumps(subissues, indent=2), encoding="utf-8")
+
+    manifest = json.loads(projection_manifest.read_text(encoding="utf-8"))
+    manifest["runtime_created_state"]["sub_issues_mirror_ref"] = {
+        "mirror_manifest_path": "v5_subissues_mirror.v1.json",
+        "created_count": 1,
+    }
+    manifest["runtime_created_state"]["project_board"]["items_count"] = 3
+    projection_manifest.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return projection_manifest
+
+
 def _valid_anchor_body(*, spm_anchor: str, slice_id: str) -> str:
     return (
         "## V5 Anchor\n"
@@ -227,6 +257,63 @@ def test_extra_issue(tmp_path):
     assert any(d.category == "extra_issue" and d.object_id == "999" for d in report.drift)
 
 
+def test_subissue_manifest_issue_is_not_extra_and_does_not_require_parent_anchor(tmp_path):
+    manifest = _attach_subissues_manifest(_make_manifest(tmp_path))
+    responses = _make_synced_responses()
+    responses["/repos/Halildeu/ao-kernel/issues?milestone=3&state=all&per_page=100"].append(
+        {
+            "number": 900,
+            # Retro sub-slice mirror issues use a compact body, not the parent
+            # `## V5 Anchor` block. The drift checker should still verify
+            # inventory + labels without manufacturing anchor drift.
+            "body": "**Parent epic:** #774\n\n**Slice ID:** E-1-1\n",
+            "labels": [
+                {"name": "epic-1"},
+                {"name": "risk:normal"},
+                {"name": "status:done"},
+            ],
+        }
+    )
+    responses["graphql:project_items:PVT_xxx"] = {
+        "items": [
+            {"id": "i1", "content": {"number": 774}},
+            {"id": "i2", "content": {"number": 775}},
+            {"id": "i3", "content": {"number": 900}},
+        ]
+    }
+    caller = _make_caller(responses)
+    report = check_github_mirror_drift(
+        projection_manifest_path=manifest,
+        gh_api_caller=caller,
+        network_allowed=True,
+        now_iso=_now(),
+    )
+    assert report.exit_decision == ExitDecision.SYNCED
+    assert report.drift == []
+    assert report.expected_counts["issues"] == 3
+
+
+def test_subissue_manifest_still_rejects_unexpected_extra_issue(tmp_path):
+    manifest = _attach_subissues_manifest(_make_manifest(tmp_path))
+    responses = _make_synced_responses()
+    responses["/repos/Halildeu/ao-kernel/issues?milestone=3&state=all&per_page=100"].append(
+        {
+            "number": 901,
+            "body": "**Slice ID:** E-unknown\n",
+            "labels": [{"name": "epic-1"}],
+        }
+    )
+    caller = _make_caller(responses)
+    report = check_github_mirror_drift(
+        projection_manifest_path=manifest,
+        gh_api_caller=caller,
+        network_allowed=True,
+        now_iso=_now(),
+    )
+    assert any(d.category == "missing_issue" and d.object_id == "900" for d in report.drift)
+    assert any(d.category == "extra_issue" and d.object_id == "901" for d in report.drift)
+
+
 def test_label_mismatch(tmp_path):
     manifest = _make_manifest(tmp_path)
     responses = _make_synced_responses()
@@ -297,6 +384,31 @@ def test_anchor_unknown_field(tmp_path):
         now_iso=_now(),
     )
     assert any(d.category == "anchor_schema_mismatch" and d.object_id == "774" for d in report.drift)
+
+
+def test_anchor_known_template_fields_and_digest_annotation_are_accepted(tmp_path):
+    manifest = _make_manifest(tmp_path)
+    responses = _make_synced_responses()
+    responses["/repos/Halildeu/ao-kernel/issues?milestone=3&state=all&per_page=100"][0]["body"] = (
+        "## V5 Anchor\n"
+        "- **spm_anchor:** `AO-MA-SPM-V5-EPIC-1`\n"
+        "- **slice_id:** `V5-EPIC-1`\n"
+        "- **ao_authority_artifact:** `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`\n"
+        f"- **artifact_sha256:** `{_VALID_ARTIFACT_SHA}`\n"
+        f"- **plan_digest:** `{_VALID_PLAN_DIGEST}` (manifest `.claude/plans/v5_issue_projection.v1.json`)\n"
+        "- **risk_class_source:** `computed_normal` (computed; NOT manually downgraded)\n"
+        "- **evidence_classes:** [plan_doc, projection_manifest]\n"
+        "- **consensus_state:** `agreed`\n"
+    )
+    caller = _make_caller(responses)
+    report = check_github_mirror_drift(
+        projection_manifest_path=manifest,
+        gh_api_caller=caller,
+        network_allowed=True,
+        now_iso=_now(),
+    )
+    assert not any(d.category == "anchor_schema_mismatch" for d in report.drift)
+    assert not any(d.category == "anchor_sha_format_invalid" for d in report.drift)
 
 
 def test_anchor_sha_format_invalid(tmp_path):
@@ -370,6 +482,27 @@ def test_project_item_count_mismatch(tmp_path):
         now_iso=_now(),
     )
     assert any(d.category == "project_item_count_mismatch" for d in report.drift)
+
+
+def test_project_item_count_ignores_non_issue_project_items(tmp_path):
+    manifest = _make_manifest(tmp_path)
+    responses = _make_synced_responses()
+    responses["graphql:project_items:PVT_xxx"] = {
+        "items": [
+            {"id": "i1", "content": {"number": 774}},
+            {"id": "i2", "content": {"number": 775}},
+            {"id": "draft1", "content": None},
+        ]
+    }
+    caller = _make_caller(responses)
+    report = check_github_mirror_drift(
+        projection_manifest_path=manifest,
+        gh_api_caller=caller,
+        network_allowed=True,
+        now_iso=_now(),
+    )
+    assert report.exit_decision == ExitDecision.SYNCED
+    assert report.drift == []
 
 
 # ---- API error ----
