@@ -16,6 +16,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **test_epic_4_1_helm_chart_skeleton write-set scope**:
+  scoped the E-4-1 write-set exactness invariant to PRs that actually
+  update the E-4-1 decision evidence artifact, so the global test suite
+  no longer compares unrelated follow-up PR diffs against the E-4-1
+  write set.
 - **test_pre_commit_changelog_gate::test_no_workflow_mutation introducer-PR detection**:
   After #909 merged, this slice-scoped invariant test was firing on every
   successor PR that touched `.github/workflows/` because the skip predicate

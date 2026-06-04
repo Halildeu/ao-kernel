@@ -9,65 +9,53 @@
       "status": "pass"
     },
     {
-      "name": "changelog_discipline",
+      "name": "lint",
       "status": "pass"
     },
     {
-      "name": "helm_chart_skeleton_invariants",
+      "name": "typecheck",
       "status": "pass"
     },
     {
-      "name": "cross_ai_review",
+      "name": "coverage",
+      "status": "pass"
+    },
+    {
+      "name": "packaging",
       "status": "pass"
     }
   ],
   "findings": [
-    "The PR scope is the V5 Epic 4 E-4-1 Helm chart skeleton: chart files, evidence schema, plan evidence, slice tests, changelog entry, and this local review evidence.",
-    "The Helm chart remains render-only and operator-installable; no live cluster command, workflow mutation, CODEOWNERS change, ruleset change, pyproject change, webhook change, or runtime public API change is introduced.",
-    "Codex post-implementation review thread 019e87c9-c6b9-7e43-bd89-6ef7d21704b7 returned REVISE for untyped rbac.rules/tolerations arrays and premature verdict wording; both findings were absorbed before this AGREE evidence.",
-    "Typed values.schema.json definitions now fail closed for invalid rbac.rules and tolerations payloads, with tests covering both static no-untyped-arrays walking and helm template negative paths.",
-    "The write set is machine-pinned by tests/test_epic_4_1_helm_chart_skeleton.py against git diff origin/main...HEAD, including CHANGELOG.md and local-ai-review-evidence.v1.json.",
-    "Guard flags live_adapter_execution, support_widening, and production_platform_claim remain false and are not authorized by this slice.",
-    "No secret material is recorded; chart values use secretKeyRef indirection and the chart/tests include secret-pattern scanning.",
-    "Provider-level separation is preserved: implementer is anthropic and reviewer is openai; AI output remains evidence only, not release authority."
+    "Skip predicate correctly uses _EVIDENCE_PATH.relative_to(_REPO_ROOT) producing .claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json, matching git diff path format.",
+    "Invariant still fires when the E-4-1 evidence artifact is in the PR diff; this is scope narrowing, not masking.",
+    "No runtime, workflow, ruleset, CODEOWNERS, public API, or guard-flag changes.",
+    "No secrets recorded or exposed in the diff.",
+    "CHANGELOG entry accurately describes the fix and its rationale.",
+    "Pattern is consistent with existing slice-scoped skip predicates in the test suite."
   ],
   "implementer": {
-    "agent": "claude-opus-4.7-helm-chart-skeleton",
-    "provider": "anthropic"
+    "agent": "codex-gpt-5-e41-write-set-scope-fix",
+    "provider": "openai"
   },
   "live_adapter_execution": false,
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "codex-post-impl-reviewer-019e87c9",
-    "provider": "openai",
+    "agent": "claude-code-reviewer-pr916",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/E-4-1-HELM-CHART-SKELETON.md",
-      ".claude/plans/E-4-1-HELM-CHART-SKELETON.v1.json",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/e-4-1-helm-chart-evidence.schema.v1.json",
-      "deploy/helm/ao-kernel/Chart.yaml",
-      "deploy/helm/ao-kernel/README.md",
-      "deploy/helm/ao-kernel/templates/NOTES.txt",
-      "deploy/helm/ao-kernel/templates/_helpers.tpl",
-      "deploy/helm/ao-kernel/templates/configmap.yaml",
-      "deploy/helm/ao-kernel/templates/deployment.yaml",
-      "deploy/helm/ao-kernel/templates/rbac.yaml",
-      "deploy/helm/ao-kernel/templates/service.yaml",
-      "deploy/helm/ao-kernel/templates/serviceaccount.yaml",
-      "deploy/helm/ao-kernel/values.schema.json",
-      "deploy/helm/ao-kernel/values.yaml",
       "local-ai-review-evidence.v1.json",
       "tests/test_epic_4_1_helm_chart_skeleton.py"
     ],
-    "head_ref": "refs/heads/codex/epic-4-1-helm-chart"
+    "head_ref": "refs/heads/codex/e41-write-set-scope-fix"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-829-helm-chart-skeleton"
+  "work_package": "AO-MA-916-e41-write-set-scope-fix"
 }
