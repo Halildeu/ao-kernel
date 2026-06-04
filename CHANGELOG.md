@@ -16,6 +16,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **scorecard baseline artifact download action pin**: updated the
+  SHA-pinned `dawidd6/action-download-artifact` scorecard baseline
+  downloader to the v21 tag commit and kept the workflow comment in
+  lockstep with the pin so the advisory scorecard lane remains
+  Node 24-compatible without introducing new write permissions or
+  required-check promotion.
 - **V5 GitHub mirror drift checker sub-issue authority**: included the
   V5 sub-issue mirror manifest in expected issue inventory, accepted
   known optional anchor fields, normalized annotated digest values, and
