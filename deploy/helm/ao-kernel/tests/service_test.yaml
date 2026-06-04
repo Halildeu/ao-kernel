@@ -1,0 +1,12 @@
+# helm-unittest suite for the ao-kernel service (V5 Epic 4 E-4-6).
+suite: service invariants
+templates:
+  - templates/service.yaml
+tests:
+  - it: renders a ClusterIP service exposing the http port
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: spec.type
+          value: ClusterIP

@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-E-4-3-postgres-provisioning",
+  "work_package": "AO-MA-E-4-6-helm-testing-doc",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,16 +13,15 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-4-3-postgres-provisioning",
+    "head_ref": "refs/heads/codex/epic-4-6-helm-unittest-doc",
     "changed_files": [
-      ".claude/plans/E-4-3-POSTGRES-PROVISIONING.md",
+      ".claude/plans/E-4-6-HELM-TESTING.md",
       "CHANGELOG.md",
-      "deploy/helm/ao-kernel/templates/deployment.yaml",
-      "deploy/helm/ao-kernel/values.schema.json",
-      "deploy/helm/ao-kernel/values.yaml",
-      "docs/OPERATOR-SECRET-MANAGEMENT.md",
+      "deploy/helm/ao-kernel/tests/deployment_test.yaml",
+      "deploy/helm/ao-kernel/tests/service_test.yaml",
+      "docs/HELM-TESTING.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_epic_4_3_postgres_provisioning.py"
+      "tests/test_epic_4_6_helm_testing_doc.py"
     ]
   },
   "checks_considered": [
@@ -35,19 +34,11 @@
       "status": "pass"
     },
     {
-      "name": "no_inline_credential_literal",
+      "name": "doc_covers_ci_helm_unittest_idempotency",
       "status": "pass"
     },
     {
-      "name": "secretkeyref_only",
-      "status": "pass"
-    },
-    {
-      "name": "chart_does_not_deploy_postgres",
-      "status": "pass"
-    },
-    {
-      "name": "values_schema_closed",
+      "name": "suites_valid_shape",
       "status": "pass"
     },
     {
@@ -64,10 +55,10 @@
     }
   ],
   "findings": [
-    "E-4-3 (#862) operator-owned external PostgreSQL provisioning + secret management. Helm chart postgresql block (enabled:false default), secretKeyRef-only credential wiring, closed values.schema.json, docs/OPERATOR-SECRET-MANAGEMENT.md runbook. Chart never deploys DB, never holds secret.",
-    "16 invariants pass: no inline credential, secretKeyRef only, no image:postgres/StatefulSet, schema closed, sslmode enum safe, runbook complete, introducer-PR no-workflow-mutation, no guard-flag key.",
-    "Low-risk lane: only deploy/helm/ + docs/ + tests/ + plan + CHANGELOG. NO .github/workflows/, CODEOWNERS, ruleset, ao_kernel/ runtime mutation.",
-    "3 guard flags const false; no production claim (beta runbook); pgvector(E-7-5) explicitly disambiguated as separate optional surface."
+    "E-4-6 (#865) helm chart testing runbook + helm-unittest suites. Two-layer: Python invariant CI source-of-truth + operator-run helm-unittest render suites. Epic-wide idempotency + default-safe contract documented.",
+    "8 invariants pass. helm-unittest NOT added to Python CI (no Helm binary in CI); operator-run. Closes Epic 4 chart-hardening (E-4-1/3/4/5/6).",
+    "Low-risk lane: docs/ + deploy/helm/tests/ + tests/ + plan + CHANGELOG. NO .github/workflows/, governance, runtime mutation.",
+    "3 guard flags const false."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
