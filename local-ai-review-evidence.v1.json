@@ -1,28 +1,25 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-3-1-SUPPORT-WIDENING-EVIDENCE",
+  "work_package": "E-2-6-ADVISORY-CI",
   "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
+    "agent": "codex",
+    "provider": "openai"
   },
   "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
+    "agent": "claude",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/epic-3-1-support-widening-evidence",
+    "head_ref": "refs/heads/codex/epic-2-6-advisory-ci",
     "changed_files": [
-      ".claude/plans/EPIC-3-E-3-1-EVIDENCE-SCHEMA.md",
-      ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
+      ".github/workflows/live-adapter-evidence-emit.yml",
       "CHANGELOG.md",
-      "ao_kernel/_internal/support_widening/__init__.py",
-      "ao_kernel/_internal/support_widening/evidence.py",
-      "ao_kernel/cli.py",
-      "ao_kernel/defaults/schemas/support-widening-evidence.schema.v1.json",
-      "tests/test_support_widening_evidence_v1.py",
+      "scripts/live_adapter_evidence_workflow_runner.py",
+      "tests/test_cost_ceiling.py",
+      "tests/test_live_adapter_evidence_workflow.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -31,18 +28,31 @@
     { "name": "secret_scan", "status": "pass" },
     { "name": "ruff", "status": "pass" },
     { "name": "mypy", "status": "pass" },
-    { "name": "schema_valid_draft_2020_12", "status": "pass" },
-    { "name": "guard_flags_const_false", "status": "pass" },
-    { "name": "recursive_closure_shape_nodes", "status": "pass" },
-    { "name": "no_remote_ref_local_only", "status": "pass" },
-    { "name": "recompute_inputs_shadow_widening_guard", "status": "pass" },
-    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "json_validity", "status": "pass" },
+    { "name": "gpp_next_guard_flags", "status": "pass" },
+    { "name": "diff_whitespace", "status": "pass" },
+    { "name": "workflow_trigger_guard", "status": "pass" },
+    { "name": "workflow_permissions_guard", "status": "pass" },
+    { "name": "workflow_secret_context_guard", "status": "pass" },
+    { "name": "artifact_only_guard", "status": "pass" },
+    { "name": "dry_run_harness_delegation", "status": "pass" },
+    { "name": "forbidden_secret_env_fail_closed", "status": "pass" },
+    { "name": "guard_flags_false_in_artifacts", "status": "pass" },
+    { "name": "codeql_stdout_secret_logging_hardened", "status": "pass" },
+    { "name": "legacy_cost_ceiling_workflow_guard_narrowed", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "E-3-1 support widening evidence schema + pure parse/recompute/verify module + read-only CLI (infrastructure-only). 2-iter Codex (OpenAI) cross-AI review on thread 019e9339; all 5 REVISE findings absorbed: (1) no-remote-ref test tightened to a local '#/' allowlist (http(s)-only let file/ftp/urn/bare-file through); (2) bare delegated-container closure asserted by exact json-pointer path set (was count-only); (3) plan §7 normative text reconciled with the implemented $defs+allOf+bare-container design; (4) branch rebased onto origin/main with both E-3-1 and E-2-5 CHANGELOG entries preserved; (5) invariant-count wording fixed (17 functions / 20 pytest cases).",
-    "Reviewer found NO behavioral bypass: cross-class key contamination rejected, shadow-widening key (even camelCase) rejected at any depth, double-pin fail-closed (schema const false + parse_v1 _RUNTIME_PINS re-assert) confirmed, recompute_v1 recompute-not-trust (evidence_dimensions == raw_dimensions canonical equality) and verify_v1 on-disk re-hash tamper-detection confirmed.",
-    "Guard flags const false at schema + evidence level (support_widening / production_platform_claim / live_adapter_execution / github_write_authorized) and re-asserted at runtime. No network call; no guard flip; a true value requires the separate v2 supersession schema (Epic 9). 20 pytest cases green; ruff + mypy clean."
+    "Claude Anthropic cross-provider review returned AGREE for E-2-6 Path A advisory CI.",
+    "Claude Anthropic re-review returned AGREE for the legacy E-2-3 workflow guard narrowing that allows only the E-2-6 advisory workflow path.",
+    "The workflow uses pull_request plus workflow_dispatch only and does not include pull_request_target.",
+    "The workflow grants only contents: read, uses persist-credentials: false, and has no PR comment, Teams webhook, secrets context, or write permission surface.",
+    "The runner fails closed when protected secret environment variable names are present and never logs secret values.",
+    "The runner's CLI stdout is intentionally static and does not print artifact paths, envelope digests, secret env names, or the full summary payload.",
+    "The runner delegates to the E-2-4 no-network dry-run harness and emits envelope, per-call audit, and workflow summary artifacts only.",
+    "Tests pin trigger, permission, secret-context, artifact-only, fail-closed env, AST import, and guard-flag boundaries.",
+    "The older E-2-3 cost-ceiling workflow mutation guard was narrowed to allow only the E-2-6 advisory workflow path while continuing to fail closed on unrelated workflow mutations.",
+    "Guard flags remain false. No support widening, production platform claim, live provider HTTP call, or live adapter execution is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

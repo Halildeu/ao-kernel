@@ -37,6 +37,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `support_widening` / `production_platform_claim` / `live_adapter_execution`
   all `const false` at schema and re-asserted at runtime; no guard flip (a true
   value requires the separate v2 supersession schema, Epic 9).
+- **E-2-6 advisory live-adapter evidence workflow** (V5 Epic 2, #851):
+  added `.github/workflows/live-adapter-evidence-emit.yml` plus
+  `scripts/live_adapter_evidence_workflow_runner.py` as the Path A
+  pull-request-safe CI lane for E-2-4 dry-run artifacts. The workflow uses
+  `pull_request`/`workflow_dispatch`, `contents: read`, no secrets context, no
+  PR comments, no Teams notification, and uploads only envelope/audit/summary
+  artifacts. The runner fails closed if protected secret environment variables
+  are present, then delegates to the no-network dry-run harness. Guard flags
+  remain false; no provider HTTP call, support widening, production claim, or
+  live adapter execution is introduced.
 - **E-2-5 secret resolution discipline module** (V5 Epic 2, #850): added
   `ao_kernel._internal.secrets.SecretResolutionDiscipline` and
   `SecretTaintSet` as the env-var-only, value-based taint primitive for future
