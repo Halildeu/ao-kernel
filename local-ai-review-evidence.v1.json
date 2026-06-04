@@ -5,6 +5,10 @@
       "status": "pass"
     },
     {
+      "name": "sixteen_invariant_tests_executed",
+      "status": "pass"
+    },
+    {
       "name": "secret_scan",
       "status": "pass"
     },
@@ -21,84 +25,71 @@
       "status": "pass"
     },
     {
-      "name": "guide_exists_at_expected_path",
+      "name": "tutorial_exists_at_correct_path",
       "status": "pass"
     },
     {
-      "name": "three_deployment_patterns_covered",
+      "name": "seven_step_coverage",
       "status": "pass"
     },
     {
-      "name": "guard_flags_const_false_in_disclaimer",
+      "name": "guard_flags_const_false_preserved",
       "status": "pass"
     },
     {
-      "name": "no_positive_production_claim_tokens",
+      "name": "no_positive_production_claim",
       "status": "pass"
     },
     {
-      "name": "no_in_prose_flag_flip",
+      "name": "no_live_provider_authorization",
       "status": "pass"
     },
     {
-      "name": "operator_bound_supersession_reference",
+      "name": "no_workflow_mutation",
       "status": "pass"
     },
     {
-      "name": "operator_owned_surfaces_listed",
+      "name": "no_runtime_code_change",
       "status": "pass"
     },
     {
-      "name": "v5_roadmap_forward_ref",
+      "name": "no_codeowners_ruleset_branchprotection_change",
       "status": "pass"
     },
     {
-      "name": "helm_e41_forward_ref",
+      "name": "no_secrets_in_diff",
       "status": "pass"
     },
     {
-      "name": "zero_touch_no_workflow_mutation",
+      "name": "tests_meaningful_not_tautological",
       "status": "pass"
     },
     {
-      "name": "no_runtime_source_changes",
+      "name": "no_whole_diff_mutation_guard",
       "status": "pass"
     },
     {
-      "name": "no_codeowners_ruleset_branch_protection_changes",
+      "name": "changelog_appropriate",
       "status": "pass"
     },
     {
-      "name": "changelog_entry_appropriate",
-      "status": "pass"
-    },
-    {
-      "name": "test_count_matches_plan_13_invariants",
-      "status": "pass"
-    },
-    {
-      "name": "claim_scanner_negation_window_correctness",
-      "status": "pass"
-    },
-    {
-      "name": "test_meaningful_no_whole_diff_mutation_guard",
+      "name": "cross_references_adr0003_adr0004_e81_e83_e11",
       "status": "pass"
     }
   ],
   "findings": [
-    "Production deployment guide is documentation-only and scoped to Epic 8 E-8-1.",
-    "Guide covers standalone Python package, Docker, and Kubernetes operator-deployable patterns.",
-    "Disclaimer keeps support_widening, production_platform_claim, and live_adapter_execution as const false.",
-    "Guide explicitly avoids a production-ready certification claim and points production/beta promotion to a future operator-bound supersession slice.",
-    "Tests enforce the expected path, three deployment patterns, operator-owned surfaces, V5 roadmap and Helm E-4-1 forward references, and claim-safety invariants.",
-    "Claude review AGREE: disclaimer negates prohibited production-readiness language and preserves guard flags.",
-    "Claude review AGREE: claim scanner strips fenced code blocks and checks a whitespace-flattened negation window.",
-    "Claude review AGREE: ZERO TOUCH test checks the plan boundary and does not perform a whole-diff workflow mutation guard.",
-    "Claude review AGREE: changelog entry is appropriately scoped under Unreleased Added.",
-    "No workflow, runtime source, CODEOWNERS, ruleset, branch-protection, or live-adapter mutation is included."
+    "AO-MA-SPM tutorial is documentation-only and scoped to Epic 8 E-8-5.",
+    "Tutorial covers the 7-step path: initialize workspace, define slice, plan-time cross-AI consensus, stub implementation, evidence verification, PR, and operator approval gate.",
+    "Tutorial preserves support_widening, production_platform_claim, and live_adapter_execution as const false.",
+    "Tutorial explicitly defers live provider calls to E-2-1 operator-bound supersession.",
+    "Tests enforce tutorial presence, 7-step coverage, claim discipline, cross references, and governance zero-touch plan boundary.",
+    "Claude review AGREE: no positive production claim, no live provider authorization, no runtime/workflow/CODEOWNERS/ruleset/branch-protection mutation.",
+    "Claude review AGREE: tests are meaningful and do not use a whole-diff mutation guard that would block unrelated future workflow PRs.",
+    "Claude review AGREE: changelog entry is appropriately scoped and records no live provider execution.",
+    "Claude review AGREE: plan doc, tutorial section 12, and evidence file consistently record OpenAI Codex as implementer and Anthropic Claude as reviewer."
   ],
   "implementer": {
-    "agent": "codex-epic-8-1-deployment-guide-rebase",
+    "agent": "codex-epic-8-5-tutorial-rebase",
     "provider": "openai"
   },
   "live_adapter_execution": false,
@@ -113,15 +104,15 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/EPIC-8-1-PRODUCTION-DEPLOYMENT-GUIDE.md",
+      ".claude/plans/EPIC-8-5-TUTORIAL.md",
       "CHANGELOG.md",
-      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
+      "docs/TUTORIAL-BUILD-AO-MA-SPM-PROGRAM.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_production_deployment_guide.py"
+      "tests/test_tutorial_build_program.py"
     ],
-    "head_ref": "refs/heads/codex/epic-8-1-deployment-guide-v2"
+    "head_ref": "refs/heads/codex/epic-8-5-tutorial-v2"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-912-deployment-guide"
+  "work_package": "AO-MA-913-tutorial"
 }
