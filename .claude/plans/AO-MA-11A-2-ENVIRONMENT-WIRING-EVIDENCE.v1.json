@@ -1,0 +1,36 @@
+{
+  "schema_version": "ao-ma-11a-2-environment-wiring-evidence.v1",
+  "artifact_kind": "ao_ma_11a_2_environment_wiring_evidence",
+  "repository_full_name": "Halildeu/ao-kernel",
+  "environment_name": "ao-ma-plan-approval",
+  "environment_id": 16221961707,
+  "environment_api_url": "https://api.github.com/repos/Halildeu/ao-kernel/environments/ao-ma-plan-approval",
+  "environment_html_url": "https://github.com/Halildeu/ao-kernel/deployments/activity_log?environments_filter=ao-ma-plan-approval",
+  "observed_at": "2026-06-04T07:30:10Z",
+  "observation_source": "github_environment_api",
+  "environment_exists": true,
+  "required_reviewers_count": 1,
+  "required_reviewers": [
+    {
+      "type": "User",
+      "login": "Halildeu",
+      "id": 186576227
+    }
+  ],
+  "prevent_self_review": true,
+  "can_admins_bypass": false,
+  "workflow_path": ".github/workflows/ao-ma-11a-plan-approval.yml",
+  "workflow_sha256": "sha256:bbebc1e8b90093e05f03e8de99e3a7a923e8856f3bade8e4c35285d5708dad84",
+  "plan_doc_path": ".claude/plans/AO-MA-11A-2-PLAN-APPROVAL-GATE.md",
+  "plan_doc_sha256": "sha256:340d8d71b64c357e8d36c8f211faaa7741157d10b428524d818cb717bcbd28dc",
+  "gate_cli_path": "scripts/ao_ma11a2_plan_approval_gate.py",
+  "gate_cli_sha256": "sha256:881650817c4813541823442b08bf2933ee8bc75b928187b734e921040ac7f310",
+  "gate_report_schema_path": "ao_kernel/defaults/schemas/ao-ma-11a-2-plan-approval-gate-report.schema.v1.json",
+  "gate_report_schema_sha256": "sha256:22004cd3a41e913882c7193f3353fe2fed56e24ec5656fca646f87f0c1491936",
+  "release_authority": "ao-release-gate+github-ruleset",
+  "ai_output_release_authority": false,
+  "secrets_recorded": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false
+}

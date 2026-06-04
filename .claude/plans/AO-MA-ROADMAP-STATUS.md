@@ -16,20 +16,20 @@ python3 scripts/ao_ma_next.py --format json
 
 ## İlerleme (2026-06-04)
 
-- **Fazlar:** 5/7 done (71%). Tamamlanan:
+- **Fazlar:** 6/7 done (86%). Tamamlanan:
+  **AO-MA-11A**,
   **AO-MA-11I**, **AO-MA-11H**, **AO-MA-11F**, **AO-MA-4.6**,
-  **AO-MA-11G**. Aktif follow-up fazları: **AO-MA-11A** +
-  **AO-MA-11E** (in_progress).
-- **Dilimler (slices):** 7/9 merged (78%).
-- **Current phase / slice:** `AO-MA-11G` / `AO-MA-11G-1`
-  (core slice landed). `progress_estimates.phases.next_phase_id = null`;
-  remaining work is demand-driven follow-up, not a new core phase.
+  **AO-MA-11G**. Aktif follow-up fazı: **AO-MA-11E** (in_progress).
+- **Dilimler (slices):** 8/9 merged (89%).
+- **Current phase / slice:** `AO-MA-11E` / `AO-MA-11E-2`.
+  V5 Epic 1'de sıradaki iş GitHub Projects/Milestone/Issue one-way sync +
+  anchor injection + live drift checker.
 
 ## Faz Tablosu
 
 | Faz | Başlık | Statü | Dilimler |
 |---|---|---|---|
-| **AO-MA-11A** | Plan Consensus + Tek Operatör Onay Kapısı | 🟡 in_progress | 11A-1 ✅ merged, 11A-2 ⬜ not_started |
+| **AO-MA-11A** | Plan Consensus + Tek Operatör Onay Kapısı | 🟢 done | 11A-1 ✅ merged, 11A-2 ✅ merged |
 | **AO-MA-11E** | GitHub-Native Operator Tracking Mirror | 🟡 in_progress | 11E-1 ✅ merged, 11E-2 ⬜ not_started |
 | **AO-MA-11I** | Autonomous Run Governor | 🟢 done | 11I-1 ✅ merged (#762) |
 | **AO-MA-11H** | Notification & Escalation | 🟢 done | 11H-1 ✅ merged (#763) |
@@ -42,7 +42,7 @@ python3 scripts/ao_ma_next.py --format json
 | Dilim | Statü | Risk | Consensus | Approval | PR | Açıklama |
 |---|---|---|---|---|---|---|
 | AO-MA-11A-1 | ✅ merged | critical | agreed | approved | #758 | plan_consensus validator + 2 schema |
-| AO-MA-11A-2 | ⬜ not_started | high | not_started | not_requested | — | GitHub Environment required-reviewer wiring |
+| AO-MA-11A-2 | ✅ merged | high | agreed | approved | #792 | GitHub Environment `ao-ma-plan-approval` required-reviewer wiring; environment id `16221961707`; `prevent_self_review=true`; `can_admins_bypass=false` |
 | AO-MA-11E-1 | ✅ merged | critical | agreed | not_requested | #760 | derived tracking SSOT + schema + ao_ma_next + roadmap + drift core |
 | AO-MA-11E-2 | ⬜ not_started | high | not_started | not_requested | — | GitHub Projects/Milestone/Issue one-way sync + live drift |
 | AO-MA-11I-1 | ✅ merged | critical | agreed | not_requested | #762 | PAUSE kill-switch + budget cap + safe-stop |
@@ -57,15 +57,13 @@ python3 scripts/ao_ma_next.py --format json
 
 ## Sıradaki
 
-1. **AO-MA-11A-2** — GitHub Environment `ao-ma-plan-approval`
-   required-reviewer wiring. High-risk follow-up; demand-driven.
-2. **AO-MA-11E-2** — GitHub Projects/Milestone/Issue one-way sync +
+1. **AO-MA-11E-2** — GitHub Projects/Milestone/Issue one-way sync +
    anchor injection + live drift checker. High-risk follow-up; demand-driven.
-3. **AO-MA-11G-2 follow-up set** — CI/pre-commit changelog enforcement,
+2. **AO-MA-11G-2 follow-up set** — CI/pre-commit changelog enforcement,
    AO-MA-4.6 dogfooding, retro ADR cross-AI revalidation, and
    CHANGELOG/pyproject allowlist widening. These are follow-up hardening
    slices; SON FAZ core capabilities are already landed.
-4. Guard flags stay false: no support widening, no production platform claim,
+3. Guard flags stay false: no support widening, no production platform claim,
    no live adapter execution. Release authority remains repo-owned
    `ao-release-gate` + GitHub ruleset, not this tracking mirror.
 
