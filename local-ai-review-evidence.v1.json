@@ -1,51 +1,19 @@
 {
-  "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "changelog_discipline",
-      "status": "pass"
-    },
-    {
-      "name": "multi_tenant_boundary_invariants",
-      "status": "pass"
-    },
-    {
-      "name": "cross_ai_review",
-      "status": "pass"
-    }
-  ],
-  "findings": [
-    "The PR scope is the V5 Epic 4 E-4-2a multi-tenant advisory boundary contract: boundary docs, tenant isolation matrix placeholder, strict schemas, slice tests, changelog entry, and this local review evidence.",
-    "The matrix is explicitly advisory and placeholder-only: runtime_enforced is false, live_validated is false, operator_enforceable is true, and operator_action_required is true for every dimension.",
-    "Codex post-implementation review thread 019e87e7-d796-7682-80e4-2be2662b7979 returned AGREE with no blocking findings after probing exact-once-per-dimension schema behavior, evidence schema closure, forward-compatible filled matrix shape, write-set exactness, and advisory language discipline.",
-    "The PR does not touch .github/workflows, pyproject.toml, runtime Python modules, Helm chart templates, CODEOWNERS, rulesets, webhooks, branch protection, or public SDK signatures.",
-    "The write set is machine-pinned by tests/test_epic_4_2a_multi_tenant_boundary.py against git diff origin/main...HEAD, including CHANGELOG.md and local-ai-review-evidence.v1.json.",
-    "Guard flags live_adapter_execution, support_widening, and production_platform_claim remain false and are not authorized by this slice.",
-    "No secret material is recorded; the new artifacts are docs, JSON schemas, matrix evidence, tests, changelog, and local review evidence only.",
-    "Provider-level separation is preserved: implementer is anthropic and reviewer is openai; AI output remains evidence only, not release authority."
-  ],
-  "implementer": {
-    "agent": "claude-opus-4.7-multi-tenant-boundary",
-    "provider": "anthropic"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
+  "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
+  "work_package": "AO-MA-830-multi-tenant-boundary",
+  "implementer": {
+    "agent": "codex-gpt-5-e4-2a-rebase-scope-fix",
+    "provider": "openai"
+  },
   "reviewer": {
-    "agent": "codex-post-impl-reviewer-019e87e7",
-    "provider": "openai",
+    "agent": "claude-code-reviewer-pr830-e42a",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
-  "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/epic-4-2a-multi-tenant-boundary",
     "changed_files": [
       ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md",
       ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.v1.json",
@@ -56,10 +24,94 @@
       "docs/MULTI-TENANT-DEPLOYMENT.md",
       "local-ai-review-evidence.v1.json",
       "tests/test_epic_4_2a_multi_tenant_boundary.py"
-    ],
-    "head_ref": "refs/heads/codex/epic-4-2a-multi-tenant-boundary"
+    ]
   },
+  "checks_considered": [
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_discipline",
+      "status": "pass"
+    },
+    {
+      "name": "pytest_import_and_skip_guard",
+      "status": "pass"
+    },
+    {
+      "name": "skip_guard_scope_correctness",
+      "status": "pass"
+    },
+    {
+      "name": "write_set_exact_match_vs_git_diff",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_pyproject_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_runtime_module_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_codeowners_ruleset_webhook_change",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "runtime_enforced_false_schema_and_data",
+      "status": "pass"
+    },
+    {
+      "name": "live_validated_false_schema_and_data",
+      "status": "pass"
+    },
+    {
+      "name": "advisory_dil_no_overclaim",
+      "status": "pass"
+    },
+    {
+      "name": "placeholder_status_all_entries",
+      "status": "pass"
+    },
+    {
+      "name": "evidence_schema_strict_closure",
+      "status": "pass"
+    },
+    {
+      "name": "matrix_schema_strict_closure",
+      "status": "pass"
+    },
+    {
+      "name": "cross_ai_provider_distinct",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    }
+  ],
+  "findings": [
+    "All 9 changed files are docs/schemas/tests/changelog/local evidence only; zero workflow/runtime/pyproject/CODEOWNERS/ruleset/webhook/public SDK/secret changes.",
+    "pytest.skip guard at test_write_set_exact_match_git_diff:320-321 correctly scopes write-set invariant to diffs containing the E-4-2a evidence artifact, preventing false failures on unrelated future PRs.",
+    "Guard flags support_widening, production_platform_claim, live_adapter_execution are schema-pinned const false in both evidence and matrix schemas; evidence JSON records all three as false.",
+    "Matrix advisory_only=true, runtime_enforced_global=false, live_validated_global=false; all 7 dimension entries runtime_enforced=false, live_validated=false, entry_status=placeholder.",
+    "Deployment doc passes overclaim grep (zero hits for 'isolation achieved', 'isolation enforced', 'fully isolated', 'runtime enforces'); advisory dil discipline maintained throughout.",
+    "Both schemas use Draft 2020-12 strict (additionalProperties:false + unevaluatedProperties:false); matrix schema uses allOf/contains/minContains/maxContains for exact-once-per-dimension enforcement.",
+    "Cross-AI provider separation: implementer=openai, reviewer=anthropic - provider-level distinct per HARD RULE.",
+    "No secret material detected in any changed file."
+  ],
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-830-multi-tenant-boundary"
+  "production_platform_claim": false
 }
