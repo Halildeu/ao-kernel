@@ -1,61 +1,43 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-1-7-status-sync",
+  "work_package": "E-2-1-LIVE-ADAPTER-ENVELOPE-SCHEMA",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/e-1-7-shadow-skip-status-sync",
+    "head_ref": "refs/heads/feat/epic-2-1-live-adapter-envelope-schema",
     "changed_files": [
-      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
-      ".claude/plans/v5_subissues_mirror.v1.json",
+      ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "CHANGELOG.md",
+      "ao_kernel/defaults/schemas/live_adapter_envelope.schema.v1.json",
+      "docs/LIVE-ADAPTER-ENVELOPE.md",
+      "tests/test_live_adapter_envelope.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "status_sync_accuracy",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_or_workflow_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_guard_flip",
-      "status": "pass"
-    },
-    {
-      "name": "changelog_entry",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
+    { "name": "ruff", "status": "pass" },
+    { "name": "mypy", "status": "pass" },
+    { "name": "schema_valid_draft_2020_12", "status": "pass" },
+    { "name": "guard_flags_const_false", "status": "pass" },
+    { "name": "strict_closure_every_object", "status": "pass" },
+    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "E-1-7 status correctly transitions from pending/blocked to merged/done referencing PR #937 c7e5709; no overclaim of production readiness",
-    "PR #764 consistently described as closed/unmerged historical reference across all three plan files",
-    "Mirror JSON status changed pending to merged and label status:blocked to status:done; deps updated to reflect operator gate satisfied; all consistent",
-    "Roadmap pending-operator-action line correctly drops E-1-7 entry since it is no longer pending",
-    "No .github/, ao_kernel/, or test runtime files in diff; pure plan/changelog status sync",
-    "No guard flag references modified; gpp_next.py confirms all three flags remain false",
-    "Changelog entry is under Fixed in Unreleased, accurately scoped to status-sync with no runtime claim",
-    "No secrets, tokens, webhook URLs, or PII in diff content"
+    "E-2-1 live adapter envelope schema (infrastructure-only). 4-iter Codex (OpenAI) cross-AI review on thread 019e92a5; all REVISE findings absorbed: (1) envelope_digest spec drift fixed (added required bare-sha256 content-address, plan §2 aligned to §702); (2) date-time fail-closed via explicit RFC3339 pattern (jsonschema does not enforce format by default); (3) closure test parametrized over every object path; (4) range-aware then calendar month/day-coupling regex (Feb<=29, 30-day months<=30); (5) leap-year validity reasoned-deferred to E-2-4 recompute-time with explicit boundary test + precise doc (no overclaim), justified by CLAUDE.md core-dependency minimalism.",
+    "Guard flags pinned const false at both schema (live_adapter_execution const false; optional support_widening/production_platform_claim const false) and evidence level. mode enum is exactly {stub, dry_run}; 'live' forbidden. No real network call represented; no guard flag flipped. Flip authority remains Epic 9 PR-Xfinal.",
+    "36 machine-enforced invariants; ruff + mypy + pytest green. Codex final verdict AGREE (iter-4). Follow-up recorded for E-2-4: dry-run harness must datetime-parse timestamps so schema-accepted-but-calendar-invalid values (e.g. non-leap 2026-02-29) fail-closed at runtime — E-2-4 acceptance blocker, not E-2-1."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
