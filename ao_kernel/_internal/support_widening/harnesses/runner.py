@@ -20,10 +20,13 @@ surface class.
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
+__all__ = ["SURFACE_CLASSES", "run_surface_smoke"]
 
 from ao_kernel._internal.support_widening.evidence import parse_v1
 from ao_kernel.config import load_default
@@ -106,13 +109,20 @@ def run_surface_smoke(
     parse_v1(payload, schema=load_default("schemas", "support-widening-evidence.schema.v1.json"))
 
     if evidence_out is not None:
+        # "No .ao/ mutation" contract: refuse to write the artifact into a workspace
+        # `.ao/` directory (the harness is read-only w.r.t. the workspace).
+        if any(part == ".ao" for part in evidence_out.parts):
+            raise SupportWideningError(
+                f"evidence_out must not be under a workspace .ao/ directory (read-only contract): {evidence_out}"
+            )
         evidence_out.parent.mkdir(parents=True, exist_ok=True)
-        # 0o600: evidence artifact owner-only (CodeQL py/overly-permissive-file).
         text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
-        import os
-
+        # 0o600 owner-only (CodeQL py/overly-permissive-file). fchmod after open so
+        # an overwrite of a pre-existing wider-mode file is also tightened (O_TRUNC
+        # alone keeps the old mode).
         fd = os.open(evidence_out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         try:
+            os.fchmod(fd, 0o600)
             os.write(fd, text.encode("utf-8"))
         finally:
             os.close(fd)

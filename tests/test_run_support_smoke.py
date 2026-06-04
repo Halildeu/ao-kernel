@@ -110,14 +110,27 @@ def test_killswitch_blocks_subprocess_and_shell() -> None:
 # ---- 4. runtime kill-switch: dynamic import fail closed (1) ---------------
 
 
-def test_killswitch_blocks_forbidden_dynamic_import() -> None:
+def test_killswitch_blocks_forbidden_import_every_path() -> None:
     import importlib
 
     with live_call_killswitch():
+        # importlib.import_module
         with pytest.raises(SupportWideningError):
             importlib.import_module("requests")
         with pytest.raises(SupportWideningError):
             importlib.import_module("socket")
+        # submodule of a forbidden package (prefix match, not just root)
+        with pytest.raises(SupportWideningError):
+            importlib.import_module("google.generativeai")
+        # builtins.__import__ (covers `import X`)
+        with pytest.raises(SupportWideningError):
+            __import__("socket")
+        # exec("import …") routes through the patched __import__
+        with pytest.raises(SupportWideningError):
+            exec("import socket")  # noqa: S102
+        # eval of an __import__ call
+        with pytest.raises(SupportWideningError):
+            eval("__import__('socket')")  # noqa: S307
 
 
 # ---- 5. runtime kill-switch: secret-env fail closed, every read path (1) --
@@ -128,7 +141,7 @@ def test_killswitch_blocks_secret_env_every_path(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setenv("SECRET_TOKEN", "dummy")
     monkeypatch.setenv("PATH", os.environ.get("PATH", "/usr/bin"))
     with live_call_killswitch():
-        # direct read paths must raise
+        # direct + membership read paths must raise
         with pytest.raises(SupportWideningError):
             _ = os.environ["API_KEY"]
         with pytest.raises(SupportWideningError):
@@ -137,9 +150,24 @@ def test_killswitch_blocks_secret_env_every_path(monkeypatch: pytest.MonkeyPatch
             os.environ.get("API_KEY")
         with pytest.raises(SupportWideningError):
             _ = "API_KEY" in os.environ
-        # sanitized view: snapshot/iteration never EXPOSE a secret key
-        assert "API_KEY" not in dict(os.environ.copy())
-        assert all("API_KEY" != k and "SECRET_TOKEN" != k for k in os.environ.keys())
+        # bulk read paths must ALSO fail closed when a secret key is present —
+        # including `dict(os.environ)`, which routes through the keys() override.
+        for bulk in (
+            lambda: os.environ.copy(),
+            lambda: dict(os.environ),
+            lambda: list(os.environ.keys()),
+            lambda: list(os.environ.items()),
+            lambda: list(os.environ.values()),
+            lambda: [k for k in os.environ],
+        ):
+            with pytest.raises(SupportWideningError):
+                bulk()
+        # os.environb byte paths must fail closed too (where supported)
+        if hasattr(os, "environb"):
+            with pytest.raises(SupportWideningError):
+                _ = os.environb[b"API_KEY"]
+            with pytest.raises(SupportWideningError):
+                os.environb.get(b"SECRET_TOKEN")
         # an allowlisted key is still readable
         assert os.getenv("PATH") is not None
 
@@ -167,6 +195,38 @@ def test_live_capability_stub_rejected() -> None:
 
     with pytest.raises(SupportWideningError):
         assert_no_live_capability(_Live())
+
+
+# ---- 7b. evidence write hardening: overwrite mode + .ao reject (2) -------
+
+
+def test_evidence_overwrite_tightens_mode(tmp_path: Path) -> None:
+    out = tmp_path / "ev.json"
+    out.write_text("{}", encoding="utf-8")
+    out.chmod(0o644)  # pre-existing wide-mode artifact
+    run_surface_smoke("python_version", generated_at=_GEN_AT, evidence_out=out)
+    assert out.stat().st_mode & 0o777 == 0o600, "overwrite must tighten mode to 0o600 (fchmod)"
+
+
+def test_evidence_out_under_dot_ao_rejected(tmp_path: Path) -> None:
+    out = tmp_path / ".ao" / "ev.json"
+    with pytest.raises(SupportWideningError):
+        run_surface_smoke("python_version", generated_at=_GEN_AT, evidence_out=out)
+    assert not out.exists(), "no .ao/ artifact may be written (read-only workspace contract)"
+
+
+def test_malicious_stub_through_runner_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A stub builder that attempts a forbidden op must fail closed because
+    run_surface_smoke executes the stub inside the kill-switch."""
+    from ao_kernel._internal.support_widening.harnesses import runner as _runner
+
+    def _evil() -> dict:
+        socket.socket()  # forbidden inside the harness
+        return {"matrix": ["3.11"], "pytest_passed": True}
+
+    monkeypatch.setitem(_runner._SURFACE_STUBS, "python_version", _evil)
+    with pytest.raises(SupportWideningError):
+        run_surface_smoke("python_version", generated_at=_GEN_AT)
 
 
 # ---- 8. CLI smoke (1) ----------------------------------------------------
