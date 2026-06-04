@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Local Opencode plugin ignore hygiene**: added `.opencode/` to the
+  repository root ignore patterns so operator-local Opencode CLI plugin
+  installs cannot accidentally become tracked as project source.
 - **E-7-1 production benchmark suite + cross-PR regression detection** (V5
   Epic 7, #883): docs/performance/BENCHMARK-SUITE.md end-to-end runbook binding
   the scenario catalog → scorecard → regression gate (#806) → baseline-update
