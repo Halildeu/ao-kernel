@@ -43,6 +43,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 cost/rate/circuit preflight bundle** (V5 Epic 9 Gate C, #963): added
+  `V5-COST-RATE-CIRCUIT-PREFLIGHT-BUNDLE.md`,
+  `v5-cost-rate-circuit-preflight-bundle.schema.v1.json`, a current-state
+  fixture, and 9 invariant tests for production-readiness matrix dimension 3
+  (`cost_rate_circuit_breaker_evidence`). Records the present cost-control
+  runtime modules (cost ceiling enforcement with soft/hard breach, per-provider
+  circuit breaker, per-provider rate limiter, per-call audit, dry-run cost
+  evidence harness; all module paths verified on disk). Preflight current-state
+  evidence only: it does not advance the matrix dimension to complete (stays
+  `partial`), open PR-Xfinal, or flip any guard flag; live cost evidence,
+  breach/rollback evidence from a protected run, and a fresh pricing-source
+  snapshot remain PR-Xfinal-bound. Non-colliding (does not edit the matrix
+  fixture). Cross-AI review: Codex (OpenAI) AGREE. Guard flags stay false.
 - **V5 bypassless governance preflight bundle** (V5 Epic 9 Gate C, #960):
   added `V5-BYPASSLESS-GOVERNANCE-PREFLIGHT-BUNDLE.md`,
   `v5-bypassless-governance-preflight-bundle.schema.v1.json`, a current-state
