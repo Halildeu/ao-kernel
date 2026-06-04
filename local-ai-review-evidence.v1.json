@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-2-4-DRY-RUN-HARNESS",
+  "work_package": "E-2-5-SECRET-DISCIPLINE",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,16 +13,15 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-2-4-dry-run-harness",
+    "head_ref": "refs/heads/codex/epic-2-5-secret-discipline",
     "changed_files": [
+      ".claude/plans/adr/ADR-0007-secret-resolution-discipline.md",
+      ".claude/plans/adr/index.json",
       "CHANGELOG.md",
-      "ao_kernel/_internal/cost_ceiling.py",
-      "ao_kernel/_internal/live_adapter_dryrun.py",
-      "docs/LIVE-ADAPTER-DRY-RUN.md",
-      "scripts/run_live_adapter_dryrun.py",
-      "tests/test_dryrun_import_denylist.py",
-      "tests/test_dryrun_killswitch_bypass.py",
-      "tests/test_live_adapter_dryrun.py",
+      "ao_kernel/_internal/secrets/__init__.py",
+      "ao_kernel/_internal/secrets/discipline.py",
+      "ao_kernel/_internal/secrets/taint.py",
+      "tests/test_secret_discipline.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -35,20 +34,21 @@
     { "name": "gpp_next_guard_flags", "status": "pass" },
     { "name": "diff_whitespace", "status": "pass" },
     { "name": "workflow_mutation_guard", "status": "pass" },
-    { "name": "dry_run_no_network_killswitch", "status": "pass" },
-    { "name": "envelope_schema_validation", "status": "pass" },
-    { "name": "per_call_audit_binding", "status": "pass" },
-    { "name": "cost_ceiling_integration", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" }
+    { "name": "env_only_secret_resolution", "status": "pass" },
+    { "name": "value_taint_redaction", "status": "pass" },
+    { "name": "regex_defense_in_depth", "status": "pass" },
+    { "name": "legacy_resolver_compatibility", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" },
+    { "name": "minimax_secondary_review", "status": "pass" }
   ],
   "findings": [
-    "Claude Anthropic cross-provider review returned AGREE for E-2-4 live adapter dry-run harness after an initial full review and a follow-up review of advisory hardening changes.",
-    "Scope reviewed: dry-run harness module, CLI wrapper, kill-switch bypass tests, import denylist tests, live adapter dry-run tests, docs, changelog, and the Decimal formatting fix in the E-2-3 cost ceiling module.",
-    "The harness emits schema-valid E-2-1 dry-run envelopes and E-2-2 per-call audit rows with deterministic stub output, prompt digesting, no prompt serialization, and no provider network call.",
-    "Runtime kill-switches block raw sockets, subprocess, shell, spawn and exec families, stdlib HTTP, optional httpx/urllib3/requests/aiohttp clients, and native ctypes/cffi escape hatches while dry-run evidence is built.",
-    "Follow-up hardening absorbed reviewer observations: overlapping kill-switch contexts now restore only after the last exit; os.exec family is patched; envelope writes use tmp file, fsync, os.replace, directory fsync, and final 0600 permissions.",
-    "E-2-3 cost ceiling integration is reviewed as correct for simulated dry-run cost: zero cost records not_applicable, hard breach exits 2 and records fail-closed cost evidence without writing the envelope artifact.",
-    "Guard flags remain false in envelope, audit row, CLI output, and gpp_next status. No workflow mutation, secret readback, live adapter execution, support widening, or production platform claim is introduced."
+    "Claude Anthropic cross-provider review returned AGREE for E-2-5 secret resolution discipline.",
+    "Mavis MiniMax secondary review also returned AGREE for the same scope and acceptance criteria.",
+    "The new discipline module resolves secrets from environment variables only and does not import or call provider factory, vault, MCP, argv, stdin, file, or header fallback paths.",
+    "Every resolved value is added to an in-memory value-based taint set; JSON, JSONL, and log serialization helpers redact by exact taint before regex defense-in-depth.",
+    "Missing required secrets fail closed with SecretResolutionError, optional missing secrets return None without taint, and provider invalidation clears provider-specific taints for rotation.",
+    "Legacy dual-read API-key resolver behavior is preserved for existing callers; E-2-5 adds explicit adoption infrastructure rather than changing legacy resolution semantics.",
+    "Guard flags remain false. No workflow mutation, support widening, production platform claim, live adapter execution, or secret readback is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

@@ -25,6 +25,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-2-5 secret resolution discipline module** (V5 Epic 2, #850): added
+  `ao_kernel._internal.secrets.SecretResolutionDiscipline` and
+  `SecretTaintSet` as the env-var-only, value-based taint primitive for future
+  live-adapter infrastructure. The module resolves secrets from environment
+  variables only, records every resolved value in memory, redacts JSON/JSONL/log
+  serialization by exact value before applying regex defense-in-depth, supports
+  provider invalidation for rotation, and fails closed on missing required env
+  secrets or manual serialization bypass. ADR:
+  `ADR-0007-secret-resolution-discipline.md`. Legacy dual-read resolver behavior
+  is preserved for existing callers; E-2-5 is explicit adoption infrastructure.
+  Guard flags remain false;
+  no workflow mutation, support widening, production claim, or live adapter
+  execution.
 - **E-2-4 live adapter dry-run harness** (V5 Epic 2, #849): added
   `scripts/run_live_adapter_dryrun.py` plus
   `ao_kernel._internal.live_adapter_dryrun` to emit schema-valid E-2-1
