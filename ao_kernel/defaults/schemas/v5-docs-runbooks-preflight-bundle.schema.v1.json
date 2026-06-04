@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-docs-runbooks-preflight-bundle:v1",
+  "title": "V5 docs and runbooks preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 docs/runbooks dimension. It records deployment, operator, rollback, API-reference, migration, incident-response, and vendor-escalation documentation evidence while keeping final claim language, release notes, v5 runbook finalization, and all production guard flags fail-closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "final_claim_language_synced",
+    "final_release_notes_present",
+    "v5_runbook_finalized",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "deployment_guide",
+    "operator_runbook",
+    "operator_action_runbooks",
+    "rollback_procedure",
+    "api_reference",
+    "migration_guide",
+    "incident_response",
+    "vendor_escalation",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": { "const": "v5_docs_runbooks_preflight_bundle.v1" },
+    "artifact_kind": { "const": "v5_docs_runbooks_preflight_bundle" },
+    "repo": { "const": "Halildeu/ao-kernel" },
+    "work_package": { "const": "E-9-1" },
+    "dimension": { "const": "docs_runbooks" },
+    "evidence_class": { "const": "preflight_current_state" },
+    "final_claim_language_synced": { "const": false },
+    "final_release_notes_present": { "const": false },
+    "v5_runbook_finalized": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "deployment_guide": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "test_path",
+        "standalone_pattern",
+        "docker_pattern",
+        "kubernetes_pattern",
+        "operator_bound_supersession_required",
+        "guard_flags_const_false_documented"
+      ],
+      "properties": {
+        "doc_path": { "const": "docs/PRODUCTION-DEPLOYMENT-GUIDE.md" },
+        "test_path": { "const": "tests/test_production_deployment_guide.py" },
+        "standalone_pattern": { "const": true },
+        "docker_pattern": { "const": true },
+        "kubernetes_pattern": { "const": true },
+        "operator_bound_supersession_required": { "const": true },
+        "guard_flags_const_false_documented": { "const": true }
+      }
+    },
+    "operator_runbook": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "test_path",
+        "rollback",
+        "tag_revert",
+        "pause",
+        "emergency_stop",
+        "incident_triage",
+        "operator_bound_supersession_required"
+      ],
+      "properties": {
+        "doc_path": { "const": "docs/OPERATOR-RUNBOOK.md" },
+        "test_path": { "const": "tests/test_operator_runbook.py" },
+        "rollback": { "const": true },
+        "tag_revert": { "const": true },
+        "pause": { "const": true },
+        "emergency_stop": { "const": true },
+        "incident_triage": { "const": true },
+        "operator_bound_supersession_required": { "const": true }
+      }
+    },
+    "operator_action_runbooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "readme_path",
+        "checklist_path",
+        "schema_path",
+        "test_path",
+        "operator_action_required",
+        "agent_executed_external_action",
+        "credential_material_committed"
+      ],
+      "properties": {
+        "readme_path": { "const": "docs/operator-runbooks/README.md" },
+        "checklist_path": { "const": "docs/operator-runbooks/operator-action-checklist.v1.json" },
+        "schema_path": { "const": "ao_kernel/defaults/schemas/operator-action-checklist.schema.v1.json" },
+        "test_path": { "const": "tests/test_operator_runbooks.py" },
+        "operator_action_required": { "const": true },
+        "agent_executed_external_action": { "const": false },
+        "credential_material_committed": { "const": false }
+      }
+    },
+    "rollback_procedure": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "runbook_path",
+        "package_rollback_doc_path",
+        "archive_tag_preservation",
+        "no_destructive_history_rewrite",
+        "operator_ruleset_authority",
+        "forward_fix_or_revert_pr_required"
+      ],
+      "properties": {
+        "runbook_path": { "const": "docs/ROLLBACK-RUNBOOK.md" },
+        "package_rollback_doc_path": { "const": "docs/ROLLBACK.md" },
+        "archive_tag_preservation": { "const": true },
+        "no_destructive_history_rewrite": { "const": true },
+        "operator_ruleset_authority": { "const": true },
+        "forward_fix_or_revert_pr_required": { "const": true }
+      }
+    },
+    "api_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "readme_path",
+        "conf_path",
+        "index_path",
+        "test_path",
+        "sphinx_scaffold_present",
+        "operator_invoked_build",
+        "hosted_docs_published",
+        "live_provider_surfaces_excluded",
+        "guard_flags_const_false_documented"
+      ],
+      "properties": {
+        "readme_path": { "const": "docs/api/README.md" },
+        "conf_path": { "const": "docs/api/conf.py" },
+        "index_path": { "const": "docs/api/index.rst" },
+        "test_path": { "const": "tests/test_sphinx_api_reference_scaffold.py" },
+        "sphinx_scaffold_present": { "const": true },
+        "operator_invoked_build": { "const": true },
+        "hosted_docs_published": { "const": false },
+        "live_provider_surfaces_excluded": { "const": true },
+        "guard_flags_const_false_documented": { "const": true }
+      }
+    },
+    "migration_guide": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "test_path",
+        "target_version",
+        "downgrade_pin",
+        "release_shipped",
+        "guard_flags_const_false_documented"
+      ],
+      "properties": {
+        "doc_path": { "const": "docs/MIGRATION-V5.md" },
+        "test_path": { "const": "tests/test_migration_v5_doc.py" },
+        "target_version": { "const": "5.0.0" },
+        "downgrade_pin": { "const": "ao-kernel==4.1.0" },
+        "release_shipped": { "const": false },
+        "guard_flags_const_false_documented": { "const": true }
+      }
+    },
+    "incident_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "readme_path",
+        "severity_matrix_path",
+        "severity_schema_path",
+        "escalation_policy_path",
+        "incident_template_path",
+        "test_path",
+        "operator_owned",
+        "is_contractual_sla",
+        "guard_flags_const_false_documented",
+        "no_live_dispatch"
+      ],
+      "properties": {
+        "readme_path": { "const": "docs/incident-response/README.md" },
+        "severity_matrix_path": { "const": "docs/incident-response/severity-matrix.v1.json" },
+        "severity_schema_path": { "const": "ao_kernel/defaults/schemas/severity-matrix.schema.v1.json" },
+        "escalation_policy_path": { "const": "docs/incident-response/escalation-policy.v1.yml" },
+        "incident_template_path": { "const": "docs/incident-response/incident-template.v1.md" },
+        "test_path": { "const": "tests/test_incident_response_playbook.py" },
+        "operator_owned": { "const": true },
+        "is_contractual_sla": { "const": false },
+        "guard_flags_const_false_documented": { "const": true },
+        "no_live_dispatch": { "const": true }
+      }
+    },
+    "vendor_escalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "matrix_path",
+        "schema_path",
+        "runbook_path",
+        "test_path",
+        "operator_owned_external_handoff",
+        "no_vendor_sla_promise",
+        "account_manager_contact_operator_provisioned",
+        "no_pii_in_repo"
+      ],
+      "properties": {
+        "matrix_path": { "const": "docs/incident-response/vendor-escalation-matrix.v1.json" },
+        "schema_path": { "const": "ao_kernel/defaults/schemas/vendor-escalation-matrix.schema.v1.json" },
+        "runbook_path": { "const": "docs/incident-response/vendor-escalation-runbook.v1.md" },
+        "test_path": { "const": "tests/test_vendor_escalation_matrix.py" },
+        "operator_owned_external_handoff": { "const": true },
+        "no_vendor_sla_promise": { "const": true },
+        "account_manager_contact_operator_provisioned": { "const": true },
+        "no_pii_in_repo": { "const": true }
+      }
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "minItems": 5,
+      "contains": { "const": "final v5.0.0 release notes" },
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "issue_refs": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/775" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/776" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/782" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/895" }
+      ],
+      "minItems": 4,
+      "maxItems": 4,
+      "items": false
+    }
+  }
+}

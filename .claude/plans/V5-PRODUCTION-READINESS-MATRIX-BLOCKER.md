@@ -110,3 +110,15 @@ That bundle binds standalone packaging smoke, deployment guide, operator
 runbook, Helm render/runbook surface, publish workflow, and migration-guide
 evidence without treating them as v5.0.0 release-artifact smoke, final tag or
 publish evidence, or final deployment lifecycle evidence.
+
+The `docs_runbooks` dimension now has a current-state docs/runbooks preflight
+bundle:
+
+- `.claude/plans/V5-DOCS-RUNBOOKS-PREFLIGHT-BUNDLE.md`
+- `tests/fixtures/epic9/v5-docs-runbooks-preflight.current.json`
+
+That bundle binds deployment, operator, rollback, API-reference, migration,
+incident-response, and vendor-escalation documentation evidence without
+treating it as final PR-Xfinal claim-language sync, v5.0.0 release notes,
+final runbook update, hosted API-docs publication, support widening, live
+adapter execution, or a production platform claim.

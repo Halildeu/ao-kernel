@@ -43,6 +43,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 docs/runbooks preflight bundle** (V5 Epic 9, #895): added
+  `V5-DOCS-RUNBOOKS-PREFLIGHT-BUNDLE.md`,
+  `v5-docs-runbooks-preflight-bundle.schema.v1.json`, and a current-state
+  fixture/test suite that binds deployment guide, operator runbook, operator
+  action runbooks, rollback procedure, API-reference scaffold, migration
+  guide, incident-response playbook, and vendor-escalation evidence to the
+  `docs_runbooks` production-readiness dimension. This is preflight evidence
+  only: final v5.0.0 release notes, PR-Xfinal claim-language sync, final
+  runbook update, hosted API-docs publication, and operator-attested final
+  docs review remain missing while `support_widening` /
+  `production_platform_claim` / `live_adapter_execution` remain false.
 - **V5 install/deploy lifecycle preflight bundle** (V5 Epic 9, #895): added
   `V5-INSTALL-DEPLOY-LIFECYCLE-PREFLIGHT-BUNDLE.md`,
   `v5-install-deploy-lifecycle-preflight-bundle.schema.v1.json`, and a
