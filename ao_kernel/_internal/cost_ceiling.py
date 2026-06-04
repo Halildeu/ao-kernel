@@ -64,7 +64,7 @@ def _as_decimal(value: Decimal, *, field: str) -> Decimal:
 
 
 def _format_decimal(value: Decimal) -> str:
-    return str(value.quantize(_EIGHT_DP, rounding=ROUND_HALF_UP))
+    return format(value.quantize(_EIGHT_DP, rounding=ROUND_HALF_UP), "f")
 
 
 def _safe_session_id(session_id: str) -> str:
