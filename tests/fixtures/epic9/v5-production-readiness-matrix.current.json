@@ -185,10 +185,18 @@
         "API reference and migration guide"
       ],
       "current_evidence_refs": [
+        ".claude/plans/V5-DOCS-RUNBOOKS-PREFLIGHT-BUNDLE.md",
+        "tests/fixtures/epic9/v5-docs-runbooks-preflight.current.json",
+        "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
         "docs/OPERATOR-RUNBOOK.md",
         "docs/operator-runbooks/README.md",
+        "docs/ROLLBACK-RUNBOOK.md",
         "docs/MIGRATION-V5.md",
-        "docs/api/README.md"
+        "docs/api/README.md",
+        "docs/incident-response/README.md",
+        "docs/incident-response/severity-matrix.v1.json",
+        "docs/incident-response/incident-template.v1.md",
+        "docs/incident-response/vendor-escalation-runbook.v1.md"
       ],
       "missing_evidence": [
         "final PR-Xfinal claim language sync",
