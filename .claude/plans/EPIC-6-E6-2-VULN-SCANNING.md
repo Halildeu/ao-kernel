@@ -1,6 +1,6 @@
 # Epic 6 E-6-2 — Vulnerability Scanning Baseline (Dependabot + Trivy)
 
-**Status:** Implementing.
+**Status:** Ready for merge after CI.
 **Codex thread:** `019e8385` (plan-time REVISE, `ready_for_impl: true`
 with three critical revisions absorbed).
 **Slice:** E-6-2 baseline (this PR) — Dependabot + Trivy filesystem
@@ -28,7 +28,7 @@ signal verir).
 |---|---|---|
 | 1 | Snyk SNYK_TOKEN secret + tier decision + fork PR secret davranışı operator-bound | Snyk OUT/deferred; empty placeholder workflow YASAK; plan doc'ta explicit deferred note |
 | 2 | Trivy advisory only ilk baseline'da (alert envanteri triajı yokken `exit-code: 1` yanlış semantic) | `exit-code: "0"` advisory; required-gate promotion ayrı hardening PR |
-| 3 | `aquasecurity/trivy-action@v0` floating major risky | Exact semver pin (`@0.28.0`); Dependabot github-actions ecosystem güncel tutar |
+| 3 | `aquasecurity/trivy-action@v0` floating major risky | Exact upstream semver tag pin (`@v0.36.0`); Dependabot github-actions ecosystem güncel tutar |
 | 4 | Dependabot runtime/dev groups doğru (flat tek group gürültü yaratır) | python-runtime + python-dev groups (exclude-patterns ile ayrım) |
 | 5 | Trivy fs-only ≠ container image coverage | Plan doc'ta açık ayrım; container image scan follow-up slice (2 Dockerfile: deploy/ao-release-gate-service, deploy/live-adapter-gate-policy-service) |
 | 6 | SARIF category `trivy-fs` doğru; CodeQL ile çakışmamalı | `category: trivy-fs` pinli; image scan eklenirse ayrı kategori (`trivy-image-<service>`) |
@@ -71,7 +71,7 @@ updates:
 | Permissions: `contents:read + security-events:write` | Minimum surface; gereksiz scope yok |
 | `pull_request_target` YASAK | Fork-PR token risk |
 | `actions/checkout@v6 + persist-credentials: false` | Repo convention + supply-chain hardening |
-| `aquasecurity/trivy-action@0.28.0` | Exact semver pin (not `@v0` floating major) |
+| `aquasecurity/trivy-action@v0.36.0` | Exact upstream semver tag pin (not `@v0` floating major; bare `0.36.0` does not resolve) |
 | `scan-type: fs` | Filesystem baseline; container image scan follow-up |
 | `severity: CRITICAL,HIGH` | Baseline; MEDIUM noise deferred |
 | `scanners: vuln` | Vulnerability only; config/secret scanning ayrı concern |
@@ -98,7 +98,7 @@ Test grupları:
 | Konu | Sonra |
 |---|---|
 | **Snyk workflow** | E-6-2-snyk follow-up — `SNYK_TOKEN` repository secret + tier/license decision + fork PR event policy + explicit operator approval gerek |
-| **Container image scans** (2 Dockerfile) | E-6-2-container follow-up — `aquasecurity/trivy-action@0.28.0` `image:` mode + matrix job (deploy/ao-release-gate-service + deploy/live-adapter-gate-policy-service) + ayrı SARIF kategorisi `trivy-image-<service>` |
+| **Container image scans** (2 Dockerfile) | E-6-2-container follow-up — `aquasecurity/trivy-action@v0.36.0` `image:` mode + matrix job (deploy/ao-release-gate-service + deploy/live-adapter-gate-policy-service) + ayrı SARIF kategorisi `trivy-image-<service>` |
 | **Required-gate promotion** | E-6-2-gate follow-up — baseline triajı sonrası `exit-code: "1"` + `.trivyignore` + accepted-risk register + ruleset required check ekleme |
 | **MEDIUM severity widening** | E-6-2-severity follow-up — baseline alert count düştükten sonra |
 | **Config + secret scanning** (`scanners: secret,config`) | E-6-2-config-scan follow-up — config tarama gürültüsü ayrı triage gerektirir |
@@ -109,7 +109,7 @@ Test grupları:
 | Risk | Mitigation |
 |---|---|
 | Fork PR token leak (security-events:write) | `pull_request_target` YASAK + invariant test |
-| `aquasecurity/trivy-action` floating tag drift | Exact semver pin (`@0.28.0`) + invariant test reject `@v0` |
+| `aquasecurity/trivy-action` floating tag drift | Exact upstream semver tag pin (`@v0.36.0`) + invariant test rejects floating `@v0` and bare semver without `v` |
 | Trivy alert envanteri baseline'sız required-gate | `exit-code: "0"` advisory + plan doc explicit deferred required-gate promotion |
 | CodeQL + Trivy SARIF kategorisi çakışma | `category: trivy-fs` distinct + invariant test |
 | Dependabot noise (haftalık 5+3 PR) | runtime/dev groups absorb eder; pratik açık-PR limit, üretim sayısı değil |
@@ -120,12 +120,11 @@ Test grupları:
 
 ## 6. Acceptance
 
-- ✅ `pytest tests/test_vuln_scanning_invariants.py -x` → 31 pass local
-- ✅ `ruff check tests/test_vuln_scanning_invariants.py` clean
+- ✅ `pytest -q tests/test_vuln_scanning_invariants.py tests/test_local_gpp_gate.py tests/test_changelog_enforcement_workflow_shape.py` → 106 pass local
 - ✅ Plan doc — this file
-- ⏳ Cross-AI post-impl review (Codex thread `019e8385` reply ile yeni iter)
-- ⏳ CI green (4 PR rebase pattern Codex evidence file gerek)
-- ⏳ Squash merge audit trail: Implementer Anthropic Claude / Reviewer OpenAI Codex
+- ✅ Cross-AI post-impl review lineage: Codex thread `019e8385` + Anthropic re-review after rebase/doc drift cleanup
+- ⏳ CI green after rebase onto `origin/main`
+- ⏳ Squash merge audit trail: Implementer Anthropic Claude / Reviewer OpenAI Codex / rebase integrator Codex
 - ⏳ **Post-merge operator action**: GHAS code scanning enablement (E-6-5 + E-6-2 paylaşır)
 - ⏳ **Post-merge measurement**: ilk Trivy main run alert count → plan doc evidence + baseline triage register
 
