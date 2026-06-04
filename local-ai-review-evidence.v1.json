@@ -13,22 +13,23 @@
       "status": "pass"
     },
     {
-      "name": "roadmap_reframe_boundary",
+      "name": "epic_2_infrastructure_boundary",
       "status": "pass"
     }
   ],
   "findings": [
-    "Epic 2 and Epic 3 are reframed as infrastructure-only; prior flip-authority slices are removed and mapped to Epic 9 PR-Xfinal.",
-    "Section 14a adds fail-closed machine-checkable preconditions before any E-2-* or E-3-* slice PR opens.",
-    "Epic 9 PR-Xfinal is explicitly all-or-none and operator-bound; partial guard-flag flips remain prohibited.",
-    "Guard role labels distinguish flip-prerequisite surfaces from Epic 9-only flip-authority surfaces.",
-    "CHANGELOG entry is scoped to the roadmap reframe and does not claim production readiness, support widening, or live adapter execution.",
-    "No runtime code, workflow, CODEOWNERS, branch-protection, ruleset, webhook, or secret surfaces are changed.",
-    "The roadmap uses gpp_status.v1.json plus scripts/gpp_next.py as guard authority instead of a nonexistent guard manifest.",
-    "Claude independent review returned AGREE for this roadmap/changelog scope."
+    "Plan is infrastructure-only: envelope schema, per-call audit, cost ceiling, dry-run harness, secret discipline, advisory CI, and pre-supersession checklist.",
+    "No runtime code, workflow, CODEOWNERS, branch-protection, ruleset, webhook, or secret surfaces are changed by this PR.",
+    "live_adapter_execution, support_widening, and production_platform_claim remain false and are not authorized by this plan.",
+    "Epic 9 PR-Xfinal remains the sole future guard-flag flip authority.",
+    "Dry-run harness, cost ceiling, and secret discipline are documented as fail-closed surfaces.",
+    "Advisory CI Path A remains pull_request, no secrets, artifact-only, and not a required check; Path B remains a separate threat-model PR.",
+    "PR #828 merged state is referenced, but E-2 implementation still waits for this plan PR merge plus section 14a preconditions.",
+    "CHANGELOG entry is scoped to the Epic 2 plan addition and does not overclaim production readiness.",
+    "Claude independent review returned AGREE for this plan/changelog scope."
   ],
   "implementer": {
-    "agent": "codex-v5-roadmap-amend-rebase",
+    "agent": "codex-epic-2-plan-rebase",
     "provider": "openai"
   },
   "live_adapter_execution": false,
@@ -43,13 +44,13 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
       "CHANGELOG.md",
       "local-ai-review-evidence.v1.json"
     ],
-    "head_ref": "refs/heads/codex/v5-roadmap-epic-2-3-amend"
+    "head_ref": "refs/heads/codex/epic-2-live-adapter-plan"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-828-v5-roadmap-amend"
+  "work_package": "AO-MA-827-epic-2-live-adapter-plan"
 }

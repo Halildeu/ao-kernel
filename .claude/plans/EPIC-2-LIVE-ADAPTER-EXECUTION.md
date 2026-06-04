@@ -34,15 +34,17 @@
 
 **Implementation slices E-2-1..E-2-7 BAŞLAYAMAZ** aşağıdaki koşul karşılanana kadar:
 
-- **`V5-ROADMAP-EPIC-2-AMEND` ayrı work item / PR merged** — V5 roadmap §3 Epic 2 satırı şu şekilde yeniden yazılmış olmalı: _"Epic 2 — Live Adapter Execution **Infrastructure** (envelope + audit + cost ceiling + dry-run + secret discipline + opt-in advisory CI workflow + pre-supersession checklist artifact); flip gerçekleştirilmez. `live_adapter_execution` flag flip Epic 9 PR-Xfinal operator-bound supersession PR'ında yapılır."_
+- **`V5-ROADMAP-EPIC-2-AMEND` ayrı work item / PR merged** — satisfied by PR #828 (`fa22bd2`) at rebase time. V5 roadmap §3 Epic 2 satırı şu şekilde yeniden yazılmış olmalı: _"Epic 2 — Live Adapter Execution **Infrastructure** (envelope + audit + cost ceiling + dry-run + secret discipline + opt-in advisory CI workflow + pre-supersession checklist artifact); flip gerçekleştirilmez. `live_adapter_execution` flag flip Epic 9 PR-Xfinal operator-bound supersession PR'ında yapılır."_
 
 **Bu plan PR'ında V5 roadmap dosyası DEĞİŞTİRİLMEZ.** Roadmap amend ayrı slice + ayrı PR; bu plan PR'ı yalnız dependency'yi **DECLARE** eder.
 
 **Doğrulama gate'i:** E-2-1 envelope schema slice'ı açılmadan önce automation veya manual check:
 
 ```bash
-gh pr list --repo Halildeu/ao-kernel --state merged --search "V5-ROADMAP-EPIC-2-AMEND in:title"
-# Must return ≥1 merged PR before E-2-1 work begins.
+gh pr view 828 --repo Halildeu/ao-kernel --json mergedAt,mergeCommit \
+  --jq 'select(.mergedAt != null and .mergeCommit.oid != null)'
+git merge-base --is-ancestor fa22bd2c48ab5b7fb9868a723685f7cdf9179cf8 origin/main
+# Both commands must pass before E-2-1 work begins.
 ```
 
 Bu HARD STOP CLAUDE.md HARD RULE Uzun Vadeli Kalıcı Çözüm (2026-05-27) + SSOT drift engelleme disiplini uygulamasıdır.
@@ -834,7 +836,7 @@ E-2-1 Envelope schema
    +--> E-2-4 Dry-run harness (envelope + audit emit)
                 |
                 +--> E-2-6 CI workflow (dry-run harness'ı koşar)
-   
+
 E-2-5 Secret discipline (paralel; tüm slice'lar üstüne enforced)
 
 E-2-7 Pre-supersession checklist (paralel; doc + schema; runtime impact YOK)
@@ -952,7 +954,7 @@ Codex iter-1 verdict: **REVISE**, `ready_for_impl: false`. 7 blocker (F1-F7) + 1
 | **F7** V5 roadmap §3 Epic 2 semantics drift | blocker/medium | §1 HARD STOP added | `V5-ROADMAP-EPIC-2-AMEND` ayrı work item / PR declared as hard dependency. E-2-1..E-2-7 implementation BAŞLAYAMAZ until roadmap amend PR merged. This plan PR does NOT touch V5 roadmap. |
 | **F8** Cross-AI 3-way insufficient for E-2-6 + E-2-7 | non-blocker/medium | §4 | E-2-6 default Path A = 2-way; **Path B trigger conditions table** specifies when 3-way required (pull_request_target, secrets, write permission). E-2-7 **3-way always** (flip-gate spec critical). |
 
-**Plan PR scope (unchanged):** plan-only PR; runtime code yok, workflow değişikliği yok, guard flag flip yok. Plan PR'ı merge edildikten sonra V5 roadmap amend PR'ı bir sonraki sıradadır; E-2-1 implementation slice'ı roadmap amend merge edildikten SONRA başlar.
+**Plan PR scope (unchanged):** plan-only PR; runtime code yok, workflow değişikliği yok, guard flag flip yok. V5 roadmap amend PR #828 artık merged; E-2-1 implementation slice'ı bu Epic 2 plan PR'ı merged olduktan ve §14a preconditions hâlâ green kaldıktan SONRA başlar.
 
 ---
 
@@ -967,4 +969,4 @@ Codex iter-2 verdict: **REVISE**, `ready_for_impl: false`. 2 blocker (F9-F10) + 
 | **F11** Risk table E-2-4 ve E-2-6 hâlâ "low" iken slice başlıkları "medium"; inv-2/inv-3 eski dar kill-switch ve regex listelerini tekrar ediyordu | non-blocker/medium | §3 risk table, §6 inv-2, §6 inv-3 | Risk table E-2-4 medium, E-2-6 Path A medium olarak güncellendi (sebep kolonlarıyla). inv-2 "baseline" + cross-ref inv-8 (full bypass matrix); inv-3 "regex defense-in-depth" + cross-ref inv-9 (primary value-based taint absence). |
 | **F12** PR #827 body iter-1 PENDING/9-condition/eski 3-way kapsam özetini gösteriyordu (plan dosyası güncel, PR surface stale) | non-blocker/low | PR #827 body | `gh pr edit 827 --body` ile body iter-2 state'e güncellendi: 18-condition checklist, E-2-6 Path A default/Path B gated, E-2-7 always 3-way, V5 amend hard-stop, current iter sequence (iter-1 REVISE F1-F8 absorbed, iter-2 REVISE F9-F12 absorbed, iter-3 PENDING). |
 
-**Iter-3 expected outcome:** Codex iter-3 → AGREE (F9-F10 closure plus F11-F12 hygiene) → V5 roadmap amend PR opens → roadmap amend merge → E-2-1 envelope schema slice opens (separate worktree per CLAUDE.md §17 + §19).
+**Iter-3 outcome recorded:** Codex iter-3 → AGREE (F9-F10 closure plus F11-F12 hygiene). V5 roadmap amend PR #828 has since merged; after this Epic 2 plan PR merges and §14a preconditions remain green, E-2-1 envelope schema slice opens in a separate worktree per CLAUDE.md §17 + §19.
