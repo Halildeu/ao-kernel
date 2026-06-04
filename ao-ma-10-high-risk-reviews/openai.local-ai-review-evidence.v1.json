@@ -1,42 +1,7 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-roadmap-status-human-mirror-sync",
-  "implementer": {
-    "agent": "codex-ao-ma-roadmap-status-sync",
-    "provider": "openai"
-  },
-  "reviewer": {
-    "agent": "openai-bohr-independent-reviewer",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-roadmap-status-sync",
-    "changed_files": [
-      ".claude/plans/AO-MA-ROADMAP-STATUS.md",
-      "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json"
-    ]
-  },
   "checks_considered": [
     {
       "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "diff_scope",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma_next",
-      "status": "pass"
-    },
-    {
-      "name": "gpp_next_progress",
       "status": "pass"
     },
     {
@@ -44,28 +9,47 @@
       "status": "pass"
     },
     {
-      "name": "guard_flags",
+      "name": "workflow_shape",
       "status": "pass"
     },
     {
-      "name": "no_runtime_or_workflow_change",
-      "status": "pass"
-    },
-    {
-      "name": "changelog",
+      "name": "ao_release_gate_pr_context",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI AGREE: no blocking findings.",
-    "OpenAI validated the diff is limited to the AO-MA human roadmap mirror, changelog, and review evidence metadata.",
-    "OpenAI validated the markdown mirror matches ao_ma_next and ao_ma_status: 5/7 phases done, 7/9 slices merged, current AO-MA-11G/AO-MA-11G-1, drift none.",
-    "OpenAI validated guard flags remain false and no runtime, workflow, ruleset, CODEOWNERS, or gpp_status changes are introduced.",
-    "OpenAI validated changelog adequacy.",
-    "OpenAI validated JSON formatting, git diff --check, and absence of new secret material."
+    "Noether re-review AGREE: pull_request edited remains subscribed and runs the full required-check surface, including ao-release-gate in PR context.",
+    "Noether verified stale governance inventory wording was corrected and no governance file remains in origin/main...HEAD diff.",
+    "Noether verified invariant tests cover edited full-run behavior and no retarget-only branch.",
+    "Reviewed changed files count=4"
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "codex-noether-subagent",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/WP-5.1-GOVERNANCE-INVENTORY.md",
+      ".github/workflows/test.yml",
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_required_check_workflow_trigger_shape.py"
+    ],
+    "head_ref": "refs/heads/codex/ci-required-check-edited-trigger-fix"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "AO-MA-CI-REQUIRED-CHECK-EDITED-FULL-RUN"
 }

@@ -40,7 +40,9 @@ Canlı gözlem:
 - `extras-install` non-blocking (`continue-on-error: true`).
 - `push` için `main` ve `codex/**` branch'lerinde tetikleniyor.
 - `pull_request` için `opened`, `reopened`, `synchronize`,
-  `ready_for_review`, `edited` (retarget) olaylarında tetikleniyor.
+  `ready_for_review`, `edited` olaylarında tetikleniyor. `edited` event'i
+  full required-check yüzeyini çalıştırır; title/body edit'leri event-gate skip
+  üretmez, retarget da aynı PR context içinde yeniden değerlendirilir.
 - `workflow_dispatch` fallback mevcut.
 
 ### 2.2 Repo içi operasyon guard'ları

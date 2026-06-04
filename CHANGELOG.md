@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Required Test workflow PR edit trigger hardening**: made
+  `pull_request: edited` run the full `.github/workflows/test.yml`
+  required-check surface instead of an event-gate skip, so PR title/body edits
+  and retargets cannot create skipped branch-protection required-check contexts
+  that block autonomous merge.
 - **E-8-2 multi-tenant production config recipe** (V5 Epic 8, #890):
   docs/MULTI-TENANT-CONFIG-RECIPE.md — namespace-per-tenant isolation recipe
   delegating to Epic 4 chart surfaces (E-4-2a boundary, E-4-3 PG/secret, E-4-4
