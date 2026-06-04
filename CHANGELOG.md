@@ -9,16 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
-- **Required Test workflow PR edit trigger hardening**: made
-  `pull_request: edited` run the full `.github/workflows/test.yml`
-  required-check surface instead of an event-gate skip, so PR title/body edits
-  and retargets cannot create skipped branch-protection required-check contexts
-  that block autonomous merge.
-- **E-8-2 multi-tenant production config recipe** (V5 Epic 8, #890):
-  docs/MULTI-TENANT-CONFIG-RECIPE.md — namespace-per-tenant isolation recipe
-  delegating to Epic 4 chart surfaces (E-4-2a boundary, E-4-3 PG/secret, E-4-4
-  monitoring, E-4-5 netpol/PSS) with per-tenant values overlay + isolation
-  checklist + ResourceQuota. 8 invariants. No new chart feature; no guard flag.
+- **E-7-1 production benchmark suite + cross-PR regression detection** (V5
+  Epic 7, #883): docs/performance/BENCHMARK-SUITE.md end-to-end runbook binding
+  the scenario catalog → scorecard → regression gate (#806) → baseline-update
+  pipeline + variance discipline, plus 7 integration invariants verifying
+  catalog↔test-module↔baseline↔gate consistency. No SLA claim; no guard flag.
 
 ### Added
 

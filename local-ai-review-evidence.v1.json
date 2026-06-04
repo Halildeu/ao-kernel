@@ -1,33 +1,25 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-E-4-2b-final-tenant-matrix",
+  "work_package": "AO-MA-E-7-1-benchmark-suite",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-4-2b-final-tenant-matrix",
+    "head_ref": "refs/heads/codex/epic-7-1-production-benchmark-suite",
     "changed_files": [
-      ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.md",
-      ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.v1.json",
-      ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
-      ".claude/plans/tenant_isolation_matrix.v1.json",
+      ".claude/plans/E-7-1-BENCHMARK-SUITE.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/e-4-2b-multi-tenant-final-seal-evidence.schema.v1.json",
-      "ao_kernel/defaults/schemas/e-4-2b-tenant-isolation-matrix.schema.v1.json",
-      "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
-      "docs/MULTI-TENANT-DEPLOYMENT.md",
+      "docs/performance/BENCHMARK-SUITE.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_epic_4_2a_multi_tenant_boundary.py",
-      "tests/test_epic_4_2b_matrix_invariants.py",
-      "tests/test_epic_4_2b_write_set_invariant.py"
+      "tests/test_epic_7_1_benchmark_suite.py"
     ]
   },
   "checks_considered": [
@@ -40,27 +32,15 @@
       "status": "pass"
     },
     {
-      "name": "matrix_final_status",
+      "name": "catalog_test_baseline_consistency",
       "status": "pass"
     },
     {
-      "name": "downstream_refs_exist",
+      "name": "regression_gate_inputs_documented",
       "status": "pass"
     },
     {
-      "name": "advisory_const_fields",
-      "status": "pass"
-    },
-    {
-      "name": "mixed_lifecycle_negative_probes",
-      "status": "pass"
-    },
-    {
-      "name": "no_overclaim_language",
-      "status": "pass"
-    },
-    {
-      "name": "no_live_cluster_commands",
+      "name": "variance_discipline_kept",
       "status": "pass"
     },
     {
@@ -68,11 +48,7 @@
       "status": "pass"
     },
     {
-      "name": "no_pyproject_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_module_change",
+      "name": "no_guard_flip",
       "status": "pass"
     },
     {
@@ -85,11 +61,10 @@
     }
   ],
   "findings": [
-    "E-4-2b promotes the advisory tenant isolation matrix from placeholder state to final seal state with seven filled dimensions and existing downstream evidence refs.",
-    "All seven dimensions remain advisory only: runtime_enforced=false and live_validated=false are preserved while operator_enforceable=true and operator_action_required=true describe Kubernetes-native operator-side controls.",
-    "The base matrix schema now rejects mixed lifecycle states such as final seal with null downstream refs or placeholder state with filled entries.",
-    "Deployment documentation avoids overclaim language and embeds no live cluster mutation commands.",
-    "The change is limited to Epic 4 docs, matrix/evidence schema JSON, tests, changelog, and local review evidence; no workflows, runtime adapter code, support tier, production platform claim, or live adapter execution are changed."
+    "E-7-1 (#883) production benchmark suite + cross-PR regression detection runbook. Binds existing scenario catalog + 3 benchmark scenarios + scorecard + baseline + threshold + regression_gate (#806) into one pipeline doc.",
+    "7 integration invariants: every catalog scenario has a real test module; every enforced scenario present in baseline; regression_gate documents head/baseline/threshold inputs; catalog guard flags all false. Real consistency check (No Fake Work).",
+    "Low-risk lane: docs/performance/ + tests/ + plan + CHANGELOG. NO scenario/gate logic change, NO .github/workflows/, NO runtime mutation.",
+    "3 guard flags const false; advisory enforcement (no blocking promotion); no SLA claim."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
