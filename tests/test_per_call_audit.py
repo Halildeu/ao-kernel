@@ -294,6 +294,7 @@ def test_writer_workspace_mode_appends_jsonl(tmp_path: Path) -> None:
     assert receipt["persisted"] is True and receipt["mode"] == "workspace"
     audit = tmp_path / "evidence" / "per_call_audit.jsonl"
     assert audit.is_file()
+    assert audit.stat().st_mode & 0o777 == 0o600
     rows = [json.loads(line) for line in audit.read_text(encoding="utf-8").splitlines()]
     assert len(rows) == 1 and rows[0]["envelope_digest"] == "a" * 64
 
@@ -312,6 +313,7 @@ def test_writer_hard_breach_cross_referenced(tmp_path: Path) -> None:
     assert (tmp_path / "evidence" / "per_call_audit.jsonl").is_file()
     breach = tmp_path / "evidence" / "cost_hard_breach.jsonl"
     assert breach.is_file(), "hard_breached row must also land in cost_hard_breach.jsonl"
+    assert breach.stat().st_mode & 0o777 == 0o600
     assert str(breach) in receipt["paths"]
 
 

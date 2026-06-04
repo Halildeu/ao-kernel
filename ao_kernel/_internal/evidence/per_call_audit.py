@@ -62,7 +62,7 @@ def _append_jsonl(path: Path, payload: dict[str, Any]) -> None:
     verification stays authoritative)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     line = (json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
     try:
         os.write(fd, line)  # single write => atomic line append under O_APPEND
         try:
