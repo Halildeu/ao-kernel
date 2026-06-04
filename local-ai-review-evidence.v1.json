@@ -5,91 +5,30 @@
       "status": "pass"
     },
     {
-      "name": "sixteen_invariant_tests_executed",
-      "status": "pass"
-    },
-    {
       "name": "secret_scan",
       "status": "pass"
     },
     {
-      "name": "json_validation",
+      "name": "changelog_discipline",
       "status": "pass"
     },
     {
-      "name": "git_diff_check",
-      "status": "pass"
-    },
-    {
-      "name": "claude_independent_review",
-      "status": "pass"
-    },
-    {
-      "name": "tutorial_exists_at_correct_path",
-      "status": "pass"
-    },
-    {
-      "name": "seven_step_coverage",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_const_false_preserved",
-      "status": "pass"
-    },
-    {
-      "name": "no_positive_production_claim",
-      "status": "pass"
-    },
-    {
-      "name": "no_live_provider_authorization",
-      "status": "pass"
-    },
-    {
-      "name": "no_workflow_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_code_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_codeowners_ruleset_branchprotection_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_secrets_in_diff",
-      "status": "pass"
-    },
-    {
-      "name": "tests_meaningful_not_tautological",
-      "status": "pass"
-    },
-    {
-      "name": "no_whole_diff_mutation_guard",
-      "status": "pass"
-    },
-    {
-      "name": "changelog_appropriate",
-      "status": "pass"
-    },
-    {
-      "name": "cross_references_adr0003_adr0004_e81_e83_e11",
+      "name": "roadmap_reframe_boundary",
       "status": "pass"
     }
   ],
   "findings": [
-    "AO-MA-SPM tutorial is documentation-only and scoped to Epic 8 E-8-5.",
-    "Tutorial covers the 7-step path: initialize workspace, define slice, plan-time cross-AI consensus, stub implementation, evidence verification, PR, and operator approval gate.",
-    "Tutorial preserves support_widening, production_platform_claim, and live_adapter_execution as const false.",
-    "Tutorial explicitly defers live provider calls to E-2-1 operator-bound supersession.",
-    "Tests enforce tutorial presence, 7-step coverage, claim discipline, cross references, and governance zero-touch plan boundary.",
-    "Claude review AGREE: no positive production claim, no live provider authorization, no runtime/workflow/CODEOWNERS/ruleset/branch-protection mutation.",
-    "Claude review AGREE: tests are meaningful and do not use a whole-diff mutation guard that would block unrelated future workflow PRs.",
-    "Claude review AGREE: changelog entry is appropriately scoped and records no live provider execution.",
-    "Claude review AGREE: plan doc, tutorial section 12, and evidence file consistently record OpenAI Codex as implementer and Anthropic Claude as reviewer."
+    "Epic 2 and Epic 3 are reframed as infrastructure-only; prior flip-authority slices are removed and mapped to Epic 9 PR-Xfinal.",
+    "Section 14a adds fail-closed machine-checkable preconditions before any E-2-* or E-3-* slice PR opens.",
+    "Epic 9 PR-Xfinal is explicitly all-or-none and operator-bound; partial guard-flag flips remain prohibited.",
+    "Guard role labels distinguish flip-prerequisite surfaces from Epic 9-only flip-authority surfaces.",
+    "CHANGELOG entry is scoped to the roadmap reframe and does not claim production readiness, support widening, or live adapter execution.",
+    "No runtime code, workflow, CODEOWNERS, branch-protection, ruleset, webhook, or secret surfaces are changed.",
+    "The roadmap uses gpp_status.v1.json plus scripts/gpp_next.py as guard authority instead of a nonexistent guard manifest.",
+    "Claude independent review returned AGREE for this roadmap/changelog scope."
   ],
   "implementer": {
-    "agent": "codex-epic-8-5-tutorial-rebase",
+    "agent": "codex-v5-roadmap-amend-rebase",
     "provider": "openai"
   },
   "live_adapter_execution": false,
@@ -104,15 +43,13 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/EPIC-8-5-TUTORIAL.md",
+      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "CHANGELOG.md",
-      "docs/TUTORIAL-BUILD-AO-MA-SPM-PROGRAM.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_tutorial_build_program.py"
+      "local-ai-review-evidence.v1.json"
     ],
-    "head_ref": "refs/heads/codex/epic-8-5-tutorial-v2"
+    "head_ref": "refs/heads/codex/v5-roadmap-epic-2-3-amend"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-913-tutorial"
+  "work_package": "AO-MA-828-v5-roadmap-amend"
 }
