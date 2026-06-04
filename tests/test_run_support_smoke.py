@@ -141,7 +141,7 @@ def test_killswitch_blocks_secret_env_every_path(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setenv("API_KEY", "dummy-not-real")
     monkeypatch.setenv("SECRET_TOKEN", "dummy")
     # credential-class keys a "secret-looking" regex MISSES — allowlist-only catches them
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AKIA_TEST")
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "dummy-aws-access-key-id")
     monkeypatch.setenv("OPENAI_ORGANIZATION", "org_test")
     monkeypatch.setenv("PATH", os.environ.get("PATH", "/usr/bin"))
     with live_call_killswitch():
