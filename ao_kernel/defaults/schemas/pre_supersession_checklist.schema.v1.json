@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:pre-supersession-checklist:v1",
+  "title": "Pre-Supersession Checklist (v1, Epic 9 PR-Xfinal prerequisite)",
+  "description": "Infrastructure-only checklist artifact for Epic 2 E-2-7. It defines the 18 mandatory conditions a future Epic 9 PR-Xfinal must meet before any guard flag supersession can be considered. This v1 schema never proposes a guard flip: support_widening, production_platform_claim, live_adapter_execution, and live_adapter_execution_current_state are all const false.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "guard_flip_authority",
+    "all_conditions_required",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "live_adapter_execution_current_state",
+    "checklist"
+  ],
+  "properties": {
+    "schema_version": { "const": "pre_supersession_checklist.v1" },
+    "artifact_kind": { "const": "pre_supersession_checklist" },
+    "repo": { "type": "string", "const": "Halildeu/ao-kernel" },
+    "work_package": { "type": "string", "const": "E-2-7" },
+    "guard_flip_authority": { "const": "epic_9_only" },
+    "all_conditions_required": { "const": true },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "live_adapter_execution_current_state": { "const": false },
+    "checklist": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "prefixItems": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Operator authority block" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Cross-AI consensus 2-way minimum" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "7-day live test window" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Cost ceiling enforced plus breach evidence plus rollback path" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "All required CI green" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Public claim language sync" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Operator-bound rollback procedure" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Secret rotation completion" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Pricing source freshness" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Workflow content SHA pin plus base SHA plus head SHA" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Protected environment reviewer proof" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Provider/model allowlist" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Provider SLA ToS data-retention region policy proof" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Budget overrun follow-up issue automation" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Branch-protection ruleset source-pin drift check" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Required-check name/source collision check" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Post-window deauthorization plus secret scope removal" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/checklist_item" },
+            { "properties": { "name": { "const": "Audit retention plus tamper evidence" } } }
+          ]
+        }
+      ],
+      "items": false
+    }
+  },
+  "$defs": {
+    "checklist_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["name", "status", "evidence_ref", "attestor"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["unmet", "met"] },
+        "evidence_ref": {
+          "oneOf": [
+            { "type": "string", "format": "uri", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "attestor": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}
