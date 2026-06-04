@@ -25,6 +25,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-2-3 cost ceiling enforcement module** (V5 Epic 2, #848): added
+  `ao_kernel._internal.cost_ceiling.CostCeiling` plus the public
+  `ao_kernel.cost` facade export for Decimal-only soft/hard USD ceiling
+  enforcement. The module returns explicit `ok` / `soft_breached` states,
+  raises `CostCeilingExceeded` on hard breach without accepting the attempted
+  spend, writes `evidence/cost_ceiling_state.jsonl` under a per-session POSIX
+  lock in workspace mode, supports the reservation/settle pattern, and can
+  record the E-2-2 hard-breach audit row before raising. Default policy:
+  `policy_cost_ceiling.v1.json` (`soft_usd=0.10000000`,
+  `hard_usd=1.00000000`). Infrastructure-only: no provider network call, no
+  workflow mutation, and all guard flags remain false.
 - **E-2-2 per-call audit evidence schema + writer** (V5 Epic 2, #847): added
   `per_call_audit.schema.v1.json` (one row per would-be LLM call: tokens, cost,
   latency, provider-lifecycle `status` and a separate `cost_breach_state`) plus

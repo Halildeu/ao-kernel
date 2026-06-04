@@ -31,6 +31,12 @@ from ao_kernel.cost.cost_math import (
     estimate_cost,
     estimate_output_tokens,
 )
+from ao_kernel._internal.cost_ceiling import (
+    CostCeiling,
+    CostCeilingPolicy,
+    Reservation,
+    load_cost_ceiling_policy,
+)
 from ao_kernel.cost._reconcile import (
     apply_spend_with_marker,
 )
@@ -46,6 +52,7 @@ from ao_kernel.cost.middleware import (
 )
 from ao_kernel.cost.errors import (
     BudgetExhaustedError,
+    CostCeilingExceeded,
     CostTrackingConfigError,
     CostTrackingDisabledError,
     CostTrackingError,
@@ -79,6 +86,11 @@ __all__ = [
     "compute_cost",
     "estimate_cost",
     "estimate_output_tokens",
+    # E-2-3 Cost ceiling
+    "CostCeiling",
+    "CostCeilingPolicy",
+    "Reservation",
+    "load_cost_ceiling_policy",
     # Ledger
     "SpendEvent",
     "compute_billing_digest",
@@ -98,6 +110,7 @@ __all__ = [
     "sort_providers_by_cost",
     # Errors
     "CostTrackingError",
+    "CostCeilingExceeded",
     "CostTrackingDisabledError",
     "CostTrackingConfigError",
     "PriceCatalogNotFoundError",
