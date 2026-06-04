@@ -25,6 +25,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-2-2 per-call audit evidence schema + writer** (V5 Epic 2, #847): added
+  `per_call_audit.schema.v1.json` (one row per would-be LLM call: tokens, cost,
+  latency, provider-lifecycle `status` and a separate `cost_breach_state`) plus
+  the fail-closed writer `ao_kernel/_internal/evidence/per_call_audit.py`. The
+  writer validates before any write (a missing/float `actual_cost_usd` is
+  rejected), skips persistence in library mode, and in workspace mode appends
+  atomically (O_APPEND + fsync) to `evidence/per_call_audit.jsonl` — a
+  `hard_breached` row is cross-referenced to `evidence/cost_hard_breach.jsonl`.
+  `allOf`: `soft_breached`⇒`cost_breach_handling` required (object); `hard_breached`⇒
+  `status==error` + `cost_breach_handling==null`. Foreign-keys to the E-2-1
+  envelope via `envelope_digest`. Infrastructure-only: `live_adapter_execution`
+  const false; no network call; the writer does not raise `CostCeilingExceeded`
+  (that is E-2-3). No guard flip.
 - **E-2-1 live adapter envelope schema** (V5 Epic 2, #846): added the
   `live_adapter_envelope.schema.v1.json` governance envelope for a single
   (would-be) LLM provider call — request/response/cost/circuit-breaker shape
