@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-3-3",
+  "work_package": "E-3-6",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,14 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic3-e3-ci-matrix",
+    "head_ref": "refs/heads/codex/epic3-e3-6-validator",
     "changed_files": [
-      ".claude/plans/EPIC-3-E-3-3-CI-MATRIX.md",
-      ".github/workflows/support-matrix-smoke.yml",
+      ".claude/plans/EPIC-3-E-3-6-RECOMPUTE-VALIDATOR.md",
       "CHANGELOG.md",
+      "ao_kernel/_internal/support_widening/validator.py",
+      "ao_kernel/defaults/schemas/widening-supersession-evidence-pack.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_cost_ceiling.py",
-      "tests/test_support_matrix_smoke_workflow.py"
+      "scripts/validate_widening_evidence.py",
+      "tests/test_support_matrix_smoke_workflow.py",
+      "tests/test_widening_evidence_validator.py"
     ]
   },
   "checks_considered": [
@@ -29,23 +31,31 @@
       "status": "pass"
     },
     {
-      "name": "pytest_support_matrix_smoke_workflow",
+      "name": "pytest_widening_evidence_validator",
       "status": "pass"
     },
     {
-      "name": "pytest_support_matrix_plus_adjacent_evidence_harness",
+      "name": "pytest_epic3_support_widening_adjacent",
       "status": "pass"
     },
     {
-      "name": "pytest_cost_ceiling_workflow_guard",
+      "name": "pytest_support_matrix_smoke_workflow_scope_fix",
       "status": "pass"
     },
     {
-      "name": "ruff_test_file",
+      "name": "json_schema_format",
       "status": "pass"
     },
     {
-      "name": "mypy_test_file",
+      "name": "ruff_validator_cli_tests",
+      "status": "pass"
+    },
+    {
+      "name": "mypy_targeted",
+      "status": "pass"
+    },
+    {
+      "name": "mypy_ao_kernel",
       "status": "pass"
     },
     {
@@ -61,15 +71,11 @@
       "status": "pass"
     },
     {
-      "name": "protected_workflow_diff_empty",
+      "name": "claude_review_round_1",
       "status": "pass"
     },
     {
-      "name": "live_ruleset_collision_check",
-      "status": "pass"
-    },
-    {
-      "name": "claude_review",
+      "name": "claude_review_round_2",
       "status": "pass"
     },
     {
@@ -77,19 +83,18 @@
       "status": "pass"
     }
   ],
-    "findings": [
-        "Claude Anthropic returned VERDICT AGREE for E-3-3 after reviewing the workflow, invariant tests, plan record, changelog entry, and local validation summary.",
-        "Claude Anthropic returned VERDICT AGREE for the post-CI guard fix: adding .github/workflows/support-matrix-smoke.yml to tests/test_cost_ceiling.py is a narrow allowlist update for the explicitly authorized E-3-3 advisory workflow and does not weaken unrelated workflow drift detection.",
-        "Claude confirmed the trigger shape is pull_request types opened/labeled/synchronize/reopened plus workflow_dispatch only, with no push, schedule, repository_dispatch, or pull_request_target.",
-    "Claude confirmed both jobs carry the combined workflow_dispatch-or-support-matrix-smoke-label gate, and the summary job correctly adds a pull_request-only guard for PR review comments.",
-    "Claude confirmed the workflow permissions are exactly contents:read and pull-requests:write, with no id-token, checks, packages, actions, secrets, or environment surface.",
-    "Claude confirmed guard flags remain false and the workflow contains no true literal for support_widening, production_platform_claim, or live_adapter_execution.",
-    "Claude confirmed protected workflow and ruleset mutation checks are present and passed.",
-    "Claude confirmed the new workflow/job names are disjoint from existing required workflow names and that the live ruleset collision check is present.",
-    "Claude confirmed the matrix derives the five surface classes from the E-3-2 SURFACE_CLASSES registry and invokes scripts/run_support_smoke.py with --surface and --evidence-out.",
-    "Claude confirmed the E-3-3/Epic-9 boundary is explicit: this is advisory-only, continue-on-error, simulated-only evidence and not branch protection, required-check promotion, support widening, production claim, or live adapter execution.",
-    "Local validation passed: pytest tests/test_support_matrix_smoke_workflow.py reported 10 passed; pytest tests/test_support_matrix_smoke_workflow.py tests/test_run_support_smoke.py tests/test_support_widening_evidence_v1.py reported 47 passed and 2 existing adjacent skips; pytest tests/test_cost_ceiling.py::test_cost_ceiling_no_unrelated_workflow_mutation_in_diff passed after adding the explicitly authorized E-3-3 advisory workflow to the guard allowlist; ruff and mypy passed for the new test file; diff whitespace, gitleaks, protected workflow diff, live ruleset collision, and gpp_next guard checks passed.",
-    "No secrets were recorded in the review prompt, review output, evidence file, or local validation artifacts."
+  "findings": [
+    "Claude Anthropic returned VERDICT AGREE for E-3-6 after reviewing the v1-only fail-closed validator, schema, CLI, tests, plan record, changelog entry, and local validation summary.",
+    "Claude Anthropic returned VERDICT AGREE for the updated PR diff after the CI fix that scopes test_support_matrix_smoke_workflow.py's E-3-3 slice diff guard to only run when .github/workflows/support-matrix-smoke.yml changes.",
+    "Claude confirmed guard flags remain false and widening_authorized is pinned false; no support widening, production platform claim, live adapter execution, GitHub mutation, ruleset mutation, network call, or live adapter call is introduced.",
+    "Claude confirmed the Epic 3 validator accepts only support_widening_evidence.v1 and widening_supersession_evidence_pack.v1; future v2 input fails closed with unsupported_future_schema_in_epic_3 and validator_v2/schema v2 are absent.",
+    "Claude confirmed the schema is recursively strict with additionalProperties:false and unevaluatedProperties:false on every object node.",
+    "Claude confirmed raw verdict SHA256 is canonicalized with raw_verdict_sha256 excluded, and legacy artifact_sha256 is recursively rejected.",
+    "Claude confirmed self-review prevention rejects same-provider, implementer-reviewer, and operator-login collisions.",
+    "Claude confirmed context-binding drift checks cover plan digest, final diff digest, PR head SHA, workflow run provenance, artifact membership/hash drift, reviewer hash drift, verdict binding drift, raw verdict artifact digest/reference/provenance drift, stale replay, and seven-day window races.",
+    "Claude confirmed the E-3-3 workflow diff guard now skips unrelated PRs when support-matrix-smoke.yml is unchanged, but remains fail-closed against unexpected files when that workflow is changed.",
+    "Local validation passed: JSON schema format, ruff, targeted mypy, full mypy ao_kernel, targeted E-3-6 pytest, adjacent Epic 3 pytest set, diff whitespace, gpp_next guard flags, and gitleaks secret scan.",
+    "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

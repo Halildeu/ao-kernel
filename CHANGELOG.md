@@ -32,6 +32,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-3-6 recompute-not-trust validator** (V5 Epic 3, #858): added
+  `ao_kernel/_internal/support_widening/validator.py`,
+  `scripts/validate_widening_evidence.py`, and
+  `widening-supersession-evidence-pack.schema.v1.json` as the v1-only
+  fail-closed validator runway for future operator-bound support-widening
+  supersession evidence packs. The validator accepts existing
+  `support_widening_evidence.v1` artifacts, rejects v2/future schemas with
+  `unsupported_future_schema_in_epic_3`, recomputes consensus/verdict/provider
+  identity/digest/artifact bindings from caller-supplied read-only context, and
+  pins `support_widening`, `production_platform_claim`, `live_adapter_execution`,
+  and `widening_authorized` false. No GitHub mutation, ruleset mutation, live
+  adapter execution, support widening, or production platform claim is
+  introduced.
 - **E-3-3 advisory support matrix workflow** (V5 Epic 3, #855): added
   `.github/workflows/support-matrix-smoke.yml` as an opt-in, advisory-only
   workflow that runs the E-3-2 stub smoke harness across all five support

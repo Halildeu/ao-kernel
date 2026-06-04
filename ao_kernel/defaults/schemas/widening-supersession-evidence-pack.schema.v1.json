@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:widening-supersession-evidence-pack:v1",
+  "title": "AO widening supersession evidence pack v1",
+  "description": "E-3-6 recompute-not-trust evidence pack for future operator-bound support-widening supersession PRs. Epic 3 v1 is evidence-only: all guard flags remain false and widening_authorized is const false.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "widening_authorized",
+    "evidence_class",
+    "simulated_only",
+    "live_call_made",
+    "operator_authority",
+    "implementer_provider",
+    "plan_digest",
+    "final_diff_digest",
+    "pr_head_sha",
+    "workflow_run_ids",
+    "time_window_boundaries",
+    "artifacts",
+    "provider_verdicts",
+    "reviewer_identity_hashes",
+    "verdict_completeness_proof",
+    "consensus_status"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "widening_supersession_evidence_pack.v1"
+    },
+    "artifact_kind": {
+      "const": "widening_supersession_evidence_pack"
+    },
+    "repo": {
+      "const": "Halildeu/ao-kernel"
+    },
+    "work_package": {
+      "type": "string",
+      "minLength": 1
+    },
+    "support_widening": {
+      "const": false
+    },
+    "production_platform_claim": {
+      "const": false
+    },
+    "live_adapter_execution": {
+      "const": false
+    },
+    "widening_authorized": {
+      "const": false
+    },
+    "evidence_class": {
+      "const": "live"
+    },
+    "simulated_only": {
+      "type": "boolean"
+    },
+    "live_call_made": {
+      "type": "boolean"
+    },
+    "operator_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "github_login",
+        "authorization_phrase",
+        "commit_verification_required"
+      ],
+      "properties": {
+        "github_login": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9-]+$"
+        },
+        "authorization_phrase": {
+          "const": "AUTHORIZE_SUPPORT_WIDENING_SUPERSESSION"
+        },
+        "commit_verification_required": {
+          "const": true
+        }
+      }
+    },
+    "implementer_provider": {
+      "$ref": "#/$defs/provider_identity"
+    },
+    "plan_digest": {
+      "$ref": "#/$defs/sha256_hex"
+    },
+    "final_diff_digest": {
+      "$ref": "#/$defs/sha256_hex"
+    },
+    "pr_head_sha": {
+      "$ref": "#/$defs/git_sha"
+    },
+    "workflow_run_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      }
+    },
+    "time_window_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/rfc3339_z"
+        },
+        "end": {
+          "$ref": "#/$defs/rfc3339_z"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": [
+          "run_id",
+          "artifact_id",
+          "sha256",
+          "produced_at",
+          "head_sha"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "artifact_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256_hex"
+          },
+          "produced_at": {
+            "$ref": "#/$defs/rfc3339_z"
+          },
+          "head_sha": {
+            "$ref": "#/$defs/git_sha"
+          }
+        }
+      }
+    },
+    "provider_verdicts": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": [
+          "provider",
+          "github_login",
+          "thread_id",
+          "verdict",
+          "plan_digest",
+          "final_diff_digest",
+          "pr_head_sha",
+          "raw_verdict_sha256",
+          "raw_verdict_artifact_digest",
+          "raw_verdict_artifact_ref"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "anthropic",
+              "google",
+              "mavis",
+              "minimax"
+            ]
+          },
+          "github_login": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9-]+$"
+          },
+          "thread_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "AGREE",
+              "REVISE",
+              "RED"
+            ]
+          },
+          "plan_digest": {
+            "$ref": "#/$defs/sha256_hex"
+          },
+          "final_diff_digest": {
+            "$ref": "#/$defs/sha256_hex"
+          },
+          "pr_head_sha": {
+            "$ref": "#/$defs/git_sha"
+          },
+          "raw_verdict_sha256": {
+            "$ref": "#/$defs/sha256_hex"
+          },
+          "raw_verdict_artifact_digest": {
+            "$ref": "#/$defs/sha256_hex"
+          },
+          "raw_verdict_artifact_ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          }
+        }
+      }
+    },
+    "reviewer_identity_hashes": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/sha256_hex"
+      }
+    },
+    "verdict_completeness_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "verdicts_received_total",
+        "verdicts_claimed_in_consensus",
+        "negative_verdicts_present"
+      ],
+      "properties": {
+        "verdicts_received_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verdicts_claimed_in_consensus": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "negative_verdicts_present": {
+          "type": "boolean"
+        }
+      }
+    },
+    "consensus_status": {
+      "type": "string",
+      "enum": [
+        "agree",
+        "not_agree"
+      ]
+    }
+  },
+  "$defs": {
+    "provider_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "provider",
+        "github_login"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "anthropic",
+            "google",
+            "mavis",
+            "minimax"
+          ]
+        },
+        "github_login": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9-]+$"
+        }
+      }
+    },
+    "sha256_hex": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "git_sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "rfc3339_z": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|1[0-9]|2[0-9]))T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
+    }
+  }
+}
