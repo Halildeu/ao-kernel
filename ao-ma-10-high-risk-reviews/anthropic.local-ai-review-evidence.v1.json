@@ -1,28 +1,27 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-796-codeql-workflow",
+  "work_package": "AO-MA-11e-2-v5-mirror-drift",
   "implementer": {
-    "agent": "codex-gpt-5-codeql-workflow-rebase-integrator",
+    "agent": "codex-v5-mirror-subissues-drift",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-code-independent-reviewer-pr796-codeql-final",
+    "agent": "anthropic-claude-opus-4-6-independent-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-6-e6-5-codeql-workflow",
+    "head_ref": "refs/heads/codex/v5-mirror-subissues-drift",
     "changed_files": [
-      ".claude/plans/EPIC-6-E6-5-CODEQL-WORKFLOW.md",
-      ".github/codeql/codeql-config.yml",
-      ".github/workflows/codeql.yml",
+      ".claude/plans/v5_subissues_mirror.v1.json",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/_internal/ao_ma/github_mirror_drift.py",
       "local-ai-review-evidence.v1.json",
-      "tests/test_codeql_workflow_shape.py"
+      "tests/test_ao_ma11e2a_mirror_drift_checker.py"
     ]
   },
   "checks_considered": [
@@ -35,60 +34,27 @@
       "status": "pass"
     },
     {
-      "name": "advisory_only_no_required_check_promotion",
+      "name": "guard_flag_audit",
       "status": "pass"
     },
     {
-      "name": "no_pull_request_target",
+      "name": "ruff_lint",
       "status": "pass"
     },
     {
-      "name": "no_explicit_secrets",
+      "name": "compileall",
       "status": "pass"
     },
     {
-      "name": "minimum_permissions",
-      "status": "pass"
-    },
-    {
-      "name": "no_contents_write",
-      "status": "pass"
-    },
-    {
-      "name": "no_id_token_write",
-      "status": "pass"
-    },
-    {
-      "name": "no_setup_python",
-      "status": "pass"
-    },
-    {
-      "name": "config_security_extended_only",
-      "status": "pass"
-    },
-    {
-      "name": "scoped_paths_and_ignores",
-      "status": "pass"
-    },
-    {
-      "name": "invariant_tests_cover_shape",
-      "status": "pass"
-    },
-    {
-      "name": "changelog_records_baseline",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_const_false",
+      "name": "git_diff_check",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude AGREE: workflow is explicitly advisory-only and required-check promotion is out of scope.",
-    "Claude AGREE: pull_request_target is absent and pinned by invariant tests.",
-    "Claude AGREE: no secrets.X expressions, no contents: write, no id-token: write, no setup-python, and minimum permissions are present.",
-    "Claude AGREE: config is single source-of-truth for queries, security-extended only, with scoped paths and glob-form ignores.",
-    "Claude AGREE: changelog records the advisory baseline and no runtime/live-adapter/support-widening/production-claim/branch-protection/ruleset/CODEOWNERS mutation exists."
+    "Claude AGREE: guard flags remain false with no support widening, production claim, or live adapter execution.",
+    "Claude AGREE: subissue manifest inventory is included while compact canonical subissue bodies skip parent-anchor validation but keep label checking strict.",
+    "Claude AGREE: anchor parser accepts known optional fields and digest markdown annotations without weakening unknown-field enforcement.",
+    "Claude AGREE: ProjectV2 draft or non-issue items are excluded from issue-backed mirror item counts."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

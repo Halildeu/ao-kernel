@@ -16,6 +16,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **V5 GitHub mirror drift checker sub-issue authority**: included the
+  V5 sub-issue mirror manifest in expected issue inventory, accepted
+  known optional anchor fields, normalized annotated digest values, and
+  counted only issue-backed ProjectV2 items so live mirror drift checks
+  stop misclassifying canonical sub-issues and draft project items as
+  drift.
 - **ao-release-gate CodeQL config diff-scope**: added the exact
   `.github/codeql/codeql-config.yml` path to the protected-base
   release-gate allowlist so reviewed CodeQL advisory baseline PRs can
