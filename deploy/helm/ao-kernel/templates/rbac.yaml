@@ -1,0 +1,36 @@
+{{- if .Values.rbac.create -}}
+# RBAC scope: namespace-scoped Role + RoleBinding ONLY.
+# ClusterRole / ClusterRoleBinding are FORBIDDEN by Epic 4 multi-tenant boundary
+# (E-4-2a/E-4-2b advisory contract: namespace isolation, RBAC scope dimensions).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ao-kernel.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ao-kernel.labels" . | nindent 4 }}
+rules:
+{{- if .Values.rbac.rules }}
+  {{- toYaml .Values.rbac.rules | nindent 2 }}
+{{- else }}
+  # Default: empty rule set (least privilege).
+  # Operator adds rules via .Values.rbac.rules.
+  []
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ao-kernel.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ao-kernel.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "ao-kernel.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "ao-kernel.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end -}}

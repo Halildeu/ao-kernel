@@ -1,0 +1,41 @@
+Thank you for installing {{ .Chart.Name }} (chart {{ .Chart.Version }}, app {{ .Chart.AppVersion }}).
+
+LIFECYCLE NOTICE
+----------------
+This chart is an operator-installable BETA skeleton (V5 Epic 4 E-4-1).
+Production claim is DEFERRED to v5 final promotion (Epic 9 PR-Xfinal).
+
+The chart is render-only at this stage:
+  * No live LLM provider calls are gated by chart guard flags.
+  * No multi-tenant boundary is runtime-enforced by ao-kernel itself
+    (the boundary is operator-enforceable via the namespace + RBAC + NetworkPolicy
+    + Secret pattern described in MULTI-TENANT-DEPLOYMENT docs delivered in E-4-2a / E-4-2b).
+  * No automated rollout or live verification is performed by the chart.
+
+OPERATOR RESPONSIBILITIES
+-------------------------
+1. Provision Kubernetes Secrets out-of-band for any LLM provider API keys, webhook URLs,
+   or database credentials. The chart references secrets via secretKeyRef ONLY; it never
+   embeds secret values.
+2. Apply egress / NetworkPolicy / PodSecurityStandards baselines per future slices
+   E-4-5 (security baseline). Until E-4-5 lands, this skeleton has NO NetworkPolicy
+   manifests of its own.
+3. Tune resource requests / limits / probes for the workload; the skeleton defaults
+   are minimum baselines.
+
+VERIFY THE RELEASE
+------------------
+Inspect rendered manifests:
+  helm get manifest {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+
+Inspect computed values:
+  helm get values {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+
+NOT EMBEDDED IN THIS NOTE
+-------------------------
+This NOTES.txt does NOT include any live cluster command (no apply-style verbs
+against the cluster, no install or upgrade verbs against the chart). Live
+deployment runbooks belong in operator-side documentation
+(see future slices E-4-3 / E-4-4 / E-4-5 docs); the chart artifact remains
+render-only. The invariant test asserts the absence of the three forbidden
+command strings here.

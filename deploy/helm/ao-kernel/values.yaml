@@ -1,0 +1,116 @@
+# ao-kernel Helm values — operator-installable beta skeleton (V5 Epic 4 E-4-1)
+#
+# CRITICAL INVARIANTS (machine-enforced by tests/test_epic_4_1_helm_chart_skeleton.py):
+#   - NO secret values inline (use env block secretKeyRef only)
+#   - NO runtime guard flag key strings anywhere in this chart (key absence enforced)
+#   - replicaCount minimum 1 (HARD RULE TEST cluster scale-to-zero YASAK)
+#   - Chart is render-only; no live cluster commands embedded in templates/docs
+#
+# Operator MUST review docs/MULTI-TENANT-DEPLOYMENT.md (delivered in E-4-2a/E-4-2b)
+# BEFORE production deployment. This template is beta; production claim deferred.
+
+# Number of pod replicas. MINIMUM 1 (scale-to-zero forbidden per HARD RULE).
+replicaCount: 1
+
+# Container image configuration.
+image:
+  repository: ghcr.io/halildeu/ao-kernel
+  # Operator should pin a digest in production; tag default is for skeleton testing.
+  tag: "4.1.0"
+  pullPolicy: IfNotPresent
+
+# Optional image pull secrets (operator-managed Kubernetes Secrets).
+imagePullSecrets: []
+
+# Override chart name in resource labels (typical Helm pattern).
+nameOverride: ""
+fullnameOverride: ""
+
+# Service configuration (ClusterIP for in-cluster reachability).
+service:
+  type: ClusterIP
+  port: 8080
+  # Health/readiness ports (kept distinct for clarity; default = same as port).
+  healthzPort: 8080
+  readyzPort: 8080
+
+# Resource requests/limits (operator MUST tune to workload; defaults are skeleton baseline).
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Pod security context (least-privilege baseline; PSS-aligned).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# ConfigMap-backed non-secret configuration.
+config:
+  # ao-kernel workspace root (mounted volume path inside the pod).
+  workspaceRoot: "/var/lib/ao-kernel"
+  # Optional log level (operator override).
+  logLevel: "INFO"
+
+# Environment variables.
+#
+# Secrets MUST be referenced via secretKeyRef ONLY (NEVER inline values).
+# Operator pre-provisions Kubernetes Secret out-of-band; the chart does not create secrets.
+# See docs/OPERATOR-SECRET-MANAGEMENT.md (delivered in E-4-3 future slice) for pattern.
+env:
+  # Plain env vars (non-secret) — operator may add freely; example:
+  plain: []
+  # Secret env vars (resolved via secretKeyRef; chart does NOT define the secret).
+  # Operator pre-creates the Kubernetes Secret; the chart only references it.
+  secretRefs: []
+  # Example entry (commented; operator pattern reference):
+  #   - name: OPENAI_API_KEY
+  #     secretName: ao-kernel-llm-secrets
+  #     secretKey: openai_api_key
+
+# ServiceAccount (namespace-scoped; ClusterRole forbidden).
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# RBAC scope (namespace-scoped Role + RoleBinding; ClusterRole forbidden by Epic 4 boundary).
+rbac:
+  create: true
+  # Operator may add custom rules; default empty (least privilege).
+  rules: []
+
+# Liveness/readiness probes (skeleton defaults; operator tunes per workload).
+probes:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Node selection / tolerations / affinity (operator-configurable; default empty).
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod labels / annotations (additive; operator-extensible).
+podLabels: {}
+podAnnotations: {}
