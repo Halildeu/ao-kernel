@@ -1,28 +1,23 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-3-6",
+  "work_package": "TEST-QUALITY-ADV001",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic3-e3-6-validator",
+    "head_ref": "refs/heads/feat/adv001-recognize-assert-helpers-cc-0604",
     "changed_files": [
-      ".claude/plans/EPIC-3-E-3-6-RECOMPUTE-VALIDATOR.md",
-      "CHANGELOG.md",
-      "ao_kernel/_internal/support_widening/validator.py",
-      "ao_kernel/defaults/schemas/widening-supersession-evidence-pack.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/validate_widening_evidence.py",
-      "tests/test_support_matrix_smoke_workflow.py",
-      "tests/test_widening_evidence_validator.py"
+      "tests/conftest.py",
+      "tests/test_conftest_quality_gate.py"
     ]
   },
   "checks_considered": [
@@ -31,31 +26,19 @@
       "status": "pass"
     },
     {
-      "name": "pytest_widening_evidence_validator",
+      "name": "pytest_conftest_quality_gate_self_tests",
       "status": "pass"
     },
     {
-      "name": "pytest_epic3_support_widening_adjacent",
+      "name": "pytest_full_suite",
       "status": "pass"
     },
     {
-      "name": "pytest_support_matrix_smoke_workflow_scope_fix",
+      "name": "ruff",
       "status": "pass"
     },
     {
-      "name": "json_schema_format",
-      "status": "pass"
-    },
-    {
-      "name": "ruff_validator_cli_tests",
-      "status": "pass"
-    },
-    {
-      "name": "mypy_targeted",
-      "status": "pass"
-    },
-    {
-      "name": "mypy_ao_kernel",
+      "name": "mypy_conftest",
       "status": "pass"
     },
     {
@@ -63,19 +46,7 @@
       "status": "pass"
     },
     {
-      "name": "gpp_next_guard_flags",
-      "status": "pass"
-    },
-    {
       "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "claude_review_round_1",
-      "status": "pass"
-    },
-    {
-      "name": "claude_review_round_2",
       "status": "pass"
     },
     {
@@ -84,16 +55,15 @@
     }
   ],
   "findings": [
-    "Claude Anthropic returned VERDICT AGREE for E-3-6 after reviewing the v1-only fail-closed validator, schema, CLI, tests, plan record, changelog entry, and local validation summary.",
-    "Claude Anthropic returned VERDICT AGREE for the updated PR diff after the CI fix that scopes test_support_matrix_smoke_workflow.py's E-3-3 slice diff guard to only run when .github/workflows/support-matrix-smoke.yml changes.",
-    "Claude confirmed guard flags remain false and widening_authorized is pinned false; no support widening, production platform claim, live adapter execution, GitHub mutation, ruleset mutation, network call, or live adapter call is introduced.",
-    "Claude confirmed the Epic 3 validator accepts only support_widening_evidence.v1 and widening_supersession_evidence_pack.v1; future v2 input fails closed with unsupported_future_schema_in_epic_3 and validator_v2/schema v2 are absent.",
-    "Claude confirmed the schema is recursively strict with additionalProperties:false and unevaluatedProperties:false on every object node.",
-    "Claude confirmed raw verdict SHA256 is canonicalized with raw_verdict_sha256 excluded, and legacy artifact_sha256 is recursively rejected.",
-    "Claude confirmed self-review prevention rejects same-provider, implementer-reviewer, and operator-login collisions.",
-    "Claude confirmed context-binding drift checks cover plan digest, final diff digest, PR head SHA, workflow run provenance, artifact membership/hash drift, reviewer hash drift, verdict binding drift, raw verdict artifact digest/reference/provenance drift, stale replay, and seven-day window races.",
-    "Claude confirmed the E-3-3 workflow diff guard now skips unrelated PRs when support-matrix-smoke.yml is unchanged, but remains fail-closed against unexpected files when that workflow is changed.",
-    "Local validation passed: JSON schema format, ruff, targeted mypy, full mypy ao_kernel, targeted E-3-6 pytest, adjacent Epic 3 pytest set, diff whitespace, gpp_next guard flags, and gitleaks secret scan.",
+    "Codex (OpenAI) returned VERDICT AGREE (thread 019e9449) after reviewing the ADV-001 detector change in tests/conftest.py and the gate self-tests, with no blocking findings.",
+    "Codex confirmed the change is consistent with the existing assert_called* mock-signal recognition and the raises/warns/fail call-name recognition; it only adds a call-name convention signal and does not relax any blocking rule.",
+    "Codex confirmed assert True remains caught by BLK-002 (matched on an ast.Assert node, not a call), so the relaxation does not weaken any blocking gate.",
+    "Codex confirmed _is_assertion_helper_name does not mask assertion-free tests: a bare validator (check_schema/validate_*) and an ordinary non-assert helper still fire ADV-001, verified by precision-guard tests.",
+    "Codex assessed the false-negative risk (an assert-prefixed no-op helper) as an acceptable precision/recall trade-off for an advisory-level gate.",
+    "Codex's two non-blocking test suggestions (assert_valid Name-form positive, Draft202012Validator.check_schema attribute-form negative) were absorbed as additional guard tests.",
+    "Local validation passed: conftest gate self-tests (45 passed), full suite (6792 passed, 122 skipped), ruff clean, mypy clean on conftest, diff whitespace clean.",
+    "ADV-001 advisory count dropped from 166 to 63; the residual 63 are bare validate-by-raise patterns that intentionally remain advisory.",
+    "Change is test-infrastructure only: no ao_kernel/ source, no .github/ workflow, no branch-protection or ruleset surface touched.",
     "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
   ],
   "secrets_recorded": false,
