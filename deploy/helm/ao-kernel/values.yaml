@@ -143,6 +143,10 @@ networkPolicy:
     allowSameNamespace: true
     extraFrom: []
   egress:
+    # DNS namespace the egress rule scopes port-53 to (well-known label
+    # kubernetes.io/metadata.name). Default kube-system; operators whose DNS
+    # lives elsewhere override. NOT a bare allow-all (Codex E-4-5 review).
+    dnsNamespace: "kube-system"
     # Operator-allowed egress CIDRs (LLM providers etc). Empty = DNS-only.
     allowCidrs: []
 podSecurityStandards:

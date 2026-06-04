@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-E-4-4-observability-surface",
+  "work_package": "AO-MA-E-4-5-networkpolicy-pss",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,17 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-4-4-observability-surface",
+    "head_ref": "refs/heads/codex/epic-4-5-networkpolicy-pss",
     "changed_files": [
-      ".claude/plans/E-4-4-OBSERVABILITY-SURFACE.md",
+      ".claude/plans/E-4-5-NETWORKPOLICY-PSS.md",
       "CHANGELOG.md",
-      "deploy/helm/ao-kernel/templates/deployment.yaml",
-      "deploy/helm/ao-kernel/templates/servicemonitor.yaml",
+      "deploy/helm/ao-kernel/templates/networkpolicy.yaml",
       "deploy/helm/ao-kernel/values.schema.json",
       "deploy/helm/ao-kernel/values.yaml",
       "local-ai-review-evidence.v1.json",
       "tests/test_epic_4_1_helm_chart_skeleton.py",
-      "tests/test_epic_4_4_observability_surface.py"
+      "tests/test_epic_4_5_networkpolicy_pss.py"
     ]
   },
   "checks_considered": [
@@ -36,15 +35,23 @@
       "status": "pass"
     },
     {
-      "name": "servicemonitor_gated",
+      "name": "networkpolicy_default_deny",
       "status": "pass"
     },
     {
-      "name": "otel_sidecar_hardened",
+      "name": "dns_scoped_to_kube_dns",
       "status": "pass"
     },
     {
-      "name": "no_slack_receiver",
+      "name": "pss_restricted",
+      "status": "pass"
+    },
+    {
+      "name": "no_psp_manifest",
+      "status": "pass"
+    },
+    {
+      "name": "no_deprecated_k8s_api",
       "status": "pass"
     },
     {
@@ -60,25 +67,20 @@
       "status": "pass"
     },
     {
+      "name": "changelog_entry",
+      "status": "pass"
+    },
+    {
       "name": "cross_provider_review",
-      "status": "pass"
-    },
-    {
-      "name": "otel_image_pinned",
-      "status": "pass"
-    },
-    {
-      "name": "otel_claim_narrowed_skeleton",
       "status": "pass"
     }
   ],
   "findings": [
-    "E-4-4 (#863) observability surface: ServiceMonitor CRD (gated, Prometheus Operator) + optional hardened OTEL sidecar. Both disabled default. Chart does not install Prometheus Operator; Teams primary alert routing (no Slack receiver).",
-    "13 invariants pass. OTLP endpoint plain env (no secret); sidecar securityContext hardened (no privilege escalation, readonly rootfs, drop ALL).",
-    "Low-risk lane: deploy/helm/ + tests/ + plan + CHANGELOG. NO .github/workflows/, governance, runtime mutation.",
-    "3 guard flags const false; no production claim.",
-    "E-4-1 strict-closure allowlist: monitoring.serviceMonitor.additionalLabels free-form k8s label map added to documented allowlist (test_epic_4_1 _VALUES_SCHEMA_FREEFORM_PATHS).",
-    "Codex E-4-4 review absorb (thread 019e91c6): OTEL sidecar claim narrowed to SKELETON (operator supplies collector config + main-container OTLP wiring; chart provides slot+hardened-securityContext+pinned-image+endpoint-env only). Image pinned 0.96.0 (no :latest). Restored postgresql schema block dropped by rebase. 2 new invariants (image-pinned, claim-narrowed)."
+    "E-4-5 NetworkPolicy + PodSecurityStandards baseline adds an opt-in default-deny NetworkPolicy and PSS restricted namespace-label guidance for the Helm chart.",
+    "NetworkPolicy is disabled by default; DNS egress is scoped to the configured kube-dns namespace and operator egress widening is explicit through values.",
+    "The chart does not create PodSecurityPolicy resources and does not use deprecated Kubernetes API versions.",
+    "The change is limited to deploy/helm chart files, tests, plan evidence, changelog, and local review evidence; no workflows, runtime adapter code, support tier, or production claim are changed.",
+    "Guard flags remain false and this is render-only/operator-installable beta infrastructure, not live cluster validation."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

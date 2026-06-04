@@ -34,9 +34,15 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
   egress:
-    # DNS resolution (kube-dns) — required for any outbound connection.
+    # DNS resolution — scoped to the kube-dns namespace ONLY (Codex E-4-5
+    # review absorb): an empty all-namespaces selector would open UDP/TCP 53
+    # to EVERY namespace's pods, not just the cluster DNS. We scope to the
+    # well-known `kube-system` namespace via its immutable metadata label.
+    # Operators whose DNS lives elsewhere override dnsNamespace.
     - to:
-        - namespaceSelector: {}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.egress.dnsNamespace | quote }}
       ports:
         - port: 53
           protocol: UDP

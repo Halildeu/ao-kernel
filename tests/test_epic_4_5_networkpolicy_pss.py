@@ -64,6 +64,20 @@ def test_networkpolicy_egress_allows_dns() -> None:
     assert "port: 53" in text, "egress must allow DNS (required for any outbound)"
 
 
+def test_networkpolicy_dns_scoped_to_kube_dns_namespace() -> None:
+    """Codex E-4-5 review absorb: DNS egress must be SCOPED to the kube-dns
+    namespace (well-known metadata label), NOT a bare namespaceSelector:{} that
+    opens port 53 to every namespace. The scope is operator-configurable via
+    networkPolicy.egress.dnsNamespace (default kube-system)."""
+    text = _NETPOL.read_text(encoding="utf-8")
+    assert "kubernetes.io/metadata.name" in text, "DNS egress must scope by namespace metadata label"
+    assert "namespaceSelector: {}" not in text, "DNS egress must NOT open port 53 to all namespaces"
+    vals = _load_values()
+    assert vals["networkPolicy"]["egress"]["dnsNamespace"] == "kube-system", (
+        "default DNS namespace must be kube-system"
+    )
+
+
 # ---- 2. values + schema (3) ---------------------------------------------
 
 
