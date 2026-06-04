@@ -32,6 +32,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-3-4 support surface inventory document** (V5 Epic 3, #856): added
+  `docs/SUPPORT-SURFACE-INVENTORY.md`, a narrative companion to
+  `SUPPORT-BOUNDARY.md` that restates today's narrow-stable boundary (pointer, not
+  a second authority), inventories the five future-widening surface dimensions
+  (`provider`/`python_version`/`os_platform`/`db_backend`/`deployment_topology`),
+  and lists per-dimension widening **prerequisites** (live integration tests,
+  pytest matrix, per-platform smoke, backend round-trip, isolation test) — while
+  announcing **no** widening (authority deferred to the Epic 9 supersession PR).
+  9 doc invariants (`tests/test_support_surface_inventory_doc.py`) incl. a
+  no-production-claim-language guard. Docs-only; guard flags stay `const false`.
 - **E-3-2 per-surface support-widening smoke harness** (V5 Epic 3, #854): added
   `scripts/run_support_smoke.py --surface <class>` + `ao_kernel/_internal/support_widening/harnesses/`
   (`killswitch.py` dominant runtime kill-switch, `runner.py` per-surface stub
