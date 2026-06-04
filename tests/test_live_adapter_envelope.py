@@ -263,12 +263,19 @@ def test_timestamps_are_fail_closed_via_regex() -> None:
     """jsonschema does not enforce `format: date-time` by default, so the
     schema carries an explicit RFC3339 `pattern`. A non-date string must be
     rejected at every timestamp field (Codex E-2-1 review absorb)."""
-    # created_at + finalized_at: free-text AND range-invalid (e.g. month 99) must fail
+    # created_at + finalized_at: free-text, numeric-range-invalid AND
+    # calendar-invalid (month/day coupling: Feb 31, Apr 31) must fail.
+    bad_dates = (
+        "not-a-date",
+        "2026-99-99T99:99:99+99:99",  # numeric range
+        "2026-02-31T10:00:00Z",  # February never has 31 days
+        "2026-04-31T10:00:00Z",  # April is a 30-day month
+    )
     for field in ("created_at", "finalized_at"):
-        for bad in ("not-a-date", "2026-99-99T99:99:99+99:99"):
+        for bad in bad_dates:
             payload = _valid_envelope()
             payload["timestamps"][field] = bad
-            assert not _is_valid(payload), f"timestamps.{field} must reject {bad!r} (range-aware RFC3339)"
+            assert not _is_valid(payload), f"timestamps.{field} must reject {bad!r}"
     # last_failure_at string branch (null is still allowed)
     for bad in ("also-not-a-date", "2026-13-40T25:61:61Z"):
         cb = _valid_envelope()
@@ -280,6 +287,23 @@ def test_timestamps_are_fail_closed_via_regex() -> None:
     ok = _valid_envelope()
     ok["circuit_breaker"]["last_failure_at"] = None
     assert _is_valid(ok), "last_failure_at=null must remain valid"
+
+
+def test_timestamp_regex_boundary_is_documented() -> None:
+    """The schema regex enforces shape + numeric-range + month/day calendar
+    coupling (Feb<=29, 30-day months<=30). It deliberately does NOT enforce
+    leap-year validity: a pure JSON-Schema regex cannot do the mod-4/100/400
+    arithmetic. So '2026-02-29' (a non-leap year) is accepted by the schema;
+    exact leap-year validity is a recompute-time check (the E-2-4 dry-run
+    harness parses the timestamp with datetime). This test pins that boundary
+    so the limitation is explicit, not an accidental gap (Codex iter-3 absorb)."""
+    leap_boundary = _valid_envelope()
+    leap_boundary["timestamps"]["created_at"] = "2026-02-29T10:00:00Z"
+    assert _is_valid(leap_boundary), "regex accepts Feb-29 regardless of leap year; leap validity is recompute-time"
+    # but Feb-30 is calendar-impossible in every year and MUST be rejected
+    feb30 = _valid_envelope()
+    feb30["timestamps"]["created_at"] = "2026-02-30T10:00:00Z"
+    assert not _is_valid(feb30), "Feb-30 is impossible in any year and must be rejected"
 
 
 # ---- 8. governance: no workflow mutation (1) ---------------------------

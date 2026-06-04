@@ -40,7 +40,13 @@ invariants.
 - Timestamps (`created_at`, `finalized_at`, `last_failure_at`) carry an explicit
   RFC3339 `pattern` in addition to `format: date-time`: `jsonschema` does not
   enforce `format` by default, so the regex is what makes a malformed timestamp
-  fail-closed.
+  fail-closed. The regex enforces **shape + numeric range + month/day calendar
+  coupling** (February ≤ 29; 30-day months ≤ 30; rejects e.g. `2026-02-31`,
+  `2026-04-31`, `2026-13-40T25:61:61Z`). It does **not** enforce leap-year
+  validity (`2026-02-29` is accepted by the regex) — a pure JSON-Schema regex
+  cannot do mod-4/100/400 arithmetic, so exact leap-year validity is a
+  recompute-time check (the E-2-4 dry-run harness parses with `datetime`). This
+  boundary is pinned by `test_timestamp_regex_boundary_is_documented`.
 
 ## Conditional invariants (`allOf`)
 
@@ -58,7 +64,7 @@ invariants.
 
 ## Verification
 
-`tests/test_live_adapter_envelope.py` — 35 machine-enforced invariants: schema
+`tests/test_live_adapter_envelope.py` — 36 machine-enforced invariants: schema
 health, guard-flag pins, strict closure enforced at **every** object path
 (parametrized), required-field enforcement (parametrized one-field-removed),
 const/enum pins, conditional `allOf` coupling, decimal/sha pattern enforcement,

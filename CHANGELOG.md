@@ -30,7 +30,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   timestamp regex (fail-closed; `format` alone is not enforced by jsonschema),
   and conditional invariants (mode↔status coupling; CLOSED breaker ⇒ 0 failures).
   Infrastructure-only: `live_adapter_execution` is `const false` and no real
-  network call is represented. 35 machine-enforced invariants
+  network call is represented. 36 machine-enforced invariants
   (`tests/test_live_adapter_envelope.py`). No guard-flag flip; the `live` mode
   and any flip live in a separate v2 schema gated by the Epic 9 supersession PR.
 - **E-4-2b multi-tenant matrix final seal** (V5 Epic 4): promoted the
