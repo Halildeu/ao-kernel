@@ -111,13 +111,58 @@
           },
           "future_prerequisite_under_pr_xfinal": { "type": "string", "minLength": 1 }
         }
-      }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": { "control": { "const": "ao_release_gate_required_check_source_pin" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "control": { "const": "empty_bypass_actors" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "control": { "const": "autonomous_merge_trail_low_risk" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "control": { "const": "cross_provider_review_guarded_changes" } },
+            "required": ["control"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
     },
     "residual_missing_evidence": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 2,
+      "maxItems": 2,
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 }
+      "items": { "type": "string", "minLength": 1 },
+      "allOf": [
+        {
+          "contains": { "type": "string", "pattern": "(?i)ruleset source-pin" },
+          "minContains": 1
+        },
+        {
+          "contains": { "type": "string", "pattern": "(?i)uniqueness" },
+          "minContains": 1
+        }
+      ]
     },
     "issue_refs": {
       "type": "array",

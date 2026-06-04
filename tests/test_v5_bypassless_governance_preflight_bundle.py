@@ -129,6 +129,51 @@ def test_governance_controls_match_expected_active_set() -> None:
         assert item["future_prerequisite_under_pr_xfinal"].strip()
 
 
+def test_schema_pins_exactly_four_canonical_controls() -> None:
+    # Duplicate one control (drop another) -> must fail (each control exactly once).
+    payload = _fixture()
+    payload["governance_controls"][0]["control"] = "empty_bypass_actors"
+    assert not _valid(payload), "duplicate control must fail closed"
+
+    # Omit a control (3 instead of 4) -> must fail (minItems=4 + each required).
+    payload = _fixture()
+    payload["governance_controls"] = payload["governance_controls"][:3]
+    assert not _valid(payload), "missing a canonical control must fail closed"
+
+
+def test_schema_pins_exact_required_checks() -> None:
+    # Duplicate a required check -> uniqueItems + maxItems=2 fail.
+    payload = _fixture()
+    payload["current_boundary"]["required_checks"] = [
+        "ao-release-gate-technical",
+        "ao-release-gate-technical",
+    ]
+    assert not _valid(payload), "duplicate required check must fail closed"
+
+    # Drop one required check -> minItems=2 fail.
+    payload = _fixture()
+    payload["current_boundary"]["required_checks"] = ["ao-release-gate-review"]
+    assert not _valid(payload), "missing a required check must fail closed"
+
+
+def test_schema_pins_both_residual_pr_xfinal_concepts() -> None:
+    # Remove the ruleset source-pin residual -> source-pin contains fails.
+    payload = _fixture()
+    payload["residual_missing_evidence"] = [
+        "final required-check name uniqueness and source-collision evidence bound to PR-Xfinal",
+        "some unrelated placeholder",
+    ]
+    assert not _valid(payload), "missing ruleset source-pin residual must fail closed"
+
+    # Remove the uniqueness residual -> uniqueness contains fails.
+    payload = _fixture()
+    payload["residual_missing_evidence"] = [
+        "PR-Xfinal pre-merge and post-merge ruleset source-pin SHA-256 evidence",
+        "some unrelated placeholder",
+    ]
+    assert not _valid(payload), "missing required-check uniqueness residual must fail closed"
+
+
 def test_governance_documents_exist_and_carry_anchor_language() -> None:
     payload = _fixture()
     docs = payload["governance_documents"]
