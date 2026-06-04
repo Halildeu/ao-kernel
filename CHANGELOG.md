@@ -9,6 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **E-2-6 advisory runner failure stderr hardening**: replaced handled failure
+  stderr with a fixed boundary message and added a subprocess regression test
+  proving stderr does not leak exception text, artifact paths, envelope
+  digests, protected secret environment variable names, or summary payloads.
+  Guard flags remain false; no workflow permission/trigger change, provider
+  HTTP call, support widening, production claim, or live adapter execution is
+  introduced.
 - **V5 E-1-7 CI shadow-skip status sync**: recorded PR #937 (`c7e5709`)
   as the permanent fix for the required-check shadow-skip issue originally
   tracked by PR #764, keeping `.github/workflows/test.yml` high-risk behavior

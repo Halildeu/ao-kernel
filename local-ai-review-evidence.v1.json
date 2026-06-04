@@ -15,6 +15,7 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/epic-2-6-stderr-hardening",
     "changed_files": [
+      "CHANGELOG.md",
       "local-ai-review-evidence.v1.json",
       "scripts/live_adapter_evidence_workflow_runner.py",
       "tests/test_live_adapter_evidence_workflow.py"
@@ -46,6 +47,7 @@
     "The fixed stderr message contains no runtime value, artifact path, envelope digest, protected secret environment variable name, exception message, or summary payload.",
     "The new subprocess regression test triggers a file-as-output-dir failure and asserts stderr exactly equals the fixed message.",
     "The regression test asserts stderr does not contain tmp_path, output_dir_file, envelope_digest, or any FORBIDDEN_SECRET_ENV_NAMES entry.",
+    "CHANGELOG.md records this follow-up as E-2-6 advisory runner failure stderr hardening under the existing no-support-widening and no-live-execution boundary.",
     "Success stdout hardening from E-2-6 remains unchanged and the workflow trigger, permission, secret-context, Teams, PR comment, provider HTTP, and artifact-only boundaries are not modified in this follow-up.",
     "Guard flags remain false. No support widening, production platform claim, live provider HTTP call, or live adapter execution is introduced."
   ],
