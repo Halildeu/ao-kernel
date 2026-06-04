@@ -9,6 +9,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Test-quality gate ADV-001 false-positive reduction** (#954): the AST-based
+  gate in `tests/conftest.py` now counts calls to `assert`/`_assert`-named
+  helpers (e.g. a shared `_assert_rejected(...)` wrapper) as assertion-bearing,
+  clearing ADV-001 advisories for tests that verify through a helper rather than
+  an inline `assert`. High-precision: assertion-free tests, `assert True`
+  (BLK-002), and bare validate-by-raise calls (`check_schema`/`validate_*`)
+  still fire ADV-001; six gate self-tests pin the positive and precision-guard
+  behavior. ADV-001 advisory count dropped 166 → 63. Cross-AI review: Codex
+  (OpenAI) AGREE (thread 019e9449). Test-infrastructure only; guard flags
+  remain false and no workflow, support widening, production claim, or live
+  adapter execution is introduced.
 - **E-2-6 advisory runner failure stderr hardening**: replaced handled failure
   stderr with a fixed boundary message and added a subprocess regression test
   proving stderr does not leak exception text, artifact paths, envelope

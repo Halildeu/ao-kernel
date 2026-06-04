@@ -15,6 +15,7 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/feat/adv001-recognize-assert-helpers-cc-0604",
     "changed_files": [
+      "CHANGELOG.md",
       "local-ai-review-evidence.v1.json",
       "tests/conftest.py",
       "tests/test_conftest_quality_gate.py"
@@ -51,6 +52,10 @@
     },
     {
       "name": "cross_provider_review",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_enforcement",
       "status": "pass"
     }
   ],
