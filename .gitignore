@@ -6,6 +6,11 @@ __pycache__/
 # Claude Code runtime artifacts
 .claude/scheduled_tasks.lock
 
+# Opencode CLI local plugin install (not project source; node_modules + package.json + lockfile).
+# The directory's own sub-.gitignore already covers package.json; this guards the directory
+# itself so a future `.opencode/<anything>.py`-style file can't accidentally become tracked.
+.opencode/
+
 # C extensions
 *.so
 
