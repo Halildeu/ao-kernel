@@ -37,6 +37,14 @@ database or a Secret across tenants.
 
 ## Step 3 — per-tenant values overlay
 
+> **Chart-version prerequisite (Codex E-8-2 review absorb):** the overlay below
+> uses the `postgresql` (E-4-3), `monitoring` (E-4-4), `networkPolicy` +
+> `podSecurityStandards` (E-4-5) value keys. These exist only in a chart built
+> from a tree where **E-4-3, E-4-4 and E-4-5 have landed**. On an older chart,
+> drop the keys whose slice has not merged — `helm` will reject unknown keys
+> (`values.schema.json` is closed). Verify with `helm lint deploy/helm/ao-kernel`
+> before applying.
+
 Create `values-tenant-$T.yaml` (operator-owned; NOT committed with secrets):
 
 ```yaml

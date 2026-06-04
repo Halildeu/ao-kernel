@@ -64,7 +64,8 @@
     "E-8-2 (#890) multi-tenant production config recipe. Namespace-per-tenant isolation delegating to Epic 4 (E-4-2a/E-4-3/E-4-4/E-4-5). Per-tenant values overlay + ResourceQuota + isolation checklist.",
     "8 invariants pass. Delegating doc \u2014 no new chart feature. secretKeyRef-only overlay (no inline password). Referenced delegate docs verified present.",
     "Low-risk lane: docs/ + tests/ + plan + CHANGELOG. NO .github/workflows/, governance, runtime mutation.",
-    "3 guard flags const false; namespace-level isolation (not in-process); no production claim."
+    "3 guard flags const false; namespace-level isolation (not in-process); no production claim.",
+    "Codex E-8-2 review absorb (thread 019e91c6): added chart-version prerequisite note \u2014 the per-tenant overlay uses E-4-3/E-4-4/E-4-5 value keys (postgresql/monitoring/networkPolicy/podSecurityStandards) that exist only when those slices have landed; operator drops keys whose slice has not merged + verifies with helm lint (closed schema rejects unknown keys)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
