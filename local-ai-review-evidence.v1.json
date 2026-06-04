@@ -1,7 +1,51 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/feat/gate-c-dim9-bypassless-governance-preflight-cc-0605",
+    "changed_files": [
+      ".claude/plans/V5-BYPASSLESS-GOVERNANCE-PREFLIGHT-BUNDLE.md",
+      "CHANGELOG.md",
+      "ao_kernel/defaults/schemas/v5-bypassless-governance-preflight-bundle.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/fixtures/epic9/v5-bypassless-governance-preflight.current.json",
+      "tests/test_v5_bypassless_governance_preflight_bundle.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "pytest_bypassless_governance_preflight_bundle",
+      "status": "pass"
+    },
+    {
+      "name": "pytest_epic9_matrix_invariants_unbroken",
+      "status": "pass"
+    },
+    {
+      "name": "json_schema_strict_valid",
+      "status": "pass"
+    },
+    {
+      "name": "ruff",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_enforcement",
       "status": "pass"
     },
     {
@@ -9,51 +53,21 @@
       "status": "pass"
     },
     {
-      "name": "guard_invariants",
-      "status": "pass"
-    },
-    {
-      "name": "scope_alignment",
+      "name": "cross_provider_review",
       "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic reviewer verdict AGREE: V5 observability preflight bundle is aligned with the current-state evidence boundary.",
-    "OpenAI reviewer also returned AGREE and found no blocking fixes.",
-    "Schema and tests pin guard flags false, final release binding false, alert/escalation evidence absent, and CI-blocking performance enforcement absent.",
-    "Matrix status remains partial and PR-Xfinal remains blocked by final claim-bound observability smoke and alert/escalation evidence.",
-    "No forbidden workflow, ruleset, runtime, live adapter, tag, publish, support widening, or production claim surface is changed."
+    "Codex (OpenAI) reviewed the V5 Gate C dimension 9 (bypassless_release_governance) preflight bundle and returned VERDICT AGREE after a 2-iteration REVISE absorb (thread 019e94b8).",
+    "Absorb: governance_controls pins exactly the 4 canonical controls via allOf contains + minContains/maxContains (dim#1 pattern); residual_missing_evidence pins exactly 2 slots with source-pin and uniqueness concept patterns; added negative tests for duplicate/omit control, duplicate/missing required check, and missing either residual concept.",
+    "Codex confirmed non-colliding (no edit to v5-production-readiness-matrix.current.json), matrix stays matrix_complete=false with dim#9 not_ready|partial, no hidden complete/flip path, and the current_state active claim is defensible from repo-local evidence.",
+    "Boundary: preflight current-state evidence only; does not open PR-Xfinal, flip guard flags, or advance the matrix dimension to complete; final ruleset source-pin and required-check uniqueness evidence remain PR-Xfinal-bound.",
+    "Rebased cleanly onto origin/main (after parallel #958/#959 preflight bundles landed); only the four new artifacts plus CHANGELOG and this evidence file change.",
+    "Local validation: 10 invariant tests passed; schema valid (Draft 2020-12, strict); fixture validates; ruff clean; changelog discipline pass.",
+    "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
   ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "claude-sonnet-4-6-anthropic-reviewer",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-      ".claude/plans/V5-OBSERVABILITY-PRODUCTION-TUNABLES-PREFLIGHT-BUNDLE.md",
-      ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
-      "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/v5-observability-production-tunables-preflight-bundle.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "tests/fixtures/epic9/v5-observability-production-tunables-preflight.current.json",
-      "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/test_v5_observability_production_tunables_preflight_bundle.py"
-    ],
-    "head_ref": "refs/heads/codex/v5-observability-preflight-bundle"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "E-9-1"
+  "production_platform_claim": false
 }
