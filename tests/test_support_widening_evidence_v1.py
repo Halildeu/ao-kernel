@@ -93,16 +93,17 @@ def test_base_fixtures_validate() -> None:
 # ---- 2. recursive strict closure (AST walk) (1) -------------------------
 
 
-def _object_nodes(node: Any) -> "list[dict[str, Any]]":
-    out: list[dict[str, Any]] = []
+def _object_nodes(node: Any, path: str = "") -> "list[tuple[str, dict[str, Any]]]":
+    """Every (json-pointer path, node) where node is a `type:object` subschema."""
+    out: list[tuple[str, dict[str, Any]]] = []
     if isinstance(node, dict):
         if node.get("type") == "object":
-            out.append(node)
-        for value in node.values():
-            out.extend(_object_nodes(value))
+            out.append((path, node))
+        for key, value in node.items():
+            out.extend(_object_nodes(value, f"{path}/{key}"))
     elif isinstance(node, list):
-        for item in node:
-            out.extend(_object_nodes(item))
+        for i, item in enumerate(node):
+            out.extend(_object_nodes(item, f"{path}/{i}"))
     return out
 
 
@@ -115,35 +116,42 @@ def test_recursive_strict_closure_at_every_shape_defining_node() -> None:
     closed shape is delegated to a per-class `$defs` entry via the root `allOf`
     (a base `additionalProperties:false` there would reject the allOf-supplied keys —
     the JSON-Schema sibling-applicator trap). Their effective closure is proven by
-    `test_wrong_class_shape_rejected`. This test asserts every shape-DEFINING node is
-    closed, and that the bare nodes are exactly the two known delegated containers."""
+    `test_wrong_class_shape_rejected`. This asserts every shape-DEFINING node is
+    closed AND the bare nodes are EXACTLY the two known delegated containers (an
+    exact-path set, so a future displaced/added bare node fails the test)."""
     schema = _schema()
     nodes = _object_nodes(schema)
     assert nodes, "expected multiple object nodes"
-    bare = 0
-    for node in nodes:
+    bare_paths: set[str] = set()
+    for node_path, node in nodes:
         if "properties" in node:
-            assert node.get("additionalProperties") is False, f"shape node missing additionalProperties:false: {node!r}"
+            assert node.get("additionalProperties") is False, (
+                f"shape node {node_path} missing additionalProperties:false"
+            )
             assert node.get("unevaluatedProperties") is False, (
-                f"shape node missing unevaluatedProperties:false: {node!r}"
+                f"shape node {node_path} missing unevaluatedProperties:false"
             )
         else:
-            bare += 1
-    # exactly two delegated containers: evidence_dimensions + recompute_inputs.raw_dimensions
-    assert bare == 2, f"expected exactly 2 bare delegated object nodes, found {bare}"
+            bare_paths.add(node_path)
+    assert bare_paths == {
+        "/properties/evidence_dimensions",
+        "/properties/recompute_inputs/properties/raw_dimensions",
+    }, f"bare delegated object nodes drifted: {sorted(bare_paths)}"
 
 
 # ---- 3. no remote $ref (1) ----------------------------------------------
 
 
-def test_no_remote_ref() -> None:
-    """BLK-schema-no-remote-ref: no $ref may be an http(s) URL."""
+def test_only_local_defs_refs() -> None:
+    """BLK-schema-no-remote-ref: every $ref must be a local `#/...` fragment.
+    Rejects http(s)/file/ftp/urn and bare-file refs (a controllable non-local ref
+    is a validation-time TOCTOU surface)."""
 
     def _walk(node: Any) -> None:
         if isinstance(node, dict):
             ref = node.get("$ref")
             if isinstance(ref, str):
-                assert not ref.startswith(("http://", "https://")), f"remote $ref forbidden: {ref}"
+                assert ref.startswith("#/"), f"non-local $ref forbidden (local #/ only): {ref}"
             for value in node.values():
                 _walk(value)
         elif isinstance(node, list):

@@ -11,7 +11,7 @@
 - `ao_kernel/defaults/schemas/support-widening-evidence.schema.v1.json`
 - `ao_kernel/_internal/support_widening/evidence.py` (`parse_v1`, `recompute_v1`, `verify_v1`)
 - CLI `ao-kernel support-widening evidence validate <path> [--recompute]` (read-only)
-- `tests/test_support_widening_evidence_v1.py` (19 invariants)
+- `tests/test_support_widening_evidence_v1.py` (17 test functions / 20 collected pytest cases)
 
 ## Key design decisions
 

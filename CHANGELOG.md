@@ -32,7 +32,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `ao_kernel/_internal/support_widening/evidence.py` (`parse_v1` with runtime
   guard-pin re-assert, `recompute_v1` recompute-not-trust, `verify_v1` on-disk
   re-hash) + read-only CLI `ao-kernel support-widening evidence validate <path>
-  [--recompute]`. 19 machine-enforced invariants. Infrastructure-only:
+  [--recompute]`. 17 test functions / 20 collected pytest cases (machine-enforced
+  invariants). Infrastructure-only:
   `support_widening` / `production_platform_claim` / `live_adapter_execution`
   all `const false` at schema and re-asserted at runtime; no guard flip (a true
   value requires the separate v2 supersession schema, Epic 9).

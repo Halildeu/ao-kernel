@@ -489,7 +489,9 @@ Per CLAUDE.md test-quality gate (conftest AST-based BLK rules): assertions are c
 
 ### Recursive closure (per iter-2 absorb F2 — required at EVERY nested node)
 
-**Every** object node in the schema — root, `evidence_dimensions`, every per-class shape under `allOf`/`if/then`, every `$defs` entry, every nested object inside `recompute_inputs`, every supersession bind-field group — MUST carry:
+**Every shape-defining** object node in the schema — root, every per-class shape under `allOf`/`if/then` (in v1 these live in `$defs`), every `$defs` entry, every nested object inside `recompute_inputs`, every supersession bind-field group — MUST carry:
+
+> **Implementation reconciliation (E-3-1):** "shape-defining" = a node that declares `properties`. The discriminated containers `evidence_dimensions` and `recompute_inputs.raw_dimensions` are intentionally bare `{type: object}` at their base: a base `additionalProperties: false` there would reject the keys supplied by the root `allOf` `$ref` (the JSON-Schema sibling-applicator trap). Their closed shape is delegated to a per-`surface_class` `$defs` entry (each fully closed); effective closure is proven by `test_wrong_class_shape_rejected`, and `test_recursive_strict_closure_at_every_shape_defining_node` asserts (a) every node declaring `properties` is closed and (b) the bare nodes are EXACTLY those two delegated containers (exact-path set).
 
 - `type: object`
 - `additionalProperties: false`
@@ -524,7 +526,7 @@ register_authority      const "evidence_record_only"
 github_write_authorized const false
 simulated_only          const true
 live_call_made          const false
-evidence_dimensions     object (required, additionalProperties: false; per-class shape via allOf below)
+evidence_dimensions     object (required; bare {type:object} base — per-class closed shape via $defs `$ref` from the root allOf below; a base additionalProperties:false would reject the allOf-supplied keys)
 reviewer_providers      array minItems=0 (Epic 3 evidence is INFRASTRUCTURE; per-slice review trail recorded separately)
 recompute_inputs        object (required) — raw inputs from which any consensus/aggregation field MUST be re-derivable
 ```
