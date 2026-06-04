@@ -54,9 +54,18 @@
     }
   ],
   "residual_missing_evidence": [
-    "live cost evidence bound to the protected operator window (replacing the dry-run harness output)",
-    "soft and hard breach plus rollback evidence captured from a protected run",
-    "fresh pricing-source snapshot (SHA-256 pinned, not older than 30 days) bound to PR-Xfinal"
+    {
+      "concept": "live_cost",
+      "description": "live cost evidence bound to the protected operator window (replacing the dry-run harness output)"
+    },
+    {
+      "concept": "breach_rollback",
+      "description": "soft and hard breach plus rollback evidence captured from a protected run"
+    },
+    {
+      "concept": "pricing_snapshot",
+      "description": "fresh pricing-source snapshot (SHA-256 pinned, not older than 30 days) bound to PR-Xfinal"
+    }
   ],
   "issue_refs": [
     "#775",

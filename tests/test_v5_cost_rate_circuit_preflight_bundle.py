@@ -119,14 +119,26 @@ def test_schema_pins_exactly_five_canonical_controls() -> None:
     assert not _valid(payload), "missing a canonical control must fail closed"
 
 
-def test_schema_pins_three_residual_pr_xfinal_concepts() -> None:
-    for drop_pattern in ("live cost", "breach", "pricing"):
+def test_schema_pins_three_distinct_residual_concepts() -> None:
+    # Each of the three concepts must be present exactly once as a distinct object.
+    for missing in ("live_cost", "breach_rollback", "pricing_snapshot"):
         payload = _fixture()
-        payload["residual_missing_evidence"] = [
-            item for item in payload["residual_missing_evidence"] if drop_pattern not in item.lower()
-        ] + ["unrelated placeholder one", "unrelated placeholder two"]
-        payload["residual_missing_evidence"] = payload["residual_missing_evidence"][:3]
-        assert not _valid(payload), f"missing '{drop_pattern}' residual must fail closed"
+        kept = [item for item in payload["residual_missing_evidence"] if item["concept"] != missing]
+        # Keep length 3 by duplicating a *different* concept, so `missing` is genuinely absent.
+        payload["residual_missing_evidence"] = kept + [
+            {"concept": kept[0]["concept"], "description": "duplicate filler"}
+        ]
+        assert not _valid(payload), f"missing '{missing}' residual concept must fail closed"
+
+    # Concept-collapse attack (object form makes this impossible): a duplicate
+    # concept with two fillers cannot satisfy three distinct concepts.
+    payload = _fixture()
+    payload["residual_missing_evidence"] = [
+        {"concept": "live_cost", "description": "all three jammed in one"},
+        {"concept": "live_cost", "description": "filler one"},
+        {"concept": "live_cost", "description": "filler two"},
+    ]
+    assert not _valid(payload), "collapsing concepts into one must fail closed"
 
 
 def test_cost_controls_match_expected_active_set() -> None:

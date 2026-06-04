@@ -158,11 +158,44 @@
       "minItems": 3,
       "maxItems": 3,
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": ["concept", "description"],
+        "properties": {
+          "concept": {
+            "type": "string",
+            "enum": ["live_cost", "breach_rollback", "pricing_snapshot"]
+          },
+          "description": { "type": "string", "minLength": 1 }
+        }
+      },
       "allOf": [
-        { "contains": { "type": "string", "pattern": "(?i)live cost" }, "minContains": 1 },
-        { "contains": { "type": "string", "pattern": "(?i)breach" }, "minContains": 1 },
-        { "contains": { "type": "string", "pattern": "(?i)pricing" }, "minContains": 1 }
+        {
+          "contains": {
+            "properties": { "concept": { "const": "live_cost" } },
+            "required": ["concept"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "concept": { "const": "breach_rollback" } },
+            "required": ["concept"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": { "concept": { "const": "pricing_snapshot" } },
+            "required": ["concept"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
       ]
     },
     "issue_refs": {
