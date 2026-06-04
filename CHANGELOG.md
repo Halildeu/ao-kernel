@@ -32,6 +32,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-2-7 pre-supersession checklist artifact** (V5 Epic 2, #852):
+  added `EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md` and
+  `pre_supersession_checklist.schema.v1.json` as the infrastructure-only
+  18-condition prerequisite contract for a future Epic 9 PR-Xfinal. The schema
+  pins `guard_flip_authority="epic_9_only"`, requires all 18 checklist items in
+  order, rejects extra root/item fields, keeps
+  `support_widening` / `production_platform_claim` / `live_adapter_execution`
+  / `live_adapter_execution_current_state` const false, and intentionally does
+  not carry an Epic 9 proposal-state field. No live adapter execution, support
+  widening, production platform claim, workflow mutation, or guard flip is
+  introduced.
 - **E-3-1 support widening evidence schema + validator** (V5 Epic 3, #853):
   added `support-widening-evidence.schema.v1.json` (per-`surface_class` evidence
   shapes via `$defs`+`allOf`; recursive strict closure on every shape-defining

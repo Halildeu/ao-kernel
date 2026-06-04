@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-2-6-STDERR-HARDENING",
+  "work_package": "E-2-7",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,12 +13,13 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-2-6-stderr-hardening",
+    "head_ref": "refs/heads/codex/epic-2-7-pre-supersession-checklist",
     "changed_files": [
+      ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
       "CHANGELOG.md",
+      "ao_kernel/defaults/schemas/pre_supersession_checklist.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/live_adapter_evidence_workflow_runner.py",
-      "tests/test_live_adapter_evidence_workflow.py"
+      "tests/test_pre_supersession_checklist_schema.py"
     ]
   },
   "checks_considered": [
@@ -29,27 +30,33 @@
     { "name": "json_validity", "status": "pass" },
     { "name": "gpp_next_guard_flags", "status": "pass" },
     { "name": "diff_whitespace", "status": "pass" },
-    { "name": "workflow_trigger_guard", "status": "pass" },
-    { "name": "workflow_permissions_guard", "status": "pass" },
-    { "name": "workflow_secret_context_guard", "status": "pass" },
-    { "name": "artifact_only_guard", "status": "pass" },
-    { "name": "dry_run_harness_delegation", "status": "pass" },
-    { "name": "forbidden_secret_env_fail_closed", "status": "pass" },
-    { "name": "guard_flags_false_in_artifacts", "status": "pass" },
-    { "name": "codeql_stdout_stderr_secret_logging_hardened", "status": "pass" },
-    { "name": "legacy_cost_ceiling_workflow_guard_narrowed", "status": "pass" },
+    { "name": "changelog", "status": "pass" },
+    { "name": "schema_doc_alignment", "status": "pass" },
+    { "name": "draft_2020_12_schema", "status": "pass" },
+    { "name": "strict_closed_schema", "status": "pass" },
+    { "name": "local_refs_only", "status": "pass" },
+    { "name": "eighteen_condition_order", "status": "pass" },
+    { "name": "guard_flags_const_false", "status": "pass" },
+    { "name": "no_proposed_state_field", "status": "pass" },
+    { "name": "no_workflow_mutation", "status": "pass" },
+    { "name": "no_runtime_mutation", "status": "pass" },
+    { "name": "no_live_adapter_execution", "status": "pass" },
+    { "name": "no_support_widening", "status": "pass" },
+    { "name": "no_production_claim", "status": "pass" },
+    { "name": "claude_review", "status": "pass" },
+    { "name": "mavis_verifier_review", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "OpenAI reviewer Mill returned REVISE after PR #944 because the runner failure stderr could print dynamic exception text, including artifact paths.",
-    "Claude Anthropic cross-provider review returned AGREE for the E-2-6 stderr hardening follow-up after reviewing the runner, test, and evidence diff.",
-    "The runner now prints a fixed FAILURE_STDERR_MESSAGE on handled failure paths and does not interpolate exception text.",
-    "The fixed stderr message contains no runtime value, artifact path, envelope digest, protected secret environment variable name, exception message, or summary payload.",
-    "The new subprocess regression test triggers a file-as-output-dir failure and asserts stderr exactly equals the fixed message.",
-    "The regression test asserts stderr does not contain tmp_path, output_dir_file, envelope_digest, or any FORBIDDEN_SECRET_ENV_NAMES entry.",
-    "CHANGELOG.md records this follow-up as E-2-6 advisory runner failure stderr hardening under the existing no-support-widening and no-live-execution boundary.",
-    "Success stdout hardening from E-2-6 remains unchanged and the workflow trigger, permission, secret-context, Teams, PR comment, provider HTTP, and artifact-only boundaries are not modified in this follow-up.",
-    "Guard flags remain false. No support widening, production platform claim, live provider HTTP call, or live adapter execution is introduced."
+    "Claude Anthropic returned AGREE for E-2-7 after reviewing the checklist doc, schema, tests, and changelog diff.",
+    "Mavis MiniMax verifier session mvs_bf6be63b50b744ec8fa2cd185ba5a194 returned VERDICT AGREE after checking the 18 conditions, doc/schema alignment, local refs, guard flags, proposal-state absence, workflow/runtime absence, and changelog accuracy.",
+    "The schema is Draft 2020-12, uses only local refs, and closes root and checklist item objects against unknown fields.",
+    "The schema pins all 18 required conditions in order and the markdown checklist mirrors the same condition names.",
+    "The schema keeps support_widening, production_platform_claim, live_adapter_execution, and live_adapter_execution_current_state const false.",
+    "The schema intentionally omits live_adapter_execution_proposed_state and proposed_state; Epic 9 owns any future proposal-state schema.",
+    "The tests cover valid payload acceptance, condition order and cardinality, guard flag rejection, authority pins, strict closure, local refs only, proposal-state absence, markdown alignment, and plan alignment.",
+    "The change is infrastructure-only and does not mutate workflows, runtime adapter code, branch protection, release authority, support tier, production claim language, or guard flags.",
+    "A broader test probe exposed an existing test_cli migration failure on origin/main; Mavis confirmed that failure pre-existed and is not negative drift from E-2-7."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
