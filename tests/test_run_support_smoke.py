@@ -139,17 +139,21 @@ def test_killswitch_blocks_forbidden_import_every_path() -> None:
 def test_killswitch_blocks_secret_env_every_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("API_KEY", "dummy-not-real")
     monkeypatch.setenv("SECRET_TOKEN", "dummy")
+    # credential-class keys a "secret-looking" regex MISSES — allowlist-only catches them
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AKIA_TEST")
+    monkeypatch.setenv("OPENAI_ORGANIZATION", "org_test")
     monkeypatch.setenv("PATH", os.environ.get("PATH", "/usr/bin"))
     with live_call_killswitch():
-        # direct + membership read paths must raise
-        with pytest.raises(SupportWideningError):
-            _ = os.environ["API_KEY"]
-        with pytest.raises(SupportWideningError):
-            os.getenv("SECRET_TOKEN")
-        with pytest.raises(SupportWideningError):
-            os.environ.get("API_KEY")
-        with pytest.raises(SupportWideningError):
-            _ = "API_KEY" in os.environ
+        # direct + membership read paths must raise (incl. non-regex credential keys)
+        for key in ("API_KEY", "SECRET_TOKEN", "AWS_ACCESS_KEY_ID", "OPENAI_ORGANIZATION"):
+            with pytest.raises(SupportWideningError):
+                _ = os.environ[key]
+            with pytest.raises(SupportWideningError):
+                os.getenv(key)
+            with pytest.raises(SupportWideningError):
+                os.environ.get(key)
+            with pytest.raises(SupportWideningError):
+                _ = key in os.environ
         # bulk read paths must ALSO fail closed when a secret key is present —
         # including `dict(os.environ)`, which routes through the keys() override.
         for bulk in (

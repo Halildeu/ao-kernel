@@ -19,11 +19,15 @@
    forbidden path to fail closed and restores all originals on exit —
    `socket.socket`, `http.client.HTTPConnection`, `urllib.urlopen`/`OpenerDirector`,
    `requests`/`httpx` send (patched only when importable), `subprocess.*`,
-   `os.system`/`os.popen`, `importlib.import_module(<forbidden>)`, and **secret-env
-   reads** via a sanitized allowlisted `os.environ` view + `os.getenv` guard
-   (direct `os.environ["API_KEY"]` / `get` / `in` / `os.getenv` raise;
-   `copy()`/`keys()`/iteration expose only the allowlist — the spec's preferred
-   "sanitized view" model).
+   `os.system`/`os.popen`, forbidden imports via `import` / `__import__` /
+   `importlib` / `exec("import …")`, and **env reads** under an **allowlist-only**
+   model: `os.environ` / `os.environb` are swapped for sanitized views where every
+   read path — direct (`os.environ["X"]` / `get` / `in`), `os.getenv` / `os.getenvb`,
+   and bulk (`copy`/`keys`/`items`/`values`/`iter`/`dict()`) — raises for any key
+   NOT in the small allowlist (`WORKSPACE_ROOT`, `CI`, `PYTHONPATH`, `PATH`, `HOME`,
+   `TMPDIR`). Allowlist-only (not a "secret-looking" regex) closes the gap for
+   credential-class keys like `AWS_ACCESS_KEY_ID` / `OPENAI_ORGANIZATION` that a
+   regex misses (Codex E-3-2 iter-2 absorb).
 3. **Runtime declaration:** `assert_no_live_capability(stub)` rejects any stub
    advertising `live_capability=True`.
 

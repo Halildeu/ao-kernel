@@ -32,18 +32,15 @@ import contextlib
 import http.client
 import importlib
 import os
-import re
 import socket
 import subprocess
 import urllib.request
 from collections.abc import Iterator
 from typing import Any
 
-# Env keys the harness is allowed to read; everything secret-looking is denied.
+# Env keys the harness is allowed to read; EVERY other key is denied (allowlist-only).
 _ENV_ALLOWLIST = frozenset({"WORKSPACE_ROOT", "CI", "PYTHONPATH", "PATH", "HOME", "TMPDIR"})
 _ENV_ALLOWLIST_B = frozenset(k.encode() for k in _ENV_ALLOWLIST)
-
-_SECRET_KEY = re.compile(r"(?i)(api[_-]?key|secret|token|password|credential|bearer|auth)")
 
 # Modules a stub harness must never import at runtime (any import path).
 _FORBIDDEN_IMPORTS = (
@@ -77,11 +74,14 @@ def _is_forbidden_module(name: str) -> bool:
 
 
 def _secret_str(key: str) -> bool:
-    return key not in _ENV_ALLOWLIST and bool(_SECRET_KEY.search(key))
+    # Allowlist-only (spec preferred model): any key not explicitly allowlisted is
+    # denied. Closes the gap a "secret-looking" regex misses for credential-class
+    # keys like AWS_ACCESS_KEY_ID / OPENAI_ORGANIZATION (Codex E-3-2 absorb).
+    return key not in _ENV_ALLOWLIST
 
 
 def _secret_bytes(key: bytes) -> bool:
-    return key not in _ENV_ALLOWLIST_B and bool(_SECRET_KEY.search(key.decode("latin-1")))
+    return key not in _ENV_ALLOWLIST_B
 
 
 class _SanitizedEnviron(dict):  # type: ignore[type-arg]
