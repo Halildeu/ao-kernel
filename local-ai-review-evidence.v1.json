@@ -22,6 +22,7 @@
       "deploy/helm/ao-kernel/values.schema.json",
       "deploy/helm/ao-kernel/values.yaml",
       "local-ai-review-evidence.v1.json",
+      "tests/test_epic_4_1_helm_chart_skeleton.py",
       "tests/test_epic_4_4_observability_surface.py"
     ]
   },
@@ -67,7 +68,8 @@
     "E-4-4 (#863) observability surface: ServiceMonitor CRD (gated, Prometheus Operator) + optional hardened OTEL sidecar. Both disabled default. Chart does not install Prometheus Operator; Teams primary alert routing (no Slack receiver).",
     "13 invariants pass. OTLP endpoint plain env (no secret); sidecar securityContext hardened (no privilege escalation, readonly rootfs, drop ALL).",
     "Low-risk lane: deploy/helm/ + tests/ + plan + CHANGELOG. NO .github/workflows/, governance, runtime mutation.",
-    "3 guard flags const false; no production claim."
+    "3 guard flags const false; no production claim.",
+    "E-4-1 strict-closure allowlist: monitoring.serviceMonitor.additionalLabels free-form k8s label map added to documented allowlist (test_epic_4_1 _VALUES_SCHEMA_FREEFORM_PATHS)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
