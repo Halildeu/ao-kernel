@@ -32,6 +32,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-3-5 supersession consensus checklist** (V5 Epic 3, #857): added
+  `widening-supersession-checklist.schema.v1.json`,
+  `widening-supersession-checklist.v1.json`, and
+  `tests/test_widening_supersession_checklist.py` as the machine-checkable
+  cross-AI consensus protocol for a future operator-bound Epic 9 support
+  widening supersession PR. The checklist pins guard flags false, requires
+  operator authority, distinct non-implementer reviewers, live evidence class,
+  rich artifact/run/verdict bind fields, raw-verdict transcript cross-binding,
+  stale/replay/denominator/self-review negative cases, and a rollback decision
+  tree. Infrastructure only: no support widening, production platform claim,
+  live adapter execution, workflow mutation, or ruleset mutation.
 - **E-3-4 support surface inventory document** (V5 Epic 3, #856): added
   `docs/SUPPORT-SURFACE-INVENTORY.md`, a narrative companion to
   `SUPPORT-BOUNDARY.md` that restates today's narrow-stable boundary (pointer, not
