@@ -1,29 +1,28 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-830-multi-tenant-boundary",
+  "work_package": "AO-MA-824-pgvector-backend",
   "implementer": {
-    "agent": "codex-gpt-5-e4-2a-rebase-scope-fix",
+    "agent": "codex-gpt-5-e7-5-pgvector-rebase-fix",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-code-reviewer-pr830-e42a",
+    "agent": "claude-code-reviewer-pr824-e75-final",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-4-2a-multi-tenant-boundary",
+    "head_ref": "refs/heads/codex/epic-7-5-pgvector-backend",
     "changed_files": [
-      ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md",
-      ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.v1.json",
-      ".claude/plans/tenant_isolation_matrix.v1.json",
+      ".claude/plans/EPIC-7-5-PGVECTOR-BACKEND.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/e-4-2a-multi-tenant-boundary-contract.schema.v1.json",
-      "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
-      "docs/MULTI-TENANT-DEPLOYMENT.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_epic_4_2a_multi_tenant_boundary.py"
+      "ao_kernel/context/semantic_backends/__init__.py",
+      "ao_kernel/context/semantic_backends/base.py",
+      "ao_kernel/context/semantic_backends/in_memory.py",
+      "ao_kernel/context/semantic_backends/pgvector.py",
+      "tests/test_semantic_backends.py",
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
@@ -32,83 +31,41 @@
       "status": "pass"
     },
     {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "lazy_import_discipline",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flag_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "operator_dsn_env_boundary",
+      "status": "pass"
+    },
+    {
+      "name": "table_identifier_validation",
+      "status": "pass"
+    },
+    {
+      "name": "workflow_mutation_guard",
+      "status": "pass"
+    },
+    {
       "name": "changelog_discipline",
       "status": "pass"
     },
     {
-      "name": "pytest_import_and_skip_guard",
-      "status": "pass"
-    },
-    {
-      "name": "skip_guard_scope_correctness",
-      "status": "pass"
-    },
-    {
-      "name": "write_set_exact_match_vs_git_diff",
-      "status": "pass"
-    },
-    {
-      "name": "no_workflow_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_pyproject_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_module_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_codeowners_ruleset_webhook_change",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_const_false",
-      "status": "pass"
-    },
-    {
-      "name": "runtime_enforced_false_schema_and_data",
-      "status": "pass"
-    },
-    {
-      "name": "live_validated_false_schema_and_data",
-      "status": "pass"
-    },
-    {
-      "name": "advisory_dil_no_overclaim",
-      "status": "pass"
-    },
-    {
-      "name": "placeholder_status_all_entries",
-      "status": "pass"
-    },
-    {
-      "name": "evidence_schema_strict_closure",
-      "status": "pass"
-    },
-    {
-      "name": "matrix_schema_strict_closure",
-      "status": "pass"
-    },
-    {
-      "name": "cross_ai_provider_distinct",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
+      "name": "scope_containment",
       "status": "pass"
     }
   ],
   "findings": [
-    "All 9 changed files are docs/schemas/tests/changelog/local evidence only; zero workflow/runtime/pyproject/CODEOWNERS/ruleset/webhook/public SDK/secret changes.",
-    "pytest.skip guard at test_write_set_exact_match_git_diff:320-321 correctly scopes write-set invariant to diffs containing the E-4-2a evidence artifact, preventing false failures on unrelated future PRs.",
-    "Guard flags support_widening, production_platform_claim, live_adapter_execution are schema-pinned const false in both evidence and matrix schemas; evidence JSON records all three as false.",
-    "Matrix advisory_only=true, runtime_enforced_global=false, live_validated_global=false; all 7 dimension entries runtime_enforced=false, live_validated=false, entry_status=placeholder.",
-    "Deployment doc passes overclaim grep (zero hits for 'isolation achieved', 'isolation enforced', 'fully isolated', 'runtime enforces'); advisory dil discipline maintained throughout.",
-    "Both schemas use Draft 2020-12 strict (additionalProperties:false + unevaluatedProperties:false); matrix schema uses allOf/contains/minContains/maxContains for exact-once-per-dimension enforcement.",
-    "Cross-AI provider separation: implementer=openai, reviewer=anthropic - provider-level distinct per HARD RULE.",
-    "No secret material detected in any changed file."
+    "Advisory: search() SQL binds query_embedding 3x via separate %s placeholders; suboptimal but functionally correct and safe.",
+    "No blocking findings. All 7 review criteria pass."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
