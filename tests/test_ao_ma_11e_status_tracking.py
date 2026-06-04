@@ -295,7 +295,8 @@ def test_drift_detects_in_review_without_consensus() -> None:
 
 def test_drift_detects_phase_done_with_unmerged_slice() -> None:
     payload = _load_status()
-    payload["phases"][0]["status"] = "done"  # 11A has an unmerged slice (11A-2)
+    phase = next(p for p in payload["phases"] if p["phase_id"] == "AO-MA-11E")
+    phase["status"] = "done"  # 11E still has unmerged slice AO-MA-11E-2.
     drift = ao_ma_next.check_drift(payload)
     assert any("done but slices not merged" in d for d in drift)
 
@@ -468,6 +469,35 @@ def test_load_status_schema_invalid(tmp_path: Path) -> None:
 def test_next_action_returns_first() -> None:
     payload = _load_status()
     assert ao_ma_next.next_action(payload) == payload["next_allowed_actions"][0]
+
+
+def test_ao_ma_11a_2_status_is_bound_to_environment_wiring_evidence() -> None:
+    payload = _load_status()
+    target = next(s for s in payload["slices"] if s["slice_id"] == "AO-MA-11A-2")
+
+    assert target["status"] == "merged"
+    assert target["risk_class"] == "high"
+    assert target["pr_refs"] == [792]
+    assert target["consensus_ref"]["state"] == "agreed"
+    assert target["approval_ref"]["state"] == "approved"
+    assert target["approval_ref"]["decision"] == "approved"
+    assert "prevent_self_review=true" in target["approval_ref"]["operator_decision_ref"]
+    assert "can_admins_bypass=false" in target["approval_ref"]["operator_decision_ref"]
+
+    evidence = target["evidence_refs"]
+    assert evidence == [
+        {
+            "kind": "github_environment_wiring",
+            "path": ".claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json",
+            "required_for_closeout": True,
+            "sha256": "sha256:eca714a017edf9809b508ccfa974cc5bd9a9fd598c9e05bcc28677871a955172",
+        }
+    ]
+    assert target["anchor"]["ao_authority_artifact"] == evidence[0]["path"]
+    assert target["anchor"]["artifact_sha256"] == evidence[0]["sha256"]
+    assert target["anchor"]["plan_digest"] == (
+        "sha256:340d8d71b64c357e8d36c8f211faaa7741157d10b428524d818cb717bcbd28dc"
+    )
 
 
 def test_main_text_exit_zero_on_clean(capsys: pytest.CaptureFixture[str]) -> None:
