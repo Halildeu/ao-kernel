@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-3-2",
+  "work_package": "E-3-4",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,45 +13,62 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic3-e2-smoke-harness",
+    "head_ref": "refs/heads/codex/epic3-e4-surface-inventory",
     "changed_files": [
-      ".claude/plans/EPIC-3-E-3-2-SMOKE-HARNESS.md",
+      ".claude/plans/EPIC-3-E-3-4-SURFACE-INVENTORY.md",
       "CHANGELOG.md",
-      "ao_kernel/_internal/support_widening/harnesses/__init__.py",
-      "ao_kernel/_internal/support_widening/harnesses/killswitch.py",
-      "ao_kernel/_internal/support_widening/harnesses/runner.py",
+      "docs/SUPPORT-SURFACE-INVENTORY.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/run_support_smoke.py",
-      "tests/test_run_support_smoke.py"
+      "tests/test_support_surface_inventory_doc.py"
     ]
   },
   "checks_considered": [
-    { "name": "tests", "status": "pass" },
-    { "name": "secret_scan", "status": "pass" },
-    { "name": "ruff", "status": "pass" },
-    { "name": "mypy", "status": "pass" },
-    { "name": "direct_cli_smoke", "status": "pass" },
-    { "name": "json_validity", "status": "pass" },
-    { "name": "diff_whitespace", "status": "pass" },
-    { "name": "gpp_next_guard_flags", "status": "pass" },
-    { "name": "claude_review", "status": "pass" },
-    { "name": "cross_provider_review", "status": "pass" },
-    { "name": "no_guard_flag_flip", "status": "pass" },
-    { "name": "no_workflow_or_ruleset_mutation", "status": "pass" },
-    { "name": "no_dot_ao_mutation", "status": "pass" },
-    { "name": "runtime_kill_switch", "status": "pass" },
-    { "name": "direct_script_repo_root_resolution", "status": "pass" }
+    {
+      "name": "pytest_support_surface_inventory_doc",
+      "status": "pass"
+    },
+    {
+      "name": "diff_whitespace",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_next_guard_flags",
+      "status": "pass"
+    },
+    {
+      "name": "no_support_boundary_or_public_beta_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_or_ruleset_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "expanded_forbidden_claim_language_guard",
+      "status": "pass"
+    },
+    {
+      "name": "verbatim_no_widening_disclaimer",
+      "status": "pass"
+    },
+    {
+      "name": "claude_review",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_review",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "Claude Anthropic returned VERDICT AGREE for E-3-2 after reviewing the current diff against origin/main.",
-    "Claude confirmed the change is infrastructure-only: no support_widening flip, no production_platform_claim, no live_adapter_execution, no workflow or ruleset mutation, and no .ao mutation path.",
-    "Claude confirmed the harness pins support_widening, production_platform_claim, and live_adapter_execution false in every emitted support_widening_evidence.v1 payload.",
-    "Claude confirmed scripts/run_support_smoke.py resolves the repository root itself, so direct CLI execution does not rely on PYTHONPATH or an editable install pointing at the right worktree.",
-    "Claude confirmed the runtime kill-switch guards socket, http client, urllib, requests/httpx when importable, subprocess, shell, dynamic import, and secret environment access paths.",
-    "The kill-switch uses an allowlist-only environment model; credential-class keys that do not match a secret-looking regex are still denied.",
-    "The runner rejects evidence_out paths under .ao and writes artifacts owner-only with fchmod after open, preserving the read-only workspace contract.",
-    "Local validation passed: direct CLI smoke wrote schema-valid evidence, pytest passed 38 tests with 1 expected skip, ruff passed, targeted mypy passed, and branch commit secret scan passed.",
-    "The E-3-2 diff only adds the smoke harness plan, internal support_widening harness package, CLI script, tests, changelog entry, and this local review evidence file.",
+    "Claude Anthropic returned VERDICT AGREE for E-3-4 after reviewing the current committed diff against origin/main.",
+    "Claude confirmed BLK-no_guard_flip-1 is covered by the expanded 12-pattern forbidden-claim language guard, including case-sensitive word-boundary GA handling.",
+    "Claude confirmed BLK-no_guard_flip-2 is covered by the verbatim disclaimer: This inventory does not announce any widening; it names what would be required if widening were authorized.",
+    "Claude confirmed the document includes all five surface classes: provider, python_version, os_platform, db_backend, and deployment_topology.",
+    "Claude confirmed the document frames all widening rows as prerequisites, not promises, and defers widening authority to the Epic 9 operator-bound supersession PR.",
+    "Claude confirmed docs/SUPPORT-BOUNDARY.md, docs/PUBLIC-BETA.md, workflows, rulesets, runtime code, and .ao evidence are not mutated by this slice.",
+    "Local validation passed: pytest tests/test_support_surface_inventory_doc.py -q reported 9 passed; diff whitespace checks passed; gpp_next still reports all guard flags false.",
+    "The E-3-4 diff is docs/test infrastructure only: support surface inventory doc, E-3-4 decision record, changelog entry, invariant test, and this local review evidence file.",
     "No secrets were recorded in the review prompt, review output, evidence file, or local validation artifacts."
   ],
   "secrets_recorded": false,
