@@ -43,6 +43,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 security/SBOM/license preflight bundle** (V5 Epic 9, #895): added
+  `V5-SECURITY-SBOM-LICENSE-PREFLIGHT-BUNDLE.md`,
+  `v5-security-sbom-license-preflight-bundle.schema.v1.json`, and a
+  current-state fixture/test suite that binds CodeQL, Trivy, SBOM generator,
+  and license inventory evidence to the `security_sbom_license_scans`
+  production-readiness dimension. This is preflight evidence only:
+  final release-bound SBOM/license/security evidence remains missing and
+  `support_widening` / `production_platform_claim` / `live_adapter_execution`
+  remain false.
 - **V5 production readiness matrix blocker** (V5 Epic 9, #895): added
   `V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md`,
   `v5-production-readiness-matrix-blocker.schema.v1.json`, and a current-state

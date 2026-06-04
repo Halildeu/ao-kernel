@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-security-sbom-license-preflight-bundle:v1",
+  "title": "V5 security, SBOM, and license preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 production-readiness security/SBOM/license dimension. It records committed security workflows, SBOM tooling, and license inventory evidence while keeping final release-bound evidence and all production guard flags fail-closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "final_release_bound",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "codeql",
+    "trivy",
+    "sbom",
+    "license_compliance",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": { "const": "v5_security_sbom_license_preflight_bundle.v1" },
+    "artifact_kind": { "const": "v5_security_sbom_license_preflight_bundle" },
+    "repo": { "const": "Halildeu/ao-kernel" },
+    "work_package": { "const": "E-9-1" },
+    "dimension": { "const": "security_sbom_license_scans" },
+    "evidence_class": { "const": "preflight_current_state" },
+    "final_release_bound": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "codeql": { "$ref": "#/$defs/security_workflow" },
+    "trivy": { "$ref": "#/$defs/security_workflow" },
+    "sbom": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "generator_path",
+        "generator_test_path",
+        "sample_fixture_path",
+        "cyclonedx_spec_version",
+        "release_component_name",
+        "release_bound_artifact_present"
+      ],
+      "properties": {
+        "generator_path": { "const": "scripts/generate_sbom.py" },
+        "generator_test_path": { "const": "tests/test_sbom_generation.py" },
+        "sample_fixture_path": { "const": "tests/fixtures/sample-sbom.cdx.json" },
+        "cyclonedx_spec_version": { "const": "1.5" },
+        "release_component_name": { "const": "ao-kernel" },
+        "release_bound_artifact_present": { "const": false }
+      }
+    },
+    "license_compliance": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "policy_path",
+        "inventory_path",
+        "inventory_schema_path",
+        "inventory_report_status",
+        "deny_count",
+        "review_count",
+        "operator_review_required"
+      ],
+      "properties": {
+        "policy_path": { "const": "docs/license-compliance/license-compliance-policy.v1.json" },
+        "inventory_path": { "const": "docs/license-compliance/dependency-license-inventory.v1.json" },
+        "inventory_schema_path": { "const": "ao_kernel/defaults/schemas/dependency-license-inventory.schema.v1.json" },
+        "inventory_report_status": { "enum": ["pass_no_deny_matches", "review_required"] },
+        "deny_count": { "const": 0 },
+        "review_count": { "type": "integer", "minimum": 1 },
+        "operator_review_required": { "const": true }
+      }
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "type": "string", "minLength": 1 },
+      "contains": { "const": "final v5 release-bound SBOM artifact" }
+    },
+    "issue_refs": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/782" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/895" }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    }
+  },
+  "$defs": {
+    "security_workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "workflow_path",
+        "workflow_name",
+        "status",
+        "required_check",
+        "security_events_write_permission",
+        "final_release_bound"
+      ],
+      "properties": {
+        "workflow_path": { "type": "string", "pattern": "^\\.github/workflows/.+\\.yml$" },
+        "workflow_name": { "type": "string", "minLength": 1 },
+        "status": { "const": "configured_advisory" },
+        "required_check": { "const": false },
+        "security_events_write_permission": { "const": true },
+        "final_release_bound": { "const": false }
+      }
+    }
+  }
+}
