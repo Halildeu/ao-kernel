@@ -16,6 +16,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **ao-release-gate CodeQL config diff-scope**: added the exact
+  `.github/codeql/codeql-config.yml` path to the protected-base
+  release-gate allowlist so reviewed CodeQL advisory baseline PRs can
+  merge without widening generic `.github/**`, `.github/codeql/**`,
+  workflow, CODEOWNERS, ruleset, support, live-adapter, or
+  production-claim surfaces.
 - **ao-release-gate Dependabot config diff-scope**: added the exact
   `.github/dependabot.yml` path to the protected-base release-gate
   allowlist so reviewed vulnerability-scanning baseline PRs can merge

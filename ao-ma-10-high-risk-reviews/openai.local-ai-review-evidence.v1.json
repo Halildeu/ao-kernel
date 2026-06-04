@@ -1,19 +1,19 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-917-release-gate-dependabot-scope",
+  "work_package": "AO-MA-918-release-gate-codeql-config-scope",
   "implementer": {
-    "agent": "codex-gpt-5-release-gate-dependabot-scope",
+    "agent": "codex-gpt-5-release-gate-codeql-config-scope",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "openai-governance-review-dependabot-scope",
+    "agent": "openai-subagent-independent-reviewer-codeql-config-scope",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-release-gate-dependabot-scope",
+    "head_ref": "refs/heads/codex/ao-release-gate-codeql-config-scope",
     "changed_files": [
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
@@ -37,6 +37,14 @@
       "status": "pass"
     },
     {
+      "name": "generic_github_prefix_absent",
+      "status": "pass"
+    },
+    {
+      "name": "generic_codeql_prefix_absent",
+      "status": "pass"
+    },
+    {
       "name": "release_gate_diff_scope_regression",
       "status": "pass"
     },
@@ -50,10 +58,11 @@
     }
   ],
   "findings": [
-    "OpenAI implementation review: exact .github/dependabot.yml allowlist entry is narrower than a .github/ prefix and directly targets PR #798's ao_release_gate_diff_out_of_scope blocker.",
-    "The invariant test asserts both presence of .github/dependabot.yml and absence of generic .github/ prefix.",
+    "OpenAI independent review returned AGREE for the exact .github/codeql/codeql-config.yml release-gate scope fix.",
+    "The patch adds only an exact CodeQL config path, not a generic .github/codeql/ or .github/ prefix.",
+    "The invariant test asserts exact path presence and absence of both generic directory prefixes.",
     "The change does not alter workflows, CODEOWNERS, rulesets, branch protection, runtime adapter code, support-widening authority, production-platform claims, or live adapter execution.",
-    "Focused local verification passed: tests/test_ao_release_gate_build_payload.py plus the baseline allow decision smoke test."
+    "The changelog note accurately describes the reviewed CodeQL advisory baseline scope and no-widening boundary."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
