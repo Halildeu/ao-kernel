@@ -24,6 +24,14 @@
   },
   "checks_considered": [
     {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
       "name": "pytest_support_surface_inventory_doc",
       "status": "pass"
     },
@@ -52,6 +60,14 @@
       "status": "pass"
     },
     {
+      "name": "row_bound_prerequisite_mapping",
+      "status": "pass"
+    },
+    {
+      "name": "provider_minimum_live_test_threshold",
+      "status": "pass"
+    },
+    {
       "name": "claude_review",
       "status": "pass"
     },
@@ -65,6 +81,8 @@
     "Claude confirmed BLK-no_guard_flip-1 is covered by the expanded 12-pattern forbidden-claim language guard, including case-sensitive word-boundary GA handling.",
     "Claude confirmed BLK-no_guard_flip-2 is covered by the verbatim disclaimer: This inventory does not announce any widening; it names what would be required if widening were authorized.",
     "Claude confirmed the document includes all five surface classes: provider, python_version, os_platform, db_backend, and deployment_topology.",
+    "Claude confirmed each prerequisite is bound to its own section 3 surface_class row, preventing false positives from the section 2 examples table.",
+    "Claude confirmed the provider row specifically requires live integration tests and names the >=3 live-test threshold.",
     "Claude confirmed the document frames all widening rows as prerequisites, not promises, and defers widening authority to the Epic 9 operator-bound supersession PR.",
     "Claude confirmed docs/SUPPORT-BOUNDARY.md, docs/PUBLIC-BETA.md, workflows, rulesets, runtime code, and .ao evidence are not mutated by this slice.",
     "Local validation passed: pytest tests/test_support_surface_inventory_doc.py -q reported 9 passed; diff whitespace checks passed; gpp_next still reports all guard flags false.",

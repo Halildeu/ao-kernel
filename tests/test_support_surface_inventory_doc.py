@@ -49,12 +49,40 @@ def test_doc_references_authoritative_boundary() -> None:
 # ---- 2. prerequisites, not promises (1) ---------------------------------
 
 
+def _prereq_section() -> str:
+    """The §3 'What each widening dimension requires' section only (the doc has a
+    second surface_class table in §2, so prerequisite rows must be read from §3)."""
+    text = _text()
+    start = text.find("## 3.")
+    assert start != -1, "doc must have a §3 prerequisites section"
+    end = text.find("\n## ", start + 1)
+    return text[start : end if end != -1 else len(text)]
+
+
+def _prereq_row(surface_class: str) -> str:
+    """The §3 prerequisite table row for a surface_class, lowercased — bound to the
+    RIGHT dimension (scoped to §3, not the §2 examples table)."""
+    for line in _prereq_section().splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|") and f"`{surface_class}`" in stripped:
+            return stripped.lower()
+    return ""
+
+
 def test_doc_states_prerequisites_per_dimension() -> None:
-    low = _text().lower()
-    assert "prerequisite" in low, "must frame widening requirements as prerequisites"
-    # at least the key per-class thresholds are named
-    for needle in ("live integration test", "pytest matrix", "smoke per", "round-trip", "isolation test"):
-        assert needle in low, f"prerequisite list missing: {needle!r}"
+    assert "prerequisite" in _text().lower(), "must frame widening requirements as prerequisites"
+    # Each prerequisite must be bound to its OWN surface_class row (Codex E-3-4 absorb):
+    # a loose any-where match would pass even if the doc mis-paired thresholds.
+    # provider must require >= 3 live integration tests specifically.
+    provider_row = _prereq_row("provider")
+    assert "live integration test" in provider_row, "provider row must require live integration tests"
+    assert re.search(r"(≥|>=)\s*3", provider_row), "provider row must name the >=3 live-test threshold"
+    assert "pytest matrix" in _prereq_row("python_version"), "python_version row must require the pytest matrix"
+    assert "smoke per" in _prereq_row("os_platform"), "os_platform row must require a per-platform smoke"
+    assert "round-trip" in _prereq_row("db_backend"), "db_backend row must require a backend round-trip"
+    assert "isolation test" in _prereq_row("deployment_topology"), (
+        "deployment_topology row must require an isolation test"
+    )
 
 
 # ---- 3. boundary disclaimer — announces no widening (1) ------------------
@@ -63,8 +91,7 @@ def test_doc_states_prerequisites_per_dimension() -> None:
 def test_doc_has_no_announcement_disclaimer() -> None:
     text = _text()
     expected = (
-        "This inventory does not announce any widening; it names what would be required "
-        "if widening were authorized."
+        "This inventory does not announce any widening; it names what would be required if widening were authorized."
     )
     assert expected in text, "must carry the E-3-4 verbatim no-widening disclaimer"
     assert "Epic 9" in text, "disclaimer must defer widening authority to Epic 9 supersession"

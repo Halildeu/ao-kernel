@@ -25,12 +25,15 @@
    from the E-3-1 v1 schema and frames them as what widening *would require*, not
    what is planned.
 3. **No-announcement disclaimer** (§4) defers all widening authority to the Epic 9
-   operator-bound supersession PR; the test asserts this verbatim-enough
-   ("does not announce", "Epic 9").
+   operator-bound supersession PR; the test asserts the **exact** disclaimer
+   sentence plus the "Epic 9" defer.
 4. **No claim language.** The test rejects the expanded Epic 3 F7 phrase set:
    production-ready, production-safe, production-certified, production-grade,
    fully-supported, `GA`, generally available, officially supported, stable
    support, beta exit, supported today, and ready for production.
+5. **Prerequisites bound per row.** The test reads each prerequisite from the §3
+   table row for its own `surface_class` (not anywhere in the doc) and enforces
+   the provider `≥ 3` live-test threshold (Codex E-3-4 absorb).
 
 ## Cross-AI review
 
