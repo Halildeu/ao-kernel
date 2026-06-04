@@ -301,6 +301,59 @@ def test_adv001_no_assertions(tmp_path: Path) -> None:
     assert "ADV-001" in rules
 
 
+def test_adv001_cleared_by_underscore_assert_helper(tmp_path: Path) -> None:
+    """A call to an ``_assert``-prefixed helper counts as an assertion, so a
+    test that verifies via a shared helper is not a false-positive ADV-001."""
+    source = (
+        "def _assert_rejected(bad, msg):\n    raise AssertionError(msg)\n"
+        "def test_thing():\n    _assert_rejected({'x': 1}, 'must reject')\n"
+    )
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "ADV-001" not in rules
+
+
+def test_adv001_cleared_by_assert_prefixed_helper(tmp_path: Path) -> None:
+    """``assert``-prefixed helper names (e.g. ``assert_valid``, unittest's
+    ``assertEqual``) also count as assertion intent."""
+    source = "def test_thing():\n    self_obj.assertEqual(1, 1)\n"
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "ADV-001" not in rules
+
+
+def test_adv001_still_flags_bare_validator_call(tmp_path: Path) -> None:
+    """Precision guard: a bare side-effect validator that only *raises*
+    (``check_schema(...)``) does NOT declare assertion intent by name, so
+    ADV-001 still nudges toward an explicit assertion/pytest.raises."""
+    source = "def check_schema(s):\n    return None\ndef test_thing():\n    check_schema({'x': 1})\n"
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "ADV-001" in rules
+
+
+def test_adv001_cleared_by_assert_valid_name_form(tmp_path: Path) -> None:
+    """A bare ``assert_valid(...)`` (Name-form, assertion-intent wrapper)
+    counts as an assertion (Codex review guard)."""
+    source = "def assert_valid(x):\n    raise AssertionError('x')\ndef test_thing():\n    assert_valid({'x': 1})\n"
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "ADV-001" not in rules
+
+
+def test_adv001_still_flags_attribute_form_bare_validator(tmp_path: Path) -> None:
+    """Precision guard (Codex review): an attribute-form bare validator such as
+    ``Draft202012Validator.check_schema(...)`` does not declare assertion intent
+    by name, so ADV-001 still fires."""
+    source = "def test_thing():\n    Draft202012Validator.check_schema({'x': 1})\n"
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "ADV-001" in rules
+
+
+def test_adv001_not_masked_by_non_assert_helper(tmp_path: Path) -> None:
+    """Precision guard: an ordinary (non-assert-named) helper call must not
+    suppress ADV-001 — only assertion-intent names do."""
+    source = "def do_thing(x):\n    return x\ndef test_thing():\n    do_thing(1)\n"
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "ADV-001" in rules
+
+
 def test_adv002_sole_is_not_none(tmp_path: Path) -> None:
     source = "def make_obj():\n    return 1\ndef test_thing():\n    obj = make_obj()\n    assert obj is not None\n"
     rules = _rules(_scan_source(tmp_path, source))

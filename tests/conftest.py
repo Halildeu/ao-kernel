@@ -27,7 +27,11 @@ Rules:
              pytest scan. Path-filtered diffs (``git diff ... -- <path>``) and
              introducer-scoped self-gates (dynamic ``startswith(<var>)``) are
              exempt by construction.
-    ADV-001: Test function with 0 assert statements — warning
+    ADV-001: Test function with 0 assert statements — warning.
+             An ``assert`` statement, a ``pytest.raises``/``warns``/``fail``
+             call, or a call to an ``assert``/``_assert``-named helper (e.g.
+             a shared ``_assert_rejected(...)`` wrapper) all count as
+             assertions; bare validators that only raise do not.
     ADV-002: sole assertion is 'is not None' — weak behavioral signal
 """
 
@@ -143,6 +147,28 @@ _BLK004_BEHAVIORAL_ATTRS = frozenset(
         "method_calls",
     }
 )
+
+
+def _is_assertion_helper_name(name: str) -> bool:
+    """Return True if a called name declares assertion intent by convention.
+
+    A callee whose name starts with ``assert`` or ``_assert`` is an
+    assertion-bearing helper — e.g. a shared ``_assert_rejected(...)`` /
+    ``assert_valid(...)`` wrapper, or unittest's ``assertEqual``/``assertRaises``.
+    Counting such calls as assertions clears ADV-001 false-positives for tests
+    that verify behavior through a named helper rather than an inline ``assert``.
+    This is consistent with the existing ``assert_called*`` mock-signal
+    recognition and is high-precision:
+
+      - It does NOT mask assertion-free tests (no such call is present).
+      - It does NOT relax ``assert True`` (BLK-002 matches an ``ast.Assert``
+        node, not a call) or any other blocking rule.
+      - Bare side-effect validators that merely *raise* (``check_schema(...)``,
+        ``validate_*(...)``) are intentionally NOT matched: they do not declare
+        assertion intent by name, so ADV-001 still nudges toward an explicit
+        ``pytest.raises``/assert for them.
+    """
+    return name.startswith("assert") or name.startswith("_assert")
 
 
 def _ast_eq(a: ast.AST, b: ast.AST) -> bool:
@@ -560,7 +586,7 @@ def _scan_test_file(filepath: Path) -> list[_TestQualityViolation]:
                     call_name = child.func.attr
                 elif isinstance(child.func, ast.Name):
                     call_name = child.func.id
-                if call_name in ("raises", "warns", "fail"):
+                if call_name in ("raises", "warns", "fail") or _is_assertion_helper_name(call_name):
                     has_assert = True
                     break
 
