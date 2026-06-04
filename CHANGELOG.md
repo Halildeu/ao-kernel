@@ -9,6 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **E-7-4 provider rate limit production tuning (per-tenant)** (V5 Epic 7,
+  #886): docs/RATE-LIMIT-TUNING.md operator runbook (per-tenant key pattern,
+  rps sizing, retry/circuit-breaker interaction, measurement) + optional
+  backward-compatible `rps` argument on the `get_rate_limiter` public facade.
+  8 invariants incl. real per-tenant bucket isolation. No guard flag.
+
+### Added
+
 - **E-4-6 helm chart testing runbook + helm-unittest suites** (V5 Epic 4,
   #865): docs/HELM-TESTING.md (Python CI invariant layer + operator-run
   helm-unittest render suites + local render smoke + epic-wide idempotency
