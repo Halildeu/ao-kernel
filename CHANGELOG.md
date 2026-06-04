@@ -9,28 +9,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
-- **AO-MA-11E-2 post-merge mirror tracking closeout**: after PR #933
-  merged through `app/github-actions`, moved the AO-MA tracking mirrors to
-  `merged` / `done` and kept guard flags false with no runtime mutation.
-- **E-4-3 follow-up: dedup DB env in operator runbook** (Codex review absorb):
-  docs/OPERATOR-SECRET-MANAGEMENT.md showed the DB env twice (postgresql block
-  + env.secretRefs/env.plain), which would duplicate/conflict with the
-  auto-rendered DB env. The postgresql block is now documented as the single
-  way; env.secretRefs/env.plain remain for non-DB secrets (e.g. LLM keys).
+- **E-8-2 multi-tenant production config recipe** (V5 Epic 8, #890):
+  docs/MULTI-TENANT-CONFIG-RECIPE.md — namespace-per-tenant isolation recipe
+  delegating to Epic 4 chart surfaces (E-4-2a boundary, E-4-3 PG/secret, E-4-4
+  monitoring, E-4-5 netpol/PSS) with per-tenant values overlay + isolation
+  checklist + ResourceQuota. 8 invariants. No new chart feature; no guard flag.
 
 ### Added
 
-- **E-4-5 NetworkPolicy + PodSecurityStandards baseline** (V5 Epic 4,
-  #864): added an opt-in default-deny NetworkPolicy and PSS restricted
-  namespace-label guidance for the ao-kernel Helm chart. DNS egress is scoped
-  to the configured kube-dns namespace, operator egress widening is explicit
-  in values, and no live cluster command, workflow mutation, guard-flag flip,
-  or production readiness claim is introduced.
-- **E-4-4 observability surface** (V5 Epic 4, #863): opt-in Prometheus
-  Operator ServiceMonitor CRD + optional hardened OTEL collector sidecar in
-  the ao-kernel Helm chart (both disabled by default). Chart does not install
-  Prometheus Operator; alert routing is Microsoft Teams primary (no Slack
-  receiver embedded). 13 invariants. No guard flag touched.
+- **E-4-3 operator-owned PostgreSQL provisioning + secret management** (V5
+  Epic 4, #862): Helm chart `postgresql` block (external, operator-owned,
+  `enabled:false` default) + `secretKeyRef`-only credential wiring in
+  `deployment.yaml` + closed `values.schema.json` block +
+  `docs/OPERATOR-SECRET-MANAGEMENT.md` operator runbook. The chart never
+  deploys a database and never holds secret material. 16 invariants in
+  `tests/test_epic_4_3_postgres_provisioning.py`. No guard flag touched.
 
 ### Changed
 
