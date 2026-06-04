@@ -36,7 +36,7 @@ The V5 production readiness matrix is **not complete**.
 | protected real provider live calls | not_ready | 7-day live window and protected environment evidence missing |
 | cost/rate/circuit breaker evidence | partial | live cost/breach/rollback evidence missing |
 | observability production tunables | partial | final claim-bound observability/alerting evidence missing |
-| security/SBOM/license scans | partial | final release-bound SBOM/license/security bundle missing |
+| security/SBOM/license scans | partial | current preflight bundle exists; final release-bound SBOM/license/security bundle missing |
 | install/deploy lifecycle smoke | partial | v5.0.0 tag/publish and release-artifact smoke missing |
 | multi-tenancy isolation | not_ready | tenant isolation and per-tenant quota/cost evidence missing |
 | docs/runbooks | partial | final claim/release wording and runbook updates missing |
@@ -57,3 +57,14 @@ the only safe action is evidence collection under the existing issue refs:
 - `#776` support widening;
 - `#782` final promotion decision;
 - `#895` all-or-none PR-Xfinal.
+
+## Current Evidence Bundle Cross-Refs
+
+The `security_sbom_license_scans` dimension now has a current-state
+security/SBOM/license preflight bundle:
+
+- `.claude/plans/V5-SECURITY-SBOM-LICENSE-PREFLIGHT-BUNDLE.md`
+- `tests/fixtures/epic9/v5-security-sbom-license-preflight.current.json`
+
+That bundle binds CodeQL, Trivy, SBOM tooling, and license inventory evidence
+without treating them as final release-bound evidence.

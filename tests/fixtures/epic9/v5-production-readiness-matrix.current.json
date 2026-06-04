@@ -108,6 +108,8 @@
       "current_evidence_refs": [
         ".github/workflows/codeql.yml",
         ".github/workflows/trivy.yml",
+        ".claude/plans/V5-SECURITY-SBOM-LICENSE-PREFLIGHT-BUNDLE.md",
+        "tests/fixtures/epic9/v5-security-sbom-license-preflight.current.json",
         "docs/KNOWN-BUGS.md"
       ],
       "missing_evidence": [

@@ -10,19 +10,13 @@
     }
   ],
   "findings": [
-    "Schema v5-production-readiness-matrix-blocker.schema.v1.json uses Draft 2020-12 with additionalProperties:false and unevaluatedProperties:false on root and $defs/dimension \u2014 strict closure verified",
-    "All guard flags const-pinned false (matrix_complete, pr_xfinal_open_allowed, support_widening, production_platform_claim, live_adapter_execution); operator_bound_supersession_required const true \u2014 no flip possible under blocker v1",
-    "Dimension status enum restricted to not_ready|partial \u2014 ready claim structurally rejected by schema; test_schema_rejects_ready_dimension_claims_in_blocker_v1 covers all 9 dimensions",
-    "9 dimensions identity-pinned via contains/minContains/maxContains allOf + minItems/maxItems 9 \u2014 cardinality and identity drift blocked at schema level",
-    "issue_refs pinned via prefixItems with items:false, minItems/maxItems 4, uniqueItems true \u2014 no injection of extra refs",
-    "Test suite covers 9 invariant categories: schema validity+strictness, fixture validation+closed-gate pins, guard-flip rejection (6 fields), ready-claim rejection (9 dimensions), cardinality/id drift+extra-field rejection, doc cross-references (3 docs), forbidden production-claim token scan, source document+evidence ref existence, issue ref binding",
-    "No secret-like material in diff \u2014 no API keys, tokens, credentials, or env var values detected",
-    "CHANGELOG entry correctly scoped as Gate C blocker infrastructure only with explicit non-authority enumeration",
-    "V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md non-authority boundary section lists six forbidden actions matching existing xfinal blocker pattern",
-    "EPIC-9-FINAL-SUPERSESSION-PR.md update adds production matrix blocker cross-reference and Gate C tracking detail without changing any guard flag or authority boundary",
-    "Scope matches E-9-1 work package \u2014 no workflow mutation, no ruleset change, no runtime code change, no support widening, no production claim, no provider HTTP call",
-    "Advisory: local-ai-review-evidence.v1.json at repo root is a duplicate of ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json \u2014 consider consolidating to single location to avoid drift",
-    "Advisory: openai.local-ai-review-evidence.v1.json lists same-provider reviewer (openai-reviewer/openai) as implementer (codex/openai); cross-provider coverage satisfied by this anthropic review"
+    "Anthropic reviewer verdict AGREE: no blocking issue in the V5 E-9-1 security/SBOM/license preflight evidence bundle.",
+    "Fail-closed guard state verified: schema and fixture pin final_release_bound=false, support_widening=false, production_platform_claim=false, and live_adapter_execution=false.",
+    "Matrix linkage verified: security_sbom_license_scans remains partial and links the new preflight bundle while final release-bound SBOM/license/security evidence remains missing.",
+    "Schema strictness verified: Draft 2020-12 schema closes object nodes with additionalProperties=false and unevaluatedProperties=false.",
+    "No workflow, ruleset, runtime, release, tag, publish, support widening, production claim, or live adapter execution mutation observed.",
+    "Tests considered: python3 -m pytest tests/test_v5_security_sbom_license_preflight_bundle.py tests/test_v5_production_readiness_matrix_blocker.py tests/test_sbom_generation.py tests/test_license_compliance.py -q => 79 passed, 1 skipped.",
+    "Secret scan considered: gitleaks over the working diff reported no leaks."
   ],
   "implementer": {
     "agent": "codex",
@@ -40,17 +34,18 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md",
       ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
+      ".claude/plans/V5-SECURITY-SBOM-LICENSE-PREFLIGHT-BUNDLE.md",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/v5-production-readiness-matrix-blocker.schema.v1.json",
+      "ao_kernel/defaults/schemas/v5-security-sbom-license-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/test_v5_production_readiness_matrix_blocker.py"
+      "tests/fixtures/epic9/v5-security-sbom-license-preflight.current.json",
+      "tests/test_v5_security_sbom_license_preflight_bundle.py"
     ],
-    "head_ref": "refs/heads/codex/v5-production-readiness-matrix-blocker"
+    "head_ref": "refs/heads/codex/v5-security-sbom-license-preflight-bundle"
   },
   "secrets_recorded": false,
   "support_widening": false,

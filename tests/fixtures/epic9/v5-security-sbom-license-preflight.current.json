@@ -1,0 +1,55 @@
+{
+  "schema_version": "v5_security_sbom_license_preflight_bundle.v1",
+  "artifact_kind": "v5_security_sbom_license_preflight_bundle",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "dimension": "security_sbom_license_scans",
+  "evidence_class": "preflight_current_state",
+  "final_release_bound": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "codeql": {
+    "workflow_path": ".github/workflows/codeql.yml",
+    "workflow_name": "CodeQL Security Analysis",
+    "status": "configured_advisory",
+    "required_check": false,
+    "security_events_write_permission": true,
+    "final_release_bound": false
+  },
+  "trivy": {
+    "workflow_path": ".github/workflows/trivy.yml",
+    "workflow_name": "Trivy Vulnerability Scan",
+    "status": "configured_advisory",
+    "required_check": false,
+    "security_events_write_permission": true,
+    "final_release_bound": false
+  },
+  "sbom": {
+    "generator_path": "scripts/generate_sbom.py",
+    "generator_test_path": "tests/test_sbom_generation.py",
+    "sample_fixture_path": "tests/fixtures/sample-sbom.cdx.json",
+    "cyclonedx_spec_version": "1.5",
+    "release_component_name": "ao-kernel",
+    "release_bound_artifact_present": false
+  },
+  "license_compliance": {
+    "policy_path": "docs/license-compliance/license-compliance-policy.v1.json",
+    "inventory_path": "docs/license-compliance/dependency-license-inventory.v1.json",
+    "inventory_schema_path": "ao_kernel/defaults/schemas/dependency-license-inventory.schema.v1.json",
+    "inventory_report_status": "review_required",
+    "deny_count": 0,
+    "review_count": 3,
+    "operator_review_required": true
+  },
+  "residual_missing_evidence": [
+    "final v5 release-bound SBOM artifact",
+    "final v5 release-bound license inventory generated from the release SBOM",
+    "final security scan evidence bundle bound to the PR-Xfinal merge candidate",
+    "operator disposition for review-required license entries"
+  ],
+  "issue_refs": [
+    "https://github.com/Halildeu/ao-kernel/issues/782",
+    "https://github.com/Halildeu/ao-kernel/issues/895"
+  ]
+}
