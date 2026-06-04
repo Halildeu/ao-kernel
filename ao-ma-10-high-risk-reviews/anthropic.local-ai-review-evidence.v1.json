@@ -1,71 +1,52 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-roadmap-status-human-mirror-sync",
-  "implementer": {
-    "agent": "codex-ao-ma-roadmap-status-sync",
-    "provider": "openai"
-  },
-  "reviewer": {
-    "agent": "anthropic-claude-independent-reviewer",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-roadmap-status-sync",
-    "changed_files": [
-      ".claude/plans/AO-MA-ROADMAP-STATUS.md",
-      "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json"
-    ]
-  },
   "checks_considered": [
     {
       "name": "tests",
       "status": "pass"
     },
     {
-      "name": "diff_scope",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma_next",
-      "status": "pass"
-    },
-    {
-      "name": "gpp_next_progress",
-      "status": "pass"
-    },
-    {
       "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_or_workflow_change",
-      "status": "pass"
-    },
-    {
-      "name": "changelog",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude AGREE: no blocking findings.",
-    "Claude validated factual alignment with ao_ma_status progress estimates and ao_ma_next output.",
-    "Claude validated only AO-MA-ROADMAP-STATUS.md and CHANGELOG.md intended content changes.",
-    "Claude validated slice descriptions and the remaining action list accurately reflect JSON next_allowed_actions.",
-    "Claude validated changelog adequacy.",
-    "Claude validated no secret exposure, no forbidden action, and no support widening, production platform claim, live adapter execution, runtime, workflow, ruleset, CODEOWNERS, or gpp_status change."
+    "event-gate case pattern correctly expanded to `opened|reopened|synchronize|ready_for_review|edited` — edited no longer skipped",
+    "Old retarget-only jq guard (`.changes.base.ref.from`) and `pull_request:retargeted` trigger_reason correctly removed — eliminates the skip path that could produce stale skipped required-check contexts",
+    "Concurrency cancel-in-progress simplified to `github.ref != 'refs/heads/main'` — the edited-event carve-out is no longer needed since edited now runs full gate",
+    "New test `test_required_check_workflow_trigger_shape.py` pins 5 invariants: trigger type list shape, case pattern string, absence of retarget-only patterns, review event types, and workflow_dispatch fallback presence",
+    ".github/REPO-GOVERNANCE.md not in changed_files — governance doc untouched",
+    "No guard flag flip, no secret, no live adapter execution, no support widening, no production platform claim",
+    "CHANGELOG.md entry accurately describes the fix scope",
+    "WP-5.1-GOVERNANCE-INVENTORY.md doc update reflects the new edited-event semantics without overclaim",
+    "No workflow_dispatch branch gains release authority — dispatch fallback is manual-only rerun"
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "claude-code",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/WP-5.1-GOVERNANCE-INVENTORY.md",
+      ".github/workflows/test.yml",
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_required_check_workflow_trigger_shape.py"
+    ],
+    "head_ref": "refs/heads/codex/ci-required-check-edited-trigger-fix"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "AO-MA-CI-REQUIRED-CHECK-EDITED-FULL-RUN"
 }
