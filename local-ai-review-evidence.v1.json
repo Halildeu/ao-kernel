@@ -18,6 +18,7 @@
       ".claude/plans/EPIC-6-E6-2-VULN-SCANNING.md",
       ".github/dependabot.yml",
       ".github/workflows/trivy.yml",
+      "CHANGELOG.md",
       "tests/test_vuln_scanning_invariants.py",
       "local-ai-review-evidence.v1.json"
     ]
@@ -62,10 +63,15 @@
     {
       "name": "doc_workflow_version_consistency",
       "status": "pass"
+    },
+    {
+      "name": "changelog_discipline",
+      "status": "pass"
     }
   ],
   "findings": [
     "Claude re-review verdict AGREE after rebase and plan-doc version drift cleanup.",
+    "ADR-0005 changelog enforcement failure was resolved with a narrow Unreleased entry for the advisory Dependabot + Trivy filesystem scanning baseline.",
     "No blocking findings: advisory-only Dependabot + Trivy filesystem baseline remains scoped; Snyk, image scans, required-gate promotion, MEDIUM severity, config/secret scanning, support widening, production claim, and live adapter execution remain out of scope."
   ],
   "secrets_recorded": false,
