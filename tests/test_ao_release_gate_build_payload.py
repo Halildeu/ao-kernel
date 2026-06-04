@@ -720,6 +720,30 @@ def test_build_payload_allowed_path_prefixes_includes_dependabot_config(
     assert ".github/" not in prefixes
 
 
+def test_build_payload_allowed_path_prefixes_includes_codeql_config(
+    tmp_path: Path,
+) -> None:
+    """`.github/codeql/codeql-config.yml` is pinned as an exact base-ref
+    allowlist path for the advisory CodeQL baseline config.
+
+    The allowlist intentionally does not widen to `.github/codeql/` or
+    `.github/`, so workflow, CODEOWNERS, ruleset, branch-protection,
+    runtime, support-widening, and production-claim surfaces remain
+    independently gated.
+    """
+
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    rc = mod.main(_build_argv(tmp_path, output=output))
+    assert rc == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+
+    prefixes = payload["allowed_path_prefixes"]
+    assert ".github/codeql/codeql-config.yml" in prefixes
+    assert ".github/codeql/" not in prefixes
+    assert ".github/" not in prefixes
+
+
 def test_build_payload_allowed_path_prefixes_includes_release_lifecycle_files(
     tmp_path: Path,
 ) -> None:

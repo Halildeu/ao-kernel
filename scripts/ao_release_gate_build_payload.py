@@ -94,6 +94,13 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     # config was not yet recognized as an allowed GitHub security metadata
     # file.
     ".github/dependabot.yml",
+    # CodeQL advisory baseline config is an exact GitHub security metadata
+    # file. It is not a workflow, CODEOWNERS rule, ruleset,
+    # branch-protection setting, runtime adapter path, support-widening
+    # claim, or production-platform claim. Keep this exact path rather
+    # than widening to `.github/codeql/` or `.github/` so unrelated GitHub
+    # governance surfaces remain independently gated.
+    ".github/codeql/codeql-config.yml",
     ".github/CODEOWNERS",
     "deploy/",
     "docs/",

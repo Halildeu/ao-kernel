@@ -1,19 +1,19 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-917-release-gate-dependabot-scope",
+  "work_package": "AO-MA-918-release-gate-codeql-config-scope",
   "implementer": {
-    "agent": "codex-gpt-5-release-gate-dependabot-scope",
+    "agent": "codex-gpt-5-release-gate-codeql-config-scope",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-code-independent-reviewer-dependabot-scope",
+    "agent": "claude-code-independent-reviewer-codeql-config-scope",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-release-gate-dependabot-scope",
+    "head_ref": "refs/heads/codex/ao-release-gate-codeql-config-scope",
     "changed_files": [
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
@@ -37,6 +37,14 @@
       "status": "pass"
     },
     {
+      "name": "generic_github_prefix_absent",
+      "status": "pass"
+    },
+    {
+      "name": "generic_codeql_prefix_absent",
+      "status": "pass"
+    },
+    {
       "name": "workflow_governance_unchanged",
       "status": "pass"
     },
@@ -46,6 +54,10 @@
     },
     {
       "name": "ruleset_governance_unchanged",
+      "status": "pass"
+    },
+    {
+      "name": "branch_protection_unchanged",
       "status": "pass"
     },
     {
@@ -61,27 +73,16 @@
       "status": "pass"
     },
     {
-      "name": "negative_invariant_test_present",
-      "status": "pass"
-    },
-    {
-      "name": "regression_test_for_pr798",
-      "status": "pass"
-    },
-    {
       "name": "changelog_accuracy",
-      "status": "pass"
-    },
-    {
-      "name": "local_test_suite_20_passed",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude AGREE: exact path .github/dependabot.yml was added, not a prefix and not .github/.",
-    "Claude AGREE: negative invariant asserts .github/ is absent from allowed_path_prefixes, guarding against future generic GitHub metadata widening.",
-    "Claude AGREE: workflow, CODEOWNERS, ruleset, live-adapter, support-widening, and production-claim governance surfaces are untouched and remain independently gated.",
-    "Claude AGREE: source comment and changelog accurately document the PR #798 regression context and scope."
+    "Claude AGREE: exact path .github/codeql/codeql-config.yml added; no generic .github/** or .github/codeql/** widening.",
+    "Claude AGREE: test asserts exact path present and confirms .github/codeql/ plus .github/ are absent from prefixes.",
+    "Claude AGREE: changelog note accurately describes scope and explicitly lists surfaces not widened.",
+    "Claude AGREE: no workflow, CODEOWNERS, ruleset, branch-protection, runtime, live-adapter, support-widening, or production-claim surfaces touched.",
+    "Claude AGREE: pattern mirrors the existing exact-path .github/dependabot.yml precedent."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
