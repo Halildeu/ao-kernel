@@ -1,26 +1,28 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-918-release-gate-codeql-config-scope",
+  "work_package": "AO-MA-796-codeql-workflow",
   "implementer": {
-    "agent": "codex-gpt-5-release-gate-codeql-config-scope",
+    "agent": "codex-gpt-5-codeql-workflow-rebase-integrator",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-code-independent-reviewer-codeql-config-scope",
+    "agent": "claude-code-independent-reviewer-pr796-codeql-final",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-release-gate-codeql-config-scope",
+    "head_ref": "refs/heads/codex/epic-6-e6-5-codeql-workflow",
     "changed_files": [
+      ".claude/plans/EPIC-6-E6-5-CODEQL-WORKFLOW.md",
+      ".github/codeql/codeql-config.yml",
+      ".github/workflows/codeql.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "tests/test_codeql_workflow_shape.py"
     ]
   },
   "checks_considered": [
@@ -33,56 +35,60 @@
       "status": "pass"
     },
     {
-      "name": "exact_path_not_prefix_widening",
+      "name": "advisory_only_no_required_check_promotion",
       "status": "pass"
     },
     {
-      "name": "generic_github_prefix_absent",
+      "name": "no_pull_request_target",
       "status": "pass"
     },
     {
-      "name": "generic_codeql_prefix_absent",
+      "name": "no_explicit_secrets",
       "status": "pass"
     },
     {
-      "name": "workflow_governance_unchanged",
+      "name": "minimum_permissions",
       "status": "pass"
     },
     {
-      "name": "codeowners_governance_unchanged",
+      "name": "no_contents_write",
       "status": "pass"
     },
     {
-      "name": "ruleset_governance_unchanged",
+      "name": "no_id_token_write",
       "status": "pass"
     },
     {
-      "name": "branch_protection_unchanged",
+      "name": "no_setup_python",
       "status": "pass"
     },
     {
-      "name": "live_adapter_gate_unchanged",
+      "name": "config_security_extended_only",
       "status": "pass"
     },
     {
-      "name": "support_widening_claim_unchanged",
+      "name": "scoped_paths_and_ignores",
       "status": "pass"
     },
     {
-      "name": "production_platform_claim_unchanged",
+      "name": "invariant_tests_cover_shape",
       "status": "pass"
     },
     {
-      "name": "changelog_accuracy",
+      "name": "changelog_records_baseline",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_const_false",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude AGREE: exact path .github/codeql/codeql-config.yml added; no generic .github/** or .github/codeql/** widening.",
-    "Claude AGREE: test asserts exact path present and confirms .github/codeql/ plus .github/ are absent from prefixes.",
-    "Claude AGREE: changelog note accurately describes scope and explicitly lists surfaces not widened.",
-    "Claude AGREE: no workflow, CODEOWNERS, ruleset, branch-protection, runtime, live-adapter, support-widening, or production-claim surfaces touched.",
-    "Claude AGREE: pattern mirrors the existing exact-path .github/dependabot.yml precedent."
+    "Claude AGREE: workflow is explicitly advisory-only and required-check promotion is out of scope.",
+    "Claude AGREE: pull_request_target is absent and pinned by invariant tests.",
+    "Claude AGREE: no secrets.X expressions, no contents: write, no id-token: write, no setup-python, and minimum permissions are present.",
+    "Claude AGREE: config is single source-of-truth for queries, security-extended only, with scoped paths and glob-form ignores.",
+    "Claude AGREE: changelog records the advisory baseline and no runtime/live-adapter/support-widening/production-claim/branch-protection/ruleset/CODEOWNERS mutation exists."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

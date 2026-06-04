@@ -52,7 +52,7 @@ Hedef: GitHub-native CodeQL static analysis workflow + scope config
   `**/__pycache__/**`, `**/*.pyc`.
 
 ### 3c. `tests/test_codeql_workflow_shape.py`
-21 invariant tests, regex-free plain-text substring matching to
+24 invariant tests, regex-free plain-text substring matching to
 avoid YAML 1.1 boolean trap on `on:` key:
 
 | Invariant | Test |
