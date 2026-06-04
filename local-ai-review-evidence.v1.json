@@ -21,6 +21,7 @@
       "ao_kernel/defaults/schemas/widening-supersession-evidence-pack.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "scripts/validate_widening_evidence.py",
+      "tests/test_support_matrix_smoke_workflow.py",
       "tests/test_widening_evidence_validator.py"
     ]
   },
@@ -35,6 +36,10 @@
     },
     {
       "name": "pytest_epic3_support_widening_adjacent",
+      "status": "pass"
+    },
+    {
+      "name": "pytest_support_matrix_smoke_workflow_scope_fix",
       "status": "pass"
     },
     {
@@ -66,7 +71,11 @@
       "status": "pass"
     },
     {
-      "name": "claude_review",
+      "name": "claude_review_round_1",
+      "status": "pass"
+    },
+    {
+      "name": "claude_review_round_2",
       "status": "pass"
     },
     {
@@ -76,12 +85,14 @@
   ],
   "findings": [
     "Claude Anthropic returned VERDICT AGREE for E-3-6 after reviewing the v1-only fail-closed validator, schema, CLI, tests, plan record, changelog entry, and local validation summary.",
+    "Claude Anthropic returned VERDICT AGREE for the updated PR diff after the CI fix that scopes test_support_matrix_smoke_workflow.py's E-3-3 slice diff guard to only run when .github/workflows/support-matrix-smoke.yml changes.",
     "Claude confirmed guard flags remain false and widening_authorized is pinned false; no support widening, production platform claim, live adapter execution, GitHub mutation, ruleset mutation, network call, or live adapter call is introduced.",
     "Claude confirmed the Epic 3 validator accepts only support_widening_evidence.v1 and widening_supersession_evidence_pack.v1; future v2 input fails closed with unsupported_future_schema_in_epic_3 and validator_v2/schema v2 are absent.",
     "Claude confirmed the schema is recursively strict with additionalProperties:false and unevaluatedProperties:false on every object node.",
     "Claude confirmed raw verdict SHA256 is canonicalized with raw_verdict_sha256 excluded, and legacy artifact_sha256 is recursively rejected.",
     "Claude confirmed self-review prevention rejects same-provider, implementer-reviewer, and operator-login collisions.",
     "Claude confirmed context-binding drift checks cover plan digest, final diff digest, PR head SHA, workflow run provenance, artifact membership/hash drift, reviewer hash drift, verdict binding drift, raw verdict artifact digest/reference/provenance drift, stale replay, and seven-day window races.",
+    "Claude confirmed the E-3-3 workflow diff guard now skips unrelated PRs when support-matrix-smoke.yml is unchanged, but remains fail-closed against unexpected files when that workflow is changed.",
     "Local validation passed: JSON schema format, ruff, targeted mypy, full mypy ao_kernel, targeted E-3-6 pytest, adjacent Epic 3 pytest set, diff whitespace, gpp_next guard flags, and gitleaks secret scan.",
     "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
   ],
