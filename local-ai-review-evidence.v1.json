@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-2-6-ADVISORY-CI",
+  "work_package": "E-2-6-STDERR-HARDENING",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,14 +13,11 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-2-6-advisory-ci",
+    "head_ref": "refs/heads/codex/epic-2-6-stderr-hardening",
     "changed_files": [
-      ".github/workflows/live-adapter-evidence-emit.yml",
-      "CHANGELOG.md",
+      "local-ai-review-evidence.v1.json",
       "scripts/live_adapter_evidence_workflow_runner.py",
-      "tests/test_cost_ceiling.py",
-      "tests/test_live_adapter_evidence_workflow.py",
-      "local-ai-review-evidence.v1.json"
+      "tests/test_live_adapter_evidence_workflow.py"
     ]
   },
   "checks_considered": [
@@ -38,20 +35,18 @@
     { "name": "dry_run_harness_delegation", "status": "pass" },
     { "name": "forbidden_secret_env_fail_closed", "status": "pass" },
     { "name": "guard_flags_false_in_artifacts", "status": "pass" },
-    { "name": "codeql_stdout_secret_logging_hardened", "status": "pass" },
+    { "name": "codeql_stdout_stderr_secret_logging_hardened", "status": "pass" },
     { "name": "legacy_cost_ceiling_workflow_guard_narrowed", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Claude Anthropic cross-provider review returned AGREE for E-2-6 Path A advisory CI.",
-    "Claude Anthropic re-review returned AGREE for the legacy E-2-3 workflow guard narrowing that allows only the E-2-6 advisory workflow path.",
-    "The workflow uses pull_request plus workflow_dispatch only and does not include pull_request_target.",
-    "The workflow grants only contents: read, uses persist-credentials: false, and has no PR comment, Teams webhook, secrets context, or write permission surface.",
-    "The runner fails closed when protected secret environment variable names are present and never logs secret values.",
-    "The runner's CLI stdout is intentionally static and does not print artifact paths, envelope digests, secret env names, or the full summary payload.",
-    "The runner delegates to the E-2-4 no-network dry-run harness and emits envelope, per-call audit, and workflow summary artifacts only.",
-    "Tests pin trigger, permission, secret-context, artifact-only, fail-closed env, AST import, and guard-flag boundaries.",
-    "The older E-2-3 cost-ceiling workflow mutation guard was narrowed to allow only the E-2-6 advisory workflow path while continuing to fail closed on unrelated workflow mutations.",
+    "OpenAI reviewer Mill returned REVISE after PR #944 because the runner failure stderr could print dynamic exception text, including artifact paths.",
+    "Claude Anthropic cross-provider review returned AGREE for the E-2-6 stderr hardening follow-up after reviewing the runner, test, and evidence diff.",
+    "The runner now prints a fixed FAILURE_STDERR_MESSAGE on handled failure paths and does not interpolate exception text.",
+    "The fixed stderr message contains no runtime value, artifact path, envelope digest, protected secret environment variable name, exception message, or summary payload.",
+    "The new subprocess regression test triggers a file-as-output-dir failure and asserts stderr exactly equals the fixed message.",
+    "The regression test asserts stderr does not contain tmp_path, output_dir_file, envelope_digest, or any FORBIDDEN_SECRET_ENV_NAMES entry.",
+    "Success stdout hardening from E-2-6 remains unchanged and the workflow trigger, permission, secret-context, Teams, PR comment, provider HTTP, and artifact-only boundaries are not modified in this follow-up.",
     "Guard flags remain false. No support widening, production platform claim, live provider HTTP call, or live adapter execution is introduced."
   ],
   "secrets_recorded": false,

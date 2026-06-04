@@ -13,6 +13,7 @@ import pytest
 
 from scripts.live_adapter_evidence_workflow_runner import (
     FORBIDDEN_SECRET_ENV_NAMES,
+    FAILURE_STDERR_MESSAGE,
     WorkflowEvidenceError,
     emit_advisory_workflow_evidence,
 )
@@ -152,6 +153,34 @@ def test_runner_cli_smoke(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
     assert payload["live_adapter_execution"] is False
     assert "envelope_digest" not in payload
     assert "artifacts" not in payload
+
+
+def test_runner_cli_failure_stderr_is_static(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_forbidden_secret_env(monkeypatch)
+    output_dir_file = tmp_path / "artifact-file"
+    output_dir_file.write_text("not a directory", encoding="utf-8")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(_RUNNER_PATH),
+            "--output-dir",
+            str(output_dir_file),
+            "--output-format",
+            "text",
+        ],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert proc.returncode == 1
+    assert proc.stderr.strip() == FAILURE_STDERR_MESSAGE
+    assert str(tmp_path) not in proc.stderr
+    assert str(output_dir_file) not in proc.stderr
+    assert "envelope_digest" not in proc.stderr
+    for forbidden_name in FORBIDDEN_SECRET_ENV_NAMES:
+        assert forbidden_name not in proc.stderr
 
 
 def test_runner_source_does_not_import_http_or_secret_providers() -> None:
