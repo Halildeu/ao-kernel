@@ -296,7 +296,9 @@ def test_drift_detects_in_review_without_consensus() -> None:
 def test_drift_detects_phase_done_with_unmerged_slice() -> None:
     payload = _load_status()
     phase = next(p for p in payload["phases"] if p["phase_id"] == "AO-MA-11E")
-    phase["status"] = "done"  # 11E still has unmerged slice AO-MA-11E-2.
+    target = next(s for s in payload["slices"] if s["slice_id"] == "AO-MA-11E-2")
+    target["status"] = "in_review"
+    phase["status"] = "done"
     drift = ao_ma_next.check_drift(payload)
     assert any("done but slices not merged" in d for d in drift)
 
@@ -504,10 +506,10 @@ def test_ao_ma_11e_2_status_is_bound_to_live_mirror_drift_evidence() -> None:
     payload = _load_status()
     target = next(s for s in payload["slices"] if s["slice_id"] == "AO-MA-11E-2")
 
-    assert target["status"] == "in_review"
+    assert target["status"] == "merged"
     assert target["risk_class"] == "high"
     assert target["issue_ref"] == 774
-    assert target["pr_refs"] == []
+    assert target["pr_refs"] == [933]
     assert target["consensus_ref"]["state"] == "agreed"
     assert target["approval_ref"]["state"] == "not_requested"
 
@@ -525,6 +527,27 @@ def test_ao_ma_11e_2_status_is_bound_to_live_mirror_drift_evidence() -> None:
     assert target["anchor"]["mirror_projection_sha256"] == (
         "sha256:b081c9b828d3593bb49bde8802ddc7177eaa6aa15c4e319f69ffb2f1d072b102"
     )
+
+
+def test_ao_ma_11e_phase_is_closed_after_live_mirror_evidence() -> None:
+    payload = _load_status()
+    phase = next(p for p in payload["phases"] if p["phase_id"] == "AO-MA-11E")
+
+    assert phase["status"] == "done"
+    assert phase["milestone_ref"] == 3
+    assert phase["closed_at"] == "2026-06-04T08:25:15Z"
+    assert payload["github_mirror"]["sync_state"] == "synced"
+    assert payload["progress_estimates"]["phases"] == {
+        "done_count": 7,
+        "total_count": 7,
+        "percent": 100,
+        "next_phase_id": None,
+    }
+    assert payload["progress_estimates"]["slices"] == {
+        "merged_count": 9,
+        "total_count": 9,
+        "percent": 100,
+    }
 
 
 def test_main_text_exit_zero_on_clean(capsys: pytest.CaptureFixture[str]) -> None:
