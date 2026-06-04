@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/e-4-2a-multi-tenant-boundary-contract.v1.json",
+  "title": "V5 Epic 4 E-4-2a multi-tenant boundary contract evidence",
+  "description": "Strict (additionalProperties:false + unevaluatedProperties:false) evidence artifact for V5 Epic 4 slice E-4-2a (Multi-tenant advisory boundary contract; early seal). Captures decision, write-set, invariant audit, guard-flag pin (3 const false), advisory-only marker (matrix advisory), and cross-AI provider distinctness. Bound to .claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md + tests/test_epic_4_2a_multi_tenant_boundary.py + .claude/plans/tenant_isolation_matrix.v1.json (placeholder state).",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "slice_id",
+    "epic_id",
+    "decision",
+    "decision_summary",
+    "write_set",
+    "checks_completed",
+    "guard_flags",
+    "matrix_advisory",
+    "reviewer_providers",
+    "no_workflow_mutation",
+    "no_pyproject_change",
+    "no_runtime_module_change",
+    "evidence_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "e-4-2a-multi-tenant-boundary-contract.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "epic-4-slice-decision-record"
+    },
+    "slice_id": {
+      "type": "string",
+      "const": "E-4-2a"
+    },
+    "epic_id": {
+      "type": "string",
+      "const": "EPIC-4"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["accepted", "rejected", "deferred"]
+    },
+    "decision_summary": {
+      "type": "string",
+      "minLength": 10
+    },
+    "write_set": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "not": { "pattern": "^\\.github/workflows/" }
+      },
+      "description": "Sorted list of files MODIFIED or ADDED on the slice branch relative to origin/main; MUST exactly equal `git diff --name-only origin/main..HEAD` (sorted)."
+    },
+    "checks_completed": {
+      "type": "array",
+      "minItems": 11,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "shape",
+          "no_guard_flip",
+          "no_workflow_mutation",
+          "runtime_enforced_false_const",
+          "operator_enforceable_true_per_entry",
+          "live_validated_false_const",
+          "advisory_dil_test",
+          "placeholder_status_per_entry",
+          "write_set_exact_match",
+          "evidence_validates",
+          "matrix_json_validates_against_matrix_schema"
+        ]
+      }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "support_widening",
+        "production_platform_claim",
+        "live_adapter_execution"
+      ],
+      "properties": {
+        "support_widening": { "const": false },
+        "production_platform_claim": { "const": false },
+        "live_adapter_execution": { "const": false }
+      },
+      "description": "All three runtime guard flags MUST stay const false in this slice. Key-string absence in the contract artifacts is re-verified by test (advisory_dil_test + no_guard_flip)."
+    },
+    "matrix_advisory": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "advisory_only",
+        "runtime_enforced_global",
+        "live_validated_global",
+        "matrix_status",
+        "dimensions_count",
+        "all_entries_placeholder"
+      ],
+      "properties": {
+        "advisory_only": { "const": true },
+        "runtime_enforced_global": { "const": false },
+        "live_validated_global": { "const": false },
+        "matrix_status": { "const": "e_4_2a_contract_placeholder" },
+        "dimensions_count": { "const": 7 },
+        "all_entries_placeholder": { "const": true }
+      },
+      "description": "Pinned mirror of the matrix advisory contract: all 7 dimensions present in placeholder state; no live validation; no runtime enforcement claim. E-4-2b will promote matrix_status to 'e_4_2b_final_seal' and entries to 'filled'."
+    },
+    "reviewer_providers": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["anthropic", "openai", "google", "minimax", "xai"]
+      },
+      "description": "Cross-AI provider list (implementer + reviewer). Provider strings MUST be distinct (HARD RULE Cross-AI Peer Review: provider-level distinct). E-4-2a uses 2-way (Claude/anthropic + Codex/openai); E-4-2b uses 3-way (adds Mavis/minimax)."
+    },
+    "no_workflow_mutation": {
+      "const": true,
+      "description": "Pinned true: this slice MUST NOT touch .github/workflows/**. Test enforces via git diff allowlist."
+    },
+    "no_pyproject_change": {
+      "const": true,
+      "description": "Pinned true: this slice MUST NOT modify pyproject.toml (Epic 4 invariant)."
+    },
+    "no_runtime_module_change": {
+      "const": true,
+      "description": "Pinned true: this slice only ADDS new schema files under ao_kernel/defaults/schemas/; it MUST NOT modify existing ao_kernel/* module files (ao_kernel/__init__.py and other modules untouched)."
+    },
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["plan_doc", "test_file", "matrix_json", "matrix_schema", "deployment_doc"],
+      "properties": {
+        "plan_doc": {
+          "type": "string",
+          "const": ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md"
+        },
+        "test_file": {
+          "type": "string",
+          "const": "tests/test_epic_4_2a_multi_tenant_boundary.py"
+        },
+        "matrix_json": {
+          "type": "string",
+          "const": ".claude/plans/tenant_isolation_matrix.v1.json"
+        },
+        "matrix_schema": {
+          "type": "string",
+          "const": "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json"
+        },
+        "deployment_doc": {
+          "type": "string",
+          "const": "docs/MULTI-TENANT-DEPLOYMENT.md"
+        }
+      }
+    },
+    "cross_ai_review_thread": {
+      "type": ["string", "null"],
+      "description": "Optional Codex MCP thread id for post-impl review (filled in after review submission)."
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

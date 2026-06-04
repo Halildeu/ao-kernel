@@ -1,0 +1,66 @@
+{
+  "schema_version": "e-4-2a-multi-tenant-boundary-contract.v1",
+  "artifact_kind": "epic-4-slice-decision-record",
+  "slice_id": "E-4-2a",
+  "epic_id": "EPIC-4",
+  "decision": "accepted",
+  "decision_summary": "V5 Epic 4 slice E-4-2a (Multi-tenant advisory boundary contract; early seal). 7-dimension shape contract + advisory dil discipline + matrix placeholder + strict Draft 2020-12 schemas; 11 invariant tests; no guard flag flip; no workflow mutation; no runtime module change; cross-AI 2-way (Claude/anthropic + Codex/openai). Per-dimension entries are PLACEHOLDER; E-4-2b will fill them after E-4-3/E-4-4/E-4-5 evidence lands.",
+  "write_set": [
+    ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md",
+    ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.v1.json",
+    ".claude/plans/tenant_isolation_matrix.v1.json",
+    "CHANGELOG.md",
+    "ao_kernel/defaults/schemas/e-4-2a-multi-tenant-boundary-contract.schema.v1.json",
+    "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
+    "docs/MULTI-TENANT-DEPLOYMENT.md",
+    "local-ai-review-evidence.v1.json",
+    "tests/test_epic_4_2a_multi_tenant_boundary.py"
+  ],
+  "checks_completed": [
+    "shape",
+    "no_guard_flip",
+    "no_workflow_mutation",
+    "runtime_enforced_false_const",
+    "operator_enforceable_true_per_entry",
+    "live_validated_false_const",
+    "advisory_dil_test",
+    "placeholder_status_per_entry",
+    "write_set_exact_match",
+    "evidence_validates",
+    "matrix_json_validates_against_matrix_schema"
+  ],
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "matrix_advisory": {
+    "advisory_only": true,
+    "runtime_enforced_global": false,
+    "live_validated_global": false,
+    "matrix_status": "e_4_2a_contract_placeholder",
+    "dimensions_count": 7,
+    "all_entries_placeholder": true
+  },
+  "reviewer_providers": ["anthropic", "openai"],
+  "no_workflow_mutation": true,
+  "no_pyproject_change": true,
+  "no_runtime_module_change": true,
+  "evidence_ref": {
+    "plan_doc": ".claude/plans/E-4-2a-MULTI-TENANT-BOUNDARY-CONTRACT.md",
+    "test_file": "tests/test_epic_4_2a_multi_tenant_boundary.py",
+    "matrix_json": ".claude/plans/tenant_isolation_matrix.v1.json",
+    "matrix_schema": "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
+    "deployment_doc": "docs/MULTI-TENANT-DEPLOYMENT.md"
+  },
+  "cross_ai_review_thread": "019e87e7-d796-7682-80e4-2be2662b7979",
+  "notes": [
+    "Plan-time consensus inherited from parent epic plan iter-2 AGREE: Codex thread 019e879d (V5 Epic 4 plan).",
+    "Post-impl review thread TBD; will be populated after Codex MCP review submission and updated with reviewer verdict.",
+    "Per Codex iter-2 F1 absorb: E-4-2 was split into E-4-2a (this slice; early advisory) + E-4-2b (later final seal with 3-way Codex + Mavis).",
+    "Per Codex iter-2 F4 absorb: 4 const fields per dimension entry (runtime_enforced:false + operator_enforceable:true + operator_action_required:true + live_validated:false) + advisory dil discipline (no 'isolation achieved' / 'isolation enforced' / 'fully isolated' / 'runtime enforces').",
+    "Per Codex iter-2 F2 absorb: 3 guard flag key strings (support_widening / production_platform_claim / live_adapter_execution) ABSENT from every artifact in this slice (docs, matrix JSON, both schema JSONs, plan doc, test file).",
+    "Per Codex iter-2 F3 absorb: write_set EXACTLY matches git diff --name-only origin/main..HEAD; no .github/workflows/** path; schema-level not-pattern guards workflow path absence.",
+    "Post-impl Codex review thread 019e87e7-d796-7682-80e4-2be2662b7979 AGREE (ready_to_merge:true; zero blocking findings). Reviewer probed matrix schema exact-once-per-dimension (missing + duplicate rejected; E-4-2b filled-form forward-compat accepted) + evidence schema unevaluatedProperties:false closure on all four objects (extra-property probes rejected) + write_set diff exact match + advisory dil discipline + zero-touch boundary verification. Non-blocking hardening suggestion for future iteration: extend overclaim banned phrase set with 'isolation guaranteed' / 'isolation proven' / 'strict isolation' (deliberately NOT 'isolation guarantee' bare because the doc uses it correctly in negation form at section 1). Suggestion not absorbed in this slice (E-4-2a is early advisory contract; final dil discipline tightening happens in E-4-2b 3-way review)."
+  ]
+}

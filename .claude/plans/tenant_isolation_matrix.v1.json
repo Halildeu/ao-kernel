@@ -1,0 +1,94 @@
+{
+  "schema_version": "tenant-isolation-matrix.v1",
+  "artifact_kind": "multi-tenant-isolation-advisory-matrix",
+  "epic_id": "EPIC-4",
+  "matrix_status": "e_4_2a_contract_placeholder",
+  "advisory_only": true,
+  "runtime_enforced_global": false,
+  "live_validated_global": false,
+  "dimensions": [
+    {
+      "dimension": "namespace_isolation",
+      "runtime_enforced": false,
+      "operator_enforceable": true,
+      "operator_action_required": true,
+      "live_validated": false,
+      "enforcement_mechanism": "One Helm release per Kubernetes Namespace; cluster-scoped resources avoided; ClusterRole binding refused by chart template policy.",
+      "operator_runbook_section": "#namespace-isolation",
+      "entry_status": "placeholder",
+      "downstream_evidence_ref": null
+    },
+    {
+      "dimension": "rbac_scope",
+      "runtime_enforced": false,
+      "operator_enforceable": true,
+      "operator_action_required": true,
+      "live_validated": false,
+      "enforcement_mechanism": "Role + RoleBinding namespace-scoped; ClusterRole + ClusterRoleBinding not rendered by the chart; cross-namespace verbs unavailable to the workload ServiceAccount.",
+      "operator_runbook_section": "#rbac-scope",
+      "entry_status": "placeholder",
+      "downstream_evidence_ref": null
+    },
+    {
+      "dimension": "secret_isolation",
+      "runtime_enforced": false,
+      "operator_enforceable": true,
+      "operator_action_required": true,
+      "live_validated": false,
+      "enforcement_mechanism": "Kubernetes Secret resources per-namespace; pod env block consumes secrets via secretKeyRef indirection; cross-namespace secret mount blocked by Kubernetes default behavior.",
+      "operator_runbook_section": "#secret-isolation",
+      "entry_status": "placeholder",
+      "downstream_evidence_ref": null
+    },
+    {
+      "dimension": "network_policy",
+      "runtime_enforced": false,
+      "operator_enforceable": true,
+      "operator_action_required": true,
+      "live_validated": false,
+      "enforcement_mechanism": "Default-deny ingress and egress NetworkPolicy; operator-extended allowlist for database, LLM providers, Teams webhook, and kube-dns peers.",
+      "operator_runbook_section": "#network-policy",
+      "entry_status": "placeholder",
+      "downstream_evidence_ref": null
+    },
+    {
+      "dimension": "resource_quota",
+      "runtime_enforced": false,
+      "operator_enforceable": true,
+      "operator_action_required": true,
+      "live_validated": false,
+      "enforcement_mechanism": "ResourceQuota + LimitRange applied per-namespace by the operator; chart template defines pod-level resources.requests and resources.limits only.",
+      "operator_runbook_section": "#resource-quota",
+      "entry_status": "placeholder",
+      "downstream_evidence_ref": null
+    },
+    {
+      "dimension": "audit_boundary",
+      "runtime_enforced": false,
+      "operator_enforceable": true,
+      "operator_action_required": true,
+      "live_validated": false,
+      "enforcement_mechanism": "JSONL evidence log written under the tenant-specific workspace_root on the pod's persistent volume; cross-tenant fact promotion is an advisory boundary respected by the workspace facts pipeline.",
+      "operator_runbook_section": "#audit-boundary",
+      "entry_status": "placeholder",
+      "downstream_evidence_ref": null
+    },
+    {
+      "dimension": "cost_tracking_advisory",
+      "runtime_enforced": false,
+      "operator_enforceable": true,
+      "operator_action_required": true,
+      "live_validated": false,
+      "enforcement_mechanism": "Per-tenant cost tracking is advisory only; the cost_tracking.available capability stays at the project's declared default; per-tenant rollup is an operator dashboard pattern, not a chart-rendered surface.",
+      "operator_runbook_section": "#cost-tracking-advisory",
+      "entry_status": "placeholder",
+      "downstream_evidence_ref": null
+    }
+  ],
+  "notes": [
+    "All 7 entries are in 'placeholder' state per E-4-2a (early advisory boundary contract).",
+    "E-4-2b will promote matrix_status to 'e_4_2b_final_seal' and entries to 'filled' after E-4-3/E-4-4/E-4-5 land downstream evidence references.",
+    "Per Codex iter-1 F4 absorb: dil discipline = 'advisory boundary' / 'isolation pattern' (no 'isolation achieved', no 'isolation enforced', no 'operator_enforced:true').",
+    "Per Codex iter-2 AGREE absorb: matrix advisory-only; runtime layer of ao-kernel does NOT enforce; live validation deferred to Epic 9."
+  ]
+}

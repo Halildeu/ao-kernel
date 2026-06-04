@@ -31,6 +31,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 Epic 4 E-4-2a multi-tenant advisory boundary contract**:
+  added the early seven-dimension multi-tenant boundary contract,
+  placeholder tenant isolation matrix, strict evidence/matrix schemas,
+  and advisory-language invariants without claiming runtime isolation,
+  workflow mutation, support widening, production readiness, or live
+  cluster validation.
 - **V5 Epic 4 E-4-1 Helm chart skeleton**: added the first
   operator-installable `deploy/helm/ao-kernel/` chart skeleton with
   render-only templates, strict `values.schema.json`, namespace-scoped
