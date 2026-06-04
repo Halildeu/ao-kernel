@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **E-4-3 operator-owned PostgreSQL provisioning + secret management** (V5
+  Epic 4, #862): Helm chart `postgresql` block (external, operator-owned,
+  `enabled:false` default) + `secretKeyRef`-only credential wiring in
+  `deployment.yaml` + closed `values.schema.json` block +
+  `docs/OPERATOR-SECRET-MANAGEMENT.md` operator runbook. The chart never
+  deploys a database and never holds secret material. 16 invariants in
+  `tests/test_epic_4_3_postgres_provisioning.py`. No guard flag touched.
+
 ### Changed
 
 - **V5 Epic 2 + Epic 3 roadmap reframe**: reframed live-adapter
