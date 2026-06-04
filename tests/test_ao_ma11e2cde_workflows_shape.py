@@ -267,7 +267,7 @@ def test_14_no_existing_workflow_mutation() -> None:
     """git diff --name-only origin/main..HEAD shows only NEW workflow files."""
     try:
         result = subprocess.run(
-            ["git", "diff", "--name-only", "origin/main..HEAD"],
+            ["git", "diff", "--name-only", "origin/main...HEAD"],
             cwd=str(REPO_ROOT),
             check=False,
             capture_output=True,
@@ -281,6 +281,14 @@ def test_14_no_existing_workflow_mutation() -> None:
         pytest.skip(f"git diff returned non-zero ({result.returncode}); stderr={result.stderr.strip()}")
 
     files = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    slice_markers = {
+        str(path.relative_to(REPO_ROOT)) for path in ALL_WORKFLOW_PATHS
+    } | {
+        str(EVIDENCE_PLAN_JSON.relative_to(REPO_ROOT)),
+        str(EVIDENCE_SCHEMA_JSON.relative_to(REPO_ROOT)),
+    }
+    if not (slice_markers & set(files)):
+        pytest.skip("AO-MA-11E workflow mutation invariant applies only when AO-MA-11E workflow artifacts are in the PR diff")
     workflow_changes = [f for f in files if f.startswith(".github/workflows/")]
     if not workflow_changes:
         return

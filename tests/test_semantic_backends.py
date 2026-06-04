@@ -263,7 +263,7 @@ def test_no_workflow_mutation() -> None:
 
     repo_root = Path(__file__).resolve().parents[1]
     proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD", "--", ".github/workflows"],
+        ["git", "diff", "--name-only", "origin/main...HEAD"],
         cwd=repo_root,
         capture_output=True,
         text=True,
@@ -271,5 +271,13 @@ def test_no_workflow_mutation() -> None:
     )
     if proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    workflow_changes = proc.stdout.split()
+    changed = [p for p in proc.stdout.split() if p]
+    e75_active = any(
+        p.startswith("ao_kernel/context/semantic_backends/")
+        or "EPIC-7-5-PGVECTOR-BACKEND" in p
+        for p in changed
+    )
+    if not e75_active:
+        pytest.skip("E-7-5 workflow mutation invariant applies only when semantic backend slice files are in the PR diff")
+    workflow_changes = [p for p in changed if p.startswith(".github/workflows/")]
     assert workflow_changes == [], f"E-7-5 must not touch workflows: {workflow_changes}"

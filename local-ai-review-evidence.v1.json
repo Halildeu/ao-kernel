@@ -1,26 +1,31 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-917-release-gate-dependabot-scope",
+  "work_package": "AO-MA-798-dependabot-trivy-scanning",
   "implementer": {
-    "agent": "codex-gpt-5-release-gate-dependabot-scope",
+    "agent": "codex-gpt-5-e6-2-rebase-integrator",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-code-independent-reviewer-dependabot-scope",
+    "agent": "claude-code-reviewer-pr798-e62-final",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-release-gate-dependabot-scope",
+    "head_ref": "refs/heads/codex/epic-6-e6-2-vuln-scanning",
     "changed_files": [
+      ".claude/plans/EPIC-6-E6-2-VULN-SCANNING.md",
+      ".github/dependabot.yml",
+      ".github/workflows/trivy.yml",
       "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "tests/test_ao_ma11e2cde_workflows_shape.py",
+      "tests/test_epic_4_1_helm_chart_skeleton.py",
+      "tests/test_epic_4_2a_multi_tenant_boundary.py",
+      "tests/test_issue_forms_shape.py",
+      "tests/test_semantic_backends.py",
+      "tests/test_vuln_scanning_invariants.py",
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
@@ -33,43 +38,51 @@
       "status": "pass"
     },
     {
-      "name": "exact_path_not_prefix_widening",
+      "name": "minimum_permissions",
       "status": "pass"
     },
     {
-      "name": "workflow_governance_unchanged",
+      "name": "no_pull_request_target",
       "status": "pass"
     },
     {
-      "name": "codeowners_governance_unchanged",
+      "name": "trivy_exact_vprefixed_semver_pin",
       "status": "pass"
     },
     {
-      "name": "ruleset_governance_unchanged",
+      "name": "advisory_exit_code_zero",
       "status": "pass"
     },
     {
-      "name": "live_adapter_gate_unchanged",
+      "name": "sarif_category_distinct",
       "status": "pass"
     },
     {
-      "name": "support_widening_claim_unchanged",
+      "name": "snyk_operator_deferred",
       "status": "pass"
     },
     {
-      "name": "production_platform_claim_unchanged",
+      "name": "guard_flag_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "doc_workflow_version_consistency",
       "status": "pass"
     },
     {
       "name": "changelog_discipline",
       "status": "pass"
+    },
+    {
+      "name": "legacy_slice_invariant_scope_fix",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Claude independent review returned AGREE for the exact .github/dependabot.yml release-gate scope fix.",
-    "The patch adds only an exact Dependabot config path, not a generic .github/ prefix.",
-    "Workflow, CODEOWNERS, ruleset, branch-protection, live-adapter, support-widening, and production-claim surfaces remain independently governed.",
-    "Local verification reported 20 focused tests passed and git diff --check clean before evidence regeneration."
+    "Claude re-review verdict AGREE after rebase and plan-doc version drift cleanup.",
+    "ADR-0005 changelog enforcement failure was resolved with a narrow Unreleased entry for the advisory Dependabot + Trivy filesystem scanning baseline.",
+    "CI matrix failures from stale slice-specific workflow/dot-github invariants were resolved by scoping those tests to their own slice evidence or artifact markers; no Trivy workflow guard was relaxed.",
+    "No blocking findings: advisory-only Dependabot + Trivy filesystem baseline remains scoped; Snyk, image scans, required-gate promotion, MEDIUM severity, config/secret scanning, support widening, production claim, and live adapter execution remain out of scope."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

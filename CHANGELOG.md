@@ -36,6 +36,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 Epic 6 E-6-2 vulnerability scanning baseline**: added the
+  advisory Dependabot and Trivy filesystem scanning baseline with
+  minimum GitHub Actions permissions, exact Trivy action pinning,
+  SARIF upload category separation, and explicit deferral of Snyk,
+  container image scans, medium-severity widening, and required-gate
+  promotion.
 - **V5 Epic 7 E-7-5 pgvector semantic backend**: added the
   opt-in semantic backend protocol with an in-memory implementation and
   a lazy-import pgvector backend that requires operator-provided DSN

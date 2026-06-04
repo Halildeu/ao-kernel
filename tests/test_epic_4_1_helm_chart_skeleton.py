@@ -156,6 +156,9 @@ def test_no_guard_flag_key_anywhere_in_chart_dir() -> None:
 def test_no_workflow_mutation_in_diff() -> None:
     """git diff against origin/main MUST NOT include .github/workflows/** entries."""
     changed = _changed_files_against_origin_main()
+    evidence_path = str(_EVIDENCE_PATH.relative_to(_REPO_ROOT))
+    if evidence_path not in changed:
+        pytest.skip("E-4-1 workflow mutation invariant applies only when the E-4-1 evidence artifact is in the PR diff")
     workflow_changes = [p for p in changed if p.startswith(".github/workflows/")]
     assert workflow_changes == [], f"workflow files modified in this slice (FORBIDDEN): {workflow_changes}"
 
