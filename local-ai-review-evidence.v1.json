@@ -22,6 +22,7 @@
       "ao_kernel/context/semantic_backends/in_memory.py",
       "ao_kernel/context/semantic_backends/pgvector.py",
       "tests/test_semantic_backends.py",
+      "tests/test_epic_4_2a_multi_tenant_boundary.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -61,10 +62,15 @@
     {
       "name": "scope_containment",
       "status": "pass"
+    },
+    {
+      "name": "e42a_slice_invariant_scope_fix",
+      "status": "pass"
     }
   ],
   "findings": [
     "Advisory: search() SQL binds query_embedding 3x via separate %s placeholders; suboptimal but functionally correct and safe.",
+    "CI fix: E-4-2a slice-specific pyproject/runtime/write_set invariants now skip unless the E-4-2a evidence artifact is in the PR diff; Claude re-review verdict AGREE.",
     "No blocking findings. All 7 review criteria pass."
   ],
   "secrets_recorded": false,
