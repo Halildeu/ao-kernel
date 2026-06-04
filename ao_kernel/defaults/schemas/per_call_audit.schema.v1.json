@@ -59,21 +59,25 @@
       "description": "Whether this call's cost recording crossed soft/hard ceiling thresholds. Distinct from status."
     },
     "cost_breach_handling": {
-      "type": "object",
-      "additionalProperties": false,
-      "unevaluatedProperties": false,
-      "required": ["decision", "soft_threshold_usd", "cumulative_cost_usd", "decided_at"],
-      "description": "Caller decision audit; required only when cost_breach_state == soft_breached (E-2-3 soft-breach contract).",
-      "properties": {
-        "decision": { "type": "string", "enum": ["continued", "stopped", "deferred"] },
-        "soft_threshold_usd": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$" },
-        "cumulative_cost_usd": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$" },
-        "decided_at": {
-          "type": "string",
-          "format": "date-time",
-          "pattern": "^[0-9]{4}-((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|1[0-9]|2[0-9]))T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-        }
-      }
+      "description": "Caller decision audit. Object only when cost_breach_state == soft_breached (E-2-3 soft-breach contract); null for hard_breached; null/absent otherwise.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "unevaluatedProperties": false,
+          "required": ["decision", "decided_by", "decided_at"],
+          "properties": {
+            "decision": { "type": "string", "enum": ["continued", "stopped", "deferred"] },
+            "decided_by": { "type": "string", "enum": ["operator", "policy_default", "caller_module"] },
+            "decided_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^[0-9]{4}-((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|1[0-9]|2[0-9]))T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+            }
+          }
+        },
+        { "type": "null" }
+      ]
     },
     "live_adapter_execution": {
       "const": false,
@@ -89,12 +93,36 @@
   },
   "allOf": [
     {
-      "if": { "properties": { "cost_breach_state": { "const": "soft_breached" } } },
-      "then": { "required": ["cost_breach_handling"] }
+      "comment": "soft_breached => cost_breach_handling required AND must be the object form",
+      "if": {
+        "required": ["cost_breach_state"],
+        "properties": { "cost_breach_state": { "const": "soft_breached" } }
+      },
+      "then": {
+        "required": ["cost_breach_handling"],
+        "properties": { "cost_breach_handling": { "type": "object" } }
+      }
     },
     {
-      "if": { "properties": { "cost_breach_state": { "const": "hard_breached" } } },
-      "then": { "properties": { "status": { "const": "error" } } }
+      "comment": "any non-soft state => cost_breach_handling, if present, must be null (populated only when soft)",
+      "if": {
+        "required": ["cost_breach_state"],
+        "properties": { "cost_breach_state": { "not": { "const": "soft_breached" } } }
+      },
+      "then": {
+        "properties": { "cost_breach_handling": { "type": "null" } }
+      }
+    },
+    {
+      "comment": "hard_breached => status error AND cost_breach_handling present (null per the non-soft branch); unconditional abort row",
+      "if": {
+        "required": ["cost_breach_state"],
+        "properties": { "cost_breach_state": { "const": "hard_breached" } }
+      },
+      "then": {
+        "required": ["cost_breach_handling"],
+        "properties": { "status": { "const": "error" } }
+      }
     }
   ]
 }

@@ -51,19 +51,26 @@ def _validate(row: dict[str, Any]) -> None:
 
 
 def _append_jsonl(path: Path, payload: dict[str, Any]) -> None:
-    """Append one row as canonical JSON, fsync best-effort (mirrors the
-    evidence writer's append contract: O_APPEND via 'a' + fsync)."""
+    """Append one row as a single canonical-JSON line, atomically.
+
+    A row is pre-encoded to one ``bytes`` value (line + trailing newline) and
+    written with a single ``os.write`` to a fd opened ``O_WRONLY|O_CREAT|
+    O_APPEND``. POSIX guarantees an ``O_APPEND`` write smaller than ``PIPE_BUF``
+    (>=4 KiB; audit rows are far smaller) is atomic, so concurrent writers never
+    interleave a partial line. ``fsync`` is best-effort (unsupported on some
+    network FS / bind mounts; the row is already in the page cache and integrity
+    verification stays authoritative)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
-        handle.flush()
+    line = (json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+    try:
+        os.write(fd, line)  # single write => atomic line append under O_APPEND
         try:
-            os.fsync(handle.fileno())
+            os.fsync(fd)
         except OSError:
-            # fsync may be unsupported (network FS, bind mount). The row has
-            # landed in the page cache; integrity verification stays the
-            # authoritative check (mirrors evidence/writer.py).
             pass
+    finally:
+        os.close(fd)
 
 
 def record_call(row: dict[str, Any], *, workspace_root: Path | None = None) -> dict[str, Any]:

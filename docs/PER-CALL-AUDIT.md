@@ -19,12 +19,16 @@ a provider-lifecycle `status`, and a **separate** `cost_breach_state`.
 | `status` | `ok` / `error` / `stub_emitted` / `dry_run_emitted` | provider call lifecycle |
 | `cost_breach_state` | `ok` / `soft_breached` / `hard_breached` / `not_applicable` | whether cost recording crossed a ceiling threshold |
 
-Conditional invariants (`allOf`):
+Conditional invariants (`allOf`), aligned to the E-2-3 breach contract:
 
-- `cost_breach_state == "soft_breached"` ⇒ `cost_breach_handling` required
-  (the caller-decision audit: continued/stopped/deferred + thresholds).
-- `cost_breach_state == "hard_breached"` ⇒ `status == "error"` (a hard breach
-  is an unconditional abort).
+- `cost_breach_state == "soft_breached"` ⇒ `cost_breach_handling` required and
+  must be the **object** form `{decision, decided_by, decided_at}`
+  (`decided_by` ∈ {operator, policy_default, caller_module}).
+- `cost_breach_state == "hard_breached"` ⇒ `status == "error"` **and**
+  `cost_breach_handling == null` (an unconditional abort row — no caller
+  decision; written to both JSONL files).
+- `ok` / `not_applicable` ⇒ `cost_breach_handling` is null or absent (a
+  populated object is rejected — it is populated only on a soft breach).
 
 Fail-closed: a missing or float `actual_cost_usd` fails schema validation, so
 the row is rejected (CLAUDE.md değişmez #1). Timestamps use the same
@@ -41,9 +45,13 @@ workspace_root=None)` is a **pure serializer**:
 - **Library mode** (`workspace_root=None`): skips persistence, returns
   `{"persisted": False, "mode": "library", "paths": []}` (single-process
   contract).
-- **Workspace mode**: appends atomically (O_APPEND + fsync) to
-  `evidence/per_call_audit.jsonl`. A `hard_breached` row is ALSO appended to
-  `evidence/cost_hard_breach.jsonl` so the abort path is cross-referenced.
+- **Workspace mode**: appends each row as a single pre-encoded `os.write` to a
+  fd opened `O_WRONLY|O_CREAT|O_APPEND` (POSIX guarantees an `O_APPEND` write
+  below `PIPE_BUF` is atomic, so concurrent writers never interleave a partial
+  line) + best-effort `fsync`, to `evidence/per_call_audit.jsonl`. A
+  `hard_breached` row is ALSO appended to `evidence/cost_hard_breach.jsonl` so
+  the abort path is cross-referenced. A concurrent-append test asserts N writers
+  produce N parseable lines.
 
 The writer does **not** decide breaches and does **not** raise
 `CostCeilingExceeded` — that is the E-2-3 cost-ceiling module, which calls this

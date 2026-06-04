@@ -59,16 +59,33 @@ def _valid_row() -> dict[str, Any]:
 
 
 def _soft_breach_row() -> dict[str, Any]:
+    """E-2-3 soft-breach contract: cost_breach_handling = {decision, decided_by,
+    decided_at} (no threshold fields)."""
     row = _valid_row()
     row["status"] = "ok"
     row["cost_breach_state"] = "soft_breached"
     row["cost_breach_handling"] = {
         "decision": "continued",
-        "soft_threshold_usd": "0.50000000",
-        "cumulative_cost_usd": "0.51000000",
+        "decided_by": "policy_default",
         "decided_at": "2026-06-04T10:00:01Z",
     }
     return row
+
+
+def _hard_breach_row() -> dict[str, Any]:
+    """E-2-3 hard-breach contract: status=error, cost_breach_handling=null."""
+    row = _valid_row()
+    row["status"] = "error"
+    row["cost_breach_state"] = "hard_breached"
+    row["cost_breach_handling"] = None
+    return row
+
+
+def _concurrent_append_worker(workspace: str, idx: int) -> None:
+    """Module-level worker so it is picklable across start methods (fork/spawn)."""
+    row = _valid_row()
+    row["request_id"] = f"{idx:08d}-4e5f-6071-8293-a4b5c6d7e8f9"
+    record_call(row, workspace_root=Path(workspace))
 
 
 # ---- 1. schema health (2) ----------------------------------------------
@@ -84,6 +101,7 @@ def test_schema_present_and_valid_draft_2020_12() -> None:
 def test_valid_rows_validate() -> None:
     assert _is_valid(_valid_row())
     assert _is_valid(_soft_breach_row())
+    assert _is_valid(_hard_breach_row())
 
 
 # ---- 2. guard-flag pins (2) --------------------------------------------
@@ -197,21 +215,61 @@ def test_recorded_at_calendar_coupling() -> None:
 # ---- 6. conditional invariants (allOf) (2) -----------------------------
 
 
-def test_soft_breach_requires_handling() -> None:
+def test_soft_breach_requires_object_handling() -> None:
     row = _valid_row()
     row["cost_breach_state"] = "soft_breached"
-    # no cost_breach_handling
     assert not _is_valid(row), "soft_breached without cost_breach_handling must be rejected"
-    assert _is_valid(_soft_breach_row()), "soft_breached with handling must validate"
+    row["cost_breach_handling"] = None  # null is not allowed for soft
+    assert not _is_valid(row), "soft_breached with null handling must be rejected"
+    assert _is_valid(_soft_breach_row()), "soft_breached with object handling must validate"
 
 
-def test_hard_breach_requires_error_status() -> None:
-    row = _valid_row()
-    row["cost_breach_state"] = "hard_breached"
-    row["status"] = "ok"  # mismatched
-    assert not _is_valid(row), "hard_breached must require status=error"
-    row["status"] = "error"
-    assert _is_valid(row), "hard_breached + status=error must validate"
+def test_soft_breach_handling_shape_matches_e23_contract() -> None:
+    # E-2-3 contract: required {decision, decided_by, decided_at}; decided_by enum
+    base = _soft_breach_row()
+    assert _is_valid(base)
+    for field in ("decision", "decided_by", "decided_at"):
+        bad = _soft_breach_row()
+        del bad["cost_breach_handling"][field]
+        assert not _is_valid(bad), f"soft handling must require {field}"
+    unknown = _soft_breach_row()
+    unknown["cost_breach_handling"]["decided_by"] = "intruder"
+    assert not _is_valid(unknown), "decided_by must be enum {operator, policy_default, caller_module}"
+    extra = _soft_breach_row()
+    extra["cost_breach_handling"]["soft_threshold_usd"] = "0.10000000"
+    assert not _is_valid(extra), "soft handling is strict-closed; unknown field rejected"
+
+
+def test_hard_breach_requires_error_status_and_null_handling() -> None:
+    # status must be error
+    bad_status = _hard_breach_row()
+    bad_status["status"] = "ok"
+    assert not _is_valid(bad_status), "hard_breached must require status=error"
+    # cost_breach_handling must be null, not an object
+    bad_obj = _hard_breach_row()
+    bad_obj["cost_breach_handling"] = {
+        "decision": "stopped",
+        "decided_by": "operator",
+        "decided_at": "2026-06-04T10:00:01Z",
+    }
+    assert not _is_valid(bad_obj), "hard_breached must carry null cost_breach_handling, not an object"
+    # the canonical hard row validates
+    assert _is_valid(_hard_breach_row())
+
+
+def test_non_soft_states_forbid_object_handling() -> None:
+    for state in ("ok", "not_applicable"):
+        row = _valid_row()
+        row["cost_breach_state"] = state
+        row["cost_breach_handling"] = {
+            "decision": "continued",
+            "decided_by": "policy_default",
+            "decided_at": "2026-06-04T10:00:01Z",
+        }
+        assert not _is_valid(row), f"{state} must not carry a populated cost_breach_handling object"
+        # null/absent is fine
+        row["cost_breach_handling"] = None
+        assert _is_valid(row), f"{state} with null handling must validate"
 
 
 # ---- 7. writer: fail-closed + library/workspace modes (5) --------------
@@ -249,14 +307,48 @@ def test_writer_appends_are_cumulative(tmp_path: Path) -> None:
 
 
 def test_writer_hard_breach_cross_referenced(tmp_path: Path) -> None:
-    row = _valid_row()
-    row["cost_breach_state"] = "hard_breached"
-    row["status"] = "error"
-    receipt = record_call(row, workspace_root=tmp_path)
+    # Uses the E-2-3 hard-breach contract (status=error, handling=null).
+    receipt = record_call(_hard_breach_row(), workspace_root=tmp_path)
     assert (tmp_path / "evidence" / "per_call_audit.jsonl").is_file()
     breach = tmp_path / "evidence" / "cost_hard_breach.jsonl"
     assert breach.is_file(), "hard_breached row must also land in cost_hard_breach.jsonl"
     assert str(breach) in receipt["paths"]
+
+
+def test_writer_invalid_row_does_not_change_existing_linecount(tmp_path: Path) -> None:
+    record_call(_valid_row(), workspace_root=tmp_path)
+    audit = tmp_path / "evidence" / "per_call_audit.jsonl"
+    before = len(audit.read_text(encoding="utf-8").splitlines())
+    bad = _valid_row()
+    bad["actual_cost_usd"] = "0.01"  # wrong precision => schema-invalid
+    with pytest.raises(PerCallAuditValidationError):
+        record_call(bad, workspace_root=tmp_path)
+    after = len(audit.read_text(encoding="utf-8").splitlines())
+    assert after == before, "a rejected row must not change the existing JSONL line count"
+
+
+def test_writer_concurrent_appends_are_line_atomic(tmp_path: Path) -> None:
+    """N concurrent processes appending must yield N lines, each parseable —
+    O_APPEND + single os.write keeps lines from interleaving (Codex E-2-2 absorb)."""
+    import multiprocessing
+
+    n = 20
+    try:
+        ctx = multiprocessing.get_context("fork")
+    except ValueError:  # platform without fork
+        pytest.skip("fork start method unavailable on this platform")
+    procs = [ctx.Process(target=_concurrent_append_worker, args=(str(tmp_path), i)) for i in range(n)]
+    for p in procs:
+        p.start()
+    for p in procs:
+        p.join()
+        assert p.exitcode == 0
+
+    audit = tmp_path / "evidence" / "per_call_audit.jsonl"
+    lines = audit.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == n, f"expected {n} lines, got {len(lines)}"
+    for line in lines:
+        json.loads(line)  # each line must be parseable (no interleaving)
 
 
 # ---- 8. governance: no workflow mutation (1) ---------------------------
