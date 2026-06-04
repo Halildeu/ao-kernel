@@ -36,9 +36,16 @@ python scripts/regression_gate.py \
   --head benchmark_scorecard.v1.json \
   --baseline docs/performance/baseline.v1.json \
   --threshold docs/performance/performance-regression-threshold.v1.json \
+  --catalog docs/performance/performance-scenario-catalog.v1.json \
+  --benchmark-mode fast \
+  --generated-at "$(git log -1 --format=%cI)" \
   --out regression-comparison-result.v1.json
 ```
 
+All seven inputs are **required** by the CLI: `--head`, `--baseline`,
+`--threshold`, `--catalog`, `--benchmark-mode {fast,full}`, `--generated-at`
+(ISO-8601; use the commit time for reproducibility), `--out`. Optional
+`--advisory-mode` / `--strict-mode` override the policy's resolved enforcement.
 The gate compares each primary scenario's `duration_ms` (and other primary
 metrics) against the baseline, applies the threshold policy, and emits a
 verdict. In `advisory` mode a regression is reported but does not hard-fail CI;

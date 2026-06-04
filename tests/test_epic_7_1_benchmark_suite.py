@@ -81,6 +81,25 @@ def test_regression_gate_cli_documents_inputs() -> None:
         assert flag in text, f"regression_gate must accept {flag}"
 
 
+def test_runbook_command_matches_script_required_args() -> None:
+    """Codex E-7-1 review absorb: the runbook's regression_gate command must
+    pass EVERY required CLI arg — not a stale subset. Parse the script's
+    required=True args and assert the doc command includes each one (so the
+    documented command actually runs)."""
+    import re
+
+    script = _GATE.read_text(encoding="utf-8")
+    required = set(re.findall(r'add_argument\(\s*"(--[a-z-]+)"[^)]*required=True', script))
+    assert required, "expected to parse required args from regression_gate.py"
+    doc = _DOC.read_text(encoding="utf-8")
+    # Find the regression_gate invocation block in the runbook.
+    idx = doc.find("python scripts/regression_gate.py")
+    assert idx != -1, "runbook must show the regression_gate command invocation"
+    block = doc[idx : idx + 700]
+    missing = [arg for arg in required if arg not in block]
+    assert not missing, f"runbook regression_gate command missing required args: {sorted(missing)}"
+
+
 # ---- 3. guard flags (2) -------------------------------------------------
 
 

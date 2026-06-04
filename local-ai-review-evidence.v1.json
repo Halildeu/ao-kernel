@@ -58,13 +58,18 @@
     {
       "name": "cross_provider_review",
       "status": "pass"
+    },
+    {
+      "name": "runbook_command_matches_script_args",
+      "status": "pass"
     }
   ],
   "findings": [
     "E-7-1 (#883) production benchmark suite + cross-PR regression detection runbook. Binds existing scenario catalog + 3 benchmark scenarios + scorecard + baseline + threshold + regression_gate (#806) into one pipeline doc.",
     "7 integration invariants: every catalog scenario has a real test module; every enforced scenario present in baseline; regression_gate documents head/baseline/threshold inputs; catalog guard flags all false. Real consistency check (No Fake Work).",
     "Low-risk lane: docs/performance/ + tests/ + plan + CHANGELOG. NO scenario/gate logic change, NO .github/workflows/, NO runtime mutation.",
-    "3 guard flags const false; advisory enforcement (no blocking promotion); no SLA claim."
+    "3 guard flags const false; advisory enforcement (no blocking promotion); no SLA claim.",
+    "Codex E-7-1 review absorb (thread 019e91c6): runbook regression_gate command was missing required args (--catalog, --benchmark-mode, --generated-at). Now lists all 7 required inputs; new test parses script required=True args and asserts the doc command includes each (runnable-command guarantee, not flag-presence-only)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
