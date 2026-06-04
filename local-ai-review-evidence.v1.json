@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-3-4",
+  "work_package": "E-3-5",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,13 +13,14 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic3-e4-surface-inventory",
+    "head_ref": "refs/heads/codex/epic3-e5-consensus-protocol",
     "changed_files": [
-      ".claude/plans/EPIC-3-E-3-4-SURFACE-INVENTORY.md",
+      ".claude/plans/EPIC-3-E-3-5-SUPERSESSION-CONSENSUS-PROTOCOL.md",
       "CHANGELOG.md",
-      "docs/SUPPORT-SURFACE-INVENTORY.md",
+      "ao_kernel/defaults/schemas/widening-supersession-checklist.schema.v1.json",
+      "ao_kernel/defaults/widening-supersession-checklist.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_support_surface_inventory_doc.py"
+      "tests/test_widening_supersession_checklist.py"
     ]
   },
   "checks_considered": [
@@ -32,7 +33,19 @@
       "status": "pass"
     },
     {
-      "name": "pytest_support_surface_inventory_doc",
+      "name": "pytest_widening_supersession_checklist",
+      "status": "pass"
+    },
+    {
+      "name": "json_schema_and_checklist_parse",
+      "status": "pass"
+    },
+    {
+      "name": "ruff_test_file",
+      "status": "pass"
+    },
+    {
+      "name": "mypy_test_file",
       "status": "pass"
     },
     {
@@ -44,27 +57,23 @@
       "status": "pass"
     },
     {
-      "name": "no_support_boundary_or_public_beta_mutation",
+      "name": "schema_recursive_strict_closure",
       "status": "pass"
     },
     {
-      "name": "no_workflow_or_ruleset_mutation",
+      "name": "canonical_operator_authority_field",
       "status": "pass"
     },
     {
-      "name": "expanded_forbidden_claim_language_guard",
+      "name": "legacy_artifact_sha256_rejection",
       "status": "pass"
     },
     {
-      "name": "verbatim_no_widening_disclaimer",
+      "name": "rich_artifacts_bind_fields",
       "status": "pass"
     },
     {
-      "name": "row_bound_prerequisite_mapping",
-      "status": "pass"
-    },
-    {
-      "name": "provider_minimum_live_test_threshold",
+      "name": "e3_5_negative_cases",
       "status": "pass"
     },
     {
@@ -77,16 +86,16 @@
     }
   ],
   "findings": [
-    "Claude Anthropic returned VERDICT AGREE for E-3-4 after reviewing the current committed diff against origin/main.",
-    "Claude confirmed BLK-no_guard_flip-1 is covered by the expanded 12-pattern forbidden-claim language guard, including case-sensitive word-boundary GA handling.",
-    "Claude confirmed BLK-no_guard_flip-2 is covered by the verbatim disclaimer: This inventory does not announce any widening; it names what would be required if widening were authorized.",
-    "Claude confirmed the document includes all five surface classes: provider, python_version, os_platform, db_backend, and deployment_topology.",
-    "Claude confirmed each prerequisite is bound to its own section 3 surface_class row, preventing false positives from the section 2 examples table.",
-    "Claude confirmed the provider row specifically requires live integration tests and names the >=3 live-test threshold.",
-    "Claude confirmed the document frames all widening rows as prerequisites, not promises, and defers widening authority to the Epic 9 operator-bound supersession PR.",
-    "Claude confirmed docs/SUPPORT-BOUNDARY.md, docs/PUBLIC-BETA.md, workflows, rulesets, runtime code, and .ao evidence are not mutated by this slice.",
-    "Local validation passed: pytest tests/test_support_surface_inventory_doc.py -q reported 9 passed; diff whitespace checks passed; gpp_next still reports all guard flags false.",
-    "The E-3-4 diff is docs/test infrastructure only: support surface inventory doc, E-3-4 decision record, changelog entry, invariant test, and this local review evidence file.",
+    "Claude Anthropic returned VERDICT AGREE for E-3-5 after reviewing the committed diff against origin/main.",
+    "Claude confirmed guard flags are pinned false in schema, checklist JSON, and tests: support_widening=false, production_platform_claim=false, live_adapter_execution=false.",
+    "Claude confirmed the checklist uses rich artifacts[] bind fields and rejects the legacy flat artifact_sha256 surface.",
+    "Claude confirmed operator_authority.github_login is the canonical field and that the legacy operator_github_login alias is rejected by additionalProperties:false.",
+    "Claude confirmed recursive strict closure is asserted for schema object nodes and only local refs are allowed.",
+    "Claude confirmed the synthetic evaluator covers stale replay, duplicate reviewer identity, filtered negative verdict, denominator manipulation, 7-day window race, final diff drift, PR head drift, workflow run mismatch, orphan/missing artifact, reviewer hash mismatch, verdict binding drift, raw verdict hash/canonicalization/artifact cross-binding, and disjoint identity/provider cases.",
+    "Claude confirmed every assertion has required=true, non-empty recompute_strategy, and non-empty bind_fields with no legacy artifact_sha256 entries.",
+    "Claude confirmed E-3-5/E-3-6 boundary is respected: E-3-5 is a synthetic checklist/test artifact only and E-3-6 will implement the production recompute validator.",
+    "Local validation passed: pytest tests/test_widening_supersession_checklist.py -q reported 16 passed; ruff and mypy passed for the new test file; JSON parse checks, diff whitespace checks, gitleaks, and gpp_next guard checks passed.",
+    "No workflow, ruleset, runtime adapter, public SDK signature, support boundary, live adapter execution, support widening, or production platform claim was introduced by this slice.",
     "No secrets were recorded in the review prompt, review output, evidence file, or local validation artifacts."
   ],
   "secrets_recorded": false,

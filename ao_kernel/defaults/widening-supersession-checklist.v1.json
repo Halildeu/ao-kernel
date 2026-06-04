@@ -1,0 +1,234 @@
+{
+  "schema_version": "widening_supersession_checklist.v1",
+  "artifact_kind": "widening_supersession_checklist",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-3-5",
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "widening_flip_authority": "operator_bound_supersession_pr_only",
+  "checklist_alone_authorizes_flip": false,
+  "operator_authority": {
+    "github_login": "Halildeu",
+    "authorization_phrase": "AUTHORIZE_SUPPORT_WIDENING_SUPERSESSION",
+    "commit_verification_required": true,
+    "operator_must_be_disjoint_from_implementer_and_reviewers": true
+  },
+  "implementer_provider": {
+    "provider": "openai",
+    "github_login": "codex-implementer"
+  },
+  "reviewer_providers": [
+    {
+      "provider": "anthropic",
+      "github_login": "claude-reviewer"
+    },
+    {
+      "provider": "mavis",
+      "github_login": "mavis-reviewer"
+    }
+  ],
+  "evidence_pack_contract": {
+    "required_evidence_class": "live",
+    "minimum_provider_live_integration_tests": 3,
+    "minimum_live_window_days": 7,
+    "legacy_flat_artifact_sha256_allowed": false,
+    "recompute_not_trust_required": true,
+    "bind_fields": [
+      "plan_digest",
+      "final_diff_digest",
+      "pr_head_sha",
+      "workflow_run_ids",
+      "artifacts[].run_id",
+      "artifacts[].artifact_id",
+      "artifacts[].sha256",
+      "artifacts[].produced_at",
+      "artifacts[].head_sha",
+      "time_window_boundaries",
+      "reviewer_identity_hashes",
+      "verdict_completeness_proof",
+      "provider_verdicts[].plan_digest",
+      "provider_verdicts[].final_diff_digest",
+      "provider_verdicts[].pr_head_sha",
+      "provider_verdicts[].raw_verdict_sha256",
+      "provider_verdicts[].raw_verdict_artifact_digest",
+      "provider_verdicts[].raw_verdict_artifact_ref"
+    ]
+  },
+  "assertions": [
+    {
+      "id": "operator_authority_block_present",
+      "required": true,
+      "recompute_strategy": "Verify operator_authority.github_login, authorization phrase, and verified commit metadata from the future supersession PR.",
+      "bind_fields": ["plan_digest", "final_diff_digest", "pr_head_sha"]
+    },
+    {
+      "id": "checklist_alone_does_not_authorize_flip",
+      "required": true,
+      "recompute_strategy": "Require the future operator-bound supersession PR and reject any checklist-only widening claim.",
+      "bind_fields": ["plan_digest", "final_diff_digest"]
+    },
+    {
+      "id": "cross_ai_distinct_provider",
+      "required": true,
+      "recompute_strategy": "Recompute reviewer provider set from raw provider_verdicts and require at least two distinct non-implementer providers.",
+      "bind_fields": ["provider_verdicts[].plan_digest", "provider_verdicts[].final_diff_digest", "provider_verdicts[].pr_head_sha"]
+    },
+    {
+      "id": "evidence_class_live",
+      "required": true,
+      "recompute_strategy": "Validate every widened surface artifact declares evidence_class=live and is not simulated.",
+      "bind_fields": ["artifacts[].artifact_id", "artifacts[].sha256", "workflow_run_ids"]
+    },
+    {
+      "id": "minimum_provider_live_integration_tests",
+      "required": true,
+      "recompute_strategy": "Recompute provider live integration counts and require at least three live provider tests for provider widening.",
+      "bind_fields": ["artifacts[].artifact_id", "artifacts[].sha256", "time_window_boundaries"]
+    },
+    {
+      "id": "bind_fields_required",
+      "required": true,
+      "recompute_strategy": "Reject any assertion or evidence pack whose canonical bind field set is missing or empty.",
+      "bind_fields": ["plan_digest", "final_diff_digest", "pr_head_sha", "workflow_run_ids"]
+    },
+    {
+      "id": "legacy_artifact_sha_array_rejected",
+      "required": true,
+      "recompute_strategy": "Reject the legacy flat artifact_sha256 array name at schema and validator layers; only rich artifacts[] entries are valid.",
+      "bind_fields": ["artifacts[].run_id", "artifacts[].artifact_id", "artifacts[].sha256"]
+    },
+    {
+      "id": "stale_replay_rejected",
+      "required": true,
+      "recompute_strategy": "Reject evidence windows whose end timestamp is older than the configured replay horizon.",
+      "bind_fields": ["time_window_boundaries", "artifacts[].produced_at"]
+    },
+    {
+      "id": "duplicate_reviewer_identity_rejected",
+      "required": true,
+      "recompute_strategy": "Recompute reviewer identity hashes from raw provider verdicts and require pairwise distinct values.",
+      "bind_fields": ["reviewer_identity_hashes", "provider_verdicts[].raw_verdict_sha256"]
+    },
+    {
+      "id": "filtered_negative_verdict_rejected",
+      "required": true,
+      "recompute_strategy": "Reject evidence claiming negative verdicts exist unless raw provider verdicts include REVISE or RED; reject hidden negatives when the flag is false.",
+      "bind_fields": ["verdict_completeness_proof", "provider_verdicts[].raw_verdict_sha256"]
+    },
+    {
+      "id": "denominator_manipulation_rejected",
+      "required": true,
+      "recompute_strategy": "Recompute verdict denominator from provider_verdicts length and compare it to verdict_completeness_proof.",
+      "bind_fields": ["verdict_completeness_proof", "provider_verdicts[].raw_verdict_sha256"]
+    },
+    {
+      "id": "seven_day_window_race_rejected",
+      "required": true,
+      "recompute_strategy": "Require a minimum seven day evidence window and reject artifacts outside the declared window.",
+      "bind_fields": ["time_window_boundaries", "artifacts[].produced_at"]
+    },
+    {
+      "id": "final_diff_digest_drift_rejected",
+      "required": true,
+      "recompute_strategy": "Recompute the final merged diff digest and reject mismatch with top-level and per-verdict digests.",
+      "bind_fields": ["final_diff_digest", "provider_verdicts[].final_diff_digest"]
+    },
+    {
+      "id": "pr_head_sha_drift_rejected",
+      "required": true,
+      "recompute_strategy": "Compare pr_head_sha with the GitHub PR head SHA and with every workflow run and provider verdict.",
+      "bind_fields": ["pr_head_sha", "artifacts[].head_sha", "provider_verdicts[].pr_head_sha"]
+    },
+    {
+      "id": "workflow_run_status_mismatch_rejected",
+      "required": true,
+      "recompute_strategy": "Query workflow_run_ids and require completed/success status, matching head SHA, and in-window creation time.",
+      "bind_fields": ["workflow_run_ids", "pr_head_sha", "time_window_boundaries"]
+    },
+    {
+      "id": "orphan_artifact_rejected",
+      "required": true,
+      "recompute_strategy": "Reject any artifact whose run_id is not present in workflow_run_ids.",
+      "bind_fields": ["workflow_run_ids", "artifacts[].run_id"]
+    },
+    {
+      "id": "artifact_not_in_run_rejected",
+      "required": true,
+      "recompute_strategy": "Query each run artifact list and reject any artifacts[].artifact_id absent from its declared run.",
+      "bind_fields": ["workflow_run_ids", "artifacts[].run_id", "artifacts[].artifact_id"]
+    },
+    {
+      "id": "reviewer_hash_recomputation_mismatch_rejected",
+      "required": true,
+      "recompute_strategy": "Recompute SHA256(provider|github_login|thread_id) for every provider verdict and compare with reviewer_identity_hashes.",
+      "bind_fields": ["reviewer_identity_hashes", "provider_verdicts[].raw_verdict_sha256"]
+    },
+    {
+      "id": "verdict_binding_drift_rejected",
+      "required": true,
+      "recompute_strategy": "Reject any provider verdict not pinned to the top-level plan_digest, final_diff_digest, and pr_head_sha.",
+      "bind_fields": ["plan_digest", "final_diff_digest", "pr_head_sha", "provider_verdicts[].plan_digest", "provider_verdicts[].final_diff_digest", "provider_verdicts[].pr_head_sha"]
+    },
+    {
+      "id": "raw_verdict_sha_mismatch_rejected",
+      "required": true,
+      "recompute_strategy": "Canonicalize each provider verdict with raw_verdict_sha256 excluded and reject hash mismatch.",
+      "bind_fields": ["provider_verdicts[].raw_verdict_sha256"]
+    },
+    {
+      "id": "raw_verdict_canonical_self_reference_rejected",
+      "required": true,
+      "recompute_strategy": "Reject self-referential raw verdict hashes computed with raw_verdict_sha256 included in the payload.",
+      "bind_fields": ["provider_verdicts[].raw_verdict_sha256"]
+    },
+    {
+      "id": "raw_verdict_artifact_digest_mismatch_rejected",
+      "required": true,
+      "recompute_strategy": "Match raw_verdict_artifact_digest to the referenced transcript artifact SHA256.",
+      "bind_fields": ["provider_verdicts[].raw_verdict_artifact_digest", "provider_verdicts[].raw_verdict_artifact_ref", "artifacts[].artifact_id", "artifacts[].sha256"]
+    },
+    {
+      "id": "raw_verdict_artifact_ref_dangling_rejected",
+      "required": true,
+      "recompute_strategy": "Reject provider verdicts whose raw_verdict_artifact_ref does not resolve to artifacts[].artifact_id.",
+      "bind_fields": ["provider_verdicts[].raw_verdict_artifact_ref", "artifacts[].artifact_id"]
+    },
+    {
+      "id": "raw_verdict_artifact_provenance_rejected",
+      "required": true,
+      "recompute_strategy": "Reject referenced raw transcript artifacts whose run_id is not listed or whose head_sha differs from pr_head_sha.",
+      "bind_fields": ["workflow_run_ids", "pr_head_sha", "artifacts[].run_id", "artifacts[].head_sha", "provider_verdicts[].raw_verdict_artifact_ref"]
+    },
+    {
+      "id": "disjoint_identities_required",
+      "required": true,
+      "recompute_strategy": "Reject operator, implementer, or reviewer GitHub login overlap.",
+      "bind_fields": ["reviewer_identity_hashes", "provider_verdicts[].raw_verdict_sha256"]
+    },
+    {
+      "id": "disjoint_providers_required",
+      "required": true,
+      "recompute_strategy": "Reject reviewer provider duplication and implementer-provider overlap.",
+      "bind_fields": ["provider_verdicts[].raw_verdict_sha256"]
+    },
+    {
+      "id": "recompute_not_trust_consensus",
+      "required": true,
+      "recompute_strategy": "Re-derive consensus and widening_authorized from raw inputs; reject producer-authored consensus drift.",
+      "bind_fields": ["verdict_completeness_proof", "provider_verdicts[].raw_verdict_sha256", "artifacts[].sha256"]
+    },
+    {
+      "id": "rollback_decision_tree_present",
+      "required": true,
+      "recompute_strategy": "Require PR-body rollback tree with revert tag, revert flag, and revert evidence artifact steps.",
+      "bind_fields": ["plan_digest", "final_diff_digest"]
+    }
+  ],
+  "rollback_decision_tree": {
+    "required": true,
+    "revert_tag_required": true,
+    "revert_flag_required": true,
+    "revert_evidence_artifact_required": true
+  }
+}

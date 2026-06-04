@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:widening-supersession-checklist:v1",
+  "title": "AO widening supersession checklist v1",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "widening_flip_authority",
+    "checklist_alone_authorizes_flip",
+    "operator_authority",
+    "implementer_provider",
+    "reviewer_providers",
+    "evidence_pack_contract",
+    "assertions",
+    "rollback_decision_tree"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "widening_supersession_checklist.v1"
+    },
+    "artifact_kind": {
+      "const": "widening_supersession_checklist"
+    },
+    "repo": {
+      "const": "Halildeu/ao-kernel"
+    },
+    "work_package": {
+      "const": "E-3-5"
+    },
+    "support_widening": {
+      "const": false
+    },
+    "production_platform_claim": {
+      "const": false
+    },
+    "live_adapter_execution": {
+      "const": false
+    },
+    "widening_flip_authority": {
+      "const": "operator_bound_supersession_pr_only"
+    },
+    "checklist_alone_authorizes_flip": {
+      "const": false
+    },
+    "operator_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "github_login",
+        "authorization_phrase",
+        "commit_verification_required",
+        "operator_must_be_disjoint_from_implementer_and_reviewers"
+      ],
+      "properties": {
+        "github_login": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9-]+$"
+        },
+        "authorization_phrase": {
+          "const": "AUTHORIZE_SUPPORT_WIDENING_SUPERSESSION"
+        },
+        "commit_verification_required": {
+          "const": true
+        },
+        "operator_must_be_disjoint_from_implementer_and_reviewers": {
+          "const": true
+        }
+      }
+    },
+    "implementer_provider": {
+      "$ref": "#/$defs/provider_identity"
+    },
+    "reviewer_providers": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/provider_identity"
+      }
+    },
+    "evidence_pack_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "required_evidence_class",
+        "minimum_provider_live_integration_tests",
+        "minimum_live_window_days",
+        "bind_fields",
+        "legacy_flat_artifact_sha256_allowed",
+        "recompute_not_trust_required"
+      ],
+      "properties": {
+        "required_evidence_class": {
+          "const": "live"
+        },
+        "minimum_provider_live_integration_tests": {
+          "const": 3
+        },
+        "minimum_live_window_days": {
+          "const": 7
+        },
+        "bind_fields": {
+          "$ref": "#/$defs/bind_fields"
+        },
+        "legacy_flat_artifact_sha256_allowed": {
+          "const": false
+        },
+        "recompute_not_trust_required": {
+          "const": true
+        }
+      }
+    },
+    "assertions": {
+      "type": "array",
+      "minItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": [
+          "id",
+          "required",
+          "recompute_strategy",
+          "bind_fields"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "required": {
+            "const": true
+          },
+          "recompute_strategy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bind_fields": {
+            "$ref": "#/$defs/bind_fields"
+          }
+        }
+      }
+    },
+    "rollback_decision_tree": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "required",
+        "revert_tag_required",
+        "revert_flag_required",
+        "revert_evidence_artifact_required"
+      ],
+      "properties": {
+        "required": {
+          "const": true
+        },
+        "revert_tag_required": {
+          "const": true
+        },
+        "revert_flag_required": {
+          "const": true
+        },
+        "revert_evidence_artifact_required": {
+          "const": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "provider_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "provider",
+        "github_login"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "anthropic",
+            "google",
+            "mavis",
+            "minimax"
+          ]
+        },
+        "github_login": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9-]+$"
+        }
+      }
+    },
+    "bind_fields": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "plan_digest",
+          "final_diff_digest",
+          "pr_head_sha",
+          "workflow_run_ids",
+          "artifacts[].run_id",
+          "artifacts[].artifact_id",
+          "artifacts[].sha256",
+          "artifacts[].produced_at",
+          "artifacts[].head_sha",
+          "time_window_boundaries",
+          "reviewer_identity_hashes",
+          "verdict_completeness_proof",
+          "provider_verdicts[].plan_digest",
+          "provider_verdicts[].final_diff_digest",
+          "provider_verdicts[].pr_head_sha",
+          "provider_verdicts[].raw_verdict_sha256",
+          "provider_verdicts[].raw_verdict_artifact_digest",
+          "provider_verdicts[].raw_verdict_artifact_ref"
+        ]
+      }
+    }
+  }
+}
