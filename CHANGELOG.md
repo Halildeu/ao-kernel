@@ -16,6 +16,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Protected live-adapter checkout action pins**: updated the BC-1
+  protected live-adapter attestation and BC-10 real-adapter usage/cost
+  workflows from `actions/checkout@v4` to `@v6`, keeping
+  `fetch-depth: 0`, read-only workflow posture, protected execution
+  windows, and guard flags unchanged while refreshing the SSOT
+  `workflow_content_sha256` bindings for both workflows.
 - **Cloud Run deploy gcloud setup action**: updated the two trusted Cloud Run
   deployment workflows from `google-github-actions/setup-gcloud@v2` to `@v3`,
   keeping the existing workflow triggers, OIDC permission surface, pre-cutover
