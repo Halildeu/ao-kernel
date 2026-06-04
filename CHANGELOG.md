@@ -43,6 +43,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 cost/rate/circuit breaker preflight bundle** (V5 Epic 9, #895): added
+  `V5-COST-RATE-CIRCUIT-BREAKER-PREFLIGHT-BUNDLE.md`,
+  `v5-cost-rate-circuit-breaker-preflight-bundle.schema.v1.json`, and a
+  current-state fixture/test suite that binds dormant cost tracking defaults,
+  cost ceiling enforcement, per-call audit, simulated usage/cost evidence,
+  rate limiter, circuit breaker, budget-burn incident, and pricing snapshot
+  evidence to the `cost_rate_circuit_breaker_evidence` production-readiness
+  dimension. This is preflight evidence only: live cost-window evidence,
+  protected breach/rollback evidence, fresh PR-Xfinal pricing evidence, and
+  promoted-tier budget alarm evidence remain missing while `support_widening` /
+  `production_platform_claim` / `live_adapter_execution` remain false.
 - **V5 bypassless governance preflight bundle** (V5 Epic 9 Gate C, #960):
   added `V5-BYPASSLESS-GOVERNANCE-PREFLIGHT-BUNDLE.md`,
   `v5-bypassless-governance-preflight-bundle.schema.v1.json`, a current-state
