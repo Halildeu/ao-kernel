@@ -2,7 +2,7 @@
   "schema_version": "v5-subissues-mirror.v1",
   "parent_manifest": ".claude/plans/v5_issue_projection.v1.json",
   "parent_plan": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
-  "milestone": "v5.0.0 — Full Production Promotion",
+  "milestone": "v5.0.0 \u2014 Full Production Promotion",
   "milestone_number": 3,
   "created_at": "2026-06-02",
   "created_by": "Halildeu (operator-driven mirror via Claude session)",
@@ -371,7 +371,7 @@
         {
           "slice_id": "E-8-6",
           "issue_number": 894,
-          "title": "[E-8-6] Migration guide v4.x → v5.0.0"
+          "title": "[E-8-6] Migration guide v4.x \u2192 v5.0.0"
         }
       ]
     },
@@ -396,7 +396,7 @@
       "title": "[E-P0-1] v5 roadmap plan doc (foundational)",
       "risk": "low",
       "status": "merged",
-      "status_ref": "merged via PR-X0 (foundational)",
+      "status_ref": "merged via PR #771 (foundational V5 roadmap)",
       "labels": [
         "epic-p0",
         "risk:low",
@@ -415,7 +415,7 @@
       "title": "[E-P0-2] Master plan amend (v5 promotion section)",
       "risk": "low",
       "status": "merged",
-      "status_ref": "merged with PR-X0 / master plan amend",
+      "status_ref": "merged via PR #771 (master plan amend)",
       "labels": [
         "epic-p0",
         "risk:low",
@@ -434,7 +434,7 @@
       "title": "[E-P0-3] GH mirror create (milestone + 13 issues + 23 labels + project board)",
       "risk": "low",
       "status": "merged",
-      "status_ref": "merged PR #772 (closes #785)",
+      "status_ref": "merged via PR #772 (GitHub mirror create; closes #785)",
       "labels": [
         "epic-p0",
         "risk:low",
@@ -453,7 +453,7 @@
       "title": "[E-P0-4] README badge + roadmap link",
       "risk": "low",
       "status": "merged",
-      "status_ref": "merged PR #813",
+      "status_ref": "merged via PR #813",
       "labels": [
         "epic-p0",
         "risk:low",
@@ -471,17 +471,17 @@
       "slice_id": "E-P0-5",
       "title": "[E-P0-5] Issue forms YAML (anchor field templates)",
       "risk": "low",
-      "status": "pending",
-      "status_ref": "pending PR #822",
+      "status": "merged",
+      "status_ref": "merged via PR #910 (minimal issue forms; supersedes closed PR #822)",
       "labels": [
         "epic-p0",
         "risk:low",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/v5_issue_projection.v1.json",
       "deps": "E-P0-3",
-      "description": "Issue forms (YAML): zorunlu spm_anchor + ao_authority_artifact + artifact_sha256 + plan_digest + slice_id + risk_class_source + evidence_classes; risk field manuel düşürülemez (computed)."
+      "description": "Issue forms (YAML): zorunlu spm_anchor + ao_authority_artifact + artifact_sha256 + plan_digest + slice_id + risk_class_source + evidence_classes; risk field manuel d\u00fc\u015f\u00fcr\u00fclemez (computed)."
     },
     "E-1-1": {
       "issue_number": 839,
@@ -491,7 +491,7 @@
       "title": "[E-1-1] AO-MA-11A-2 plan-approval gate wiring",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged PR #792",
+      "status_ref": "merged via PR #792",
       "labels": [
         "epic-1",
         "risk:normal",
@@ -510,7 +510,7 @@
       "title": "[E-1-2] AO-MA-11E-2 GH mirror sync workflow + drift checker",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged PRs #788/#789/#790",
+      "status_ref": "merged via PRs #788/#789/#790 and live drift evidence PR #933",
       "labels": [
         "epic-1",
         "risk:normal",
@@ -519,7 +519,7 @@
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "P0 runway",
-      "description": "GH Projects/Milestone/Issue one-way sync + anchor injection + drift checker (mirror_drift_detected → otonom DUR); V5 mirror write sync + PAT fallback."
+      "description": "GH Projects/Milestone/Issue one-way sync + anchor injection + drift checker (mirror_drift_detected \u2192 otonom DUR); V5 mirror write sync + PAT fallback."
     },
     "E-1-3": {
       "issue_number": 841,
@@ -528,12 +528,12 @@
       "slice_id": "E-1-3",
       "title": "[E-1-3] CI workflow changelog enforcement check",
       "risk": "normal",
-      "status": "pending",
-      "status_ref": "pending PR #823",
+      "status": "merged",
+      "status_ref": "merged via PR #823",
       "labels": [
         "epic-1",
         "risk:normal",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -547,17 +547,17 @@
       "slice_id": "E-1-4",
       "title": "[E-1-4] Pre-commit hook for changelog",
       "risk": "low",
-      "status": "pending",
-      "status_ref": "pending PR #818",
+      "status": "merged",
+      "status_ref": "merged via PR #909 (minimal hook; supersedes closed PR #818)",
       "labels": [
         "epic-1",
         "risk:low",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-1-3",
-      "description": "AO-MA-11G-2d: lokal yardımcı pre-commit hook (release authority değil)."
+      "description": "AO-MA-11G-2d: lokal yard\u0131mc\u0131 pre-commit hook (release authority de\u011fil)."
     },
     "E-1-5": {
       "issue_number": 843,
@@ -567,7 +567,7 @@
       "title": "[E-1-5] AO-MA-4.6-2 native-import operator dogfooding",
       "risk": "normal",
       "status": "planned",
-      "status_ref": "planned",
+      "status_ref": "planned/deferred: AO-MA-4.6-2 operator dogfooding remains demand-driven and does not affect V5 production-readiness guard flags",
       "labels": [
         "epic-1",
         "risk:normal",
@@ -576,7 +576,7 @@
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "deps": "E-1-1",
-      "description": "Operator claude-cli ile worker_result üret → ao-kernel native-import ingest."
+      "description": "Operator claude-cli ile worker_result \u00fcret \u2192 ao-kernel native-import ingest."
     },
     "E-1-6": {
       "issue_number": 844,
@@ -585,12 +585,12 @@
       "slice_id": "E-1-6",
       "title": "[E-1-6] Retro ADR cross-AI revalidation (ADR-0001..0004)",
       "risk": "low",
-      "status": "pending",
-      "status_ref": "pending PR #814",
+      "status": "merged",
+      "status_ref": "merged via PR #814",
       "labels": [
         "epic-1",
         "risk:low",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -605,7 +605,7 @@
       "title": "[E-1-7] PR #764 CI shadow-skip permanent fix",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged PR #937 (c7e5709), superseding closed/unmerged PR #764",
+      "status_ref": "merged via PR #937 (supersedes closed/unmerged PR #764)",
       "labels": [
         "epic-1",
         "risk:high",
@@ -623,12 +623,12 @@
       "slice_id": "E-2-1",
       "title": "[E-2-1] Live adapter envelope schema (live_adapter_envelope.v1.json)",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP: deps PR #828 V5 amend + PR #827 Epic 2 plan + PR #826 Epic 3 plan all merged)",
+      "status": "merged",
+      "status_ref": "merged via PR #939 (infrastructure-only; no live execution flip)",
       "labels": [
         "epic-2",
         "risk:low",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
@@ -642,12 +642,12 @@
       "slice_id": "E-2-2",
       "title": "[E-2-2] Per-call audit evidence schema (per_call_audit.v1.json)",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #940 (infrastructure-only; no live execution flip)",
       "labels": [
         "epic-2",
         "risk:low",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
@@ -661,12 +661,12 @@
       "slice_id": "E-2-3",
       "title": "[E-2-3] Cost ceiling enforcement module",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #941 (infrastructure-only; no live execution flip)",
       "labels": [
         "epic-2",
         "risk:normal",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
@@ -680,12 +680,12 @@
       "slice_id": "E-2-4",
       "title": "[E-2-4] Dry-run harness (no network kill-switches)",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #942 (dry-run only; no live execution flip)",
       "labels": [
         "epic-2",
         "risk:normal",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
@@ -699,12 +699,12 @@
       "slice_id": "E-2-5",
       "title": "[E-2-5] Secret resolution discipline module (3-way cross-AI)",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #943 (secret discipline; no live execution flip)",
       "labels": [
         "epic-2",
         "risk:normal",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
@@ -718,12 +718,12 @@
       "slice_id": "E-2-6",
       "title": "[E-2-6] Opt-in advisory CI workflow (live-adapter-evidence-emit.yml)",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #944 and hardening PR #946 (advisory workflow; no live execution flip)",
       "labels": [
         "epic-2",
         "risk:normal",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
@@ -737,12 +737,12 @@
       "slice_id": "E-2-7",
       "title": "[E-2-7] Pre-supersession-PR checklist artifact for Epic 9 PR-Xfinal (3-way)",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-2-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #947 (pre-supersession checklist; PR-Xfinal still blocked)",
       "labels": [
         "epic-2",
         "risk:low",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
@@ -756,12 +756,12 @@
       "slice_id": "E-3-1",
       "title": "[E-3-1] Support widening evidence schema v1 (support_widening_evidence.v1.json)",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP: deps V5 amend + Epic 3 plan + Epic 2 plan merged)",
+      "status": "merged",
+      "status_ref": "merged via PR #945 (infrastructure-only; no support widening flip)",
       "labels": [
         "epic-3",
         "risk:low",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
@@ -775,12 +775,12 @@
       "slice_id": "E-3-2",
       "title": "[E-3-2] Per-surface smoke harness scaffolding (library-mode + stub adapters)",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #948 (infrastructure-only; no support widening flip)",
       "labels": [
         "epic-3",
         "risk:normal",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
@@ -794,12 +794,12 @@
       "slice_id": "E-3-3",
       "title": "[E-3-3] Advisory CI matrix workflow (support-matrix-smoke.yml; opt-in)",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #951 (advisory workflow; no support widening flip)",
       "labels": [
         "epic-3",
         "risk:normal",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
@@ -813,12 +813,12 @@
       "slice_id": "E-3-4",
       "title": "[E-3-4] Surface inventory document (docs/SUPPORT-SURFACE-INVENTORY.md)",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #949 (surface inventory; no support widening flip)",
       "labels": [
         "epic-3",
         "risk:low",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
@@ -832,12 +832,12 @@
       "slice_id": "E-3-5",
       "title": "[E-3-5] Cross-AI consensus protocol checklist (3-way; future supersession spec)",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #950 (consensus checklist; no support widening flip)",
       "labels": [
         "epic-3",
         "risk:low",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
@@ -851,12 +851,12 @@
       "slice_id": "E-3-6",
       "title": "[E-3-6] Recompute-not-trust validator (v1-only fail-closed)",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned (HARD STOP same as E-3-1)",
+      "status": "merged",
+      "status_ref": "merged via PR #952 (validator; no support widening flip)",
       "labels": [
         "epic-3",
         "risk:low",
-        "status:blocked",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-3-SUPPORT-WIDENING-MATRIX.md",
@@ -870,12 +870,12 @@
       "slice_id": "E-4-1",
       "title": "[E-4-1] Helm chart skeleton (deploy/helm/ao-kernel/)",
       "risk": "low",
-      "status": "pending",
-      "status_ref": "pending PR #829 (Codex AGREE)",
+      "status": "merged",
+      "status_ref": "merged via PR #829",
       "labels": [
         "epic-4",
         "risk:low",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
@@ -889,12 +889,12 @@
       "slice_id": "E-4-2a",
       "title": "[E-4-2a] Multi-tenant advisory boundary contract + schema (early)",
       "risk": "low",
-      "status": "pending",
-      "status_ref": "pending PR #830 (Codex AGREE)",
+      "status": "merged",
+      "status_ref": "merged via PR #830",
       "labels": [
         "epic-4",
         "risk:low",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
@@ -908,12 +908,12 @@
       "slice_id": "E-4-2b",
       "title": "[E-4-2b] Multi-tenant matrix final seal (high risk; 3-way Codex+Mavis)",
       "risk": "high",
-      "status": "planned",
-      "status_ref": "planned (deps E-4-2a + E-4-5 + E-4-4 + E-4-3 evidence refs)",
+      "status": "merged",
+      "status_ref": "merged via PR #936",
       "labels": [
         "epic-4",
         "risk:high",
-        "status:planned",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
@@ -927,17 +927,17 @@
       "slice_id": "E-4-3",
       "title": "[E-4-3] Operator-owned PostgreSQL provisioning + secret management",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned",
+      "status": "merged",
+      "status_ref": "merged via PR #924",
       "labels": [
         "epic-4",
         "risk:normal",
-        "status:planned",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
       "deps": "E-4-1 + E-4-2a",
-      "description": "Operator DDL responsibility; ao-kernel hiçbir DDL execute etmez; env-only secret resolution (D11); secret kaynak öncelik tablosu."
+      "description": "Operator DDL responsibility; ao-kernel hi\u00e7bir DDL execute etmez; env-only secret resolution (D11); secret kaynak \u00f6ncelik tablosu."
     },
     "E-4-4": {
       "issue_number": 863,
@@ -946,12 +946,12 @@
       "slice_id": "E-4-4",
       "title": "[E-4-4] Observability surface (ServiceMonitor template + OTEL sidecar; Teams primary)",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned",
+      "status": "merged",
+      "status_ref": "merged via PR #926",
       "labels": [
         "epic-4",
         "risk:normal",
-        "status:planned",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
@@ -965,12 +965,12 @@
       "slice_id": "E-4-5",
       "title": "[E-4-5] NetworkPolicy + PodSecurityStandards namespace-label baseline",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned",
+      "status": "merged",
+      "status_ref": "merged via PR #927",
       "labels": [
         "epic-4",
         "risk:normal",
-        "status:planned",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
@@ -984,12 +984,12 @@
       "slice_id": "E-4-6",
       "title": "[E-4-6] helm-unittest CI invocation doc + lokal runbook + epic-wide idempotency",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned",
+      "status": "merged",
+      "status_ref": "merged via PR #928",
       "labels": [
         "epic-4",
         "risk:low",
-        "status:planned",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md",
@@ -1004,7 +1004,7 @@
       "title": "[E-5-1] OTEL production tracing tunables",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged PR #791",
+      "status_ref": "merged via PR #791",
       "labels": [
         "epic-5",
         "risk:normal",
@@ -1023,7 +1023,7 @@
       "title": "[E-5-2] Prometheus + Grafana dashboard templates",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged PR-B5 (docs/grafana/ao_kernel_default.v1.json 8 panels)",
+      "status_ref": "merged via PR-B5 (Grafana dashboard baseline)",
       "labels": [
         "epic-5",
         "risk:normal",
@@ -1042,7 +1042,7 @@
       "title": "[E-5-3] Distributed tracing (multi-session correlation)",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged",
+      "status_ref": "merged (distributed tracing evidence present)",
       "labels": [
         "epic-5",
         "risk:normal",
@@ -1061,7 +1061,7 @@
       "title": "[E-5-3b] Consultation tracing integration",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged PR #804",
+      "status_ref": "merged via PR #804",
       "labels": [
         "epic-5",
         "risk:normal",
@@ -1080,7 +1080,7 @@
       "title": "[E-5-4] SLI/SLO definitions (uptime + latency + cost burn-rate)",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged",
+      "status_ref": "merged (SLI/SLO catalog evidence present)",
       "labels": [
         "epic-5",
         "risk:normal",
@@ -1099,7 +1099,7 @@
       "title": "[E-5-5] Alertmanager rule templates (escalation policy)",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged",
+      "status_ref": "merged (Alertmanager rule evidence present)",
       "labels": [
         "epic-5",
         "risk:normal",
@@ -1118,7 +1118,7 @@
       "title": "[E-6-1] SBOM generation (cyclonedx-py release artifact)",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged",
+      "status_ref": "merged (SBOM generation evidence present)",
       "labels": [
         "epic-6",
         "risk:high",
@@ -1136,12 +1136,12 @@
       "slice_id": "E-6-2",
       "title": "[E-6-2] Dependabot + Trivy vulnerability scanning",
       "risk": "high",
-      "status": "pending",
-      "status_ref": "pending PR #798",
+      "status": "merged",
+      "status_ref": "merged via PR #798",
       "labels": [
         "epic-6",
         "risk:high",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1156,7 +1156,7 @@
       "title": "[E-6-3] SOC2/ISO 27001 documentation pack (audit-ready)",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged",
+      "status_ref": "merged (SOC2/ISO documentation evidence present)",
       "labels": [
         "epic-6",
         "risk:high",
@@ -1175,7 +1175,7 @@
       "title": "[E-6-3b] HIPAA control mapping",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged PR #809",
+      "status_ref": "merged via PR #809",
       "labels": [
         "epic-6",
         "risk:high",
@@ -1194,7 +1194,7 @@
       "title": "[E-6-3c] GDPR DPIA operator template",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged PR #810",
+      "status_ref": "merged via PR #810",
       "labels": [
         "epic-6",
         "risk:high",
@@ -1213,7 +1213,7 @@
       "title": "[E-6-3d] PCI-DSS control reference mapping",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged PR #811",
+      "status_ref": "merged via PR #811",
       "labels": [
         "epic-6",
         "risk:high",
@@ -1231,12 +1231,12 @@
       "slice_id": "E-6-3e",
       "title": "[E-6-3e] NIST CSF 2.0 Function/Category mapping",
       "risk": "high",
-      "status": "pending",
-      "status_ref": "pending PR #812",
+      "status": "merged",
+      "status_ref": "merged via PR #812",
       "labels": [
         "epic-6",
         "risk:high",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1251,7 +1251,7 @@
       "title": "[E-6-4] 3rd party license compliance audit (MIT dependency matrix)",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged PR #803",
+      "status_ref": "merged via PR #803",
       "labels": [
         "epic-6",
         "risk:high",
@@ -1269,12 +1269,12 @@
       "slice_id": "E-6-5",
       "title": "[E-6-5] CodeQL workflow (GitHub Advanced Security)",
       "risk": "high",
-      "status": "pending",
-      "status_ref": "pending PR #796",
+      "status": "merged",
+      "status_ref": "merged via PR #796",
       "labels": [
         "epic-6",
         "risk:high",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1289,7 +1289,7 @@
       "title": "[E-6-6] Security incident response playbook",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged",
+      "status_ref": "merged (incident response playbook evidence present)",
       "labels": [
         "epic-6",
         "risk:high",
@@ -1308,7 +1308,7 @@
       "title": "[E-6-6b] Vendor escalation matrix",
       "risk": "high",
       "status": "merged",
-      "status_ref": "merged PR #808",
+      "status_ref": "merged via PR #808",
       "labels": [
         "epic-6",
         "risk:high",
@@ -1326,12 +1326,12 @@
       "slice_id": "E-7-1",
       "title": "[E-7-1] Production benchmark suite (cross-PR regression detection)",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned",
+      "status": "merged",
+      "status_ref": "merged via PR #932",
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:planned",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/EPIC-7-PERFORMANCE-BASELINE.md",
@@ -1345,12 +1345,12 @@
       "slice_id": "E-7-2",
       "title": "[E-7-2] Long-running session stress test (24h+ continuous)",
       "risk": "normal",
-      "status": "pending",
-      "status_ref": "pending PR #819",
+      "status": "merged",
+      "status_ref": "merged via PR #819",
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1365,7 +1365,7 @@
       "title": "[E-7-3] Memory profiling (mprof; production resource budgets)",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged PR #820",
+      "status_ref": "merged via PR #820",
       "labels": [
         "epic-7",
         "risk:normal",
@@ -1383,12 +1383,12 @@
       "slice_id": "E-7-4",
       "title": "[E-7-4] Provider rate limit production tuning per-tenant",
       "risk": "normal",
-      "status": "planned",
-      "status_ref": "planned",
+      "status": "merged",
+      "status_ref": "merged via PR #931",
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:planned",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1402,12 +1402,12 @@
       "slice_id": "E-7-5",
       "title": "[E-7-5] pgvector backend implementation",
       "risk": "normal",
-      "status": "pending",
-      "status_ref": "pending PR #824",
+      "status": "merged",
+      "status_ref": "merged via PR #824",
       "labels": [
         "epic-7",
         "risk:normal",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1422,7 +1422,7 @@
       "title": "[E-7-x] CI promotion track regression",
       "risk": "normal",
       "status": "merged",
-      "status_ref": "merged PR #806",
+      "status_ref": "merged via PR #806",
       "labels": [
         "epic-7",
         "risk:normal",
@@ -1440,12 +1440,12 @@
       "slice_id": "E-8-1",
       "title": "[E-8-1] Production deployment guide (k8s + standalone)",
       "risk": "low",
-      "status": "pending",
-      "status_ref": "pending PR #815",
+      "status": "merged",
+      "status_ref": "merged via PR #912 (reopen of closed PR #815)",
       "labels": [
         "epic-8",
         "risk:low",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1459,12 +1459,12 @@
       "slice_id": "E-8-2",
       "title": "[E-8-2] Multi-tenant production config recipe (delegates to Epic 4 E-4-3)",
       "risk": "low",
-      "status": "planned",
-      "status_ref": "planned (delegated to E-4-3)",
+      "status": "merged",
+      "status_ref": "merged via PR #930",
       "labels": [
         "epic-8",
         "risk:low",
-        "status:planned",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1478,12 +1478,12 @@
       "slice_id": "E-8-3",
       "title": "[E-8-3] Operator runbook (incident response; Epic 4-6 ile)",
       "risk": "low",
-      "status": "pending",
-      "status_ref": "pending PR #816",
+      "status": "merged",
+      "status_ref": "merged via PR #816",
       "labels": [
         "epic-8",
         "risk:low",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1498,7 +1498,7 @@
       "title": "[E-8-4] API reference auto-generated (Sphinx + autodoc)",
       "risk": "low",
       "status": "merged",
-      "status_ref": "merged PR #821",
+      "status_ref": "merged via PR #821",
       "labels": [
         "epic-8",
         "risk:low",
@@ -1516,12 +1516,12 @@
       "slice_id": "E-8-5",
       "title": "[E-8-5] Tutorial: 'Build your own AO-MA-SPM program with AI'",
       "risk": "low",
-      "status": "pending",
-      "status_ref": "pending PR #817",
+      "status": "merged",
+      "status_ref": "merged via PR #913 (reopen of closed PR #817)",
       "labels": [
         "epic-8",
         "risk:low",
-        "status:in_progress",
+        "status:done",
         "mirror:authority"
       ],
       "plan_ref": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
@@ -1533,10 +1533,10 @@
       "url": "https://github.com/Halildeu/ao-kernel/issues/894",
       "parent": 781,
       "slice_id": "E-8-6",
-      "title": "[E-8-6] Migration guide v4.x → v5.0.0",
+      "title": "[E-8-6] Migration guide v4.x \u2192 v5.0.0",
       "risk": "low",
       "status": "merged",
-      "status_ref": "merged PR #807",
+      "status_ref": "merged via PR #807",
       "labels": [
         "epic-8",
         "risk:low",
@@ -1554,8 +1554,8 @@
       "slice_id": "E-9-1",
       "title": "[E-9-1] Final operator-bound supersession PR-Xfinal (3 guard flag atomic flip; all-or-none)",
       "risk": "critical",
-      "status": "planned",
-      "status_ref": "planned (deps Epic 1-8 complete)",
+      "status": "blocked",
+      "status_ref": "blocked: PR-Xfinal requires complete 9-dimensional matrix, explicit operator-bound supersession authorization, v5.0.0 release/tag/publish evidence, and all three guard gates green",
       "labels": [
         "epic-9",
         "guard-flip:live_adapter",
@@ -1583,6 +1583,30 @@
       "epic_7": 6,
       "epic_8": 6,
       "epic_9": 1
+    },
+    "status_counts": {
+      "merged": 60,
+      "planned": 1,
+      "blocked": 1
     }
+  },
+  "status_reconciliation": {
+    "reconciled_at_origin_main": "4d5ac717e0894e4818fe6d23758727f7174c04a9",
+    "source_refs": [
+      "origin/main git log through PR #968",
+      "GitHub milestone #3 issues read-only snapshot on 2026-06-05",
+      "V5 production readiness matrix blocker fixture remains authoritative for production-claim readiness"
+    ],
+    "status_counts": {
+      "merged": 60,
+      "planned": 1,
+      "blocked": 1
+    },
+    "merged_subissues_count": 60,
+    "planned_or_blocked_subissues": [
+      "E-1-5",
+      "E-9-1"
+    ],
+    "guardrail": "This reconciliation updates sub-issue mirror status only; it does not mark matrix_complete, pr_xfinal_open_allowed, support_widening, production_platform_claim, or live_adapter_execution true."
   }
 }

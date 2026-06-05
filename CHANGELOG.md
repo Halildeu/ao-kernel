@@ -9,6 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **V5 subissue mirror status reconciliation**: updated the repo-side V5
+  subissue mirror to remove stale pending-PR references after the merged V5
+  preflight bundle series and added regression coverage pinning the reconciled
+  60 merged / 1 planned / 1 blocked status split. This is SSOT bookkeeping
+  only; the V5 production-readiness matrix remains incomplete and guard flags
+  remain false with no support widening, production claim, workflow change, or
+  live adapter execution.
 - **Test-quality gate ADV-001 false-positive reduction** (#954): the AST-based
   gate in `tests/conftest.py` now counts calls to `assert`/`_assert`-named
   helpers (e.g. a shared `_assert_rejected(...)` wrapper) as assertion-bearing,
