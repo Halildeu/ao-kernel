@@ -43,6 +43,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 protected real-provider live-calls preflight bundle** (V5 Epic 9,
+  #895): added `V5-PROTECTED-REAL-PROVIDER-LIVE-CALLS-PREFLIGHT-BUNDLE.md`,
+  `v5-protected-real-provider-live-calls-preflight-bundle.schema.v1.json`, and
+  a current-state fixture/test suite that binds RI-7.8 pre-authorization,
+  BC-10 execution-window contracts, dormant workflow/script/schema assets, and
+  the CLI-only defer/non-promotion decision to the
+  `protected_real_provider_live_calls` production-readiness dimension. This is
+  preflight evidence only: fresh API-mode live provider calls, active protected
+  environment reviewer proof, per-call and aggregate evidence from actual
+  provider calls, post-window deauthorization, and final release-bound operator
+  attestation remain missing while `support_widening` /
+  `production_platform_claim` / `live_adapter_execution` remain false.
 - **V5 multi-tenancy isolation preflight bundle** (V5 Epic 9, #895): added
   `V5-MULTI-TENANCY-ISOLATION-PREFLIGHT-BUNDLE.md`,
   `v5-multi-tenancy-isolation-preflight-bundle.schema.v1.json`, and a
