@@ -819,7 +819,19 @@
         "epic_9": 1
       },
       "issue_number_range": "834-895",
-      "created_at": "2026-06-02"
+      "created_at": "2026-06-02",
+      "status_reconciliation": {
+        "mirror_manifest_path": ".claude/plans/v5_subissues_mirror.v1.json",
+        "reconciled_at_origin_main": "4d5ac717e0894e4818fe6d23758727f7174c04a9",
+        "merged_subissues_count": 60,
+        "planned_subissues": [
+          "E-1-5"
+        ],
+        "blocked_subissues": [
+          "E-9-1"
+        ],
+        "production_readiness_boundary": "Sub-issue mirror reconciliation is not V5 production readiness completion; tests/fixtures/epic9/v5-production-readiness-matrix.current.json remains matrix_complete=false and pr_xfinal_open_allowed=false."
+      }
     },
     "board_field_setup": {
       "_description": "Phase-2 (custom fields) + Phase-3 (item add) + Phase-4 (field value set) results. Authority remains projection manifest; this captures observed state for AO-MA-11E-2 drift reconciliation.",
