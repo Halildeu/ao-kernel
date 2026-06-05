@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-protected-real-provider-live-calls-preflight-bundle:v1",
+  "title": "V5 protected real provider live calls preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 protected real-provider live-calls dimension. It records existing RI-7.8 pre-authorization, BC-10 execution-window contracts, dormant workflow assets, schemas, and CLI-only defer decisions while keeping live calls and all production guard flags fail-closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "final_release_bound",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "current_authority",
+    "preauthorization_assets",
+    "execution_boundary",
+    "required_future_evidence",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "v5_protected_real_provider_live_calls_preflight_bundle.v1"
+    },
+    "artifact_kind": {
+      "const": "v5_protected_real_provider_live_calls_preflight_bundle"
+    },
+    "repo": {
+      "const": "Halildeu/ao-kernel"
+    },
+    "work_package": {
+      "const": "E-9-1"
+    },
+    "dimension": {
+      "const": "protected_real_provider_live_calls"
+    },
+    "evidence_class": {
+      "const": "preflight_current_state"
+    },
+    "final_release_bound": {
+      "const": false
+    },
+    "support_widening": {
+      "const": false
+    },
+    "production_platform_claim": {
+      "const": false
+    },
+    "live_adapter_execution": {
+      "const": false
+    },
+    "current_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "gpp_status_path",
+        "gpp_exit_decision",
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed",
+        "current_usage_mode",
+        "final_non_promotion_decision_path",
+        "bc10_defer_decision_path"
+      ],
+      "properties": {
+        "gpp_status_path": {
+          "const": ".claude/plans/gpp_status.v1.json"
+        },
+        "gpp_exit_decision": {
+          "const": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim"
+        },
+        "support_widening_allowed": {
+          "const": false
+        },
+        "production_platform_claim_allowed": {
+          "const": false
+        },
+        "live_adapter_execution_allowed": {
+          "const": false
+        },
+        "current_usage_mode": {
+          "const": "cli_only_monthly_subscription_no_programmatic_api_mode"
+        },
+        "final_non_promotion_decision_path": {
+          "const": ".claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json"
+        },
+        "bc10_defer_decision_path": {
+          "const": ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json"
+        }
+      }
+    },
+    "preauthorization_assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "ri78a_pre_authorization_doc",
+        "bc10_6a_authorization_evidence",
+        "bc10_6b_protected_window_evidence",
+        "bc10_6c_defer_decision_evidence",
+        "real_adapter_usage_schema",
+        "bc10_per_call_schema",
+        "bc10_aggregate_schema",
+        "bc10_closure_schema",
+        "bc10_runtime_marker_schema",
+        "workflow_path",
+        "activation_script_path",
+        "scenario_runner_path",
+        "pricing_snapshot_path",
+        "all_assets_present"
+      ],
+      "properties": {
+        "ri78a_pre_authorization_doc": {
+          "const": ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.md"
+        },
+        "bc10_6a_authorization_evidence": {
+          "const": ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json"
+        },
+        "bc10_6b_protected_window_evidence": {
+          "const": ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json"
+        },
+        "bc10_6c_defer_decision_evidence": {
+          "const": ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json"
+        },
+        "real_adapter_usage_schema": {
+          "const": "ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json"
+        },
+        "bc10_per_call_schema": {
+          "const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-per-call-evidence.schema.v1.json"
+        },
+        "bc10_aggregate_schema": {
+          "const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-aggregate-evidence.schema.v1.json"
+        },
+        "bc10_closure_schema": {
+          "const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-closure-evidence.schema.v1.json"
+        },
+        "bc10_runtime_marker_schema": {
+          "const": "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json"
+        },
+        "workflow_path": {
+          "const": ".github/workflows/bc10-real-adapter-usage-cost.yml"
+        },
+        "activation_script_path": {
+          "const": "scripts/ri78b_bc10_activation_window.py"
+        },
+        "scenario_runner_path": {
+          "const": "scripts/bc10_run_scenarios.py"
+        },
+        "pricing_snapshot_path": {
+          "const": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json"
+        },
+        "all_assets_present": {
+          "const": true
+        }
+      }
+    },
+    "execution_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "workflow_exists",
+        "workflow_dispatched",
+        "provider_call_performed",
+        "secret_referenced",
+        "bc10_aggregate_recorded",
+        "bc10_defer_recorded",
+        "assets_dormant_for_future_api_mode",
+        "future_operator_bound_supersession_required",
+        "manual_protected_environment_required",
+        "current_decision_authorizes_execution"
+      ],
+      "properties": {
+        "workflow_exists": {
+          "const": true
+        },
+        "workflow_dispatched": {
+          "const": false
+        },
+        "provider_call_performed": {
+          "const": false
+        },
+        "secret_referenced": {
+          "const": false
+        },
+        "bc10_aggregate_recorded": {
+          "const": false
+        },
+        "bc10_defer_recorded": {
+          "const": true
+        },
+        "assets_dormant_for_future_api_mode": {
+          "const": true
+        },
+        "future_operator_bound_supersession_required": {
+          "const": true
+        },
+        "manual_protected_environment_required": {
+          "const": true
+        },
+        "current_decision_authorizes_execution": {
+          "const": false
+        }
+      }
+    },
+    "required_future_evidence": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "issue_refs": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "prefixItems": [
+        {
+          "const": "https://github.com/Halildeu/ao-kernel/issues/775"
+        },
+        {
+          "const": "https://github.com/Halildeu/ao-kernel/issues/782"
+        },
+        {
+          "const": "https://github.com/Halildeu/ao-kernel/issues/895"
+        }
+      ],
+      "items": false
+    }
+  }
+}

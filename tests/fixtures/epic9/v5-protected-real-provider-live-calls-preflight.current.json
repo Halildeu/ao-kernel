@@ -1,0 +1,69 @@
+{
+  "schema_version": "v5_protected_real_provider_live_calls_preflight_bundle.v1",
+  "artifact_kind": "v5_protected_real_provider_live_calls_preflight_bundle",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "dimension": "protected_real_provider_live_calls",
+  "evidence_class": "preflight_current_state",
+  "final_release_bound": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "current_authority": {
+    "gpp_status_path": ".claude/plans/gpp_status.v1.json",
+    "gpp_exit_decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false,
+    "current_usage_mode": "cli_only_monthly_subscription_no_programmatic_api_mode",
+    "final_non_promotion_decision_path": ".claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json",
+    "bc10_defer_decision_path": ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json"
+  },
+  "preauthorization_assets": {
+    "ri78a_pre_authorization_doc": ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.md",
+    "bc10_6a_authorization_evidence": ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
+    "bc10_6b_protected_window_evidence": ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json",
+    "bc10_6c_defer_decision_evidence": ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json",
+    "real_adapter_usage_schema": "ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json",
+    "bc10_per_call_schema": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-per-call-evidence.schema.v1.json",
+    "bc10_aggregate_schema": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-aggregate-evidence.schema.v1.json",
+    "bc10_closure_schema": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-closure-evidence.schema.v1.json",
+    "bc10_runtime_marker_schema": "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json",
+    "workflow_path": ".github/workflows/bc10-real-adapter-usage-cost.yml",
+    "activation_script_path": "scripts/ri78b_bc10_activation_window.py",
+    "scenario_runner_path": "scripts/bc10_run_scenarios.py",
+    "pricing_snapshot_path": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json",
+    "all_assets_present": true
+  },
+  "execution_boundary": {
+    "workflow_exists": true,
+    "workflow_dispatched": false,
+    "provider_call_performed": false,
+    "secret_referenced": false,
+    "bc10_aggregate_recorded": false,
+    "bc10_defer_recorded": true,
+    "assets_dormant_for_future_api_mode": true,
+    "future_operator_bound_supersession_required": true,
+    "manual_protected_environment_required": true,
+    "current_decision_authorizes_execution": false
+  },
+  "required_future_evidence": [
+    "fresh operator-bound API-mode supersession PR",
+    "bounded protected execution window with environment reviewer proof",
+    "live evidence-class provider calls with per-call audit records",
+    "aggregate usage and cost evidence linked to protected run artifacts",
+    "post-window deauthorization and secret-scope removal evidence"
+  ],
+  "residual_missing_evidence": [
+    "live evidence-class provider calls under a fresh operator-bound API-mode supersession",
+    "protected environment reviewer proof for an active execution window",
+    "per-call and aggregate evidence produced by actual provider calls",
+    "post-window deauthorization and secret-scope removal evidence",
+    "operator-attested final release binding for the live evidence artifacts"
+  ],
+  "issue_refs": [
+    "https://github.com/Halildeu/ao-kernel/issues/775",
+    "https://github.com/Halildeu/ao-kernel/issues/782",
+    "https://github.com/Halildeu/ao-kernel/issues/895"
+  ]
+}

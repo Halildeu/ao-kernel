@@ -13,16 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v5-multi-tenancy-isolation-preflight-bundle",
+    "head_ref": "refs/heads/codex/v5-protected-real-provider-live-calls-preflight",
     "changed_files": [
-      ".claude/plans/V5-MULTI-TENANCY-ISOLATION-PREFLIGHT-BUNDLE.md",
       ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
+      ".claude/plans/V5-PROTECTED-REAL-PROVIDER-LIVE-CALLS-PREFLIGHT-BUNDLE.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/v5-multi-tenancy-isolation-preflight-bundle.schema.v1.json",
+      "ao_kernel/defaults/schemas/v5-protected-real-provider-live-calls-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/fixtures/epic9/v5-multi-tenancy-isolation-preflight.current.json",
       "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/test_v5_multi_tenancy_isolation_preflight_bundle.py"
+      "tests/fixtures/epic9/v5-protected-real-provider-live-calls-preflight.current.json",
+      "tests/test_v5_protected_real_provider_live_calls_preflight_bundle.py"
     ]
   },
   "checks_considered": [
@@ -31,46 +31,21 @@
       "status": "pass"
     },
     {
-      "name": "pytest_multi_tenancy_preflight_bundle",
-      "status": "pass"
-    },
-    {
-      "name": "pytest_epic9_matrix_invariants_unbroken",
-      "status": "pass"
-    },
-    {
-      "name": "json_schema_strict_valid",
-      "status": "pass"
-    },
-    {
       "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_review",
-      "status": "pass"
-    },
-    {
-      "name": "guard_invariants",
-      "status": "pass"
-    },
-    {
-      "name": "scope_alignment",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude (Anthropic) reviewed the staged V5 multi-tenancy isolation preflight bundle and returned VERDICT AGREE.",
-    "The reviewer confirmed the matrix fixture moves multi_tenancy_isolation from not_ready to partial only, while matrix_complete, pr_xfinal_open_allowed, support_widening, production_platform_claim, and live_adapter_execution remain false.",
-    "The reviewer confirmed no positive authority claims are made for runtime enforcement, live validation, tenant isolation readiness, production readiness, support widening, live adapter execution, or PR-Xfinal openability.",
-    "The reviewer confirmed the schema is strict and fail-closed with additionalProperties=false and unevaluatedProperties=false on every object, const-false guard fields, and exact arrays for dimensions, residual missing evidence, and issue refs.",
-    "The reviewer confirmed tests bind actual repo artifacts: tenant_isolation_matrix, E-4-2b final seal, MULTI-TENANT-DEPLOYMENT, MULTI-TENANT-CONFIG-RECIPE, Helm boundary files, and RATE-LIMIT-TUNING.",
-    "The reviewer confirmed residual missing evidence keeps live/operator gaps explicit: live CNI/RBAC/NetworkPolicy validation, cross-tenant leak-prevention testing, operator-applied quota proof, per-tenant live cost/quota dashboard evidence, and final release-bound operator attestation.",
-    "The reviewer confirmed scope is local only: plan docs, schema, fixture, matrix fixture, changelog, and test file; no workflow, ruleset, GitHub permission, runtime code, or guard flag mutation.",
-    "Local validation before review: JSON parse checks passed for the new schema, new fixture, and production readiness matrix fixture.",
-    "Local validation before review: 88 targeted tests passed with 10 skipped for the multi-tenancy preflight bundle, production readiness matrix blocker, Epic 4 tenant boundary/final seal, multi-tenant config recipe, rate-limit tuning, and Helm chart skeleton surfaces.",
-    "Staged diff secret scan passed with no leaks found.",
-    "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
+    "Claude (Anthropic) reviewed the V5 protected real-provider live-calls preflight bundle and returned AGREE.",
+    "Schema strictness verified: additionalProperties false and required fields enforced.",
+    "Guard flags remain false: live_adapter_execution, support_widening, and production_platform_claim.",
+    "Execution boundary remains preflight-only and does not authorize workflow dispatch, billable provider calls, secret reference, or PR-Xfinal.",
+    "Issue refs #775, #782, and #895 are pinned in the fixture and schema.",
+    "Fixture and test validation accepted from operator-run targeted validation: 19 tests passed.",
+    "Matrix blocker consistency verified across the fixture and plan update.",
+    "Documentation preserves the non-authority boundary for this preflight bundle.",
+    "No secret material was found in the changed files.",
+    "Referenced assets and residual gap arrays are acceptable for this preflight-only slice."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

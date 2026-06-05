@@ -36,7 +36,7 @@
     },
     {
       "id": "protected_real_provider_live_calls",
-      "status": "not_ready",
+      "status": "partial",
       "required_evidence": [
         "7-day bounded live provider execution window",
         "per-call audit aggregate with protected environment reviewer proof",
@@ -44,16 +44,28 @@
       ],
       "current_evidence_refs": [
         ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
-        "ao_kernel/defaults/schemas/pre_supersession_checklist.schema.v1.json"
+        "ao_kernel/defaults/schemas/pre_supersession_checklist.schema.v1.json",
+        ".claude/plans/V5-PROTECTED-REAL-PROVIDER-LIVE-CALLS-PREFLIGHT-BUNDLE.md",
+        "tests/fixtures/epic9/v5-protected-real-provider-live-calls-preflight.current.json",
+        ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.md",
+        ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
+        ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json",
+        ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json",
+        ".claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json",
+        "ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json"
       ],
       "missing_evidence": [
-        "live evidence-class provider calls",
-        "protected environment reviewer proof",
-        "post-window deauthorization evidence"
+        "live evidence-class provider calls under a fresh operator-bound API-mode supersession",
+        "protected environment reviewer proof for an active execution window",
+        "per-call and aggregate evidence produced by actual provider calls",
+        "post-window deauthorization and secret-scope removal evidence",
+        "operator-attested final release binding for the live evidence artifacts"
       ],
       "source_documents": [
         ".claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md",
-        ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md"
+        ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+        ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.md",
+        ".claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json"
       ]
     },
     {

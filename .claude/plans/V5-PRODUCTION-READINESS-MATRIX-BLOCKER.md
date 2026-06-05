@@ -33,7 +33,7 @@ The V5 production readiness matrix is **not complete**.
 | Dimension | Current status | Reason PR-Xfinal remains blocked |
 |---|---|---|
 | public support matrix | partial | current support-boundary preflight bundle exists; final v5 public support tier and claim-language sync missing |
-| protected real provider live calls | not_ready | 7-day live window and protected environment evidence missing |
+| protected real provider live calls | partial | current protected real-provider preflight bundle exists; fresh API-mode live calls, active protected-environment proof, and post-window deauthorization evidence missing |
 | cost/rate/circuit breaker evidence | partial | current cost/rate/circuit breaker preflight bundle exists; live cost/breach/rollback evidence missing |
 | observability production tunables | partial | current observability preflight bundle exists; final claim-bound observability/alerting evidence missing |
 | security/SBOM/license scans | partial | current preflight bundle exists; final release-bound SBOM/license/security bundle missing |
@@ -78,6 +78,18 @@ security/SBOM/license preflight bundle:
 
 That bundle binds CodeQL, Trivy, SBOM tooling, and license inventory evidence
 without treating them as final release-bound evidence.
+
+The `protected_real_provider_live_calls` dimension now has a current-state
+protected real-provider live-calls preflight bundle:
+
+- `.claude/plans/V5-PROTECTED-REAL-PROVIDER-LIVE-CALLS-PREFLIGHT-BUNDLE.md`
+- `tests/fixtures/epic9/v5-protected-real-provider-live-calls-preflight.current.json`
+
+That bundle binds RI-7.8 pre-authorization, BC-10 execution-window contracts,
+dormant workflow/script/schema assets, and the current CLI-only defer decision
+without treating them as live evidence-class provider calls, active protected
+environment reviewer proof, support widening, live adapter execution, or a
+production platform claim.
 
 The `cost_rate_circuit_breaker_evidence` dimension now has a current-state
 cost/rate/circuit breaker preflight bundle:
