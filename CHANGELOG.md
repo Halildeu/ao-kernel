@@ -43,6 +43,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **V5 multi-tenancy isolation preflight bundle** (V5 Epic 9, #895): added
+  `V5-MULTI-TENANCY-ISOLATION-PREFLIGHT-BUNDLE.md`,
+  `v5-multi-tenancy-isolation-preflight-bundle.schema.v1.json`, and a
+  current-state fixture/test suite that binds the Epic 4 advisory tenant
+  isolation matrix, multi-tenant deployment runbook, namespace-per-tenant
+  config recipe, Helm boundary evidence, and per-tenant rate-limit evidence to
+  the `multi_tenancy_isolation` production-readiness dimension. This is
+  preflight evidence only: live cluster CNI/RBAC/NetworkPolicy validation,
+  cross-tenant leak-prevention evidence, operator-applied quota evidence,
+  per-tenant live cost/quota dashboard evidence, and final release-bound
+  operator attestation remain missing while `support_widening` /
+  `production_platform_claim` / `live_adapter_execution` remain false.
 - **V5 docs/runbooks preflight bundle** (V5 Epic 9, #895): added
   `V5-DOCS-RUNBOOKS-PREFLIGHT-BUNDLE.md`,
   `v5-docs-runbooks-preflight-bundle.schema.v1.json`, and a current-state

@@ -157,22 +157,33 @@
     },
     {
       "id": "multi_tenancy_isolation",
-      "status": "not_ready",
+      "status": "partial",
       "required_evidence": [
         "tenant isolation test suite",
         "RBAC, secret, quota, and audit isolation evidence",
         "per-tenant cost tracking and rate limit evidence"
       ],
       "current_evidence_refs": [
-        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+        ".claude/plans/V5-MULTI-TENANCY-ISOLATION-PREFLIGHT-BUNDLE.md",
+        "tests/fixtures/epic9/v5-multi-tenancy-isolation-preflight.current.json",
+        "docs/MULTI-TENANT-DEPLOYMENT.md",
+        "docs/MULTI-TENANT-CONFIG-RECIPE.md",
+        "docs/RATE-LIMIT-TUNING.md",
+        ".claude/plans/tenant_isolation_matrix.v1.json",
+        ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.v1.json",
+        "deploy/helm/ao-kernel/values.yaml"
       ],
       "missing_evidence": [
-        "tenant isolation implementation evidence",
-        "cross-tenant leak prevention test evidence",
-        "per-tenant cost and quota evidence"
+        "live cluster CNI/RBAC/NetworkPolicy validation evidence",
+        "cross-tenant leak prevention or attack-test evidence",
+        "operator-applied ResourceQuota and LimitRange evidence",
+        "per-tenant live cost/quota dashboard evidence",
+        "operator-attested tenant isolation review bound to final release artifact"
       ],
       "source_documents": [
-        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+        ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+        ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md",
+        ".claude/plans/EPIC-4-KUBERNETES-HELM-MULTI-TENANT.md"
       ]
     },
     {

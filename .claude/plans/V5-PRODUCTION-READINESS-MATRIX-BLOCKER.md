@@ -38,7 +38,7 @@ The V5 production readiness matrix is **not complete**.
 | observability production tunables | partial | current observability preflight bundle exists; final claim-bound observability/alerting evidence missing |
 | security/SBOM/license scans | partial | current preflight bundle exists; final release-bound SBOM/license/security bundle missing |
 | install/deploy lifecycle smoke | partial | v5.0.0 tag/publish and release-artifact smoke missing |
-| multi-tenancy isolation | not_ready | tenant isolation and per-tenant quota/cost evidence missing |
+| multi-tenancy isolation | partial | current advisory multi-tenancy preflight bundle exists; live tenant-isolation, quota, and cost evidence missing |
 | docs/runbooks | partial | final claim/release wording and runbook updates missing |
 | bypassless release governance | partial | PR-Xfinal source-pin/collision evidence missing |
 
@@ -122,3 +122,15 @@ incident-response, and vendor-escalation documentation evidence without
 treating it as final PR-Xfinal claim-language sync, v5.0.0 release notes,
 final runbook update, hosted API-docs publication, support widening, live
 adapter execution, or a production platform claim.
+
+The `multi_tenancy_isolation` dimension now has a current-state multi-tenancy
+isolation preflight bundle:
+
+- `.claude/plans/V5-MULTI-TENANCY-ISOLATION-PREFLIGHT-BUNDLE.md`
+- `tests/fixtures/epic9/v5-multi-tenancy-isolation-preflight.current.json`
+
+That bundle binds the Epic 4 advisory tenant isolation matrix, multi-tenant
+deployment runbook, namespace-per-tenant config recipe, Helm boundary evidence,
+and per-tenant rate-limit evidence without treating them as runtime-enforced
+tenant isolation, live cross-tenant validation, final quota/cost evidence,
+support widening, live adapter execution, or a production platform claim.
