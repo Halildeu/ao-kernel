@@ -1,0 +1,92 @@
+{
+  "schema_version": "v5_multi_tenancy_isolation_preflight_bundle.v1",
+  "artifact_kind": "v5_multi_tenancy_isolation_preflight_bundle",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "dimension": "multi_tenancy_isolation",
+  "evidence_class": "preflight_current_state",
+  "runtime_enforced": false,
+  "operator_enforceable": true,
+  "operator_action_required": true,
+  "live_validated": false,
+  "tenant_isolation_ready": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "advisory_matrix": {
+    "matrix_path": ".claude/plans/tenant_isolation_matrix.v1.json",
+    "matrix_schema_path": "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json",
+    "final_seal_evidence_path": ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.v1.json",
+    "test_path": "tests/test_epic_4_2b_matrix_invariants.py",
+    "matrix_status": "e_4_2b_final_seal",
+    "dimensions_count": 7,
+    "exact_dimensions": [
+      "namespace_isolation",
+      "rbac_scope",
+      "secret_isolation",
+      "network_policy",
+      "resource_quota",
+      "audit_boundary",
+      "cost_tracking_advisory"
+    ],
+    "all_entries_filled": true,
+    "runtime_enforced_global": false,
+    "live_validated_global": false,
+    "operator_enforceable_all": true,
+    "operator_action_required_all": true
+  },
+  "deployment_runbook": {
+    "doc_path": "docs/MULTI-TENANT-DEPLOYMENT.md",
+    "advisory_boundary": true,
+    "runtime_enforced": false,
+    "live_validated": false,
+    "operator_enforceable": true,
+    "operator_action_required": true,
+    "covers_seven_dimensions": true,
+    "live_cluster_commands_embedded": false
+  },
+  "config_recipe": {
+    "doc_path": "docs/MULTI-TENANT-CONFIG-RECIPE.md",
+    "test_path": "tests/test_epic_8_2_multitenant_config_recipe.py",
+    "namespace_per_tenant": true,
+    "dedicated_database_and_secret": true,
+    "network_policy_default_deny": true,
+    "servicemonitor_tenant_label": true,
+    "resource_quota_operator_owned": true,
+    "delegates_to_epic4_slices": true,
+    "inline_secret_material_present": false
+  },
+  "helm_boundary": {
+    "chart_root": "deploy/helm/ao-kernel",
+    "values_path": "deploy/helm/ao-kernel/values.yaml",
+    "test_path": "tests/test_epic_4_1_helm_chart_skeleton.py",
+    "namespace_scoped_rbac": true,
+    "cluster_scoped_rbac_present": false,
+    "secret_key_ref_only": true,
+    "network_policy_template_present": true,
+    "pod_resources_present": true,
+    "servicemonitor_surface_present": true,
+    "resourcequota_rendered_by_chart": false
+  },
+  "rate_limit": {
+    "doc_path": "docs/RATE-LIMIT-TUNING.md",
+    "test_path": "tests/test_epic_7_4_rate_limit_tuning.py",
+    "per_tenant_key_pattern": true,
+    "bucket_isolation_tested": true,
+    "process_local_registry": true,
+    "live_adapter_execution": false
+  },
+  "residual_missing_evidence": [
+    "live cluster CNI/RBAC/NetworkPolicy validation evidence",
+    "cross-tenant leak prevention or attack-test evidence",
+    "operator-applied ResourceQuota and LimitRange evidence",
+    "per-tenant live cost/quota dashboard evidence",
+    "operator-attested tenant isolation review bound to final release artifact"
+  ],
+  "issue_refs": [
+    "https://github.com/Halildeu/ao-kernel/issues/775",
+    "https://github.com/Halildeu/ao-kernel/issues/776",
+    "https://github.com/Halildeu/ao-kernel/issues/782",
+    "https://github.com/Halildeu/ao-kernel/issues/895"
+  ]
+}

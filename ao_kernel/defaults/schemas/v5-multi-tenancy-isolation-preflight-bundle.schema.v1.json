@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-multi-tenancy-isolation-preflight-bundle:v1",
+  "title": "V5 multi-tenancy isolation preflight evidence bundle v1",
+  "description": "Current-state preflight bundle for the V5 multi_tenancy_isolation dimension. It records advisory matrix, operator runbook, config recipe, Helm boundary, and rate-limit evidence while keeping runtime enforcement, live validation, tenant isolation readiness, and all production guard flags fail-closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "dimension",
+    "evidence_class",
+    "runtime_enforced",
+    "operator_enforceable",
+    "operator_action_required",
+    "live_validated",
+    "tenant_isolation_ready",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "advisory_matrix",
+    "deployment_runbook",
+    "config_recipe",
+    "helm_boundary",
+    "rate_limit",
+    "residual_missing_evidence",
+    "issue_refs"
+  ],
+  "properties": {
+    "schema_version": { "const": "v5_multi_tenancy_isolation_preflight_bundle.v1" },
+    "artifact_kind": { "const": "v5_multi_tenancy_isolation_preflight_bundle" },
+    "repo": { "const": "Halildeu/ao-kernel" },
+    "work_package": { "const": "E-9-1" },
+    "dimension": { "const": "multi_tenancy_isolation" },
+    "evidence_class": { "const": "preflight_current_state" },
+    "runtime_enforced": { "const": false },
+    "operator_enforceable": { "const": true },
+    "operator_action_required": { "const": true },
+    "live_validated": { "const": false },
+    "tenant_isolation_ready": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "advisory_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "matrix_path",
+        "matrix_schema_path",
+        "final_seal_evidence_path",
+        "test_path",
+        "matrix_status",
+        "dimensions_count",
+        "exact_dimensions",
+        "all_entries_filled",
+        "runtime_enforced_global",
+        "live_validated_global",
+        "operator_enforceable_all",
+        "operator_action_required_all"
+      ],
+      "properties": {
+        "matrix_path": { "const": ".claude/plans/tenant_isolation_matrix.v1.json" },
+        "matrix_schema_path": { "const": "ao_kernel/defaults/schemas/tenant-isolation-matrix.schema.v1.json" },
+        "final_seal_evidence_path": { "const": ".claude/plans/E-4-2b-MULTI-TENANT-FINAL-SEAL.v1.json" },
+        "test_path": { "const": "tests/test_epic_4_2b_matrix_invariants.py" },
+        "matrix_status": { "const": "e_4_2b_final_seal" },
+        "dimensions_count": { "const": 7 },
+        "exact_dimensions": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "namespace_isolation" },
+            { "const": "rbac_scope" },
+            { "const": "secret_isolation" },
+            { "const": "network_policy" },
+            { "const": "resource_quota" },
+            { "const": "audit_boundary" },
+            { "const": "cost_tracking_advisory" }
+          ],
+          "minItems": 7,
+          "maxItems": 7,
+          "items": false
+        },
+        "all_entries_filled": { "const": true },
+        "runtime_enforced_global": { "const": false },
+        "live_validated_global": { "const": false },
+        "operator_enforceable_all": { "const": true },
+        "operator_action_required_all": { "const": true }
+      }
+    },
+    "deployment_runbook": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "advisory_boundary",
+        "runtime_enforced",
+        "live_validated",
+        "operator_enforceable",
+        "operator_action_required",
+        "covers_seven_dimensions",
+        "live_cluster_commands_embedded"
+      ],
+      "properties": {
+        "doc_path": { "const": "docs/MULTI-TENANT-DEPLOYMENT.md" },
+        "advisory_boundary": { "const": true },
+        "runtime_enforced": { "const": false },
+        "live_validated": { "const": false },
+        "operator_enforceable": { "const": true },
+        "operator_action_required": { "const": true },
+        "covers_seven_dimensions": { "const": true },
+        "live_cluster_commands_embedded": { "const": false }
+      }
+    },
+    "config_recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "test_path",
+        "namespace_per_tenant",
+        "dedicated_database_and_secret",
+        "network_policy_default_deny",
+        "servicemonitor_tenant_label",
+        "resource_quota_operator_owned",
+        "delegates_to_epic4_slices",
+        "inline_secret_material_present"
+      ],
+      "properties": {
+        "doc_path": { "const": "docs/MULTI-TENANT-CONFIG-RECIPE.md" },
+        "test_path": { "const": "tests/test_epic_8_2_multitenant_config_recipe.py" },
+        "namespace_per_tenant": { "const": true },
+        "dedicated_database_and_secret": { "const": true },
+        "network_policy_default_deny": { "const": true },
+        "servicemonitor_tenant_label": { "const": true },
+        "resource_quota_operator_owned": { "const": true },
+        "delegates_to_epic4_slices": { "const": true },
+        "inline_secret_material_present": { "const": false }
+      }
+    },
+    "helm_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "chart_root",
+        "values_path",
+        "test_path",
+        "namespace_scoped_rbac",
+        "cluster_scoped_rbac_present",
+        "secret_key_ref_only",
+        "network_policy_template_present",
+        "pod_resources_present",
+        "servicemonitor_surface_present",
+        "resourcequota_rendered_by_chart"
+      ],
+      "properties": {
+        "chart_root": { "const": "deploy/helm/ao-kernel" },
+        "values_path": { "const": "deploy/helm/ao-kernel/values.yaml" },
+        "test_path": { "const": "tests/test_epic_4_1_helm_chart_skeleton.py" },
+        "namespace_scoped_rbac": { "const": true },
+        "cluster_scoped_rbac_present": { "const": false },
+        "secret_key_ref_only": { "const": true },
+        "network_policy_template_present": { "const": true },
+        "pod_resources_present": { "const": true },
+        "servicemonitor_surface_present": { "const": true },
+        "resourcequota_rendered_by_chart": { "const": false }
+      }
+    },
+    "rate_limit": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "doc_path",
+        "test_path",
+        "per_tenant_key_pattern",
+        "bucket_isolation_tested",
+        "process_local_registry",
+        "live_adapter_execution"
+      ],
+      "properties": {
+        "doc_path": { "const": "docs/RATE-LIMIT-TUNING.md" },
+        "test_path": { "const": "tests/test_epic_7_4_rate_limit_tuning.py" },
+        "per_tenant_key_pattern": { "const": true },
+        "bucket_isolation_tested": { "const": true },
+        "process_local_registry": { "const": true },
+        "live_adapter_execution": { "const": false }
+      }
+    },
+    "residual_missing_evidence": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "live cluster CNI/RBAC/NetworkPolicy validation evidence" },
+        { "const": "cross-tenant leak prevention or attack-test evidence" },
+        { "const": "operator-applied ResourceQuota and LimitRange evidence" },
+        { "const": "per-tenant live cost/quota dashboard evidence" },
+        { "const": "operator-attested tenant isolation review bound to final release artifact" }
+      ],
+      "minItems": 5,
+      "maxItems": 5,
+      "items": false
+    },
+    "issue_refs": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/775" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/776" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/782" },
+        { "const": "https://github.com/Halildeu/ao-kernel/issues/895" }
+      ],
+      "minItems": 4,
+      "maxItems": 4,
+      "items": false
+    }
+  }
+}

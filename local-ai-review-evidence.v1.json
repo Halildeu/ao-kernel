@@ -13,16 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v5-docs-runbooks-preflight-bundle",
+    "head_ref": "refs/heads/codex/v5-multi-tenancy-isolation-preflight-bundle",
     "changed_files": [
-      ".claude/plans/V5-DOCS-RUNBOOKS-PREFLIGHT-BUNDLE.md",
+      ".claude/plans/V5-MULTI-TENANCY-ISOLATION-PREFLIGHT-BUNDLE.md",
       ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/v5-docs-runbooks-preflight-bundle.schema.v1.json",
+      "ao_kernel/defaults/schemas/v5-multi-tenancy-isolation-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/fixtures/epic9/v5-docs-runbooks-preflight.current.json",
+      "tests/fixtures/epic9/v5-multi-tenancy-isolation-preflight.current.json",
       "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/test_v5_docs_runbooks_preflight_bundle.py"
+      "tests/test_v5_multi_tenancy_isolation_preflight_bundle.py"
     ]
   },
   "checks_considered": [
@@ -31,7 +31,7 @@
       "status": "pass"
     },
     {
-      "name": "pytest_docs_runbooks_preflight_bundle",
+      "name": "pytest_multi_tenancy_preflight_bundle",
       "status": "pass"
     },
     {
@@ -60,14 +60,15 @@
     }
   ],
   "findings": [
-    "Claude (Anthropic) reviewed the staged V5 docs/runbooks preflight bundle and returned VERDICT AGREE.",
-    "The reviewer confirmed the diff is limited to docs/runbooks preflight evidence and does not touch runtime code.",
-    "The reviewer confirmed all top-level authority and guard flags remain const false: final_claim_language_synced, final_release_notes_present, v5_runbook_finalized, support_widening, production_platform_claim, and live_adapter_execution.",
-    "The reviewer confirmed nested authority flips are rejected for agent_executed_external_action, credential_material_committed, hosted_docs_published, release_shipped, and is_contractual_sla.",
-    "The reviewer confirmed the docs_runbooks matrix dimension remains partial while matrix_complete, pr_xfinal_open_allowed, support_widening, production_platform_claim, and live_adapter_execution remain false.",
-    "The reviewer confirmed schema strictness: every object node is closed, issue refs are pinned, and residual missing evidence remains required.",
-    "The reviewer confirmed evidence refs are defensible from repo-local documentation and tests covering deployment, operator, rollback, API-reference, migration, incident-response, and vendor-escalation surfaces.",
-    "Local validation before review: 190 targeted tests passed for the docs/runbooks preflight bundle, production readiness matrix invariants, operator runbooks, migration guide, deployment guide, API-reference scaffold, incident-response playbook, and vendor-escalation matrix.",
+    "Claude (Anthropic) reviewed the staged V5 multi-tenancy isolation preflight bundle and returned VERDICT AGREE.",
+    "The reviewer confirmed the matrix fixture moves multi_tenancy_isolation from not_ready to partial only, while matrix_complete, pr_xfinal_open_allowed, support_widening, production_platform_claim, and live_adapter_execution remain false.",
+    "The reviewer confirmed no positive authority claims are made for runtime enforcement, live validation, tenant isolation readiness, production readiness, support widening, live adapter execution, or PR-Xfinal openability.",
+    "The reviewer confirmed the schema is strict and fail-closed with additionalProperties=false and unevaluatedProperties=false on every object, const-false guard fields, and exact arrays for dimensions, residual missing evidence, and issue refs.",
+    "The reviewer confirmed tests bind actual repo artifacts: tenant_isolation_matrix, E-4-2b final seal, MULTI-TENANT-DEPLOYMENT, MULTI-TENANT-CONFIG-RECIPE, Helm boundary files, and RATE-LIMIT-TUNING.",
+    "The reviewer confirmed residual missing evidence keeps live/operator gaps explicit: live CNI/RBAC/NetworkPolicy validation, cross-tenant leak-prevention testing, operator-applied quota proof, per-tenant live cost/quota dashboard evidence, and final release-bound operator attestation.",
+    "The reviewer confirmed scope is local only: plan docs, schema, fixture, matrix fixture, changelog, and test file; no workflow, ruleset, GitHub permission, runtime code, or guard flag mutation.",
+    "Local validation before review: JSON parse checks passed for the new schema, new fixture, and production readiness matrix fixture.",
+    "Local validation before review: 88 targeted tests passed with 10 skipped for the multi-tenancy preflight bundle, production readiness matrix blocker, Epic 4 tenant boundary/final seal, multi-tenant config recipe, rate-limit tuning, and Helm chart skeleton surfaces.",
     "Staged diff secret scan passed with no leaks found.",
     "No secrets were recorded in the review prompt, review output, evidence file, or validation artifacts."
   ],
