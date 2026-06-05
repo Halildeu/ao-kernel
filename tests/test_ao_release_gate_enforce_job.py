@@ -315,7 +315,10 @@ def test_enforce_job_generates_high_risk_supersession_evidence_at_runtime() -> N
     assert "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json" in block
     assert "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json" in block
     assert "high-risk supersession evidence requires both OpenAI and Anthropic raw reviewer files" in block
-    assert "high-risk supersession raw reviews require root local-ai-review-evidence.v1.json" in block
+    assert "ROOT_REVIEW_PATH: ${{ steps.reviewer.outputs.path }}" in block
+    assert 'if [ -z "$ROOT_REVIEW_PATH" ]; then' in block
+    assert "current-PR root local-ai-review-evidence.v1.json in the PR diff" in block
+    assert "[ ! -f ../head/local-ai-review-evidence.v1.json ]" not in block
     assert "Generate high-risk supersession evidence at runtime from raw reviewer evidence" in block
     assert "scripts/ao_ma10_high_risk_supersession_evidence.py" in block
     assert '--review-base-ref "refs/heads/$BASE_REF"' in block
@@ -323,6 +326,20 @@ def test_enforce_job_generates_high_risk_supersession_evidence_at_runtime() -> N
     assert '--diff-base-ref "$BASE_SHA"' in block
     assert '--diff-head-ref "$HEAD_SHA"' in block
     assert '--output high-risk-supersession-evidence.v1.json' in block
+
+
+def test_enforce_job_fails_closed_before_high_risk_builder_when_review_work_package_empty() -> None:
+    """Empty reviewed work_package must not reach the high-risk builder."""
+
+    block = _gate_job_block()
+    guard_index = block.find('if [ -z "${REVIEW_WORK_PACKAGE:-}" ]; then')
+    builder_index = block.find("python scripts/ao_ma10_high_risk_supersession_evidence.py")
+
+    assert guard_index >= 0, "high-risk generation must reject empty REVIEW_WORK_PACKAGE before builder"
+    assert builder_index >= 0, "high-risk supersession builder invocation must exist"
+    assert guard_index < builder_index
+    assert '--review-work-package "$REVIEW_WORK_PACKAGE"' in block
+    assert "high-risk supersession generation requires resolved reviewed work_package" in block
 
 
 def test_enforce_job_patches_reviewed_slice_before_decision_core() -> None:

@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **ao-release-gate high-risk work-package binding crash**: the enforce workflow
+  now rejects high-risk raw review supersession before the builder when the
+  current PR did not commit a root `local-ai-review-evidence.v1.json`, producing
+  an explicit fail-closed workflow error instead of leaking an empty
+  `REVIEW_WORK_PACKAGE` into `ao_ma10_high_risk_supersession_evidence.py`.
 - **Test-quality gate ADV-001 false-positive reduction** (#954): the AST-based
   gate in `tests/conftest.py` now counts calls to `assert`/`_assert`-named
   helpers (e.g. a shared `_assert_rejected(...)` wrapper) as assertion-bearing,

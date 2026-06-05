@@ -839,6 +839,8 @@ jobs:
       - name: Locate optional high-risk raw reviewer evidence on PR head
         id: high_risk_reviewers
         working-directory: base
+        env:
+          ROOT_REVIEW_PATH: ${{ steps.reviewer.outputs.path }}
         run: |
           HIGH_RISK_CHANGED="$(python - <<'PY'
           import json
@@ -862,8 +864,8 @@ jobs:
           OPENAI_PATH="head/ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json"
           ANTHROPIC_PATH="head/ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json"
           if [ -f "../$OPENAI_PATH" ] && [ -f "../$ANTHROPIC_PATH" ]; then
-            if [ ! -f ../head/local-ai-review-evidence.v1.json ]; then
-              echo "::error::high-risk supersession raw reviews require root local-ai-review-evidence.v1.json for reviewed work-package binding"
+            if [ -z "$ROOT_REVIEW_PATH" ]; then
+              echo "::error::high-risk supersession raw reviews require current-PR root local-ai-review-evidence.v1.json in the PR diff for reviewed work-package binding"
               exit 1
             fi
             echo "openai_path=$OPENAI_PATH" >> "$GITHUB_OUTPUT"
@@ -899,6 +901,10 @@ jobs:
         env:
           REVIEW_WORK_PACKAGE: ${{ steps.reviewed_wp.outputs.work_package }}
         run: |
+          if [ -z "${REVIEW_WORK_PACKAGE:-}" ]; then
+            echo "::error::high-risk supersession generation requires resolved reviewed work_package from current-PR root reviewer evidence"
+            exit 1
+          fi
           # Fetch failures are not ignored semantically: the runtime
           # builder below must resolve $BASE_SHA...$HEAD_SHA and will
           # fail closed if either object is unavailable in this checkout.
