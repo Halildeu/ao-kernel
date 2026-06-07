@@ -3,23 +3,27 @@
   "repo": "Halildeu/ao-kernel",
   "work_package": "E-9-1",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude-opus-4-8",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-opus-4-6",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v5-mirror-status-reconcile",
+    "head_ref": "refs/heads/feat/epic9-supersession-reframe-2026-06-07",
     "changed_files": [
-      ".claude/plans/v5_issue_projection.v1.json",
-      ".claude/plans/v5_subissues_mirror.v1.json",
+      ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md",
+      ".claude/plans/EPIC-9-PR-XFINAL-SUPERSESSION-CLOSEOUT.md",
+      ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "CHANGELOG.md",
+      "ao_kernel/defaults/schemas/epic9-xfinal-supersession-decision.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_v5_subissues_mirror_status_reconciliation.py"
+      "tests/fixtures/epic9/epic9-xfinal-supersession-decision.current.json",
+      "tests/test_epic9_xfinal_supersession_decision.py"
     ]
   },
   "checks_considered": [
@@ -32,7 +36,7 @@
       "status": "pass"
     },
     {
-      "name": "no_runtime_changes",
+      "name": "no_python_runtime_changes",
       "status": "pass"
     },
     {
@@ -44,11 +48,7 @@
       "status": "pass"
     },
     {
-      "name": "status_counts_consistent",
-      "status": "pass"
-    },
-    {
-      "name": "no_stale_pending_pr_refs",
+      "name": "supersession_machine_enforced",
       "status": "pass"
     },
     {
@@ -57,18 +57,14 @@
     }
   ],
   "findings": [
-    "Claude reviewed PR #969 current branch diff against origin/main and returned AGREE.",
-    "Diff is scoped to V5 repo-side subissue mirror/status reconciliation plus this root review evidence binding.",
-    "No runtime code changes were introduced; ao_kernel package sources are untouched.",
-    "No workflow or ruleset changes were introduced; .github paths are untouched.",
-    "Guard flags remain false: support_widening, production_platform_claim, and live_adapter_execution.",
-    "Subissue mirror reconciliation is internally consistent: 60 merged, 1 planned, and 1 blocked across 62 total subissues.",
-    "No stale pending-PR status references remain in the reconciled mirror.",
-    "E-9-1 remains blocked on the final V5 production readiness preconditions.",
-    "E-1-5 remains planned/deferred and does not affect V5 production-readiness guard flags.",
-    "CHANGELOG entry accurately describes the change as SSOT bookkeeping with no release-facing behavior change.",
-    "Projection metadata preserves the production-readiness boundary: matrix_complete=false and pr_xfinal_open_allowed=false.",
-    "Focused validation passed: changelog gate pass, pytest 74 passed, git diff --check clean, and gpp_next guard flags false.",
+    "Codex (OpenAI) reviewed the PR #970 diff against origin/main and returned AGREE after two plan-time REVISE rounds were fully absorbed (thread 019ea0f0).",
+    "Diff records the Epic 9 PR-Xfinal supersession decision: the all-or-none guard-flag flip and v5.0.0 production-platform claim are superseded by the operator CLI-only governed-control-plane decision.",
+    "No Python runtime code changed; one additive bundled JSON schema was added under ao_kernel/defaults/schemas/ plus a fixture, a test, plan docs, and the CHANGELOG.",
+    "No workflow or ruleset changes were introduced; .github paths are untouched (low-risk lane).",
+    "Guard flags remain false: support_widening, production_platform_claim, and live_adapter_execution, both at top level and in guard_flags_final_state.",
+    "The supersession is machine-enforced at content level: the new test asserts SUPERSEDED banners and historical-only / no-guard-flag-flip language in the prior blocker draft, the pre-supersession checklist, and the V5 roadmap, not just file existence.",
+    "supersedes is pinned exact-4 in schema and fixture so each prior artifact is explicitly reframed as superseded / not applicable rather than left as an active route.",
+    "Local gate: supersession test 11/11 pass, ruff clean, CHANGELOG discipline pass, related sweep 177 passed / 7 skipped with no regression.",
     "No secrets, credentials, or sensitive material were found in the reviewed diff."
   ],
   "secrets_recorded": false,
