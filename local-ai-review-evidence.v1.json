@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-CROSS-REPO-DOGFOOD-EVIDENCE",
+  "work_package": "V5-EXTENSION-TRUTH-RETIRE-3-DEAD",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,32 +13,41 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/docs/v420-cross-repo-dogfood-evidence-2026-06-07",
+    "head_ref": "refs/heads/chore/extension-truth-retire-3-dead-2026-06-07",
     "changed_files": [
+      ".claude/plans/PB-6.1a-RETIRE-DEAD-REFERENCE-CONFIRMATION.md",
+      ".claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md",
       "CHANGELOG.md",
-      "docs/EVIDENCE-V4.2.0-CROSS-REPO-DOGFOOD.md",
+      "ao_kernel/defaults/extensions/PRJ-EXECUTORPORT/extension.manifest.v1.json",
+      "ao_kernel/defaults/extensions/PRJ-MEMORYPORT/extension.manifest.v1.json",
+      "ao_kernel/defaults/extensions/PRJ-OBSERVABILITY-OTEL/extension.manifest.v1.json",
+      "ao_kernel/defaults/extensions/RETIRED.v1.json",
+      "ao_kernel/defaults/schemas/retired-extension-ledger.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_v420_cross_repo_dogfood_evidence_doc.py"
+      "tests/test_extension_loader.py",
+      "tests/test_extension_truth_ratchet.py",
+      "tests/test_retired_extension_ledger.py"
     ]
   },
   "checks_considered": [
     {"name": "tests", "status": "pass"},
+    {"name": "ruff", "status": "pass"},
     {"name": "secret_scan", "status": "pass"},
-    {"name": "no_runtime_changes", "status": "pass"},
-    {"name": "no_workflow_ruleset_changes", "status": "pass"},
     {"name": "guard_flags_false", "status": "pass"},
-    {"name": "evidence_class_honestly_labeled", "status": "pass"},
-    {"name": "reproduce_matches_transcript", "status": "pass"},
-    {"name": "changelog_scope_accurate", "status": "pass"}
+    {"name": "no_support_widening", "status": "pass"},
+    {"name": "no_promotion", "status": "pass"},
+    {"name": "doctor_healthy_criterion_unchanged", "status": "pass"},
+    {"name": "no_workflow_ruleset_branch_protection_change", "status": "pass"},
+    {"name": "retired_ids_disjoint_from_live_inventory", "status": "pass"}
   ],
   "findings": [
-    "Codex (OpenAI) reviewed the cross-repo dogfood evidence doc and returned AGREE after two post-impl rounds were fully absorbed (thread 019ea0f0).",
-    "Adds docs/EVIDENCE-V4.2.0-CROSS-REPO-DOGFOOD.md: a reproducible record that the published ao-kernel==4.2.0 installs into a fresh separate repo from PyPI and runs the governed control-plane (fail-closed policy, governed context record/recall, persisted canonical decision store) with no provider API key; docs/tests only.",
-    "Evidence class is honestly labeled operator-local usage-model demo, explicitly NOT project-owned production evidence (CLAUDE.md §21); the doc carries an explicit 'does NOT prove' scope (no production-platform claim, no live adapter execution, no support widening, no JSONL evidence trail, no multi-tenant/scale claim).",
-    "Surface terminology corrected per review: the demo writes the canonical decision store (governed context persistence), NOT the separate self-hosted JSONL evidence trail; the doc distinguishes them and the test pins the distinction.",
-    "Reproduce snippet matches the transcript: it runs the bundled policy_cost_tracking check producing 'deny'; verified live.",
-    "No Python runtime code changed; .github paths untouched; no forbidden scope substring; the three guard flags remain false.",
-    "Doc-bound test (6 tests) machine-enforces the §21 disclaimer, false guard flags, transcript markers, negative production-platform scope, and the canonical-store vs JSONL-evidence-trail distinction.",
+    "Codex (OpenAI) reviewed the dead-extension retirement on thread 019ea185: plan-time AGREE, then post-impl substantive AGREE (scope correct, boundary preserved, ledger/test/refactor meet the durable-solution standard). Codex's only REVISE point was procedural (files not yet committed at review time); this evidence is produced after staging the full intended diff.",
+    "Retires the exact PB-9.2 truth-inventory ratchet retire_candidate bucket: PRJ-EXECUTORPORT, PRJ-MEMORYPORT, PRJ-OBSERVABILITY-OTEL (quarantined contract-only manifests, entrypoints=0, ui=0, missing_runtime_refs>=9). Bundled inventory 19 -> 16; quarantined 16 -> 13.",
+    "ao-kernel doctor still emits the 'Bundled extension truth' WARN (quarantined=13 with design intent); the WARN is truthful by design and was NOT suppressed. doctor healthy criterion (loaded>0 and quarantined==0) is unchanged.",
+    "Adds a schema-backed tombstone ledger ao_kernel/defaults/extensions/RETIRED.v1.json (schema additionalProperties:false + unevaluatedProperties:false on every object; restorable_from_git_history const true; no manifest payloads embedded). Restore authority is git history; the loader (dir-walk only) ignores the file.",
+    "classify_bucket()/compute_priority_score() are now tested with synthetic ExtensionManifest fixtures covering all 5 buckets, decoupling the ratchet's bucket logic from live inventory so coverage survives the empty retire_candidate queue. A new ledger test asserts retired ids are disjoint from the live registry (no retired-on-paper-but-shipped drift) and that additionalProperties:false rejects unknown fields.",
+    "Boundary: the three guard flags stay const false; no promotion of promotion_candidate (PRJ-CONTEXT-ORCHESTRATION); no support widening; no production-platform claim; no live adapter execution. No change to .github workflows, rulesets, branch protection, or apps.",
+    "Verification: full pytest 6977 passed / 125 skipped / 0 failed; ruff clean. mypy's two 'unused type: ignore' notices in ao_kernel/mcp_server.py are pre-existing on origin/main and env-local (mcp installed locally); this PR adds no Python source under ao_kernel/ and does not touch mcp_server.py.",
     "No secrets, credentials, or sensitive material were found in the reviewed diff."
   ],
   "secrets_recorded": false,

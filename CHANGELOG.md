@@ -24,6 +24,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   change, no guard flag flip, no support widening, production-platform claim, or
   live adapter execution. Cross-AI review: Codex (OpenAI).
 
+### Removed
+
+- **Retired 3 dead bundled extensions** (`PRJ-EXECUTORPORT`, `PRJ-MEMORYPORT`,
+  `PRJ-OBSERVABILITY-OTEL`): these were quarantined contract-only manifests with
+  `entrypoints=0`, `ui=0`, and `missing_runtime_refs>=9` — the exact
+  `retire_candidate` bucket produced by the PB-9.2 truth-inventory ratchet, and
+  confirmed dead by the PB-6.1a file-level audit. Bundled extension inventory
+  drops 19 → 16 (`quarantined` 16 → 13); `ao-kernel doctor` still reports the
+  "Bundled extension truth" WARN because real quarantine debt (13 entries with
+  design intent) remains — the WARN is truthful by design, not suppressed. A
+  machine-readable audit index is added at
+  `ao_kernel/defaults/extensions/RETIRED.v1.json` (schema:
+  `retired-extension-ledger.schema.v1.json`); the authoritative restore source is
+  git history (`restorable_from_git_history`). `classify_bucket()` is now tested
+  with synthetic fixtures (decoupled from live inventory) so the ratchet's
+  bucket logic stays covered after the retirement. No guard flag flip, no
+  support widening, no promotion, no production-platform claim, no live adapter
+  execution; doctor `healthy` criterion unchanged. Cross-AI review: Codex (OpenAI).
+
 ## [4.2.0] - 2026-06-07
 
 ### Added

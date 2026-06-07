@@ -122,3 +122,24 @@ Ratchet sonucu açık işlem sırası:
 2. support boundary ile çelişen "inventory = support" yorumu engellendi.
 3. widening kararı halen `PB-9.3` ve `PB-9.4` kapıları üzerinden verilecek;
    bu belge yalnız backlog sırasını kilitler.
+
+---
+
+## Execution closeout (2026-06-07)
+
+`retire_candidate` queue executed: the 3 dead contract-only extensions
+(`PRJ-EXECUTORPORT`, `PRJ-MEMORYPORT`, `PRJ-OBSERVABILITY-OTEL`) were removed
+from `ao_kernel/defaults/extensions/`. Scope = **dead inventory retirement
+only**: no support widening, no promotion, no guard-flag change, doctor
+`healthy` criterion unchanged. Inventory 19 → 16; `quarantined` 16 → 13; doctor
+"Bundled extension truth" WARN remains truthful (13 quarantined with design
+intent stay). Audit index: `ao_kernel/defaults/extensions/RETIRED.v1.json`
+(restore authority = git history). `classify_bucket()` is now covered by
+synthetic fixtures, so the ratchet's bucket logic stays tested with the
+`retire_candidate` queue legitimately empty.
+
+`SEARCH` + `UI-COCKPIT-LITE` (PB-6.1a human-confirmed but ratchet `quarantine_keep`
+because they declare entrypoints whose targets are absent) are intentionally
+**out of scope** here; they need a separate follow-up that either teaches the
+ratchet to detect declared-but-dead entrypoints or migrates the PB-6.1a audit
+verdict into a deterministic rule before a second retirement.

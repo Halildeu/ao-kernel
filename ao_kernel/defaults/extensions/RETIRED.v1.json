@@ -1,0 +1,30 @@
+{
+  "schema_version": "retired-extension-ledger.v1",
+  "ledger_kind": "bundled-extension-retirement",
+  "retired_extensions": [
+    {
+      "extension_id": "PRJ-EXECUTORPORT",
+      "retired_on": "2026-06-07",
+      "reason": "Quarantined dead contract-only manifest (entrypoints=0, ui=0, missing_runtime_refs>=9); no live runtime counterpart in the current tree. Confirmed retire_candidate by the PB-9.2 truth-inventory ratchet and the PB-6.1a file-level audit.",
+      "ratchet_bucket": "retire_candidate",
+      "superseded_by": "ao_kernel/tool_gateway.py (governed, policy-gated tool dispatch)",
+      "restorable_from_git_history": true
+    },
+    {
+      "extension_id": "PRJ-MEMORYPORT",
+      "retired_on": "2026-06-07",
+      "reason": "Quarantined dead contract-only manifest (entrypoints=0, ui=0, missing_runtime_refs>=9); legacy memory bridge shell with no live runtime counterpart. Confirmed retire_candidate by the PB-9.2 truth-inventory ratchet and the PB-6.1a file-level audit.",
+      "ratchet_bucket": "retire_candidate",
+      "superseded_by": "ao_kernel/context/ (governed memory pipeline: memory_pipeline, context_compiler, memory_tiers)",
+      "restorable_from_git_history": true
+    },
+    {
+      "extension_id": "PRJ-OBSERVABILITY-OTEL",
+      "retired_on": "2026-06-07",
+      "reason": "Quarantined dead contract-only manifest (entrypoints=0, ui=0, missing_runtime_refs>=9); no live runtime counterpart in the current tree. Confirmed retire_candidate by the PB-9.2 truth-inventory ratchet.",
+      "ratchet_bucket": "retire_candidate",
+      "superseded_by": "ao_kernel/telemetry.py (lazy OTEL adapter with no-op fallback, D12)",
+      "restorable_from_git_history": true
+    }
+  ]
+}
