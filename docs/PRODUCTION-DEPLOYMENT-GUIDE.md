@@ -92,7 +92,7 @@ USER aoekernel
 WORKDIR /home/aoekernel
 
 # Pin to a specific ao-kernel release
-RUN pip install --no-cache-dir 'ao-kernel==4.1.0' 'ao-kernel[mcp,llm,otel]'
+RUN pip install --no-cache-dir 'ao-kernel==4.2.0' 'ao-kernel[mcp,llm,otel]'
 
 # Workspace + evidence volume mount points
 VOLUME /home/aoekernel/.ao
@@ -106,7 +106,7 @@ CMD ["ao-kernel", "mcp", "serve"]
 ```yaml
 services:
   ao-kernel:
-    image: your-registry/ao-kernel:4.1.0
+    image: your-registry/ao-kernel:4.2.0
     user: aoekernel
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
