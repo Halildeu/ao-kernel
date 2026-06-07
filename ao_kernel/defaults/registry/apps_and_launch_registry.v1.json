@@ -9,22 +9,6 @@
   ],
   "profiles": [
     {
-      "app_id": "ao:cockpit-lite",
-      "target_id": "ao-core",
-      "display_name": "Orchestrator Cockpit Lite",
-      "status": "ACTIVE_CANDIDATE",
-      "launch_mode": "ops_command",
-      "working_dir": "__WORKSPACE_ROOT__",
-      "command": "python3 -m src.ops.manage cockpit-serve --workspace-root .cache/ws_customer_default --port 8787",
-      "ports": [
-        8787
-      ],
-      "source_refs": [
-        "__WORKSPACE_ROOT__/extensions/PRJ-UI-COCKPIT-LITE/extension.manifest.v1.json",
-        "__WORKSPACE_ROOT__/src/ops/commands/maintenance_cmds.py"
-      ]
-    },
-    {
       "app_id": "dev:web-shell",
       "target_id": "dev:web",
       "display_name": "Web Shell",
