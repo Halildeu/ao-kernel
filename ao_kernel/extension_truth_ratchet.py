@@ -44,8 +44,21 @@ def classify_bucket(manifest: ExtensionManifest) -> str:
         return "maintain_runtime_backed"
     if tier == TRUTH_TIER_CONTRACT_ONLY and missing == 0 and remap == 0:
         return "promotion_candidate"
-    if tier == TRUTH_TIER_QUARANTINED and missing >= 9 and entrypoints == 0 and ui == 0:
+
+    # A quarantined manifest is a retire candidate when it is heavily missing
+    # (>=9 dead refs) AND has no live or recoverable surface. Two sub-reasons,
+    # one bucket:
+    #   dead_shell            - declares no entrypoint/ui surface at all.
+    #   declared_dead_surface - declares a surface, but it is dead-on-arrival:
+    #                           no remap remediation path AND no registered
+    #                           runtime handler. The handler guard prevents
+    #                           retiring a live-handler extension that merely
+    #                           has broken docs/test refs.
+    dead_shell = entrypoints == 0 and ui == 0
+    declared_dead_surface = (entrypoints > 0 or ui > 0) and remap == 0 and not manifest.runtime_handler_registered
+    if tier == TRUTH_TIER_QUARANTINED and missing >= 9 and (dead_shell or declared_dead_surface):
         return "retire_candidate"
+
     if tier == TRUTH_TIER_QUARANTINED and missing <= 8 and remap >= 1:
         return "remap_priority"
     return "quarantine_keep"
@@ -93,16 +106,10 @@ def build_report() -> dict[str, Any]:
     )
 
     ordered_queue = {
-        "promotion_candidate": [
-            row.extension_id for row in rows if row.bucket == "promotion_candidate"
-        ],
+        "promotion_candidate": [row.extension_id for row in rows if row.bucket == "promotion_candidate"],
         "remap_priority": [row.extension_id for row in remap_queue],
-        "quarantine_keep": sorted(
-            row.extension_id for row in rows if row.bucket == "quarantine_keep"
-        ),
-        "retire_candidate": sorted(
-            row.extension_id for row in rows if row.bucket == "retire_candidate"
-        ),
+        "quarantine_keep": sorted(row.extension_id for row in rows if row.bucket == "quarantine_keep"),
+        "retire_candidate": sorted(row.extension_id for row in rows if row.bucket == "retire_candidate"),
     }
 
     return {

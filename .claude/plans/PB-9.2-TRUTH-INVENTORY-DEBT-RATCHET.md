@@ -143,3 +143,17 @@ because they declare entrypoints whose targets are absent) are intentionally
 **out of scope** here; they need a separate follow-up that either teaches the
 ratchet to detect declared-but-dead entrypoints or migrates the PB-6.1a audit
 verdict into a deterministic rule before a second retirement.
+
+### Follow-up closeout (2026-06-07) — declared_dead_surface rule
+
+The `retire_candidate` rule was extended with a `declared_dead_surface` sub-reason:
+a quarantined manifest that declares an entrypoint/ui surface but has no remap
+remediation path (remap=0) AND no registered runtime handler, with
+missing_runtime_refs>=9, is now retired alongside the original `dead_shell`
+(entrypoints=0, ui=0) sub-reason — both map to the same bucket via a single named
+decision. This caught `PRJ-SEARCH` and `PRJ-UI-COCKPIT-LITE` (PB-6.1a
+human-confirmed dead), which the prior count-only rule left in `quarantine_keep`
+because they declared a (dead) surface. A handler guard keeps a future
+live-handler extension with merely broken docs/test refs out of retirement.
+Inventory 16 -> 14; quarantined 13 -> 11; `ENFORCEMENT-PACK`/`PM-SUITE` stay
+`quarantine_keep` (remap>0 = remediation path). doctor WARN remains truthful (11).

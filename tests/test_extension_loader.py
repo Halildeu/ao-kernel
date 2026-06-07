@@ -32,7 +32,7 @@ class TestBundledDefaults:
         reg = ExtensionRegistry()
         report = reg.load_from_defaults()
         assert isinstance(report, LoadReport)
-        assert report.loaded >= 15  # 18 bundled, a few may be skipped
+        assert report.loaded >= 12  # 14 bundled after 2026-06-07 retirements; a few may be skipped
 
     def test_get_known_extension(self):
         reg = ExtensionRegistry()
@@ -97,10 +97,11 @@ class TestBundledDefaults:
         summary = reg.truth_summary()
         assert summary.runtime_backed == 2
         assert summary.contract_only == 1
-        # 16 -> 13 after the 2026-06-07 dead-inventory retirement of 3
-        # retire_candidate extensions (PRJ-EXECUTORPORT, PRJ-MEMORYPORT,
-        # PRJ-OBSERVABILITY-OTEL). See ao_kernel/defaults/extensions/RETIRED.v1.json.
-        assert summary.quarantined == 13
+        # 16 -> 13 -> 11 after the 2026-06-07 dead-inventory retirements: first 3
+        # dead-shell retire_candidates (PRJ-EXECUTORPORT, PRJ-MEMORYPORT,
+        # PRJ-OBSERVABILITY-OTEL), then 2 declared-dead-surface ones (PRJ-SEARCH,
+        # PRJ-UI-COCKPIT-LITE). See ao_kernel/defaults/extensions/RETIRED.v1.json.
+        assert summary.quarantined == 11
         assert summary.runtime_backed_ids == ("PRJ-HELLO", "PRJ-KERNEL-API")
         assert summary.contract_only_ids == ("PRJ-CONTEXT-ORCHESTRATION",)
 

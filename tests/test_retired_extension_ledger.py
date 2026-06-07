@@ -17,7 +17,13 @@ from ao_kernel.config import load_default
 from ao_kernel.extensions.loader import ExtensionRegistry
 
 SCHEMA_NAME = "retired-extension-ledger.schema.v1.json"
-EXPECTED_RETIRED = {"PRJ-EXECUTORPORT", "PRJ-MEMORYPORT", "PRJ-OBSERVABILITY-OTEL"}
+EXPECTED_RETIRED = {
+    "PRJ-EXECUTORPORT",
+    "PRJ-MEMORYPORT",
+    "PRJ-OBSERVABILITY-OTEL",
+    "PRJ-SEARCH",
+    "PRJ-UI-COCKPIT-LITE",
+}
 
 
 def _schema() -> dict:

@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-EXTENSION-TRUTH-RETIRE-3-DEAD",
+  "work_package": "V5-EXTENSION-TRUTH-RETIRE-DECLARED-DEAD",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,16 +13,15 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/chore/extension-truth-retire-3-dead-2026-06-07",
+    "head_ref": "refs/heads/chore/ext-truth-declared-dead-entrypoint-2026-06-07",
     "changed_files": [
       ".claude/plans/PB-6.1a-RETIRE-DEAD-REFERENCE-CONFIRMATION.md",
       ".claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/extensions/PRJ-EXECUTORPORT/extension.manifest.v1.json",
-      "ao_kernel/defaults/extensions/PRJ-MEMORYPORT/extension.manifest.v1.json",
-      "ao_kernel/defaults/extensions/PRJ-OBSERVABILITY-OTEL/extension.manifest.v1.json",
+      "ao_kernel/defaults/extensions/PRJ-SEARCH/extension.manifest.v1.json",
+      "ao_kernel/defaults/extensions/PRJ-UI-COCKPIT-LITE/extension.manifest.v1.json",
       "ao_kernel/defaults/extensions/RETIRED.v1.json",
-      "ao_kernel/defaults/schemas/retired-extension-ledger.schema.v1.json",
+      "ao_kernel/extension_truth_ratchet.py",
       "local-ai-review-evidence.v1.json",
       "tests/test_extension_loader.py",
       "tests/test_extension_truth_ratchet.py",
@@ -41,13 +40,14 @@
     {"name": "retired_ids_disjoint_from_live_inventory", "status": "pass"}
   ],
   "findings": [
-    "Codex (OpenAI) reviewed the dead-extension retirement on thread 019ea185: plan-time AGREE, then post-impl substantive AGREE (scope correct, boundary preserved, ledger/test/refactor meet the durable-solution standard). Codex's only REVISE point was procedural (files not yet committed at review time); this evidence is produced after staging the full intended diff.",
-    "Retires the exact PB-9.2 truth-inventory ratchet retire_candidate bucket: PRJ-EXECUTORPORT, PRJ-MEMORYPORT, PRJ-OBSERVABILITY-OTEL (quarantined contract-only manifests, entrypoints=0, ui=0, missing_runtime_refs>=9). Bundled inventory 19 -> 16; quarantined 16 -> 13.",
-    "ao-kernel doctor still emits the 'Bundled extension truth' WARN (quarantined=13 with design intent); the WARN is truthful by design and was NOT suppressed. doctor healthy criterion (loaded>0 and quarantined==0) is unchanged.",
-    "Adds a schema-backed tombstone ledger ao_kernel/defaults/extensions/RETIRED.v1.json (schema additionalProperties:false + unevaluatedProperties:false on every object; restorable_from_git_history const true; no manifest payloads embedded). Restore authority is git history; the loader (dir-walk only) ignores the file.",
-    "classify_bucket()/compute_priority_score() are now tested with synthetic ExtensionManifest fixtures covering all 5 buckets, decoupling the ratchet's bucket logic from live inventory so coverage survives the empty retire_candidate queue. A new ledger test asserts retired ids are disjoint from the live registry (no retired-on-paper-but-shipped drift) and that additionalProperties:false rejects unknown fields.",
-    "Boundary: the three guard flags stay const false; no promotion of promotion_candidate (PRJ-CONTEXT-ORCHESTRATION); no support widening; no production-platform claim; no live adapter execution. No change to .github workflows, rulesets, branch protection, or apps.",
-    "Verification: full pytest 6977 passed / 125 skipped / 0 failed; ruff clean. mypy's two 'unused type: ignore' notices in ao_kernel/mcp_server.py are pre-existing on origin/main and env-local (mcp installed locally); this PR adds no Python source under ao_kernel/ and does not touch mcp_server.py.",
+    "Codex (OpenAI) reviewed this follow-up on thread 019ea185: plan-time REVISE (sharpen the rule) fully absorbed, then post-impl AGREE. The retire_candidate rule gained a deterministic declared_dead_surface sub-reason proposed by Codex.",
+    "Extends the PB-9.2 ratchet classify_bucket(): a quarantined manifest with missing_runtime_refs>=9 is retire_candidate when EITHER dead_shell (entrypoints==0 and ui==0) OR declared_dead_surface (declares a surface but remap==0 and not runtime_handler_registered). A handler guard prevents retiring a future live-handler extension that merely has broken docs/test refs.",
+    "Retires PRJ-SEARCH and PRJ-UI-COCKPIT-LITE (PB-6.1a human-confirmed dead; declared entrypoints with no registered handler, missing>=9, remap=0). Bundled inventory 16 -> 14; quarantined 13 -> 11. PRJ-ENFORCEMENT-PACK and PRJ-PM-SUITE stay quarantine_keep because they have a remap remediation path.",
+    "ao-kernel doctor still emits the 'Bundled extension truth' WARN (quarantined=11); the WARN is truthful by design and was NOT suppressed. doctor healthy criterion is unchanged.",
+    "Both retired ids are appended to the schema-backed tombstone ledger ao_kernel/defaults/extensions/RETIRED.v1.json (restore authority = git history). classify_bucket() gains synthetic-fixture tests for the new declared_dead_surface clause plus a future-guard test (live handler -> not retired); the _synth fixture now takes runtime_handler_registered. The ledger test asserts retired ids stay disjoint from the live registry.",
+    "Boundary: the three guard flags stay const false; no promotion; no support widening; no production-platform claim; no live adapter execution. No change to .github workflows, rulesets, branch protection, or apps.",
+    "Out of scope (noted, not touched): ao_kernel/defaults/registry/apps_and_launch_registry.v1.json references __WORKSPACE_ROOT__/extensions/PRJ-UI-COCKPIT-LITE — a separate project's (PRJ-MULTI-AI-CODING-OS) launch catalog using workspace placeholders, not the bundled manifest; pre-existing and unchanged by this retirement.",
+    "Verification: full pytest 6979 passed / 125 skipped / 0 failed; ruff clean. mypy's 'unused type: ignore' notices in ao_kernel/mcp_server.py are pre-existing and env-local; this PR's only ao_kernel source change (extension_truth_ratchet.py) adds no new mypy error.",
     "No secrets, credentials, or sensitive material were found in the reviewed diff."
   ],
   "secrets_recorded": false,
