@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:epic9-xfinal-supersession-decision:v1",
+  "title": "Epic 9 PR-Xfinal Supersession Decision",
+  "description": "Records that the Epic 9 PR-Xfinal all-or-none V5 production-promotion path (atomic flip of live_adapter_execution + support_widening + production_platform_claim plus v5.0.0 production-platform claim) is SUPERSEDED — not failed, not deferred — by an explicit operator decision to keep ao-kernel a CLI-only / operator-mediated governed control-plane. This is a conscious product-boundary change, not an engineering escape. The three guard flags remain const false, which is the correct final state for this decision and consistent with RI-7.8c (operator non-promotion, cli-only) and GPP-9 (keep_narrow_stable_runtime). The pre-existing xfinal-readiness-blocker and EPIC-9-PR-Xfinal pre-supersession checklist are not deleted; they are reinterpreted as superseded / not applicable under this decision. AI output is evidence only; release authority remains the repo-owned ao-release-gate required check plus GitHub branch protection.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "decision",
+    "decision_effect",
+    "scope",
+    "operator_intent",
+    "source_authority",
+    "guard_flags_final_state",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "supersedes",
+    "not_satisfied_requirements",
+    "allowed_claims",
+    "forbidden_claims",
+    "evidence",
+    "impact_on_existing_artifacts",
+    "release_implication",
+    "non_authority_boundary",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "epic9-xfinal-supersession-decision.v1"},
+    "artifact_kind": {"type": "string", "const": "epic9_xfinal_supersession_decision"},
+    "repo": {"type": "string", "const": "Halildeu/ao-kernel"},
+    "work_package": {"type": "string", "const": "E-9-1"},
+    "decision": {
+      "type": "string",
+      "const": "superseded_by_operator_cli_only_decision_keep_governed_control_plane_no_production_platform_promotion"
+    },
+    "decision_effect": {
+      "type": "string",
+      "const": "epic9_all_or_none_flip_path_out_of_scope_three_guard_flags_preserved_false_old_blocker_and_checklist_reinterpreted_as_superseded_not_applicable_release_only_as_governed_control_plane"
+    },
+    "scope": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "E-9-1",
+          "PR-Xfinal",
+          "epic9_all_or_none_atomic_guard_flag_flip"
+        ]
+      }
+    },
+    "operator_intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "cli_only",
+        "no_provider_api_calls",
+        "ao_kernel_as_governed_control_plane",
+        "operator_decision_source"
+      ],
+      "properties": {
+        "cli_only": {"type": "boolean", "const": true},
+        "no_provider_api_calls": {"type": "boolean", "const": true},
+        "ao_kernel_as_governed_control_plane": {"type": "boolean", "const": true},
+        "operator_decision_source": {"type": "string", "minLength": 12}
+      }
+    },
+    "source_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "ri78c_final_promote_decision_path",
+        "gpp_status_path",
+        "gpp_exit_decision",
+        "ai_output_is_release_authority",
+        "repo_owned_required_check_is_release_authority"
+      ],
+      "properties": {
+        "ri78c_final_promote_decision_path": {"type": "string", "const": ".claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json"},
+        "gpp_status_path": {"type": "string", "const": ".claude/plans/gpp_status.v1.json"},
+        "gpp_exit_decision": {"type": "string", "minLength": 12},
+        "ai_output_is_release_authority": {"type": "boolean", "const": false},
+        "repo_owned_required_check_is_release_authority": {"type": "boolean", "const": true}
+      }
+    },
+    "guard_flags_final_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "live_adapter_execution",
+        "support_widening",
+        "production_platform_claim"
+      ],
+      "properties": {
+        "live_adapter_execution": {"type": "boolean", "const": false},
+        "support_widening": {"type": "boolean", "const": false},
+        "production_platform_claim": {"type": "boolean", "const": false}
+      }
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "supersedes": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": ["artifact", "prior_reading", "superseded_reading"],
+        "properties": {
+          "artifact": {
+            "type": "string",
+            "enum": [
+              "tests/fixtures/epic9/xfinal-readiness-blocker.current.json",
+              ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md",
+              ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+              ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"
+            ]
+          },
+          "prior_reading": {"type": "string", "minLength": 12},
+          "superseded_reading": {"type": "string", "minLength": 12}
+        }
+      },
+      "allOf": [
+        {"contains": {"properties": {"artifact": {"const": "tests/fixtures/epic9/xfinal-readiness-blocker.current.json"}}, "required": ["artifact"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"artifact": {"const": ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md"}}, "required": ["artifact"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"artifact": {"const": ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md"}}, "required": ["artifact"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"artifact": {"const": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md"}}, "required": ["artifact"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "not_satisfied_requirements": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 12}
+    },
+    "allowed_claims": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "installable_governed_control_plane",
+          "fail_closed_policy_engine",
+          "self_hosted_jsonl_evidence_trail",
+          "governed_context_pipeline",
+          "api_keyless_consumer_use"
+        ]
+      }
+    },
+    "forbidden_claims": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "general_purpose_production_platform",
+          "autonomous_provider_api_execution",
+          "support_widening_active",
+          "live_adapter_runtime_active",
+          "all_or_none_v5_production_promotion_satisfied"
+        ]
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "consumer_acceptance_smoke",
+        "pypi_baseline_version",
+        "evidence_class"
+      ],
+      "properties": {
+        "consumer_acceptance_smoke": {
+          "type": "object",
+          "additionalProperties": false,
+          "unevaluatedProperties": false,
+          "required": [
+            "fresh_venv_pip_install",
+            "init_and_doctor",
+            "fail_closed_policy_check",
+            "governed_context_persistence",
+            "no_api_key_required"
+          ],
+          "properties": {
+            "fresh_venv_pip_install": {"type": "boolean", "const": true},
+            "init_and_doctor": {"type": "boolean", "const": true},
+            "fail_closed_policy_check": {"type": "boolean", "const": true},
+            "governed_context_persistence": {"type": "boolean", "const": true},
+            "no_api_key_required": {"type": "boolean", "const": true}
+          }
+        },
+        "pypi_baseline_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "evidence_class": {"type": "string", "const": "operator_local_consumer_smoke_not_project_owned_production_evidence"}
+      }
+    },
+    "impact_on_existing_artifacts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": ["path", "reinterpretation"],
+        "properties": {
+          "path": {"type": "string", "minLength": 8},
+          "reinterpretation": {"type": "string", "minLength": 12}
+        }
+      }
+    },
+    "release_implication": {
+      "type": "string",
+      "const": "release_only_as_governed_control_plane_no_production_platform_claim_v4x_minor_preferred_v5_major_only_if_explicitly_renamed_governed_control_plane_ga_with_three_flags_false_in_changelog"
+    },
+    "non_authority_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "is_release_note",
+        "is_public_production_claim",
+        "authorizes_guard_flag_flip",
+        "release_authority"
+      ],
+      "properties": {
+        "is_release_note": {"type": "boolean", "const": false},
+        "is_public_production_claim": {"type": "boolean", "const": false},
+        "authorizes_guard_flag_flip": {"type": "boolean", "const": false},
+        "release_authority": {"type": "string", "const": "repo_owned_ao_release_gate_required_check_plus_github_branch_protection"}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 8},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {"type": "string", "const": "AGREE"}
+      }
+    }
+  }
+}

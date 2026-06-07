@@ -1,0 +1,113 @@
+{
+  "schema_version": "epic9-xfinal-supersession-decision.v1",
+  "artifact_kind": "epic9_xfinal_supersession_decision",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "E-9-1",
+  "decision": "superseded_by_operator_cli_only_decision_keep_governed_control_plane_no_production_platform_promotion",
+  "decision_effect": "epic9_all_or_none_flip_path_out_of_scope_three_guard_flags_preserved_false_old_blocker_and_checklist_reinterpreted_as_superseded_not_applicable_release_only_as_governed_control_plane",
+  "scope": [
+    "E-9-1",
+    "PR-Xfinal",
+    "epic9_all_or_none_atomic_guard_flag_flip"
+  ],
+  "operator_intent": {
+    "cli_only": true,
+    "no_provider_api_calls": true,
+    "ao_kernel_as_governed_control_plane": true,
+    "operator_decision_source": "Operator chat 2026-06-07: ao-kernel olabilir ama isleri aylik CLI aboneligi ile yapacagim + projemi bitirince diger projelerimi yapmak icin diger repolara kuracagim"
+  },
+  "source_authority": {
+    "ri78c_final_promote_decision_path": ".claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json",
+    "gpp_status_path": ".claude/plans/gpp_status.v1.json",
+    "gpp_exit_decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "ai_output_is_release_authority": false,
+    "repo_owned_required_check_is_release_authority": true
+  },
+  "guard_flags_final_state": {
+    "live_adapter_execution": false,
+    "support_widening": false,
+    "production_platform_claim": false
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "supersedes": [
+    {
+      "artifact": "tests/fixtures/epic9/xfinal-readiness-blocker.current.json",
+      "prior_reading": "pr_xfinal_open_allowed false with three gates (live_adapter_execution, support_widening, production_platform_claim) blocked pending future evidence; all_or_none_atomic_flip true",
+      "superseded_reading": "all-or-none flip path is out of scope by operator decision; the three guard flags remain false as the final state, not as pending-evidence gates; retained as historical prior-state evidence"
+    },
+    {
+      "artifact": ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md",
+      "prior_reading": "draft guardrail describing a future operator-bound PR-Xfinal that would perform the all-or-none flip once Gate A/B/C evidence is complete",
+      "superseded_reading": "the future PR-Xfinal all-or-none flip is no longer the path; document retained as historical guardrail, explicitly superseded by this decision"
+    },
+    {
+      "artifact": ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+      "prior_reading": "18-condition all-or-none pre-supersession checklist presented as an active prerequisite contract a future Epic 9 PR-Xfinal must satisfy before any guard-flag flip",
+      "superseded_reading": "no longer an active prerequisite contract; the all-or-none flip path is out of scope by operator decision; retained as historical record only with a superseded banner"
+    },
+    {
+      "artifact": ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
+      "prior_reading": "roadmap framed as Full Production Promotion culminating in the Epic 9 atomic guard-flag flip and a v5.0.0 production-platform claim",
+      "superseded_reading": "reframed as matured governed control-plane; Epic 9 flip out of scope; release only as a governed control-plane with no production-platform claim"
+    }
+  ],
+  "not_satisfied_requirements": [
+    "the 9-dimensional V5 production readiness matrix completion is no longer a target under the operator CLI-only decision",
+    "the all-or-none atomic guard-flag flip is out of scope by operator decision, not pending further evidence",
+    "the public production_platform_claim language remains intentionally unclaimed and forbidden"
+  ],
+  "allowed_claims": [
+    "installable_governed_control_plane",
+    "fail_closed_policy_engine",
+    "self_hosted_jsonl_evidence_trail",
+    "governed_context_pipeline",
+    "api_keyless_consumer_use"
+  ],
+  "forbidden_claims": [
+    "general_purpose_production_platform",
+    "autonomous_provider_api_execution",
+    "support_widening_active",
+    "live_adapter_runtime_active",
+    "all_or_none_v5_production_promotion_satisfied"
+  ],
+  "evidence": {
+    "consumer_acceptance_smoke": {
+      "fresh_venv_pip_install": true,
+      "init_and_doctor": true,
+      "fail_closed_policy_check": true,
+      "governed_context_persistence": true,
+      "no_api_key_required": true
+    },
+    "pypi_baseline_version": "4.1.0",
+    "evidence_class": "operator_local_consumer_smoke_not_project_owned_production_evidence"
+  },
+  "impact_on_existing_artifacts": [
+    {
+      "path": "tests/fixtures/epic9/xfinal-readiness-blocker.current.json",
+      "reinterpretation": "read as superseded / not applicable under the CLI-only operator decision; retained as historical prior-state evidence, no longer an active blocked-pending-flip gate"
+    },
+    {
+      "path": ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
+      "reinterpretation": "the 18-condition all-or-none pre-supersession checklist is no longer the active path; retained as a historical contract, not a pending requirement"
+    },
+    {
+      "path": "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
+      "reinterpretation": "the 9-dimension production readiness matrix stays partial by design and is no longer targeted for completion under this decision"
+    }
+  ],
+  "release_implication": "release_only_as_governed_control_plane_no_production_platform_claim_v4x_minor_preferred_v5_major_only_if_explicitly_renamed_governed_control_plane_ga_with_three_flags_false_in_changelog",
+  "non_authority_boundary": {
+    "is_release_note": false,
+    "is_public_production_claim": false,
+    "authorizes_guard_flag_flip": false,
+    "release_authority": "repo_owned_ao_release_gate_required_check_plus_github_branch_protection"
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019ea0f0-0837-7050-a686-0f37d6805581",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  }
+}
