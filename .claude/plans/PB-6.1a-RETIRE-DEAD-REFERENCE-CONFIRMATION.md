@@ -88,3 +88,22 @@ gerekçesi çıkmadı çünkü:
 1. `PB-6.1b` promote candidate shortlist
 2. `PRJ-CONTEXT-ORCHESTRATION`, `PRJ-KERNEL-API`, `PRJ-RELEASE-AUTOMATION`
    arasından ilk gerçek runtime promotion adayını seçmek
+
+---
+
+## Execution closeout (2026-06-07)
+
+The archive step anticipated by this plan ("bundled defaults / registry içinde
+görünürlüklerini azaltacak archive planı") was executed for the subset that the
+deterministic PB-9.2 ratchet also flags as `retire_candidate`:
+`PRJ-EXECUTORPORT` and `PRJ-MEMORYPORT` (plus `PRJ-OBSERVABILITY-OTEL`, flagged
+by the ratchet). Removed from `ao_kernel/defaults/extensions/`; audit index at
+`ao_kernel/defaults/extensions/RETIRED.v1.json`. Scope = dead inventory
+retirement only; no support widening, no promotion.
+
+`PRJ-SEARCH` and `PRJ-UI-COCKPIT-LITE` from this plan's confirmed list were
+**NOT** retired in this pass: the deterministic ratchet keeps them in
+`quarantine_keep` because their manifests declare entrypoints/UI (whose targets
+this audit found absent). Rather than bypass the ratchet authority, their
+retirement is deferred to a follow-up that reconciles the human audit verdict
+with a deterministic ratchet signal (declared-but-dead entrypoint detection).

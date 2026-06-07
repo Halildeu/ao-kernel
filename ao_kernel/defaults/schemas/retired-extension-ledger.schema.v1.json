@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retired-extension-ledger.schema.v1",
+  "title": "Retired bundled-extension ledger (v1)",
+  "description": "Machine-readable audit index of bundled extensions retired from ao_kernel/defaults/extensions/. The ledger is an index only; the authoritative restore source is git history (restorable_from_git_history). It does NOT embed retired manifest payloads.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "ledger_kind",
+    "retired_extensions"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "retired-extension-ledger.v1"
+    },
+    "ledger_kind": {
+      "const": "bundled-extension-retirement"
+    },
+    "retired_extensions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "required": [
+          "extension_id",
+          "retired_on",
+          "reason",
+          "ratchet_bucket",
+          "superseded_by",
+          "restorable_from_git_history"
+        ],
+        "properties": {
+          "extension_id": {
+            "type": "string",
+            "pattern": "^PRJ-[A-Z0-9][A-Z0-9-]*$"
+          },
+          "retired_on": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10
+          },
+          "ratchet_bucket": {
+            "const": "retire_candidate"
+          },
+          "superseded_by": {
+            "type": "string",
+            "minLength": 3
+          },
+          "restorable_from_git_history": {
+            "const": true
+          }
+        }
+      }
+    }
+  }
+}
