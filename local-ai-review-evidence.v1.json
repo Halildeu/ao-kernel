@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-RELEASE-V4.2.0",
+  "work_package": "V5-CROSS-REPO-DOGFOOD-EVIDENCE",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,67 +13,32 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/release/v4.2.0-2026-06-07",
+    "head_ref": "refs/heads/docs/v420-cross-repo-dogfood-evidence-2026-06-07",
     "changed_files": [
       "CHANGELOG.md",
-      "ao_kernel/__init__.py",
-      "deploy/helm/ao-kernel/Chart.yaml",
-      "deploy/helm/ao-kernel/values.yaml",
-      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
-      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
-      "docs/operator-runbooks/01-pypi-publish.md",
-      "docs/operator-runbooks/README.md",
-      "docs/operator-runbooks/operator-action-checklist.v1.json",
+      "docs/EVIDENCE-V4.2.0-CROSS-REPO-DOGFOOD.md",
       "local-ai-review-evidence.v1.json",
-      "pyproject.toml",
-      "tests/test_epic_4_1_helm_chart_skeleton.py",
-      "tests/test_pr_a6_features.py",
-      "tests/test_v410_version_pin.py",
-      "tests/test_v420_version_pin.py"
+      "tests/test_v420_cross_repo_dogfood_evidence_doc.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "no_workflow_ruleset_changes",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_false",
-      "status": "pass"
-    },
-    {
-      "name": "version_consistency",
-      "status": "pass"
-    },
-    {
-      "name": "release_facing_surfaces_match_version",
-      "status": "pass"
-    },
-    {
-      "name": "changelog_cut_keep_a_changelog",
-      "status": "pass"
-    }
+    {"name": "tests", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "no_runtime_changes", "status": "pass"},
+    {"name": "no_workflow_ruleset_changes", "status": "pass"},
+    {"name": "guard_flags_false", "status": "pass"},
+    {"name": "evidence_class_honestly_labeled", "status": "pass"},
+    {"name": "reproduce_matches_transcript", "status": "pass"},
+    {"name": "changelog_scope_accurate", "status": "pass"}
   ],
   "findings": [
-    "Codex (OpenAI) reviewed the v4.2.0 release prep diff against origin/main and returned AGREE after two post-impl rounds were fully absorbed (thread 019ea0f0).",
-    "v4.2.0 governed control-plane readiness release: bumps project.version 4.1.0 -> 4.2.0 (pyproject + __version__) and cuts the 117-commit [Unreleased] backlog into a Keep-a-Changelog [4.2.0] - 2026-06-07 section; [Unreleased] left empty above it; chore-no-changelog label per ADR-0005 (release PR adds no new bullet).",
-    "Semantic discipline kept: only project.version changed in pyproject (no build-system, scripts, or tool config changes).",
-    "Version-pin lifecycle advanced: test_v420_version_pin.py replaces test_v410_version_pin.py and preserves the version-consistency, PyYAML, [4.1.0] history, section-order, and guard-flags-false invariants.",
-    "Downstream version-tracking surfaces bumped to 4.2.0 at root: test_pr_a6_features TestVersionBump, Helm Chart.yaml appVersion, Helm values.yaml default image tag, consumer onboarding exact pin, production deployment Docker/Compose examples, and the operator PyPI publish runbook + checklist dispatch ref/expected artifact.",
-    "A new test_release_facing_install_surfaces_match_version invariant machine-enforces that the consumer pin, Helm tag, and operator publish dispatch ref always track project.version, so a release can no longer point users/operators at the prior version.",
-    "No workflow or ruleset changes were introduced; .github paths are untouched. No forbidden scope substring is touched.",
-    "Guard flags remain false: support_widening, production_platform_claim, and live_adapter_execution. This is a minor release, not a production-platform promotion.",
-    "Full test suite: 6944 passed, 121 skipped, 0 failed (benchmarks excluded); wheel ao_kernel-4.2.0-py3-none-any.whl builds.",
-    "CI-red root-cause fix: test_epic_4_1_helm_chart_skeleton.py::test_no_pyproject_change_in_slice was a global per-PR guard asserting pyproject not in the diff; a release PR legitimately bumps pyproject.version AND the chart appVersion together. Scoped the guard to the E-4-1 slice only (skip when the E-4-1 evidence artifact is not in the diff), matching the sibling test_write_set_exact_match_git_diff pattern. E-4-1 slice protection is preserved; release-version invariants stay covered by test_v420_version_pin. Cross-AI: Codex AGREE (thread 019ea0f0).",
-    "The PyPI publish (tag v4.2.0 push) remains a separate operator-go irreversible public step after merge; this PR does not publish.",
+    "Codex (OpenAI) reviewed the cross-repo dogfood evidence doc and returned AGREE after two post-impl rounds were fully absorbed (thread 019ea0f0).",
+    "Adds docs/EVIDENCE-V4.2.0-CROSS-REPO-DOGFOOD.md: a reproducible record that the published ao-kernel==4.2.0 installs into a fresh separate repo from PyPI and runs the governed control-plane (fail-closed policy, governed context record/recall, persisted canonical decision store) with no provider API key; docs/tests only.",
+    "Evidence class is honestly labeled operator-local usage-model demo, explicitly NOT project-owned production evidence (CLAUDE.md §21); the doc carries an explicit 'does NOT prove' scope (no production-platform claim, no live adapter execution, no support widening, no JSONL evidence trail, no multi-tenant/scale claim).",
+    "Surface terminology corrected per review: the demo writes the canonical decision store (governed context persistence), NOT the separate self-hosted JSONL evidence trail; the doc distinguishes them and the test pins the distinction.",
+    "Reproduce snippet matches the transcript: it runs the bundled policy_cost_tracking check producing 'deny'; verified live.",
+    "No Python runtime code changed; .github paths untouched; no forbidden scope substring; the three guard flags remain false.",
+    "Doc-bound test (6 tests) machine-enforces the §21 disclaimer, false guard flags, transcript markers, negative production-platform scope, and the canonical-store vs JSONL-evidence-trail distinction.",
     "No secrets, credentials, or sensitive material were found in the reviewed diff."
   ],
   "secrets_recorded": false,

@@ -7,6 +7,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **v4.2.0 cross-repo dogfood evidence doc**: added
+  `docs/EVIDENCE-V4.2.0-CROSS-REPO-DOGFOOD.md`, a reproducible record that the
+  published `ao-kernel==4.2.0` installs into a fresh separate repo from PyPI and
+  runs the governed control-plane (fail-closed policy, governed context
+  record/recall, persisted canonical decision store) with no provider API key, exercising
+  the CLI-subscription operating model end-to-end. The doc is explicitly labeled
+  an **operator-local usage-model demo — NOT project-owned production evidence**
+  (CLAUDE.md §21); the three guard flags stay false and it carries an explicit
+  "does NOT prove" scope. A doc-bound test
+  (`tests/test_v420_cross_repo_dogfood_evidence_doc.py`) machine-enforces the §21
+  evidence-class disclaimer, the false guard flags, the reproducible transcript
+  markers, and the no-overclaim negative scope. Docs/tests only; no runtime
+  change, no guard flag flip, no support widening, production-platform claim, or
+  live adapter execution. Cross-AI review: Codex (OpenAI).
+
 ## [4.2.0] - 2026-06-07
 
 ### Added
