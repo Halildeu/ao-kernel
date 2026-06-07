@@ -423,6 +423,15 @@ def test_write_set_exact_match_git_diff() -> None:
 
 def test_no_pyproject_change_in_slice() -> None:
     changed = _changed_files_against_origin_main()
+    # Slice-scoped guard (same pattern as test_write_set_exact_match_git_diff):
+    # the "helm slice must not touch pyproject" rule applies ONLY to the E-4-1
+    # slice PR — detected by the E-4-1 evidence artifact being in the diff. A
+    # release PR legitimately bumps pyproject.version AND the chart appVersion
+    # together (appVersion tracks ao_kernel.__version__), so without this skip
+    # the guard would false-fail every version-bump release.
+    evidence_path = str(_EVIDENCE_PATH.relative_to(_REPO_ROOT))
+    if evidence_path not in changed:
+        pytest.skip("E-4-1 no-pyproject-change guard applies only when the E-4-1 evidence artifact is in the PR diff")
     assert "pyproject.toml" not in changed, (
         "pyproject.toml MUST NOT change in E-4-1 (Epic 4 F8 absorb: [k8s-helm] out of scope)"
     )
