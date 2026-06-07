@@ -1,6 +1,29 @@
 # v5.0.0 — Full Production Promotion Roadmap
 
-**Status:** PROPOSED · **Target:** 2026-12-31 (aspirational; exit criteria are authoritative)
+> ## ⚠️ SUPERSEDED (2026-06-07) — reframed as governed control-plane
+>
+> The "Full Production Promotion" framing of this roadmap — culminating in the
+> Epic 9 PR-Xfinal **all-or-none atomic flip** of `live_adapter_execution` +
+> `support_widening` + `production_platform_claim` and a `v5.0.0` general-purpose
+> **production-platform claim** — is **superseded by an explicit operator
+> decision** (a conscious product-boundary change, not a failure or deferral).
+>
+> ao-kernel stays a **CLI-only / operator-mediated governed control-plane**: the
+> AIs (Claude / Codex / Mavis) do the work through their own monthly CLI
+> subscriptions; ao-kernel never makes programmatic provider API calls. The three
+> guard flags remain **const false** as the final state.
+>
+> - **Decision (machine-readable):** `tests/fixtures/epic9/epic9-xfinal-supersession-decision.current.json`
+> - **Closeout (human-readable):** `.claude/plans/EPIC-9-PR-XFINAL-SUPERSESSION-CLOSEOUT.md`
+> - **Source authority:** `.claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json`
+>
+> The epics below that are **not** the guard-flag flip (observability, security,
+> docs, install lifecycle, etc.) remain valid as governed-control-plane
+> hardening. Epic 9 (the flip) is **out of scope**. Release only as a governed
+> control-plane (v4.x minor preferred); never as a production-platform promotion.
+> The content below is **retained as historical record**.
+
+**Status:** SUPERSEDED (see banner above) · ~~PROPOSED~~ · **Target:** 2026-12-31 (aspirational; exit criteria are authoritative)
 **Owner:** Halil Kocoglu · **Consultation:** CNS-20260601-004 · **Codex thread** `019e80b3` (1 tur REVISE → revize 4-PR yapısı + 8 missing invariant absorb)
 
 > **Visibility, NOT authority.** GitHub Milestones / Issues / Project board are a one-way mirror of this plan. Repo artifacts (`.claude/plans/`, JSONL evidence, `ao-release-gate`) remain the SSOT. Promotion authority lives in the **final operator-bound supersession PR** at the end of this roadmap; no individual epic or slice can flip the three guard flags on its own.

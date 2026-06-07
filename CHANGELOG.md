@@ -7,6 +7,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- **Epic 9 PR-Xfinal supersession — V5 reframed as governed control-plane**:
+  recorded an explicit operator decision (2026-06-07) that supersedes the Epic 9
+  "Full Production Promotion" all-or-none atomic guard-flag flip
+  (`live_adapter_execution` + `support_widening` + `production_platform_claim`)
+  and the `v5.0.0` general-purpose production-platform claim. This is a conscious
+  product-boundary change, not a failure or deferral: ao-kernel stays a CLI-only /
+  operator-mediated governed control-plane (the AIs use their own monthly CLI
+  subscriptions; ao-kernel never makes programmatic provider API calls). Added a
+  strict, schema-backed machine-readable decision
+  (`ao_kernel/defaults/schemas/epic9-xfinal-supersession-decision.schema.v1.json`
+  + `tests/fixtures/epic9/epic9-xfinal-supersession-decision.current.json` +
+  `tests/test_epic9_xfinal_supersession_decision.py`) and a human-readable
+  closeout (`.claude/plans/EPIC-9-PR-XFINAL-SUPERSESSION-CLOSEOUT.md`). The prior
+  `xfinal-readiness-blocker` fixture, the Epic 9 pre-supersession checklist, and
+  the V5 roadmap are **retained as historical record** and reinterpreted as
+  superseded / not applicable (superseded banners added). The three guard flags
+  remain **const false** as the final state, consistent with RI-7.8c
+  (operator non-promotion, cli-only) and GPP-9 (`keep_narrow_stable_runtime`).
+  No guard flag is flipped; no support widening, production-platform claim,
+  workflow change, or live adapter execution is introduced. Cross-AI review:
+  Codex (OpenAI) thread `019ea0f0`.
+
 ### Fixed
 
 - **V5 subissue mirror status reconciliation**: updated the repo-side V5

@@ -1,6 +1,21 @@
 # Epic 9 PR-Xfinal — Final Supersession Draft Guardrail
 
-**Status:** draft / not ready to open
+> ## ⚠️ SUPERSEDED (2026-06-07) — historical only, NOT an active route
+>
+> The future PR-Xfinal **all-or-none guard-flag flip** described in this draft is
+> **superseded by an explicit operator decision** to keep ao-kernel a CLI-only
+> governed control-plane. It is **not** the path forward and **must not be
+> opened**. The three guard flags remain const false as the final state, and
+> **no guard flag flip is authorized** by this document.
+>
+> **Everything below this banner is HISTORICAL RECORD ONLY.** Any "future
+> operator-bound PR-Xfinal", "Final promotion authority belongs only to …", or
+> "Only after all three gates …" language below describes a path that will
+> **not** be taken and must not be read as an active route or requirement.
+> See `.claude/plans/EPIC-9-PR-XFINAL-SUPERSESSION-CLOSEOUT.md` and
+> `tests/fixtures/epic9/epic9-xfinal-supersession-decision.current.json`.
+
+**Status:** SUPERSEDED (see banner) · ~~draft / not ready to open~~
 **Work package:** E-9-1
 **Parent roadmap:** `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`
 **Current blocker artifact schema:** `ao_kernel/defaults/schemas/epic9-xfinal-readiness-blocker.schema.v1.json`

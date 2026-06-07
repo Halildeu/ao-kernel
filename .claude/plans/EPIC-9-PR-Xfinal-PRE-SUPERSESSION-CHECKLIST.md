@@ -1,6 +1,21 @@
 # Epic 9 PR-Xfinal Pre-Supersession Checklist
 
-**Status:** recorded / prerequisite artifact only
+> ## ⚠️ SUPERSEDED (2026-06-07) — historical only, NOT an active route
+>
+> This 18-condition all-or-none checklist is **superseded by an explicit operator
+> decision** to keep ao-kernel a CLI-only governed control-plane. It is **no
+> longer an active prerequisite contract** and **does not gate any future work**.
+> No Epic 9 PR-Xfinal all-or-none guard-flag flip will be opened. The three guard
+> flags remain const false as the final state, and **no guard flag flip is
+> authorized** by this document.
+>
+> **Everything below this banner is HISTORICAL RECORD ONLY.** Any "future Epic 9
+> PR-Xfinal must satisfy …" / "must fail closed …" language below describes a path
+> that will **not** be taken and must not be read as an active requirement.
+> See `.claude/plans/EPIC-9-PR-XFINAL-SUPERSESSION-CLOSEOUT.md` and
+> `tests/fixtures/epic9/epic9-xfinal-supersession-decision.current.json`.
+
+**Status:** SUPERSEDED (historical only) · ~~recorded / prerequisite artifact only~~
 **Slice:** E-2-7
 **Parent plan:** `.claude/plans/EPIC-2-LIVE-ADAPTER-EXECUTION.md`
 **Schema:** `ao_kernel/defaults/schemas/pre_supersession_checklist.schema.v1.json`
