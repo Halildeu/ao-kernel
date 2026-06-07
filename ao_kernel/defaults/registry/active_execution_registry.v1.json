@@ -33,7 +33,6 @@
         "__WORKSPACE_ROOT__/.claude/worktrees/zealous-ritchie"
       ],
       "app_ids": [
-        "ao:cockpit-lite",
         "ao:ops-kernel"
       ],
       "version_source_refs": [

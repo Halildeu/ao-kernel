@@ -57,6 +57,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   (11 quarantined). No guard flag flip, no support widening, no promotion, no
   production-platform claim, no live adapter execution; doctor `healthy`
   criterion unchanged. Cross-AI review: Codex (OpenAI).
+- **Removed the PRJ-UI-COCKPIT-LITE web UI completely**: following the manifest
+  retirement, every remaining declarative cockpit-lite surface is dropped — the
+  `ao:cockpit-lite` launch profile (`apps_and_launch_registry.v1.json`), its
+  `active_execution_registry.v1.json` app_id, the `cockpit_lite` status object
+  and `last_cockpit_healthcheck_path` from `system-status.schema.json`, the
+  `cockpit_decision_*` retention globs (`policy_retention.v1.json`), and the
+  cockpit-lite snapshot props (`last_cockpit_healthcheck_path`, `cockpit_port`,
+  `last_cockpit_port`, `last_chat_log_path`, `cockpit_notes_count`,
+  `last_note_id`) from `ui-snapshot-bundle.schema.v1.json`. The generic
+  `cockpit_sections` extension vocabulary and the shared `ui-snapshot-bundle`
+  schema (still used by `PRJ-DEPLOY`) are preserved. A structural invariant test
+  (`tests/test_cockpit_lite_retirement.py`) locks in the removal and the
+  preservation, including a negative check that the schema now rejects the old
+  cockpit-lite snapshot fields. No Python runtime referenced these surfaces. No
+  guard flag flip, no support widening, no production-platform claim, no live
+  adapter execution. Cross-AI review: Codex (OpenAI).
 
 ## [4.2.0] - 2026-06-07
 

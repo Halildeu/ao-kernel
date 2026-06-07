@@ -467,27 +467,6 @@
       "minimum": 0,
       "type": "integer"
     },
-    "last_cockpit_healthcheck_path": {
-      "type": "string"
-    },
-    "cockpit_port": {
-      "minimum": 0,
-      "type": "integer"
-    },
-    "last_cockpit_port": {
-      "minimum": 0,
-      "type": "integer"
-    },
-    "last_chat_log_path": {
-      "type": "string"
-    },
-    "cockpit_notes_count": {
-      "minimum": 0,
-      "type": "integer"
-    },
-    "last_note_id": {
-      "type": "string"
-    },
     "last_airunner_proof_bundle_path": {
       "type": "string"
     },
