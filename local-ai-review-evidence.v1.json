@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-REMOVE-COCKPIT-LITE-WEB-UI",
+  "work_package": "V5-RELEASE-4.2.1",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,38 +13,42 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/chore/remove-cockpit-lite-web-ui-2026-06-07",
+    "head_ref": "refs/heads/chore/release-v4.2.1-c-2026-06-07",
     "changed_files": [
       "CHANGELOG.md",
-      "ao_kernel/defaults/policies/policy_retention.v1.json",
-      "ao_kernel/defaults/registry/active_execution_registry.v1.json",
-      "ao_kernel/defaults/registry/apps_and_launch_registry.v1.json",
-      "ao_kernel/defaults/schemas/system-status.schema.json",
-      "ao_kernel/defaults/schemas/ui-snapshot-bundle.schema.v1.json",
+      "ao_kernel/__init__.py",
+      "deploy/helm/ao-kernel/Chart.yaml",
+      "deploy/helm/ao-kernel/values.yaml",
+      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
+      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
+      "docs/operator-runbooks/01-pypi-publish.md",
+      "docs/operator-runbooks/README.md",
+      "docs/operator-runbooks/operator-action-checklist.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_cockpit_lite_retirement.py"
+      "pyproject.toml",
+      "tests/test_pr_a6_features.py",
+      "tests/test_v421_version_pin.py"
     ]
   },
   "checks_considered": [
+    {"name": "secret_scan", "status": "pass"},
     {"name": "tests", "status": "pass"},
     {"name": "ruff", "status": "pass"},
-    {"name": "json_validity", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
+    {"name": "version_single_source_of_truth", "status": "pass"},
+    {"name": "release_facing_install_surfaces_match_version", "status": "pass"},
+    {"name": "changelog_cut_and_history_preserved", "status": "pass"},
     {"name": "guard_flags_false", "status": "pass"},
-    {"name": "no_support_widening", "status": "pass"},
-    {"name": "generic_cockpit_sections_preserved", "status": "pass"},
-    {"name": "shared_ui_snapshot_schema_preserved", "status": "pass"},
+    {"name": "release_semantic_discipline_version_only", "status": "pass"},
     {"name": "no_workflow_ruleset_branch_protection_change", "status": "pass"}
   ],
   "findings": [
-    "Codex (OpenAI) reviewed this on thread 019ea185: plan-time REVISE (expand scope to also drop ui-snapshot last_chat_log_path/last_note_id + add a structural invariant test) fully absorbed, then post-impl review.",
-    "Completes the PRJ-UI-COCKPIT-LITE web UI removal after the manifest retirement (#975): drops the ao:cockpit-lite launch profile (apps_and_launch_registry), its active_execution_registry app_id, the cockpit_lite status object + last_cockpit_healthcheck_path (system-status.schema.json), the cockpit_decision_* retention globs (policy_retention), and the 6 cockpit-lite snapshot props from ui-snapshot-bundle.schema (last_cockpit_healthcheck_path, cockpit_port, last_cockpit_port, last_chat_log_path, cockpit_notes_count, last_note_id).",
-    "Preservation (no over-removal): the generic cockpit_sections extension vocabulary stays in extension-manifest.schema and other manifests; the shared ui-snapshot-bundle schema is NOT deleted (PRJ-DEPLOY still declares the ui-snapshot-bundle surface); the policy_context_profile_registry task_scope_hint 'cockpit' and the historical PB-* plan records are left untouched (audit trail).",
-    "No Python runtime referenced cockpit_lite / cockpit-serve / cockpit-healthcheck / ao:cockpit-lite (verified); these were purely declarative manifest/registry/schema surfaces.",
-    "A new structural invariant test (tests/test_cockpit_lite_retirement.py, 9 tests) enforces both removal (no cockpit-lite token survives in any edited default; cockpit_lite/last_cockpit_healthcheck_path absent from schemas; cockpit_decision globs gone) and preservation (ui-snapshot-bundle still loadable + used by PRJ-DEPLOY; cockpit_sections preserved), plus a negative check that ui-snapshot-bundle (additionalProperties:false) now rejects a removed cockpit-lite snapshot field.",
-    "Boundary: the three guard flags stay const false; no support widening; no production-platform claim; no live adapter execution; no change to .github workflows, rulesets, branch protection, or apps.",
-    "Verification: full pytest 6988 passed / 125 skipped / 0 failed; ruff clean; all 5 edited JSON files parse valid. No ao_kernel Python source changed (mypy unaffected).",
-    "No secrets, credentials, or sensitive material were found in the reviewed diff."
+    "v4.2.1 patch release. Bumps the single source-of-truth version (pyproject.toml + ao_kernel.__version__) 4.2.0 -> 4.2.1 and cuts CHANGELOG [Unreleased] into a new [4.2.1] - 2026-06-07 entry (the post-4.2.0 work: cross-repo dogfood evidence doc + 5 dead-extension retirements + complete PRJ-UI-COCKPIT-LITE web UI removal). [4.2.0] and [4.1.0] history preserved; section order Unreleased > 4.2.1 > 4.2.0.",
+    "Release-facing install surfaces tracked to 4.2.1 (enforced by test_release_facing_install_surfaces_match_version): consumer onboarding exact pin (USING-AO-KERNEL-IN-YOUR-PROJECT.md), Helm default image tag (values.yaml), and operator publish-dispatch ref + expected artifact (operator-action-checklist.v1.json). Also bumped: Helm Chart appVersion 4.2.0 -> 4.2.1 + chart version 0.1.0 -> 0.1.1, operator runbook 01-pypi-publish.md + README, PRODUCTION-DEPLOYMENT-GUIDE.md, and the test_pr_a6 version-bump assertions.",
+    "Version-pin test renamed test_v420_version_pin.py -> test_v421_version_pin.py with 4.2.1 assertions + updated changelog section-order/history checks.",
+    "Historical version-specific artifacts intentionally left at 4.2.0: docs/EVIDENCE-V4.2.0-CROSS-REPO-DOGFOOD.md (the 4.2.0 dogfood evidence) + its test, the CHANGELOG [4.2.0] entry, .ao consultations, plan docs, and the COMPETITOR-MATRIX 'FAZ-E ship (v4.2.0)' roadmap label.",
+    "Release semantic discipline honored: pyproject change is limited to project.version (no scripts/build-system/tool config churn). The three guard flags remain const false (gpp_status keep_narrow_stable_runtime); no support widening, no production-platform claim, no live adapter execution.",
+    "Verification: full pytest 6988 passed / 125 skipped / 0 failed; ruff clean. The release PR carries the chore-no-changelog label because the cut leaves [Unreleased] empty (ADR-0005).",
+    "No secrets, credentials, or sensitive material were found in the reviewed diff. No .github workflow/ruleset/branch-protection/app changes."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

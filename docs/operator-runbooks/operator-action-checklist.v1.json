@@ -21,18 +21,18 @@
   "actions": [
     {
       "id": "p0-1-pypi-publish",
-      "title": "PyPI v4.2.0 publish dispatch (P0-1)",
+      "title": "PyPI v4.2.1 publish dispatch (P0-1)",
       "runbook_path": "docs/operator-runbooks/01-pypi-publish.md",
       "workflow_path": ".github/workflows/publish.yml",
       "environment_name": "pypi",
       "secret_names": [],
-      "dispatch_inputs": { "ref": "refs/tags/v4.2.0" },
+      "dispatch_inputs": { "ref": "refs/tags/v4.2.1" },
       "expected_artifacts": [
-        "https://pypi.org/project/ao-kernel/4.2.0/"
+        "https://pypi.org/project/ao-kernel/4.2.1/"
       ],
       "operator_must_verify": [
         "tag SHA matches main release commit",
-        "GHCR + PyPI parity for ao-kernel 4.2.0",
+        "GHCR + PyPI parity for ao-kernel 4.2.1",
         "no test release published to production index"
       ],
       "forbidden_claims": [
@@ -46,7 +46,7 @@
       "agent_prep_status": "done",
       "operator_action_status": "pending",
       "status_evidence_refs": [],
-      "blocker_for": ["v4.2.0 GA"],
+      "blocker_for": ["v4.2.1 GA"],
       "estimated_minutes": 5,
       "dependencies": []
     },
