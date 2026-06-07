@@ -15,8 +15,6 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/chore/release-v4.2.1-c-2026-06-07",
     "changed_files": [
-      "ao-ma-10-high-risk-reviews/V5-RELEASE-4.2.1/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/V5-RELEASE-4.2.1/openai.local-ai-review-evidence.v1.json",
       "CHANGELOG.md",
       "ao_kernel/__init__.py",
       "deploy/helm/ao-kernel/Chart.yaml",
@@ -33,6 +31,7 @@
     ]
   },
   "checks_considered": [
+    {"name": "secret_scan", "status": "pass"},
     {"name": "tests", "status": "pass"},
     {"name": "ruff", "status": "pass"},
     {"name": "version_single_source_of_truth", "status": "pass"},
