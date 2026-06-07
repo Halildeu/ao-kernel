@@ -42,6 +42,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   bucket logic stays covered after the retirement. No guard flag flip, no
   support widening, no promotion, no production-platform claim, no live adapter
   execution; doctor `healthy` criterion unchanged. Cross-AI review: Codex (OpenAI).
+- **Retired 2 more dead bundled extensions** (`PRJ-SEARCH`,
+  `PRJ-UI-COCKPIT-LITE`): the PB-9.2 ratchet's `retire_candidate` rule gained a
+  deterministic `declared_dead_surface` sub-reason — a quarantined manifest that
+  declares an entrypoint/ui surface but has no remap remediation path (`remap=0`)
+  and no registered runtime handler, with `missing_runtime_refs>=9`, is now
+  retired alongside the original `dead_shell` case. This caught these two
+  (PB-6.1a human-confirmed dead) that the prior count-only rule left in
+  `quarantine_keep` because they declared a dead surface. A handler guard keeps a
+  future live-handler extension with merely broken docs/test refs out of
+  retirement. Bundled inventory drops 16 → 14 (`quarantined` 13 → 11);
+  `PRJ-ENFORCEMENT-PACK`/`PRJ-PM-SUITE` stay `quarantine_keep` (they have a remap
+  remediation path). The doctor "Bundled extension truth" WARN remains truthful
+  (11 quarantined). No guard flag flip, no support widening, no promotion, no
+  production-platform claim, no live adapter execution; doctor `healthy`
+  criterion unchanged. Cross-AI review: Codex (OpenAI).
 
 ## [4.2.0] - 2026-06-07
 

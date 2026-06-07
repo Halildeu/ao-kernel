@@ -107,3 +107,13 @@ retirement only; no support widening, no promotion.
 this audit found absent). Rather than bypass the ratchet authority, their
 retirement is deferred to a follow-up that reconciles the human audit verdict
 with a deterministic ratchet signal (declared-but-dead entrypoint detection).
+
+### Follow-up closeout (2026-06-07) — SEARCH + UI-COCKPIT-LITE executed
+
+The deferral above is resolved. Rather than bypass the ratchet, the PB-9.2 ratchet
+gained a deterministic `declared_dead_surface` signal (declared entrypoint/ui +
+no remap path + no registered handler + missing>=9), which reclassifies
+`PRJ-SEARCH` and `PRJ-UI-COCKPIT-LITE` as `retire_candidate` — matching this
+plan's human audit verdict via a machine rule. Both are now retired
+(ao_kernel/defaults/extensions/RETIRED.v1.json). All four confirmed targets from
+this plan (EXECUTORPORT, MEMORYPORT, SEARCH, UI-COCKPIT-LITE) are now retired.

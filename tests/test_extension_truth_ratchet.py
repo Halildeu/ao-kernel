@@ -36,6 +36,7 @@ def _synth(
     remap: int = 0,
     entrypoints: int = 0,
     ui: int = 0,
+    runtime_handler_registered: bool = False,
 ) -> ExtensionManifest:
     """Build a synthetic manifest exercising only the fields classify_bucket reads.
 
@@ -56,6 +57,7 @@ def _synth(
         truth_tier=tier,
         missing_runtime_refs=tuple(f"missing/{i}" for i in range(missing)),
         remap_candidate_refs=tuple(f"remap/{i}" for i in range(remap)),
+        runtime_handler_registered=runtime_handler_registered,
     )
 
 
@@ -83,9 +85,39 @@ def test_classify_bucket_remap_priority() -> None:
     assert classify_bucket(manifest) == "remap_priority"
 
 
-def test_classify_bucket_quarantine_keep_when_entrypoints_present() -> None:
-    # quarantined + missing>=9 but has entrypoints -> not retire, not remap (missing>8).
-    manifest = _synth(tier=TRUTH_TIER_QUARANTINED, missing=9, remap=0, entrypoints=4, ui=0)
+def test_classify_bucket_quarantine_keep_when_surface_has_remediation_path() -> None:
+    # quarantined + missing>=9 + declared surface BUT remap>0 -> a remediation
+    # path exists, so it is kept (not retired) and not remap_priority (missing>8).
+    manifest = _synth(tier=TRUTH_TIER_QUARANTINED, missing=9, remap=2, entrypoints=4, ui=0)
+    assert classify_bucket(manifest) == "quarantine_keep"
+
+
+def test_classify_bucket_declared_dead_surface_without_remap_retires() -> None:
+    # quarantined + missing>=9 + declared surface + no remap path + no handler
+    # = declared-but-dead surface -> retire (catches PRJ-SEARCH / PRJ-UI-COCKPIT-LITE).
+    manifest = _synth(
+        tier=TRUTH_TIER_QUARANTINED,
+        missing=9,
+        remap=0,
+        entrypoints=1,
+        ui=0,
+        runtime_handler_registered=False,
+    )
+    assert classify_bucket(manifest) == "retire_candidate"
+
+
+def test_classify_bucket_declared_surface_with_handler_is_not_retired() -> None:
+    # Future guard: a quarantined extension with a registered runtime handler is
+    # NOT retired just because its docs/test refs are broken — a live handler
+    # means a real surface, so it stays a keep candidate.
+    manifest = _synth(
+        tier=TRUTH_TIER_QUARANTINED,
+        missing=9,
+        remap=0,
+        entrypoints=1,
+        ui=0,
+        runtime_handler_registered=True,
+    )
     assert classify_bucket(manifest) == "quarantine_keep"
 
 
@@ -134,9 +166,11 @@ def test_known_extension_classifications_are_stable() -> None:
     assert context_orch["bucket"] == "promotion_candidate"
     assert context_orch["priority_score"] is None
 
-    cockpit = _row(report, "PRJ-UI-COCKPIT-LITE")
-    assert cockpit["bucket"] == "quarantine_keep"
-    assert cockpit["priority_score"] is None
+    # PRJ-ENFORCEMENT-PACK stays quarantine_keep: declared surface + missing>=9
+    # but remap>0 means a remediation path exists (not a declared-dead surface).
+    enforcement = _row(report, "PRJ-ENFORCEMENT-PACK")
+    assert enforcement["bucket"] == "quarantine_keep"
+    assert enforcement["priority_score"] is None
 
 
 def test_render_text_contains_key_sections() -> None:

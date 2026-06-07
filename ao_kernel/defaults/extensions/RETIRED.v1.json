@@ -25,6 +25,22 @@
       "ratchet_bucket": "retire_candidate",
       "superseded_by": "ao_kernel/telemetry.py (lazy OTEL adapter with no-op fallback, D12)",
       "restorable_from_git_history": true
+    },
+    {
+      "extension_id": "PRJ-SEARCH",
+      "retired_on": "2026-06-07",
+      "reason": "Quarantined manifest with a declared-but-dead surface: declares ops/test entrypoints but has no registered runtime handler, missing_runtime_refs>=9, and no remap remediation path (remap=0). Confirmed dead by the PB-6.1a file-level audit; reclassified retire_candidate by the PB-9.2 ratchet's declared_dead_surface rule.",
+      "ratchet_bucket": "retire_candidate",
+      "superseded_by": "n/a (declared search surface never had a registered runtime handler; no live counterpart)",
+      "restorable_from_git_history": true
+    },
+    {
+      "extension_id": "PRJ-UI-COCKPIT-LITE",
+      "retired_on": "2026-06-07",
+      "reason": "Quarantined manifest with a declared-but-dead surface: declares cockpit ops/ui entrypoints but has no registered runtime handler, missing_runtime_refs>=9 (29), and no remap remediation path (remap=0). Confirmed dead by the PB-6.1a file-level audit; reclassified retire_candidate by the PB-9.2 ratchet's declared_dead_surface rule.",
+      "ratchet_bucket": "retire_candidate",
+      "superseded_by": "n/a (declared cockpit surface never shipped a live runtime handler; no live counterpart)",
+      "restorable_from_git_history": true
     }
   ]
 }
