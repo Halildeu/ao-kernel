@@ -45,7 +45,7 @@ ao-kernel is a **control-plane**, not a provider-API client. The intended model:
 
 ```bash
 pip install ao-kernel                 # Core (only jsonschema dependency)
-pip install ao-kernel==4.2.0          # Exact pin
+pip install ao-kernel==4.2.1          # Exact pin
 pip install ao-kernel[mcp]            # + MCP server over stdio (governance tools for AI agents)
 pip install ao-kernel[mcp-http]       # + MCP server over HTTP (adds starlette + uvicorn)
 pip install ao-kernel[llm]            # + LLM modules (tenacity + tiktoken)
