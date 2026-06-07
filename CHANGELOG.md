@@ -7,6 +7,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **Consumer onboarding guide — using ao-kernel in your project**: added
+  `docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md`, a walkthrough for installing
+  ao-kernel into another repository and using it as a governed control-plane
+  (`pip install` → `ao-kernel init` → `doctor` → fail-closed policy engine,
+  governed context persistence, CLI surfaces, and the MCP governance server). It
+  documents the CLI-subscription operating model (the AIs use their own
+  subscriptions; ao-kernel governs; no provider API key is required for the core)
+  and the const-false guard-flag boundary (governed control-plane, not a
+  production platform). A doc-bound smoke test
+  (`tests/test_using_ao_kernel_in_your_project_doc.py`) verifies the core
+  load-bearing claims and documented surfaces (fail-closed policy, governed
+  context persistence, the `doctor` health check, the CLI subcommand surface, and
+  the exact MCP tool set) against the installed package with no network and no API
+  key, so the guide cannot silently drift from the shipped behavior. Docs/tests only; no
+  runtime change, no guard flag flip, no support widening, production-platform
+  claim, or live adapter execution. Cross-AI review: Codex (OpenAI).
+
 ### Changed
 
 - **Epic 9 PR-Xfinal supersession — V5 reframed as governed control-plane**:

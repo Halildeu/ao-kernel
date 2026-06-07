@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "E-9-1",
+  "work_package": "V5-CONSUMER-ONBOARDING",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,17 +13,12 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/epic9-supersession-reframe-2026-06-07",
+    "head_ref": "refs/heads/feat/consumer-onboarding-guide-2026-06-07",
     "changed_files": [
-      ".claude/plans/EPIC-9-FINAL-SUPERSESSION-PR.md",
-      ".claude/plans/EPIC-9-PR-XFINAL-SUPERSESSION-CLOSEOUT.md",
-      ".claude/plans/EPIC-9-PR-Xfinal-PRE-SUPERSESSION-CHECKLIST.md",
-      ".claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md",
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/epic9-xfinal-supersession-decision.schema.v1.json",
+      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
       "local-ai-review-evidence.v1.json",
-      "tests/fixtures/epic9/epic9-xfinal-supersession-decision.current.json",
-      "tests/test_epic9_xfinal_supersession_decision.py"
+      "tests/test_using_ao_kernel_in_your_project_doc.py"
     ]
   },
   "checks_considered": [
@@ -36,7 +31,7 @@
       "status": "pass"
     },
     {
-      "name": "no_python_runtime_changes",
+      "name": "no_runtime_changes",
       "status": "pass"
     },
     {
@@ -48,7 +43,7 @@
       "status": "pass"
     },
     {
-      "name": "supersession_machine_enforced",
+      "name": "doc_bound_smoke_machine_verified",
       "status": "pass"
     },
     {
@@ -57,14 +52,14 @@
     }
   ],
   "findings": [
-    "Codex (OpenAI) reviewed the PR #970 diff against origin/main and returned AGREE after two plan-time REVISE rounds were fully absorbed (thread 019ea0f0).",
-    "Diff records the Epic 9 PR-Xfinal supersession decision: the all-or-none guard-flag flip and v5.0.0 production-platform claim are superseded by the operator CLI-only governed-control-plane decision.",
-    "No Python runtime code changed; one additive bundled JSON schema was added under ao_kernel/defaults/schemas/ plus a fixture, a test, plan docs, and the CHANGELOG.",
+    "Codex (OpenAI) reviewed the PR diff against origin/main and returned AGREE after three post-impl rounds were fully absorbed (thread 019ea0f0).",
+    "Diff adds docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md (consumer onboarding guide) plus a doc-bound smoke test and a CHANGELOG entry; docs/tests only.",
+    "No Python runtime code changed; ao_kernel package sources are untouched.",
     "No workflow or ruleset changes were introduced; .github paths are untouched (low-risk lane).",
-    "Guard flags remain false: support_widening, production_platform_claim, and live_adapter_execution, both at top level and in guard_flags_final_state.",
-    "The supersession is machine-enforced at content level: the new test asserts SUPERSEDED banners and historical-only / no-guard-flag-flip language in the prior blocker draft, the pre-supersession checklist, and the V5 roadmap, not just file existence.",
-    "supersedes is pinned exact-4 in schema and fixture so each prior artifact is explicitly reframed as superseded / not applicable rather than left as an active route.",
-    "Local gate: supersession test 11/11 pass, ruff clean, CHANGELOG discipline pass, related sweep 177 passed / 7 skipped with no regression.",
+    "Guard flags remain false: support_widening, production_platform_claim, and live_adapter_execution.",
+    "The guide is positioned as a governed control-plane, explicitly not a general-purpose production platform; it documents the CLI-subscription model with no provider API key required for the core.",
+    "The doc-bound smoke (9 tests) machine-verifies the core load-bearing claims: fail-closed policy deny, governed context record/query roundtrip with canonical persistence, doctor returncode 0, the documented CLI subcommand surface, the exact 6-tool MCP set against mcp_server.py, and the HTTP transport mcp-http extra mapping.",
+    "Overclaim was removed: the doc and CHANGELOG say 'core load-bearing claims and documented surfaces' rather than 'every command/API', matching the actual test coverage.",
     "No secrets, credentials, or sensitive material were found in the reviewed diff."
   ],
   "secrets_recorded": false,
