@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-06-07
+
 ### Added
 
 - **Consumer onboarding guide — using ao-kernel in your project**: added

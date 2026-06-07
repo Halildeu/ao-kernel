@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-CONSUMER-ONBOARDING",
+  "work_package": "V5-RELEASE-V4.2.0",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,12 +13,22 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/consumer-onboarding-guide-2026-06-07",
+    "head_ref": "refs/heads/release/v4.2.0-2026-06-07",
     "changed_files": [
       "CHANGELOG.md",
+      "ao_kernel/__init__.py",
+      "deploy/helm/ao-kernel/Chart.yaml",
+      "deploy/helm/ao-kernel/values.yaml",
+      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
       "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
+      "docs/operator-runbooks/01-pypi-publish.md",
+      "docs/operator-runbooks/README.md",
+      "docs/operator-runbooks/operator-action-checklist.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_using_ao_kernel_in_your_project_doc.py"
+      "pyproject.toml",
+      "tests/test_pr_a6_features.py",
+      "tests/test_v410_version_pin.py",
+      "tests/test_v420_version_pin.py"
     ]
   },
   "checks_considered": [
@@ -31,10 +41,6 @@
       "status": "pass"
     },
     {
-      "name": "no_runtime_changes",
-      "status": "pass"
-    },
-    {
       "name": "no_workflow_ruleset_changes",
       "status": "pass"
     },
@@ -43,23 +49,29 @@
       "status": "pass"
     },
     {
-      "name": "doc_bound_smoke_machine_verified",
+      "name": "version_consistency",
       "status": "pass"
     },
     {
-      "name": "changelog_scope_accurate",
+      "name": "release_facing_surfaces_match_version",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_cut_keep_a_changelog",
       "status": "pass"
     }
   ],
   "findings": [
-    "Codex (OpenAI) reviewed the PR diff against origin/main and returned AGREE after three post-impl rounds were fully absorbed (thread 019ea0f0).",
-    "Diff adds docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md (consumer onboarding guide) plus a doc-bound smoke test and a CHANGELOG entry; docs/tests only.",
-    "No Python runtime code changed; ao_kernel package sources are untouched.",
-    "No workflow or ruleset changes were introduced; .github paths are untouched (low-risk lane).",
-    "Guard flags remain false: support_widening, production_platform_claim, and live_adapter_execution.",
-    "The guide is positioned as a governed control-plane, explicitly not a general-purpose production platform; it documents the CLI-subscription model with no provider API key required for the core.",
-    "The doc-bound smoke (9 tests) machine-verifies the core load-bearing claims: fail-closed policy deny, governed context record/query roundtrip with canonical persistence, doctor returncode 0, the documented CLI subcommand surface, the exact 6-tool MCP set against mcp_server.py, and the HTTP transport mcp-http extra mapping.",
-    "Overclaim was removed: the doc and CHANGELOG say 'core load-bearing claims and documented surfaces' rather than 'every command/API', matching the actual test coverage.",
+    "Codex (OpenAI) reviewed the v4.2.0 release prep diff against origin/main and returned AGREE after two post-impl rounds were fully absorbed (thread 019ea0f0).",
+    "v4.2.0 governed control-plane readiness release: bumps project.version 4.1.0 -> 4.2.0 (pyproject + __version__) and cuts the 117-commit [Unreleased] backlog into a Keep-a-Changelog [4.2.0] - 2026-06-07 section; [Unreleased] left empty above it; chore-no-changelog label per ADR-0005 (release PR adds no new bullet).",
+    "Semantic discipline kept: only project.version changed in pyproject (no build-system, scripts, or tool config changes).",
+    "Version-pin lifecycle advanced: test_v420_version_pin.py replaces test_v410_version_pin.py and preserves the version-consistency, PyYAML, [4.1.0] history, section-order, and guard-flags-false invariants.",
+    "Downstream version-tracking surfaces bumped to 4.2.0 at root: test_pr_a6_features TestVersionBump, Helm Chart.yaml appVersion, Helm values.yaml default image tag, consumer onboarding exact pin, production deployment Docker/Compose examples, and the operator PyPI publish runbook + checklist dispatch ref/expected artifact.",
+    "A new test_release_facing_install_surfaces_match_version invariant machine-enforces that the consumer pin, Helm tag, and operator publish dispatch ref always track project.version, so a release can no longer point users/operators at the prior version.",
+    "No workflow or ruleset changes were introduced; .github paths are untouched. No forbidden scope substring is touched.",
+    "Guard flags remain false: support_widening, production_platform_claim, and live_adapter_execution. This is a minor release, not a production-platform promotion.",
+    "Full test suite: 6944 passed, 121 skipped, 0 failed (benchmarks excluded); wheel ao_kernel-4.2.0-py3-none-any.whl builds.",
+    "The PyPI publish (tag v4.2.0 push) remains a separate operator-go irreversible public step after merge; this PR does not publish.",
     "No secrets, credentials, or sensitive material were found in the reviewed diff."
   ],
   "secrets_recorded": false,
