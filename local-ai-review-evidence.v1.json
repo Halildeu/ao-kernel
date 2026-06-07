@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-RELEASE-4.2.1",
+  "work_package": "AO-MA-CI-REVIEW-SKIP",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,42 +13,30 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/chore/release-v4.2.1-c-2026-06-07",
+    "head_ref": "refs/heads/chore/ci-skip-heavy-jobs-on-review-2026-06-07",
     "changed_files": [
-      "CHANGELOG.md",
-      "ao_kernel/__init__.py",
-      "deploy/helm/ao-kernel/Chart.yaml",
-      "deploy/helm/ao-kernel/values.yaml",
-      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
-      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
-      "docs/operator-runbooks/01-pypi-publish.md",
-      "docs/operator-runbooks/README.md",
-      "docs/operator-runbooks/operator-action-checklist.v1.json",
+      ".github/workflows/test.yml",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "pyproject.toml",
-      "tests/test_pr_a6_features.py",
-      "tests/test_v421_version_pin.py"
+      "tests/test_ao_release_gate_enforce_job.py"
     ]
   },
   "checks_considered": [
     {"name": "secret_scan", "status": "pass"},
     {"name": "tests", "status": "pass"},
     {"name": "ruff", "status": "pass"},
-    {"name": "version_single_source_of_truth", "status": "pass"},
-    {"name": "release_facing_install_surfaces_match_version", "status": "pass"},
-    {"name": "changelog_cut_and_history_preserved", "status": "pass"},
     {"name": "guard_flags_false", "status": "pass"},
-    {"name": "release_semantic_discipline_version_only", "status": "pass"},
-    {"name": "no_workflow_ruleset_branch_protection_change", "status": "pass"}
+    {"name": "no_runtime_change", "status": "pass"}
   ],
   "findings": [
-    "v4.2.1 patch release. Bumps the single source-of-truth version (pyproject.toml + ao_kernel.__version__) 4.2.0 -> 4.2.1 and cuts CHANGELOG [Unreleased] into a new [4.2.1] - 2026-06-07 entry (the post-4.2.0 work: cross-repo dogfood evidence doc + 5 dead-extension retirements + complete PRJ-UI-COCKPIT-LITE web UI removal). [4.2.0] and [4.1.0] history preserved; section order Unreleased > 4.2.1 > 4.2.0.",
-    "Release-facing install surfaces tracked to 4.2.1 (enforced by test_release_facing_install_surfaces_match_version): consumer onboarding exact pin (USING-AO-KERNEL-IN-YOUR-PROJECT.md), Helm default image tag (values.yaml), and operator publish-dispatch ref + expected artifact (operator-action-checklist.v1.json). Also bumped: Helm Chart appVersion 4.2.0 -> 4.2.1 + chart version 0.1.0 -> 0.1.1, operator runbook 01-pypi-publish.md + README, PRODUCTION-DEPLOYMENT-GUIDE.md, and the test_pr_a6 version-bump assertions.",
-    "Version-pin test renamed test_v420_version_pin.py -> test_v421_version_pin.py with 4.2.1 assertions + updated changelog section-order/history checks.",
-    "Historical version-specific artifacts intentionally left at 4.2.0: docs/EVIDENCE-V4.2.0-CROSS-REPO-DOGFOOD.md (the 4.2.0 dogfood evidence) + its test, the CHANGELOG [4.2.0] entry, .ao consultations, plan docs, and the COMPETITOR-MATRIX 'FAZ-E ship (v4.2.0)' roadmap label.",
-    "Release semantic discipline honored: pyproject change is limited to project.version (no scripts/build-system/tool config churn). The three guard flags remain const false (gpp_status keep_narrow_stable_runtime); no support widening, no production-platform claim, no live adapter execution.",
-    "Verification: full pytest 6988 passed / 125 skipped / 0 failed; ruff clean. The release PR carries the chore-no-changelog label because the cut leaves [Unreleased] empty (ADR-0005).",
-    "No secrets, credentials, or sensitive material were found in the reviewed diff. No .github workflow/ruleset/branch-protection/app changes."
+    "CI efficiency carve-out: a pull_request_review (CODEOWNER approval / evidence re-trigger) no longer re-runs the heavy CI matrix on an unchanged head. The 9 heavy jobs (lint/test/coverage/typecheck/packaging-smoke/policy-container-smoke/release-gate-container-smoke/benchmark-fast/extras-install) gain a github.event_name != 'pull_request_review' guard; ao-release-gate still evaluates on review.",
+    "Fail-closed safety preserved: the gate's upstream fail-closed step keeps event-gate failure fail-closed on ALL events, and the heavy needs.*.result checks are gated to pull_request; on review the required-check freshness is enforced from the persisted check-runs API (_required_checks_are_green rejects missing/skipped/non-success).",
+    "Concurrency group is event-scoped (adds github.event_name) so a lightweight review run does not cancel an in-progress full pull_request run on the same ref.",
+    "Five invariant tests added to tests/test_ao_release_gate_enforce_job.py. High-risk .github change merged via the AO-MA-10 dual-provider supersession (openai Codex + anthropic Claude, both AGREE), no human approval.",
+    "Codex plan-time REVISE (thread 019ea255) absorbed (event-gate stays fail-closed on all events; concurrency event-scoped) + post-impl AGREE.",
+    "Verification: full pytest 6993 passed / 0 failed; ruff clean; workflow YAML parses. No runtime/schema/ruleset/branch-protection/publish/tag/release-authority change; three guard flags const false.",
+    "No secrets, credentials, or sensitive material were found in the reviewed diff."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

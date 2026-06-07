@@ -232,10 +232,7 @@ def test_enforce_job_smoke_detector_requires_added_smoke_markdown(tmp_path: Path
     assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": "ADDED"}]) == "true"
 
     for change_type in ("RENAMED", "DELETED", "CHANGED", "MODIFIED"):
-        assert (
-            _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": change_type}])
-            == "false"
-        )
+        assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": change_type}]) == "false"
     assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path}]) == "false"
     assert (
         _run_ao_ma10_smoke_detector(
@@ -322,7 +319,7 @@ def test_enforce_job_generates_high_risk_supersession_evidence_at_runtime() -> N
     assert '--review-head-ref "refs/heads/$HEAD_REF"' in block
     assert '--diff-base-ref "$BASE_SHA"' in block
     assert '--diff-head-ref "$HEAD_SHA"' in block
-    assert '--output high-risk-supersession-evidence.v1.json' in block
+    assert "--output high-risk-supersession-evidence.v1.json" in block
 
 
 def test_enforce_job_patches_reviewed_slice_before_decision_core() -> None:
@@ -571,3 +568,83 @@ def test_enforce_job_uploads_decision_audit_artifact() -> None:
     assert "base/local-gpp-gate-evidence.v1.json" in block
     assert "base/local-gpp-gate.stdout.log" in block
     assert "base/high-risk-supersession-evidence.v1.json" in block
+
+
+# ── pull_request_review efficiency carve-out (heavy jobs skip on review) ──
+
+
+_HEAVY_REVIEW_SKIP_JOBS = (
+    "lint",
+    "test",
+    "coverage",
+    "packaging-smoke",
+    "policy-container-smoke",
+    "release-gate-container-smoke",
+    "typecheck",
+    "benchmark-fast",
+    "extras-install",
+)
+
+
+def test_heavy_jobs_skip_on_pull_request_review() -> None:
+    """A pull_request_review (CODEOWNER approval / evidence re-trigger) must NOT
+    re-run the heavy CI matrix on an unchanged head. The heavy jobs carry a
+    ``github.event_name != 'pull_request_review'`` guard."""
+    stripped = _strip_yaml_comments(_test_workflow_text())
+    assert "needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'" in stripped
+    # coverage keeps its always() prefix plus the review-skip guard.
+    assert (
+        "always() && needs.event-gate.outputs.should_run == 'true' "
+        "&& github.event_name != 'pull_request_review'" in stripped
+    )
+    # All heavy jobs (8 plain + coverage) carry the review-skip guard.
+    assert stripped.count("github.event_name != 'pull_request_review'") >= len(_HEAVY_REVIEW_SKIP_JOBS)
+
+
+def test_ao_release_gate_still_runs_on_pull_request_review() -> None:
+    """ao-release-gate keeps evaluating on pull_request_review (its purpose:
+    re-read persisted check-runs + reviewer evidence). It must NOT carry the
+    heavy-job review-skip guard."""
+    gate = _gate_job_block()
+    assert "github.event_name == 'pull_request_review'" in gate
+    assert "github.event_name != 'pull_request_review'" not in gate
+
+
+def test_fail_closed_keeps_event_gate_on_all_events() -> None:
+    """The upstream fail-closed step keeps event-gate failure fail-closed on ALL
+    events; only the heavy-job needs.*.result checks are gated to pull_request."""
+    gate = _strip_yaml_comments(_gate_job_block())
+    guard = "github.event_name == 'pull_request' && ("
+    assert guard in gate, "heavy-needs fail-closed must be guarded by the pull_request event"
+    pre = gate[: gate.index(guard)]
+    pre_norm = " ".join(pre.split())
+    # event-gate failure is OR-ed in (and the heavy-needs group opened) before the
+    # pull_request guard, so it fail-closes on all events.
+    assert pre_norm.endswith("needs.event-gate.result != 'success' || ("), (
+        "event-gate fail-closed must apply on all events, immediately before the pull_request guard"
+    )
+
+
+def test_fail_closed_heavy_needs_present_under_pull_request_guard() -> None:
+    """The heavy-job needs.*.result fail-closed checks remain enforced (on
+    pull_request) so a genuinely-red same-run job still denies the gate."""
+    gate = _strip_yaml_comments(_gate_job_block())
+    for need in (
+        "lint",
+        "typecheck",
+        "test",
+        "coverage",
+        "packaging-smoke",
+        "policy-container-smoke",
+        "release-gate-container-smoke",
+    ):
+        assert f"needs.{need}.result != 'success'" in gate, f"missing heavy needs fail-closed for {need}"
+
+
+def test_concurrency_group_is_event_scoped() -> None:
+    """Concurrency group is event-scoped so a lightweight pull_request_review run
+    does not cancel an in-progress full pull_request run on the same ref."""
+    stripped = _strip_yaml_comments(_test_workflow_text())
+    assert "${{ github.event_name }}" in stripped.split("concurrency:", 1)[1].split("jobs:", 1)[0], (
+        "concurrency group must include github.event_name"
+    )

@@ -18,22 +18,21 @@
     }
   ],
   "findings": [
-    "Anthropic reviewer verdict AGREE: no blocking issue in the V5 E-9-1 observability production tunables preflight bundle.",
-    "Schema strictness is adequate: root and nested object nodes close additionalProperties and unevaluatedProperties.",
-    "Fixture validates and preserves preflight_current_state semantics; residual PR-Xfinal observability evidence remains missing.",
-    "Tests cover guard flips, schema strictness, fixture validation, Grafana, SLI/SLO, performance policy, matrix linkage, and positive-claim token discipline.",
-    "The V5 matrix keeps observability_production_tunables partial and preserves matrix_complete=false.",
-    "No support widening, production platform claim, live adapter execution, v5 tag, publish, workflow, ruleset, runtime, or release authority change is introduced."
+    "Anthropic reviewer verdict AGREE: the pull_request_review efficiency carve-out is correct and fail-closed safe. Heavy jobs (lint/test/coverage/typecheck/packaging-smoke/policy-container-smoke/release-gate-container-smoke/benchmark-fast/extras-install) skip on pull_request_review; ao-release-gate still evaluates.",
+    "The gate's upstream fail-closed step keeps event-gate failure fail-closed on ALL events; heavy needs.*.result checks are gated to pull_request, with review-time required-check freshness enforced via the persisted check-runs API.",
+    "Concurrency group is event-scoped so a review run cannot cancel an in-progress full pull_request run on the same ref.",
+    "Five invariant tests added to tests/test_ao_release_gate_enforce_job.py pin the carve-out. Full pytest 6993 passed / 0 failed; ruff clean; no other workflow-invariant test broke.",
+    "No support widening, production platform claim, live adapter execution, ruleset, branch-protection, runtime, publish, tag, or release-authority change is introduced."
   ],
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude-opus-4.8-1m",
+    "provider": "anthropic"
   },
   "live_adapter_execution": false,
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "claude-sonnet-4-6-anthropic-reviewer",
+    "agent": "claude-opus-4.8-1m-anthropic-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
@@ -41,20 +40,15 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/V5-OBSERVABILITY-PRODUCTION-TUNABLES-PREFLIGHT-BUNDLE.md",
-      ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
-      "CHANGELOG.md",
+      ".github/workflows/test.yml",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/v5-observability-production-tunables-preflight-bundle.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/fixtures/epic9/v5-observability-production-tunables-preflight.current.json",
-      "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/test_v5_observability_production_tunables_preflight_bundle.py"
+      "tests/test_ao_release_gate_enforce_job.py"
     ],
-    "head_ref": "refs/heads/codex/v5-observability-preflight-bundle"
+    "head_ref": "refs/heads/chore/ci-skip-heavy-jobs-on-review-2026-06-07"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "E-9-1"
+  "work_package": "AO-MA-CI-REVIEW-SKIP"
 }
