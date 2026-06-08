@@ -639,7 +639,9 @@ def _cmd_context_ingest(args: argparse.Namespace) -> int:
                     "ingested": report.ingested,
                     "revision": report.revision,
                     "by_type": report.by_type,
-                    "secrets_skipped": report.secrets_skipped,
+                    # Count only — never emit secret-detector-derived source refs
+                    # (py/clear-text-logging-sensitive-data; defense in depth).
+                    "secrets_skipped_count": len(report.secrets_skipped),
                     "collisions": report.collisions,
                 },
                 indent=2,
@@ -654,8 +656,10 @@ def _cmd_context_ingest(args: argparse.Namespace) -> int:
         )
         for collision in report.collisions:
             print(f"  collision (skipped): {collision}", file=sys.stderr)
-        for secret in report.secrets_skipped:
-            print(f"  secret-like (skipped): {secret}", file=sys.stderr)
+        if report.secrets_skipped:
+            # Count only — never echo secret-detector-derived source refs
+            # (py/clear-text-logging-sensitive-data; defense in depth).
+            print(f"  {len(report.secrets_skipped)} secret-like value(s) skipped", file=sys.stderr)
     return 0
 
 
