@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "CONTEXT-DOC-BRIDGE",
+  "work_package": "V5-RELEASE-4.3.0",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,27 +13,28 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/context-bridge-claude-2026-06-08",
+    "head_ref": "refs/heads/chore/release-v4.3.0",
     "changed_files": [
       "CHANGELOG.md",
-      "ao_kernel/_internal/context_doc_bridge/__init__.py",
-      "ao_kernel/_internal/context_doc_bridge/ingest.py",
-      "ao_kernel/_internal/context_doc_bridge/keygen.py",
-      "ao_kernel/_internal/context_doc_bridge/mapping.py",
-      "ao_kernel/_internal/context_doc_bridge/parser.py",
-      "ao_kernel/_internal/context_doc_bridge/renderer.py",
-      "ao_kernel/cli.py",
-      "ao_kernel/config.py",
-      "ao_kernel/context/canonical_store.py",
-      "ao_kernel/context/doc_bridge.py",
-      "ao_kernel/defaults/context_bridge/doc_mapping.default.v1.json",
-      "ao_kernel/defaults/schemas/context-doc-bridge-mapping.schema.v1.json",
-      "docs/CONTEXT-BRIDGE.md",
+      "ao_kernel/__init__.py",
+      "deploy/helm/ao-kernel/Chart.yaml",
+      "deploy/helm/ao-kernel/values.yaml",
+      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
+      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
+      "docs/operator-runbooks/01-pypi-publish.md",
+      "docs/operator-runbooks/README.md",
+      "docs/operator-runbooks/operator-action-checklist.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_context_doc_bridge.py"
+      "pyproject.toml",
+      "tests/test_pr_a6_features.py",
+      "tests/test_v430_version_pin.py"
     ]
   },
   "checks_considered": [
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
     {
       "name": "tests",
       "status": "pass"
@@ -43,11 +44,15 @@
       "status": "pass"
     },
     {
-      "name": "mypy",
+      "name": "version_single_source_of_truth",
       "status": "pass"
     },
     {
-      "name": "secret_scan",
+      "name": "release_facing_install_surfaces_match_version",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_cut_and_history_preserved",
       "status": "pass"
     },
     {
@@ -55,37 +60,21 @@
       "status": "pass"
     },
     {
-      "name": "no_support_widening",
-      "status": "pass"
-    },
-    {
-      "name": "no_promotion",
-      "status": "pass"
-    },
-    {
-      "name": "no_live_adapter_execution",
+      "name": "release_semantic_discipline_version_only",
       "status": "pass"
     },
     {
       "name": "no_workflow_ruleset_branch_protection_change",
       "status": "pass"
-    },
-    {
-      "name": "compile_context_signature_unchanged",
-      "status": "pass"
-    },
-    {
-      "name": "mcp_surface_unchanged",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Codex (OpenAI) two-gate cross-AI review on thread 019ea7e3. Plan-time: REVISE -> v2 absorbed (thin public facade + _internal impl; authoritative provenance inside canonical item provenance.doc_bridge with NO side-map; bounded schema-validated mapping; packet separate from compile_context) -> AGREE. Post-impl: REVISE -> 3 findings closed (1) render now requires doc_hash equality, (2) render re-resolves provenance src under the same repo-root confinement as ingest via shared resolve_within_repo, (3) key collision checked against the LIVE store inside the CAS loop, not just the batch -> AGREE.",
-    "Feature: ao_kernel.context.doc_bridge ingests a repo's .md-governed context (AGENTS.md, ADRs, current-state, decision records) into the governed canonical store and renders a short, provenance-tagged markdown context packet for any AI. Surfaces: ingest_docs()/render_context_packet() + CLI 'ao-kernel context {ingest,packet}'. New canonical_store.promote_many() writes the batch under a single CAS revision.",
-    "Fail-closed packet selection: a source that is deleted, drifted (doc_hash mismatch OR mapping no longer reproduces key+value_hash), symlinked, escaped or oversize is excluded; secret-like values are skipped (never redacted-and-stored); unverified doc_claim facts are opt-in and labelled UNVERIFIED; the packet header states it is source-derived context that cannot override the guard flags.",
-    "Boundary: the three guard flags stay const false; compile_context (LLM-call pipeline) and the MCP surface are untouched (machine-checked by tests); no support widening, no production-platform claim, no live adapter execution. No change to .github workflows, rulesets, branch protection, or apps.",
-    "Verification: full pytest 6976 passed / 127 skipped / 0 failed; ruff clean; mypy clean on the new modules + facade. 25 dedicated behavioral tests including the three post-impl regressions (body-only drift, post-ingest symlink, cross-ingest collision).",
-    "No secrets, credentials, or sensitive material were found in the reviewed diff (synthetic secret-detection test tokens are assembled at runtime and never appear contiguously in source)."
+    "Codex (OpenAI) cross-AI post-impl review on thread 019ea892. Verdict REVISE -> AGREE. The single REVISE blocker was governance-recipe, not code: a deploy/** high-risk release PR must include a current-bound root local-ai-review-evidence.v1.json so the trusted-base workflow can derive REVIEW_WORK_PACKAGE for the AO-MA-10 supersession builder (test.yml only reads the root reviewer evidence when it is part of the current PR diff; an absent root evidence makes the builder fail closed). This file is that current-bound root evidence; matches the proven #978 (v4.2.1) 13-file release diff shape.",
+    "Release content: v4.3.0 ships the context doc-bridge feature (ao_kernel.context.doc_bridge + CLI 'ao-kernel context {ingest,packet}', merged in #987) to PyPI. Minor bump (additive feature). Single-source version pin verified consistent by Codex: pyproject 4.3.0 == ao_kernel.__version__ 4.3.0 == CHANGELOG [4.3.0] == Helm appVersion 4.3.0 == values image tag 4.3.0 == docs ao-kernel==4.3.0 == operator checklist ref refs/tags/v4.3.0 + PyPI artifact /4.3.0/.",
+    "CHANGELOG cut verified: empty [Unreleased], [4.3.0] - 2026-06-08 below it, [4.2.1] and [4.2.0] history preserved, newest-first order. Version-pin test renamed v4.2.1 -> v4.3.0 (tests/test_v430_version_pin.py) and tests/test_pr_a6_features.py TestVersionBump updated to 4.3.0.",
+    "Scope is release-mechanical only: 13 files, no runtime feature code beyond the __version__ string; no change to .github workflows, rulesets, branch protection, GitHub apps, or the ao-ma-10-high-risk-reviews/{openai,anthropic} state-at-landing supersession pins.",
+    "Boundary: the three guard flags stay const false (support_widening, production_platform_claim, live_adapter_execution); gpp_status closure stays keep_narrow_stable_runtime. This is a governed control-plane release, NOT a production-platform promotion.",
+    "Verification: full pytest 7023 passed / 123 skipped / 0 failed under CI-parity venv (extras dev,llm,metrics); branch coverage 85.02% >= 85 gate; ruff clean. No secrets or credential material in the reviewed diff."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
