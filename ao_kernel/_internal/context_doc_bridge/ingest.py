@@ -122,12 +122,13 @@ def ingest_docs(
     max_bytes = int(spec.get("max_file_bytes", mapping.DEFAULT_MAX_BYTES))
 
     report = IngestReport()
-    items: list[dict[str, Any]] = []
-    seen: dict[str, tuple[str, str]] = {}
+    raw: list[dict[str, Any]] = []
 
     for rule in spec["rules"]:
         mid = rule["mapping_id"]
         policy = rule.get("collision_policy", "strict")
+        rtype = rule["type"]
+        category = "fact" if rtype == "fact" else "architecture"
         for src in mapping.resolve_sources(repo, rule["glob"], max_files=max_files, max_bytes=max_bytes):
             src_rel = str(src.relative_to(repo))
             text = src.read_text(encoding="utf-8", errors="replace")
@@ -136,17 +137,7 @@ def ingest_docs(
                 if parser.looks_like_secret(ex.value):
                     report.secrets_skipped.append(f"{src_rel} ({ex.key})")
                     continue
-                supersedes: str | None = None
-                prev = seen.get(ex.key)
-                if prev is not None and prev != (src_rel, mid):
-                    if policy == "supersede":
-                        supersedes = ex.key
-                    else:  # strict | update_same_source: reject cross-source collision
-                        report.collisions.append(f"{ex.key}: {prev[0]} vs {src_rel}")
-                        continue
-                seen[ex.key] = (src_rel, mid)
-                category = "fact" if rule["type"] == "fact" else "architecture"
-                items.append(
+                raw.append(
                     {
                         "key": ex.key,
                         "value": ex.value,
@@ -154,30 +145,86 @@ def ingest_docs(
                         "source": "agent",
                         "confidence": ex.confidence,
                         "session_id": "doc-bridge",
-                        "supersedes": supersedes,
+                        "supersedes": None,
                         "provenance": _build_provenance(rule, src_rel, ex, doc_hash),
+                        "_policy": policy,
+                        "_src_mid": (src_rel, mid),
+                        "_type": rtype,
                     }
                 )
-                report.by_type[rule["type"]] = report.by_type.get(rule["type"], 0) + 1
 
-    if items:
-        report.revision = _cas_write(ws, items)
-        report.ingested = len(items)
+    if raw:
+        report.revision = _resolve_and_write(ws, raw, report)
     return report
 
 
-def _cas_write(ws: Path, items: list[dict[str, Any]], retries: int = 1) -> str:
-    """Single-revision batch write with read-revision-mutate-write retry.
+def _existing_doc_bridge_keys(store: dict[str, Any]) -> dict[str, tuple[str, str]]:
+    """Map already-stored doc-bridge keys -> (src, mapping_id) for collision check."""
+    out: dict[str, tuple[str, str]] = {}
+    for section in ("decisions", "facts"):
+        for key, item in store.get(section, {}).items():
+            if not isinstance(item, dict):
+                continue
+            namespace = (item.get("provenance") or {}).get(PROVENANCE_NS)
+            if isinstance(namespace, dict):
+                out[key] = (namespace.get("src", ""), namespace.get("mapping_id", ""))
+    return out
 
-    On conflict the loop re-loads a FRESH snapshot + revision (never re-writes
-    the stale snapshot) — Codex acceptance #1.
+
+def _select_items(
+    raw: list[dict[str, Any]],
+    existing: dict[str, tuple[str, str]],
+) -> tuple[list[dict[str, Any]], list[str], dict[str, int]]:
+    """Apply collision policy against BOTH this batch and the existing store.
+
+    A key already owned by a DIFFERENT ``(src, mapping_id)`` is a collision:
+    ``strict`` / ``update_same_source`` skip it (never a silent overwrite),
+    ``supersede`` records ``supersedes``. The same ``(src, mapping_id)`` is an
+    in-place update. Pure + recomputed on every CAS attempt (post-impl #3).
+    """
+    seen: dict[str, tuple[str, str]] = {}
+    final: list[dict[str, Any]] = []
+    collisions: list[str] = []
+    by_type: dict[str, int] = {}
+    for cand in raw:
+        key = cand["key"]
+        src_mid = cand["_src_mid"]
+        owner = seen.get(key) or existing.get(key)
+        supersedes: str | None = None
+        if owner is not None and owner != src_mid:
+            if cand["_policy"] == "supersede":
+                supersedes = key
+            else:
+                collisions.append(f"{key}: {owner[0]} vs {src_mid[0]}")
+                continue
+        seen[key] = src_mid
+        item = {k: v for k, v in cand.items() if not k.startswith("_")}
+        item["supersedes"] = supersedes
+        final.append(item)
+        by_type[cand["_type"]] = by_type.get(cand["_type"], 0) + 1
+    return final, collisions, by_type
+
+
+def _resolve_and_write(ws: Path, raw: list[dict[str, Any]], report: IngestReport, retries: int = 1) -> str:
+    """Collision-resolve against the live store, then write in one CAS revision.
+
+    Read-revision-mutate-write: on conflict, re-load a FRESH snapshot, re-resolve
+    collisions against it, and re-write — never re-writes a stale snapshot
+    (Codex acceptance #1 + post-impl #3, cross-store collision).
     """
     attempt = 0
     while True:
         store = cs.load_store(ws)
         expected = cs.store_revision(store)
+        existing = _existing_doc_bridge_keys(store)
+        final, collisions, by_type = _select_items(raw, existing)
+        report.collisions = collisions
+        report.by_type = by_type
+        report.ingested = len(final)
+        if not final:
+            return expected  # all collided / nothing to write; store unchanged
         try:
-            return cs.promote_many(ws, items, expected_revision=expected, allow_overwrite=False)
+            return cs.promote_many(ws, final, expected_revision=expected, allow_overwrite=False)
         except CanonicalRevisionConflict:
             attempt += 1
             if attempt > retries:

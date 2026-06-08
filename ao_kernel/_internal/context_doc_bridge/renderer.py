@@ -1,8 +1,9 @@
 """Render a short markdown context packet from doc-bridge-governed store items.
 
-Fail-closed selection (Codex acceptance #3 + #5): an item is only rendered if
-its source file still exists AND re-applying the same mapping rule reproduces
-the same key + ``value_hash``. Stale / drifted / deleted sources, low-confidence
+Fail-closed selection: an item is only rendered if its source still resolves
+under repo-root confinement, its current ``doc_hash`` matches what was ingested
+(no byte drift), AND re-applying the same mapping rule reproduces the same key +
+``value_hash``. Stale / drifted / deleted / symlinked sources, low-confidence
 items, and unverified ``doc_claim`` facts (unless explicitly opted in) are
 excluded. The packet is source-derived context, never release authority.
 """
@@ -15,6 +16,7 @@ from typing import Any
 
 from ao_kernel._internal.context_doc_bridge import ingest as _ingest
 from ao_kernel._internal.context_doc_bridge import mapping as _mapping
+from ao_kernel._internal.context_doc_bridge import parser as _parser
 from ao_kernel.context import canonical_store as cs
 
 _SECTION_ORDER = [
@@ -47,6 +49,7 @@ def _verify_and_collect(
     rules_by_id: dict[str, Any],
     min_conf: float,
     include_doc_claims: bool,
+    max_bytes: int,
 ) -> tuple[list[_Row], int]:
     rows: list[_Row] = []
     excluded = 0
@@ -66,8 +69,16 @@ def _verify_and_collect(
         if rule is None:  # mapping no longer defines this rule
             excluded += 1
             continue
-        src_path = repo / prov.get("src", "")
-        if not src_path.is_file():  # source deleted
+        # Re-verify the source under the SAME confinement as ingest: deleted,
+        # symlinked, escaped, or oversize -> exclude (Codex post-impl #2).
+        src_path = _mapping.resolve_within_repo(repo, prov.get("src", ""), max_bytes=max_bytes)
+        if src_path is None:
+            excluded += 1
+            continue
+        # File-integrity: ANY byte drift in the source -> exclude until re-ingest
+        # (Codex post-impl #1 — heading may be stable while body/authority text
+        # changed; doc_hash equality is the strong guard).
+        if _parser.sha256_file(src_path) != prov.get("doc_hash"):
             excluded += 1
             continue
         try:
@@ -113,8 +124,9 @@ def render_context_packet(
     repo = Path(repo_root) if repo_root is not None else ws
     spec = _mapping.load_mapping(mapping_path)
     rules_by_id = {r["mapping_id"]: r for r in spec["rules"]}
+    max_bytes = int(spec.get("max_file_bytes", _mapping.DEFAULT_MAX_BYTES))
 
-    rows, excluded = _verify_and_collect(ws, repo, rules_by_id, min_conf, include_doc_claims)
+    rows, excluded = _verify_and_collect(ws, repo, rules_by_id, min_conf, include_doc_claims, max_bytes)
     sections: list[tuple[str, list[_Row]]] = []
     shown = 0
     for type_, header in _SECTION_ORDER:

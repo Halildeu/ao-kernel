@@ -41,6 +41,42 @@ def _pattern_is_safe(pattern: str) -> bool:
     return ".." not in pattern.split("/")
 
 
+def resolve_within_repo(
+    repo_root: Path,
+    rel: str,
+    *,
+    max_bytes: int = DEFAULT_MAX_BYTES,
+) -> Path | None:
+    """Resolve a single repo-relative path with full fail-closed confinement.
+
+    Returns the path only if it is relative (no absolute / ``~`` / ``..``), not a
+    symlink, resolves under ``repo_root``, exists as a file, and is within
+    ``max_bytes``; otherwise ``None``. Shared by ingest (glob results) and render
+    (provenance ``src`` re-verify) so the security boundary is identical on both
+    sides — a source that becomes a symlink or escapes the repo after ingest is
+    rejected at render time too.
+    """
+    if not rel or rel.startswith("/") or rel.startswith("~"):
+        return None
+    if ".." in rel.split("/"):
+        return None
+    repo_real = repo_root.resolve()
+    p = repo_root / rel
+    if p.is_symlink() or not p.is_file():
+        return None
+    try:
+        real = p.resolve()
+        real.relative_to(repo_real)
+    except (ValueError, OSError):
+        return None
+    try:
+        if real.stat().st_size > max_bytes:
+            return None
+    except OSError:
+        return None
+    return p
+
+
 def resolve_sources(
     repo_root: Path,
     pattern: str,
@@ -50,31 +86,21 @@ def resolve_sources(
 ) -> list[Path]:
     """Return repo-confined, existing, size-bounded files matching ``pattern``.
 
-    Fail-closed confinement:
-        * reject absolute / ``~`` / ``..`` patterns outright,
-        * skip symlinks (even if the target is in-repo),
-        * skip any match whose resolved real path escapes ``repo_root``,
-        * skip files over ``max_bytes``,
-        * cap at ``max_files``, deterministic sort.
+    Rejects absolute / ``~`` / ``..`` patterns outright, then applies
+    :func:`resolve_within_repo` per match (symlink / escape / oversize skipped),
+    caps at ``max_files``, deterministic sort.
     """
     if not _pattern_is_safe(pattern):
         return []
-    repo_real = repo_root.resolve()
     out: list[Path] = []
     for p in sorted(repo_root.glob(pattern)):
-        if p.is_symlink() or not p.is_file():
-            continue
         try:
-            real = p.resolve()
-            real.relative_to(repo_real)
-        except (ValueError, OSError):
+            rel = str(p.relative_to(repo_root))
+        except ValueError:
             continue
-        try:
-            if real.stat().st_size > max_bytes:
-                continue
-        except OSError:
-            continue
-        out.append(p)
-        if len(out) >= max_files:
-            break
+        resolved = resolve_within_repo(repo_root, rel, max_bytes=max_bytes)
+        if resolved is not None:
+            out.append(resolved)
+            if len(out) >= max_files:
+                break
     return out

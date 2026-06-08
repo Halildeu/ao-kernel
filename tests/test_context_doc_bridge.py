@@ -240,3 +240,63 @@ def test_parser_secret_detection() -> None:
     assert _parser.looks_like_secret("api_key = abcdef123456")
     assert _parser.looks_like_secret(_FAKE_GHP)
     assert not _parser.looks_like_secret("a normal architecture decision heading")
+
+
+def test_body_drift_same_heading_excluded(repo: Path) -> None:
+    # Codex post-impl #1: heading (value_hash) stable but body changed ->
+    # doc_hash differs -> item must be excluded by the file-integrity guard.
+    ingest_docs(repo)
+    _write(repo / "AGENTS.md", "# AGENTS - testrepo\n\nCOMPLETELY DIFFERENT BODY TEXT.\n")
+    packet = render_context_packet(repo)
+    assert "AGENTS - testrepo" not in packet
+
+
+def test_source_replaced_by_symlink_excluded(repo: Path) -> None:
+    # Codex post-impl #2: a source that becomes a symlink after ingest is
+    # rejected at render under the same confinement as ingest.
+    ingest_docs(repo)
+    target = repo.parent / "evil_agents.md"
+    target.write_text("# AGENTS - testrepo\n", encoding="utf-8")
+    (repo / "AGENTS.md").unlink()
+    (repo / "AGENTS.md").symlink_to(target)
+    packet = render_context_packet(repo)
+    assert "AGENTS - testrepo" not in packet
+
+
+def test_cross_ingest_collision_does_not_overwrite(tmp_path: Path) -> None:
+    # Codex post-impl #3: a different source claiming an existing key (strict)
+    # is a collision against the live store, not a silent overwrite.
+    (tmp_path / ".ao").mkdir()
+    mp = tmp_path / "m.json"
+    mp.write_text(
+        json.dumps(
+            {
+                "schema_version": "context-doc-bridge-mapping.v1",
+                "rules": [
+                    {
+                        "mapping_id": "x",
+                        "glob": "*/*.md",
+                        "type": "rule",
+                        "tier": "repo_canonical",
+                        "key_template": "rule.fixed",
+                        "value_strategy": "first_heading",
+                        "confidence": 0.9,
+                        "collision_policy": "strict",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write(tmp_path / "a/one.md", "# One\n")
+    first = ingest_docs(tmp_path, mapping_path=str(mp))
+    assert first.ingested == 1
+
+    (tmp_path / "a/one.md").unlink()
+    _write(tmp_path / "b/two.md", "# Two\n")
+    second = ingest_docs(tmp_path, mapping_path=str(mp))
+    assert second.ingested == 0
+    assert len(second.collisions) == 1
+
+    stored = {i["key"]: i for i in cs.query(tmp_path, include_expired=True)}
+    assert stored["rule.fixed"]["value"] == "One"
