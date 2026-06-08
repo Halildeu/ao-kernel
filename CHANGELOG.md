@@ -7,6 +7,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **`internal_gate_host_health_probe` URL secret scrubbing**: a
+  `--policy-url` / `--release-gate-url` (or `--host`-derived URL) whose
+  userinfo (`https://user:password@host`), query (`?token=...`), or fragment
+  (`#...`) carried a secret was flagged (`..._credentials_forbidden` /
+  `..._not_canonical`) but the raw URL was still echoed into the evidence
+  payload (top-level `policy_url`/`release_gate_url` **and** the per-service
+  `service_results[].url`), the rendered text, the JSON output, and the
+  persisted artifact — leaking the secret in clear text (CodeQL
+  `py/clear-text-logging-sensitive-data`, HIGH; cross-AI verified Claude +
+  Codex). `_sanitize_url` now strips userinfo, query, and fragment before the
+  URL reaches any stored/emitted surface; the forbidden-userinfo and
+  not-canonical findings are still raised (computed from the raw URL). No
+  behavior change for credential-free canonical URLs.
+
 ## [4.3.0] - 2026-06-08
 
 ### Added

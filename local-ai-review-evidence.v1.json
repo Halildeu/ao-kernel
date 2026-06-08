@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-RELEASE-4.3.0",
+  "work_package": "CODEQL-11-URL-USERINFO-LEAK",
   "implementer": {
     "agent": "claude-opus-4-8",
     "provider": "anthropic"
@@ -13,21 +13,12 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/chore/release-v4.3.0",
+    "head_ref": "refs/heads/fix/health-probe-url-userinfo-leak",
     "changed_files": [
       "CHANGELOG.md",
-      "ao_kernel/__init__.py",
-      "deploy/helm/ao-kernel/Chart.yaml",
-      "deploy/helm/ao-kernel/values.yaml",
-      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
-      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
-      "docs/operator-runbooks/01-pypi-publish.md",
-      "docs/operator-runbooks/README.md",
-      "docs/operator-runbooks/operator-action-checklist.v1.json",
       "local-ai-review-evidence.v1.json",
-      "pyproject.toml",
-      "tests/test_pr_a6_features.py",
-      "tests/test_v430_version_pin.py"
+      "scripts/internal_gate_host_health_probe.py",
+      "tests/test_internal_gate_host_health_probe.py"
     ]
   },
   "checks_considered": [
@@ -44,37 +35,25 @@
       "status": "pass"
     },
     {
-      "name": "version_single_source_of_truth",
-      "status": "pass"
-    },
-    {
-      "name": "release_facing_install_surfaces_match_version",
-      "status": "pass"
-    },
-    {
-      "name": "changelog_cut_and_history_preserved",
-      "status": "pass"
-    },
-    {
       "name": "guard_flags_false",
-      "status": "pass"
-    },
-    {
-      "name": "release_semantic_discipline_version_only",
       "status": "pass"
     },
     {
       "name": "no_workflow_ruleset_branch_protection_change",
       "status": "pass"
+    },
+    {
+      "name": "changelog_entry_added",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Codex (OpenAI) cross-AI post-impl review on thread 019ea892. Verdict REVISE -> AGREE. The single REVISE blocker was governance-recipe, not code: a deploy/** high-risk release PR must include a current-bound root local-ai-review-evidence.v1.json so the trusted-base workflow can derive REVIEW_WORK_PACKAGE for the AO-MA-10 supersession builder (test.yml only reads the root reviewer evidence when it is part of the current PR diff; an absent root evidence makes the builder fail closed). This file is that current-bound root evidence; matches the proven #978 (v4.2.1) 13-file release diff shape.",
-    "Release content: v4.3.0 ships the context doc-bridge feature (ao_kernel.context.doc_bridge + CLI 'ao-kernel context {ingest,packet}', merged in #987) to PyPI. Minor bump (additive feature). Single-source version pin verified consistent by Codex: pyproject 4.3.0 == ao_kernel.__version__ 4.3.0 == CHANGELOG [4.3.0] == Helm appVersion 4.3.0 == values image tag 4.3.0 == docs ao-kernel==4.3.0 == operator checklist ref refs/tags/v4.3.0 + PyPI artifact /4.3.0/.",
-    "CHANGELOG cut verified: empty [Unreleased], [4.3.0] - 2026-06-08 below it, [4.2.1] and [4.2.0] history preserved, newest-first order. Version-pin test renamed v4.2.1 -> v4.3.0 (tests/test_v430_version_pin.py) and tests/test_pr_a6_features.py TestVersionBump updated to 4.3.0.",
-    "Scope is release-mechanical only: 13 files, no runtime feature code beyond the __version__ string; no change to .github workflows, rulesets, branch protection, GitHub apps, or the ao-ma-10-high-risk-reviews/{openai,anthropic} state-at-landing supersession pins.",
-    "Boundary: the three guard flags stay const false (support_widening, production_platform_claim, live_adapter_execution); gpp_status closure stays keep_narrow_stable_runtime. This is a governed control-plane release, NOT a production-platform promotion.",
-    "Verification: full pytest 7023 passed / 123 skipped / 0 failed under CI-parity venv (extras dev,llm,metrics); branch coverage 85.02% >= 85 gate; ruff clean. No secrets or credential material in the reviewed diff."
+    "Codex (OpenAI) cross-AI review on thread 019ea8bd. Verdict REVISE -> REVISE -> AGREE. This PR fixes the one REAL leak Codex flagged during the 18-alert CodeQL triage (#11), then closed a second leak vector Codex found in iter-1 (query/fragment in addition to userinfo).",
+    "Bug: scripts/internal_gate_host_health_probe.py flagged userinfo-bearing health URLs (..._credentials_forbidden) and query/fragment (..._not_canonical) but still echoed the raw URL into the evidence payload (top-level policy_url/release_gate_url AND per-service service_results[].url), the rendered text, the JSON output, and the persisted artifact — leaking the secret in clear text. CodeQL py/clear-text-logging-sensitive-data, HIGH.",
+    "Fix: new _sanitize_url() strips userinfo + query + fragment before the URL reaches any stored/emitted surface; findings are still computed from the raw URL (so credentials_forbidden + not_canonical are preserved). No behavior change for credential-free canonical URLs.",
+    "Verification: ruff clean; tests/test_internal_gate_host_health_probe.py 9 passed including the new regression (userinfo+query+fragment secret absent from payload, render text, JSON, and nested service_results[].url) + _sanitize_url unit. Codex independently confirmed via no-write probe that the secret leaks in none of these surfaces.",
+    "Boundary: low-risk change (scripts/ + tests/ + CHANGELOG only); no .github workflows, rulesets, branch protection, deploy/, or guard-flag changes. The 17 other triaged alerts were verified false-positive (cross-AI) and dismissed.",
+    "No secrets or credential material committed in the diff (the test uses a synthetic placeholder 'sup3rs3cret')."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
