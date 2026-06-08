@@ -263,6 +263,174 @@ def test_source_replaced_by_symlink_excluded(repo: Path) -> None:
     assert "AGENTS - testrepo" not in packet
 
 
+def _run_cli(argv: list[str]) -> int:
+    from ao_kernel.cli import main
+
+    return main(argv)
+
+
+def test_cli_ingest_then_packet(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert _run_cli(["context", "ingest", "--root", str(repo)]) == 0
+    assert "ingested=" in capsys.readouterr().out
+    assert _run_cli(["context", "packet", "--root", str(repo)]) == 0
+    out = capsys.readouterr().out
+    assert "Context Packet" in out
+    assert "AUTHORITY" in out
+
+
+def test_cli_ingest_json_output(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert _run_cli(["context", "ingest", "--root", str(repo), "--output", "json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["ingested"] == 6
+    assert data["by_type"] == {"rule": 2, "decision": 2, "fact": 2}
+
+
+def test_cli_ingest_bad_root_returns_1(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert _run_cli(["context", "ingest", "--root", str(tmp_path / "missing")]) == 1
+    assert "not found" in capsys.readouterr().err
+
+
+def test_cli_context_no_subcommand_usage(capsys: pytest.CaptureFixture[str]) -> None:
+    assert _run_cli(["context"]) == 1
+    assert "Usage" in capsys.readouterr().err
+
+
+def test_cli_packet_include_doc_claims(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    _run_cli(["context", "ingest", "--root", str(repo)])
+    capsys.readouterr()
+    rc = _run_cli(["context", "packet", "--root", str(repo), "--include-doc-claims", "--min-conf", "0.5"])
+    assert rc == 0
+    assert "UNVERIFIED" in capsys.readouterr().out
+
+
+def test_cli_ingest_reports_collisions_and_secrets(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    (tmp_path / ".ao").mkdir()
+    _write(tmp_path / "a/one.md", "# One\n")
+    _write(tmp_path / "b/two.md", "# Two\n")
+    _write(tmp_path / "AGENTS.md", f"# token {_FAKE_SK}\n")
+    mp = tmp_path / "m.json"
+    mp.write_text(
+        json.dumps(
+            {
+                "schema_version": "context-doc-bridge-mapping.v1",
+                "rules": [
+                    {
+                        "mapping_id": "agents",
+                        "glob": "AGENTS.md",
+                        "type": "rule",
+                        "tier": "repo_canonical",
+                        "key_template": "rule.agents-md",
+                        "value_strategy": "first_heading",
+                        "confidence": 0.95,
+                    },
+                    {
+                        "mapping_id": "fixed",
+                        "glob": "*/*.md",
+                        "type": "rule",
+                        "tier": "repo_canonical",
+                        "key_template": "rule.fixed",
+                        "value_strategy": "first_heading",
+                        "confidence": 0.9,
+                        "collision_policy": "strict",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    rc = _run_cli(["context", "ingest", "--root", str(tmp_path), "--mapping", str(mp)])
+    assert rc == 0
+    err = capsys.readouterr().err
+    assert "collision" in err
+    assert "secret-like" in err
+
+
+def test_cli_packet_failure_returns_1(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not valid json", encoding="utf-8")
+    rc = _run_cli(["context", "packet", "--root", str(tmp_path), "--mapping", str(bad)])
+    assert rc == 1
+    assert "failed" in capsys.readouterr().err
+
+
+def test_supersede_policy_overrides(tmp_path: Path) -> None:
+    (tmp_path / ".ao").mkdir()
+    _write(tmp_path / "a/one.md", "# One\n")
+    _write(tmp_path / "b/two.md", "# Two\n")
+    mp = tmp_path / "m.json"
+    mp.write_text(
+        json.dumps(
+            {
+                "schema_version": "context-doc-bridge-mapping.v1",
+                "rules": [
+                    {
+                        "mapping_id": "x",
+                        "glob": "*/*.md",
+                        "type": "rule",
+                        "tier": "repo_canonical",
+                        "key_template": "rule.fixed",
+                        "value_strategy": "first_heading",
+                        "confidence": 0.9,
+                        "collision_policy": "supersede",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = ingest_docs(tmp_path, mapping_path=str(mp))
+    # supersede: both sources are accepted (no collision skip); the later source
+    # (b/two.md) wins the shared key and records supersedes.
+    assert report.ingested == 2
+    assert report.collisions == []
+    stored = {i["key"]: i for i in cs.query(tmp_path, include_expired=True)}
+    assert stored["rule.fixed"]["value"] == "Two"
+    assert stored["rule.fixed"]["supersedes"] == "rule.fixed"
+
+
+def test_ingest_no_matching_sources(tmp_path: Path) -> None:
+    (tmp_path / ".ao").mkdir()
+    report = ingest_docs(tmp_path)
+    assert report.ingested == 0
+    assert report.by_type == {}
+
+
+def test_keygen_rejects_unknown_placeholder() -> None:
+    from ao_kernel._internal.context_doc_bridge import keygen
+
+    with pytest.raises(ValueError, match="unknown placeholder"):
+        keygen.render_key("rule.{bogus}", stem="x")
+
+
+def test_render_excludes_when_mapping_rule_removed(repo: Path, tmp_path: Path) -> None:
+    # ingest with the default mapping, then render with a mapping that no longer
+    # defines those mapping_ids -> every item's rule is gone -> all excluded.
+    ingest_docs(repo)
+    empty_map = tmp_path / "empty.json"
+    empty_map.write_text(
+        json.dumps(
+            {
+                "schema_version": "context-doc-bridge-mapping.v1",
+                "rules": [
+                    {
+                        "mapping_id": "unrelated",
+                        "glob": "NOPE.md",
+                        "type": "rule",
+                        "tier": "repo_canonical",
+                        "key_template": "rule.nope",
+                        "value_strategy": "first_heading",
+                        "confidence": 0.9,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    packet = render_context_packet(repo, mapping_path=str(empty_map))
+    assert "AGENTS - testrepo" not in packet
+    assert "Use Postgres" not in packet
+
+
 def test_cross_ingest_collision_does_not_overwrite(tmp_path: Path) -> None:
     # Codex post-impl #3: a different source claiming an existing key (strict)
     # is a collision against the live store, not a silent overwrite.
@@ -300,3 +468,115 @@ def test_cross_ingest_collision_does_not_overwrite(tmp_path: Path) -> None:
 
     stored = {i["key"]: i for i in cs.query(tmp_path, include_expired=True)}
     assert stored["rule.fixed"]["value"] == "One"
+
+
+def test_resolve_within_repo_rejections(tmp_path: Path) -> None:
+    (tmp_path / "ok.md").write_text("# ok\n", encoding="utf-8")
+    assert _mapping.resolve_within_repo(tmp_path, "") is None
+    assert _mapping.resolve_within_repo(tmp_path, "../x.md") is None
+    assert _mapping.resolve_within_repo(tmp_path, "/etc/hosts") is None
+    assert _mapping.resolve_within_repo(tmp_path, "~/x.md") is None
+    assert _mapping.resolve_within_repo(tmp_path, "missing.md") is None
+    resolved = _mapping.resolve_within_repo(tmp_path, "ok.md")
+    assert resolved is not None
+    assert resolved.name == "ok.md"
+
+
+def test_resolve_within_repo_oversize(tmp_path: Path) -> None:
+    (tmp_path / "big.md").write_text("# " + ("x" * 100), encoding="utf-8")
+    assert _mapping.resolve_within_repo(tmp_path, "big.md", max_bytes=10) is None
+
+
+def test_resolve_sources_max_files_cap(tmp_path: Path) -> None:
+    for i in range(3):
+        (tmp_path / f"d{i}.md").write_text(f"# {i}\n", encoding="utf-8")
+    assert len(_mapping.resolve_sources(tmp_path, "*.md", max_files=1)) == 1
+
+
+def test_parser_section_headings_limit() -> None:
+    text = "# title\n\n## A\n\n## B\n\n## C\n"
+    assert _parser.section_headings(text, 2) == ["A", "B"]
+
+
+def test_parser_status_durum_and_inline_date() -> None:
+    assert _parser.status_and_date("## Durum\n\n**Kabul** (2026-02-01)")[0] == "Kabul"
+    status, date = _parser.status_and_date("# x\n\nSuperseded by ADR-9 on 2026-02-03\n")
+    assert status == "Superseded"
+    assert date == "2026-02-03"
+
+
+def test_renderer_skips_non_bridge_decisions(tmp_path: Path) -> None:
+    (tmp_path / ".ao").mkdir()
+    cs.promote_decision(tmp_path, key="manual.x", value="hand-recorded value", confidence=0.95)
+    packet = render_context_packet(tmp_path)
+    assert "hand-recorded value" not in packet
+
+
+def test_cli_ingest_failure_returns_1(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    (tmp_path / ".ao").mkdir()
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not valid json", encoding="utf-8")
+    rc = _run_cli(["context", "ingest", "--root", str(tmp_path), "--mapping", str(bad)])
+    assert rc == 1
+    assert "failed" in capsys.readouterr().err
+
+
+def test_parser_first_heading_fallback() -> None:
+    assert _parser.first_heading("no heading line here", "fallback-stem") == "fallback-stem"
+
+
+def test_packet_per_section_cap(repo: Path) -> None:
+    ingest_docs(repo)
+    packet = render_context_packet(repo, max_items=1)
+    # 2 rules + 2 decisions exist but each section is capped at 1
+    assert packet.count("- AGENTS - testrepo") + packet.count("- Context Priority") == 1
+    assert "over per-section cap" in packet
+
+
+def test_packet_min_conf_excludes_everything(repo: Path) -> None:
+    ingest_docs(repo)
+    packet = render_context_packet(repo, min_conf=0.99)
+    assert "0 item shown" in packet
+    assert "## Rules" not in packet
+
+
+def test_packet_low_threshold_shows_status_but_still_drops_doc_claims(repo: Path) -> None:
+    # A Proposed ADR (conf 0.6) clears a low min_conf and renders WITH its status
+    # tag; doc_claim facts (conf 0.55) clear the conf bar too but are still
+    # dropped because doc-claims are opt-in.
+    _write(repo / "docs/adr/0003-proposed.md", "# 0003 - Proposed Thing\n\n## Status\n\n**Proposed**\n")
+    ingest_docs(repo)
+    packet = render_context_packet(repo, min_conf=0.5)
+    assert "Proposed Thing" in packet
+    assert "Proposed]" in packet or "| Proposed>" in packet
+    assert "Live Delta" not in packet
+
+
+def test_render_value_strategy_change_excludes(repo: Path, tmp_path: Path) -> None:
+    # Same file + same doc_hash, but render uses a mapping whose rule (same
+    # mapping_id) extracts a DIFFERENT value -> value_hash no longer reproduces
+    # -> excluded even though the bytes are unchanged.
+    ingest_map = tmp_path / "ingest.json"
+    base_rule = {
+        "mapping_id": "agents",
+        "glob": "AGENTS.md",
+        "type": "rule",
+        "tier": "repo_canonical",
+        "key_template": "rule.agents-md",
+        "value_strategy": "first_heading",
+        "confidence": 0.95,
+    }
+    ingest_map.write_text(
+        json.dumps({"schema_version": "context-doc-bridge-mapping.v1", "rules": [base_rule]}),
+        encoding="utf-8",
+    )
+    ingest_docs(repo, mapping_path=str(ingest_map))
+    assert "AGENTS - testrepo" in render_context_packet(repo, mapping_path=str(ingest_map))
+
+    drift_rule = dict(base_rule, value_strategy="section_headings")
+    drift_map = tmp_path / "drift.json"
+    drift_map.write_text(
+        json.dumps({"schema_version": "context-doc-bridge-mapping.v1", "rules": [drift_rule]}),
+        encoding="utf-8",
+    )
+    assert "AGENTS - testrepo" not in render_context_packet(repo, mapping_path=str(drift_map))
