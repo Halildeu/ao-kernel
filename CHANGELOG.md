@@ -7,6 +7,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **Context doc-bridge** (`ao_kernel.context.doc_bridge`): ingest a repo's
+  `.md`-governed context (AGENTS.md, ADRs, `current-state`, decision records)
+  into the governed canonical store, then render a short, provenance-tagged
+  markdown **context packet** for injection into any AI (Claude / Codex /
+  Mavis). Surfaces: public `ingest_docs()` / `render_context_packet()` and a CLI
+  `ao-kernel context {ingest,packet}`. A declarative, schema-validated mapping
+  (`ao_kernel/defaults/context_bridge/doc_mapping.default.v1.json`, schema
+  `context-doc-bridge-mapping.schema.v1.json`) drives extraction; bundled
+  defaults cover the common ADR / entry-doc / state-doc conventions and are fully
+  overridable. Design + acceptance criteria were set by a cross-AI plan-time gate
+  (Codex AGREE): authoritative provenance lives **inside** each canonical item's
+  `provenance.doc_bridge` namespace (no side-map), the batch is written under a
+  single CAS revision via the new `canonical_store.promote_many`, and the packet
+  is **fail-closed** — items whose source file was deleted or drifted (re-applied
+  mapping no longer reproduces the same key + `value_hash`) are excluded, secret-
+  like values are skipped (never redacted-and-stored), unverified `doc_claim`
+  facts are opt-in and labelled `UNVERIFIED`, and the packet header states it is
+  source-derived context that cannot override `support_widening` /
+  `production_platform_claim` / `live_adapter_execution`. Source repos are read
+  read-only; mapping globs are repo-root confined (symlink / `..` / oversize
+  rejected). `compile_context`, the MCP surface, and the three guard flags are
+  untouched. Cross-AI review: Codex (OpenAI).
+
 ## [4.2.1] - 2026-06-07
 
 ### Added

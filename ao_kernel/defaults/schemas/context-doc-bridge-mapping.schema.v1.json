@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel/schemas/context-doc-bridge-mapping.v1.json",
+  "title": "Context doc-bridge mapping (v1)",
+  "description": "Declarative, bounded mapping from repo .md sources to governed context entries. Repo-root confined, deterministic, no DSL.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "rules"],
+  "properties": {
+    "schema_version": {"const": "context-doc-bridge-mapping.v1"},
+    "max_files_per_rule": {"type": "integer", "minimum": 1, "maximum": 2000, "default": 500},
+    "max_file_bytes": {"type": "integer", "minimum": 1, "maximum": 10485760, "default": 1048576},
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mapping_id", "glob", "type", "tier", "key_template", "value_strategy"],
+        "properties": {
+          "mapping_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"},
+          "glob": {"type": "string", "minLength": 1, "maxLength": 256},
+          "type": {"enum": ["rule", "decision", "fact"]},
+          "tier": {"enum": ["repo_canonical", "canonical_doc", "doc_claim"]},
+          "key_template": {"type": "string", "minLength": 1, "maxLength": 128},
+          "value_strategy": {"enum": ["first_heading", "status_line", "section_headings"]},
+          "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+          "status_map": {
+            "type": "object",
+            "additionalProperties": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+            "minProperties": 1
+          },
+          "collision_policy": {"enum": ["strict", "supersede", "update_same_source"], "default": "strict"},
+          "max_items": {"type": "integer", "minimum": 1, "maximum": 500}
+        }
+      }
+    }
+  }
+}

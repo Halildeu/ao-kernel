@@ -58,11 +58,11 @@ class CanonicalDecision:
     category: str = "general"  # architecture | runtime | user_pref | approved_plan | fact
     source: str = "agent"
     confidence: float = 0.8
-    promoted_from: str = ""    # session_id where decision originated
+    promoted_from: str = ""  # session_id where decision originated
     promoted_at: str = ""
-    fresh_until: str = ""      # considered current until
-    review_after: str = ""     # should be reconsidered
-    expires_at: str = ""       # hard expiration
+    fresh_until: str = ""  # considered current until
+    review_after: str = ""  # should be reconsidered
+    expires_at: str = ""  # hard expiration
     supersedes: str | None = None  # previous decision key
     provenance: dict[str, Any] = field(default_factory=dict)  # evidence linkage
     schema_version: str = "v1"
@@ -122,15 +122,11 @@ def load_store(workspace_root: Path) -> dict[str, Any]:
     try:
         raw = path.read_text(encoding="utf-8")
     except OSError as exc:
-        raise CanonicalStoreCorruptedError(
-            f"Cannot read canonical store at {path}: {exc}"
-        ) from exc
+        raise CanonicalStoreCorruptedError(f"Cannot read canonical store at {path}: {exc}") from exc
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise CanonicalStoreCorruptedError(
-            f"Canonical store JSON at {path} is invalid: {exc}"
-        ) from exc
+        raise CanonicalStoreCorruptedError(f"Canonical store JSON at {path} is invalid: {exc}") from exc
     if not isinstance(parsed, dict):
         raise CanonicalStoreCorruptedError(
             f"Canonical store at {path} must be a JSON object, got {type(parsed).__name__}"
@@ -201,9 +197,9 @@ def save_store_cas(
     # raising here instead of falling back avoids a silent downgrade.
     if not lock_supported():
         from ao_kernel._internal.shared.lock import LockPlatformNotSupported
+
         raise LockPlatformNotSupported(
-            "save_store_cas requires POSIX fcntl locking; Windows support "
-            "is tracked in Tranche D (v3.1.0)."
+            "save_store_cas requires POSIX fcntl locking; Windows support is tracked in Tranche D (v3.1.0)."
         )
 
     with file_lock(lockfile):
@@ -212,8 +208,7 @@ def save_store_cas(
         if not allow_overwrite and expected_revision is not None:
             if current_rev != expected_revision:
                 raise CanonicalRevisionConflict(
-                    f"Revision mismatch: expected {expected_revision}, "
-                    f"store is at {current_rev}"
+                    f"Revision mismatch: expected {expected_revision}, store is at {current_rev}"
                 )
         store["updated_at"] = _now_iso()
         write_json_atomic(path, store)
@@ -233,13 +228,9 @@ def _load_store_locked(workspace_root: Path) -> dict[str, Any]:
     try:
         parsed = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise CanonicalStoreCorruptedError(
-            f"Canonical store JSON at {path} is invalid: {exc}"
-        ) from exc
+        raise CanonicalStoreCorruptedError(f"Canonical store JSON at {path} is invalid: {exc}") from exc
     if not isinstance(parsed, dict):
-        raise CanonicalStoreCorruptedError(
-            f"Canonical store at {path} must be a JSON object"
-        )
+        raise CanonicalStoreCorruptedError(f"Canonical store at {path} must be a JSON object")
     return parsed
 
 
@@ -260,9 +251,9 @@ def _mutate_with_cas(
 
     if not lock_supported():
         from ao_kernel._internal.shared.lock import LockPlatformNotSupported
+
         raise LockPlatformNotSupported(
-            "canonical mutators require POSIX fcntl locking; "
-            "Windows support is tracked in Tranche D (v3.1.0)."
+            "canonical mutators require POSIX fcntl locking; Windows support is tracked in Tranche D (v3.1.0)."
         )
 
     with file_lock(lockfile):
@@ -271,8 +262,7 @@ def _mutate_with_cas(
         if not allow_overwrite and expected_revision is not None:
             if current_rev != expected_revision:
                 raise CanonicalRevisionConflict(
-                    f"Revision mismatch: expected {expected_revision}, "
-                    f"store is at {current_rev}"
+                    f"Revision mismatch: expected {expected_revision}, store is at {current_rev}"
                 )
         mutator(current)
         current["updated_at"] = _now_iso()
@@ -346,6 +336,7 @@ def promote_decision(
 
     try:
         from ao_kernel.telemetry import record_canonical_promote
+
         record_canonical_promote(category=category)
     except Exception:
         pass
@@ -353,6 +344,7 @@ def promote_decision(
     if vector_store is not None:
         try:
             from ao_kernel.context.semantic_indexer import index_decision
+
             index_decision(
                 key=key,
                 value=value,
@@ -444,6 +436,67 @@ def promote_from_ephemeral(
     return promoted
 
 
+def promote_many(
+    workspace_root: Path,
+    items: list[dict[str, Any]],
+    *,
+    expected_revision: str | None = None,
+    allow_overwrite: bool = True,
+    fresh_days: int = 30,
+    review_days: int = 90,
+    expire_days: int = 365,
+) -> str:
+    """Promote multiple decisions/facts atomically under a SINGLE CAS revision.
+
+    All-or-nothing: every item lands in one write or the call raises and the
+    store is unchanged (no partial state). This is the batch path callers like
+    the context doc-bridge use to avoid per-item revision churn / partial
+    ingest (CNS doc-bridge plan, Codex acceptance #1).
+
+    Each ``items`` entry is a dict with keys:
+        key (required), value, category, source, confidence, session_id,
+        supersedes, provenance.
+
+    Returns the post-write revision token.
+
+    Raises:
+        CanonicalRevisionConflict: ``expected_revision`` no longer matches and
+            ``allow_overwrite`` is False.
+        KeyError: an item is missing the required ``key``.
+    """
+    now = _now_iso()
+    fresh = _future_iso(fresh_days)
+    review = _future_iso(review_days)
+    expire = _future_iso(expire_days)
+
+    def _apply(store: dict[str, Any]) -> None:
+        for item in items:
+            category = item.get("category", "general")
+            decision = CanonicalDecision(
+                key=item["key"],
+                value=item.get("value"),
+                category=category,
+                source=item.get("source", "agent"),
+                confidence=item.get("confidence", 0.8),
+                promoted_from=item.get("session_id", ""),
+                promoted_at=now,
+                fresh_until=fresh,
+                review_after=review,
+                expires_at=expire,
+                supersedes=item.get("supersedes"),
+                provenance=item.get("provenance") or {},
+            )
+            target = "facts" if category == "fact" else "decisions"
+            store.setdefault(target, {})[item["key"]] = asdict(decision)
+
+    return _mutate_with_cas(
+        workspace_root,
+        _apply,
+        expected_revision=expected_revision,
+        allow_overwrite=allow_overwrite,
+    )
+
+
 __all__ = [
     "CanonicalDecision",
     "load_store",
@@ -452,5 +505,6 @@ __all__ = [
     "store_revision",
     "promote_decision",
     "promote_from_ephemeral",
+    "promote_many",
     "query",
 ]
