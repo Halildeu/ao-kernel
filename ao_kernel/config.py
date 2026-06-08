@@ -24,6 +24,7 @@ _VALID_RESOURCE_TYPES = frozenset(
         "extensions",
         "operations",
         "catalogs",
+        "context_bridge",
     }
 )
 # "catalogs" added in FAZ-B PR-B0 (CNS-028v2 iter-5 W2/W4 absorb):

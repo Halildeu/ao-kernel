@@ -1,0 +1,54 @@
+{
+  "schema_version": "context-doc-bridge-mapping.v1",
+  "max_files_per_rule": 500,
+  "max_file_bytes": 1048576,
+  "rules": [
+    {
+      "mapping_id": "default.agents",
+      "glob": "AGENTS.md",
+      "type": "rule",
+      "tier": "repo_canonical",
+      "key_template": "rule.agents-md",
+      "value_strategy": "first_heading",
+      "confidence": 0.95,
+      "collision_policy": "update_same_source"
+    },
+    {
+      "mapping_id": "default.context-priority",
+      "glob": "docs/context-priority-rules.md",
+      "type": "rule",
+      "tier": "repo_canonical",
+      "key_template": "rule.context-priority",
+      "value_strategy": "first_heading",
+      "confidence": 0.95,
+      "collision_policy": "update_same_source"
+    },
+    {
+      "mapping_id": "default.adr",
+      "glob": "docs/adr/[0-9]*.md",
+      "type": "decision",
+      "tier": "canonical_doc",
+      "key_template": "decision.adr.{stem}",
+      "value_strategy": "status_line",
+      "status_map": {
+        "accepted": 0.9, "kabul": 0.9, "approved": 0.9,
+        "proposed": 0.6, "draft": 0.55,
+        "rejected": 0.45, "reddedildi": 0.45,
+        "superseded": 0.3, "deprecated": 0.3,
+        "unknown": 0.7
+      },
+      "collision_policy": "strict"
+    },
+    {
+      "mapping_id": "default.current-state",
+      "glob": "docs/state/current-state.md",
+      "type": "fact",
+      "tier": "doc_claim",
+      "key_template": "fact.current-state.{index}",
+      "value_strategy": "section_headings",
+      "confidence": 0.55,
+      "max_items": 8,
+      "collision_policy": "update_same_source"
+    }
+  ]
+}

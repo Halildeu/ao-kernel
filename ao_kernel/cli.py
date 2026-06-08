@@ -616,6 +616,73 @@ def _parse_repo_export_targets(raw: str | None) -> list[str]:
     return targets
 
 
+def _cmd_context_ingest(args: argparse.Namespace) -> int:
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.context.doc_bridge import ingest_docs
+
+    root = _Path(args.root or ".").resolve()
+    if not root.is_dir():
+        print(f"workspace root not found: {root}", file=sys.stderr)
+        return 1
+    repo_root = _Path(args.repo).resolve() if args.repo else None
+    try:
+        report = ingest_docs(root, repo_root=repo_root, mapping_path=args.mapping)
+    except Exception as exc:  # noqa: BLE001 — surface mapping/IO errors as CLI failure
+        print(f"context ingest failed: {exc}", file=sys.stderr)
+        return 1
+    if args.output == "json":
+        print(
+            _json.dumps(
+                {
+                    "ingested": report.ingested,
+                    "revision": report.revision,
+                    "by_type": report.by_type,
+                    "secrets_skipped": report.secrets_skipped,
+                    "collisions": report.collisions,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+    else:
+        print(
+            f"ingested={report.ingested} by_type={report.by_type} "
+            f"secrets_skipped={len(report.secrets_skipped)} "
+            f"collisions={len(report.collisions)}"
+        )
+        for collision in report.collisions:
+            print(f"  collision (skipped): {collision}", file=sys.stderr)
+        for secret in report.secrets_skipped:
+            print(f"  secret-like (skipped): {secret}", file=sys.stderr)
+    return 0
+
+
+def _cmd_context_packet(args: argparse.Namespace) -> int:
+    from pathlib import Path as _Path
+
+    from ao_kernel.context.doc_bridge import render_context_packet
+
+    root = _Path(args.root or ".").resolve()
+    repo_root = _Path(args.repo).resolve() if args.repo else None
+    try:
+        packet = render_context_packet(
+            root,
+            repo_root=repo_root,
+            mapping_path=args.mapping,
+            profile=args.profile,
+            min_conf=args.min_conf,
+            max_items=args.max_items,
+            include_doc_claims=args.include_doc_claims,
+        )
+    except Exception as exc:  # noqa: BLE001 — surface mapping/IO errors as CLI failure
+        print(f"context packet failed: {exc}", file=sys.stderr)
+        return 1
+    print(packet)
+    return 0
+
+
 def _cmd_support_widening_evidence_validate(args: argparse.Namespace) -> int:
     """V5 Epic 3 E-3-1: validate a support_widening_evidence.v1 artifact.
 
@@ -1301,6 +1368,28 @@ def _build_parser() -> argparse.ArgumentParser:
     migrate_p.add_argument("--backup", action="store_true", help="Backup files before mutation")
 
     sub.add_parser("doctor", help="Workspace health check")
+
+    # Context doc-bridge (.md sources -> governed store -> markdown packet)
+    ctx_p = sub.add_parser("context", help="Context doc-bridge: ingest .md sources + render packet")
+    ctx_sub = ctx_p.add_subparsers(dest="context_command")
+    ctx_ing = ctx_sub.add_parser("ingest", help="Ingest repo .md sources into the governed store")
+    ctx_ing.add_argument("--root", default=".", help="Workspace root (.ao location); default: cwd")
+    ctx_ing.add_argument("--repo", default=None, help="Repo root to scan (default: --root)")
+    ctx_ing.add_argument("--mapping", default=None, help="Custom mapping JSON path (default: bundled)")
+    ctx_ing.add_argument("--output", choices=["text", "json"], default="text")
+    ctx_pkt = ctx_sub.add_parser("packet", help="Render the markdown context packet")
+    ctx_pkt.add_argument("--root", default=".", help="Workspace root (.ao location); default: cwd")
+    ctx_pkt.add_argument("--repo", default=None, help="Repo root for source re-verify (default: --root)")
+    ctx_pkt.add_argument("--mapping", default=None, help="Custom mapping JSON path (default: bundled)")
+    ctx_pkt.add_argument("--profile", default=None, help="Context profile label (cosmetic)")
+    ctx_pkt.add_argument("--min-conf", type=float, default=0.7, dest="min_conf")
+    ctx_pkt.add_argument("--max-items", type=int, default=20, dest="max_items")
+    ctx_pkt.add_argument(
+        "--include-doc-claims",
+        action="store_true",
+        dest="include_doc_claims",
+        help="Include unverified doc-claim facts (labelled UNVERIFIED)",
+    )
 
     # Evidence subcommands (PR-A5)
     ev_p = sub.add_parser("evidence", help="Evidence timeline + replay + manifest")
@@ -2107,6 +2196,16 @@ def main(argv: list[str] | None = None) -> int:
             "Usage: ao-kernel repo {scan,index,query,export-plan,export} [--project-root PATH] [--output {text,json}]",
             file=sys.stderr,
         )
+        return 1
+
+    # Context doc-bridge subcommand
+    if cmd == "context":
+        ctx_cmd = getattr(args, "context_command", None)
+        if ctx_cmd == "ingest":
+            return _cmd_context_ingest(args)
+        if ctx_cmd == "packet":
+            return _cmd_context_packet(args)
+        print("Usage: ao-kernel context {ingest,packet} [--root PATH] [--repo PATH]", file=sys.stderr)
         return 1
 
     # Executor subcommand (PR-C6)
