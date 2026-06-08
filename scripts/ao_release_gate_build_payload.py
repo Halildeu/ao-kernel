@@ -102,18 +102,6 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     # governance surfaces remain independently gated.
     ".github/codeql/codeql-config.yml",
     ".github/CODEOWNERS",
-    # Protected-workflow authorization artifact (issue #983, Codex thread
-    # 019ea61b). An exact GitHub governance-metadata file recording that a
-    # protected CI-workflow change in this PR is deliberate and cross-provider
-    # reviewed (consumed by the pytest protected-path drift guard in
-    # tests/test_support_matrix_smoke_workflow.py). It is not a workflow,
-    # CODEOWNERS rule, ruleset, branch-protection setting, runtime adapter
-    # path, support-widening claim, or production-platform claim. Keep this
-    # exact path rather than widening to `.github/` so unrelated GitHub
-    # governance surfaces remain independently gated; the high-risk
-    # path_sensitive_human_review / supersession checks still run on the
-    # protected workflow change itself.
-    ".github/protected-workflow-authorization.v1.json",
     "deploy/",
     "docs/",
     "AGENTS.md",

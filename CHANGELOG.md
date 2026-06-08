@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Protected-workflow authorization model** (issue #983): a per-PR,
   schema-backed
   (`ao_kernel/defaults/schemas/protected-workflow-authorization.schema.v1.json`)
-  authorization artifact (`.github/protected-workflow-authorization.v1.json`)
+  authorization artifact (`tests/protected-workflow-authorization.v1.json`)
   that lets the pytest protected-path drift guard
   (`tests/test_support_matrix_smoke_workflow.py`) pass an explicit, narrow,
   cross-provider-reviewed change to a protected CI workflow while still failing

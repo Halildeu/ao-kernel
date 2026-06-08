@@ -606,11 +606,6 @@ def test_build_payload_allowed_path_prefixes_repo_owned_not_pr_supplied(tmp_path
     assert ".github/workflows/" in prefixes
     assert ".github/ISSUE_TEMPLATE/" in prefixes
     assert ".github/dependabot.yml" in prefixes
-    # Protected-workflow authorization artifact (issue #983): exact GitHub
-    # governance-metadata path, deliberately narrower than `.github/`, so a
-    # PR that ships `.github/protected-workflow-authorization.v1.json` alongside
-    # an authorized protected-workflow change is not diff_out_of_scope-blocked.
-    assert ".github/protected-workflow-authorization.v1.json" in prefixes
     # GPP-2D-3c bootstrap prerequisite: the ao-release-gate enforce
     # job reads the raw reviewer evidence file committed at the repo
     # head and generates the head-bound gate evidence file at CI

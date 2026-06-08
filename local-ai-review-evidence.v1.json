@@ -15,13 +15,11 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/chore/protected-workflow-authz-2026-06-08-cc",
     "changed_files": [
-      ".github/protected-workflow-authorization.v1.json",
       ".github/workflows/test.yml",
       "CHANGELOG.md",
       "ao_kernel/defaults/schemas/protected-workflow-authorization.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_build_payload.py",
+      "tests/protected-workflow-authorization.v1.json",
       "tests/test_ao_release_gate_enforce_job.py",
       "tests/test_cost_ceiling.py",
       "tests/test_support_matrix_smoke_workflow.py"
@@ -36,10 +34,10 @@
   ],
   "findings": [
     "Re-lands the shelved #979 pull_request_review CI carve-out through a proper governance model (issue #983) instead of weakening the protected-path guards. Heavy CI matrix skips on pull_request_review; ao-release-gate still re-evaluates; fail-closed preserved (event-gate on all events, heavy needs.*.result gated to pull_request, review-time required-check freshness from the persisted check-runs API); concurrency event-scoped.",
-    "(a) Scopes the E-2-3 CostCeiling workflow-mutation guard to the CostCeiling runtime/policy surface so it no longer fires on every PR (parity with introducer-scoped E-2-2/E-4-3 + conftest BLK-005). (b) Adds a per-PR, schema-backed protected-workflow authorization model (.github/protected-workflow-authorization.v1.json + schema): the drift guard passes an explicit, fresh, narrow, cross-provider-reviewed protected-workflow change while failing closed on accidental drift, deletion/rename, stale or over-broad authorization, and rulesets/branch-protection.",
-    "(C) Makes the ao-release-gate high-risk raw-reviewer locator diff-aware (build supersession only when both raw files are in this PR's diff), closing a stale-supersession false-green hole where state-at-landing AGREEs could wrap a fresh root review; exactly one changed raw file fails closed. Diff-scope allowlist pins the new authorization artifact as exact GitHub governance metadata (not a broad .github/ widening).",
+    "(a) Scopes the E-2-3 CostCeiling workflow-mutation guard to the CostCeiling runtime/policy surface so it no longer fires on every PR (parity with introducer-scoped E-2-2/E-4-3 + conftest BLK-005). (b) Adds a per-PR, schema-backed protected-workflow authorization model (tests/protected-workflow-authorization.v1.json + schema): the drift guard passes an explicit, fresh, narrow, cross-provider-reviewed protected-workflow change while failing closed on accidental drift, deletion/rename, stale or over-broad authorization, and rulesets/branch-protection.",
+    "(C) Makes the ao-release-gate high-risk raw-reviewer locator diff-aware (build supersession only when both raw files are in this PR's diff), closing a stale-supersession false-green hole where state-at-landing AGREEs could wrap a fresh root review; exactly one changed raw file fails closed. The authorization artifact lives under tests/ (the drift guard's own directory, already covered by the base-ref diff_scope allowlist), so no gate-allowlist change is needed.",
     "The real high-risk merge authority remains ao-release-gate (HIGH_RISK_PATH_PATTERNS + supersession / non-author review); these pytest guards are independent defense-in-depth. The raw high-risk review files were deliberately NOT touched: a Claude-implemented change cannot produce an honest Anthropic-reviewer supersession entry (provider-level self-review), so merge authority is the non-author CODEOWNER approval path. The provider-level supersession self-review gap is tracked as a separate high-risk follow-up, not folded here.",
-    "Verification: full pytest 7023 passed / 114 skipped / 0 failed; ruff check ao_kernel/ tests/ scripts/ clean; ruff format clean; workflow YAML parses. Protected-path guard proven non-vacuous (sees 'M .github/workflows/test.yml', loads schema-valid authorization, fresh-in-diff, violations=[]; absent authorization => non-empty violations). CostCeiling guard correctly skips. diff_scope simulation: all 10 changed paths in the base-ref allowlist.",
+    "Verification: full pytest 7023 passed / 114 skipped / 0 failed; ruff check ao_kernel/ tests/ scripts/ clean; ruff format clean; workflow YAML parses. Protected-path guard proven non-vacuous (sees 'M .github/workflows/test.yml', loads schema-valid authorization, fresh-in-diff, violations=[]; absent authorization => non-empty violations). CostCeiling guard correctly skips. diff_scope simulation: all 8 changed paths in the base-ref allowlist.",
     "No library runtime change, no guard-flag flip, no support widening, no production-platform claim, no live adapter execution. Three guard flags stay const false. Cross-AI: Codex (OpenAI) plan-time AGREE + post-impl AGREE, thread 019ea61b.",
     "No secrets, credentials, or sensitive material were found in the reviewed diff."
   ],

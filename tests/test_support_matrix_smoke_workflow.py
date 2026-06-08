@@ -46,7 +46,7 @@ _PROTECTED_WORKFLOW_PATHS = [
 # ONLY when this per-PR, schema-valid, fresh, narrow authorization artifact lists
 # exactly the protected workflow paths changed. This is independent
 # defense-in-depth; the real high-risk merge authority remains ao-release-gate.
-_AUTHORIZATION_REL_PATH = ".github/protected-workflow-authorization.v1.json"
+_AUTHORIZATION_REL_PATH = "tests/protected-workflow-authorization.v1.json"
 _AUTHORIZATION_SCHEMA_PATH = (
     _REPO_ROOT / "ao_kernel" / "defaults" / "schemas" / "protected-workflow-authorization.schema.v1.json"
 )
