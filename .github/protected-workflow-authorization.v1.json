@@ -1,0 +1,13 @@
+{
+  "schema_version": "protected-workflow-authorization.v1",
+  "artifact_kind": "protected_workflow_authorization",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "AO-MA-CI-REVIEW-SKIP",
+  "reason": "Skip the heavy CI matrix on pull_request_review (gate-only re-eval); review-time required-check freshness comes from the persisted check-runs API, not a re-run. Re-lands closed PR #979 through the protected-workflow authorization model (issue #983).",
+  "authorized_paths": [
+    ".github/workflows/test.yml"
+  ],
+  "review_evidence_refs": [
+    "local-ai-review-evidence.v1.json"
+  ]
+}

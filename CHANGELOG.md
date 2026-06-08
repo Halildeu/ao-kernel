@@ -7,6 +7,46 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **Protected-workflow authorization model** (issue #983): a per-PR,
+  schema-backed
+  (`ao_kernel/defaults/schemas/protected-workflow-authorization.schema.v1.json`)
+  authorization artifact (`.github/protected-workflow-authorization.v1.json`)
+  that lets the pytest protected-path drift guard
+  (`tests/test_support_matrix_smoke_workflow.py`) pass an explicit, narrow,
+  cross-provider-reviewed change to a protected CI workflow while still failing
+  closed on accidental drift, deletions/renames, stale (non-fresh) or over-broad
+  authorizations, and rulesets/branch-protection. The real high-risk merge
+  authority remains ao-release-gate (HIGH_RISK_PATH_PATTERNS + supersession /
+  non-author review); this guard is independent defense-in-depth.
+
+### Changed
+
+- **CI: skip the heavy matrix on `pull_request_review`** (re-lands the shelved
+  #979). A review event (CODEOWNER approval / evidence re-trigger) no longer
+  re-runs the 9 heavy jobs on an unchanged head; only `ao-release-gate`
+  re-evaluates the persisted check-runs + reviewer evidence. Fail-closed is
+  preserved (event-gate on all events; heavy `needs.*.result` gated to
+  `pull_request`; review-time required-check freshness from the persisted
+  check-runs API), and the concurrency group is event-scoped.
+- **Scoped the E-2-3 CostCeiling workflow-mutation guard** to the CostCeiling
+  runtime/policy surface so it no longer fires on every PR, matching the
+  introducer-scoped E-2-2/E-4-3 guards and the conftest BLK-005 anti-pattern.
+
+### Fixed
+
+- **Closed a stale high-risk supersession hole**: the `ao-release-gate` enforce
+  job now treats the `ao-ma-10-high-risk-reviews/{openai,anthropic}` raw reviewer
+  files as supersession inputs only when both are part of *this* PR's diff (not
+  merely present on `main`), so state-at-landing AGREEs from an earlier PR can no
+  longer wrap a fresh root review into a false-green supersession; exactly one
+  changed raw file fails closed.
+
+Docs/CI/test governance only; no library runtime change, no guard-flag flip, no
+support widening, production-platform claim, or live adapter execution. Cross-AI
+review: Codex (OpenAI), thread 019ea61b.
+
 ## [4.2.1] - 2026-06-07
 
 ### Added

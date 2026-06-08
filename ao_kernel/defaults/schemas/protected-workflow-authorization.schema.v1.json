@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:protected-workflow-authorization:v1",
+  "title": "Protected Workflow Authorization",
+  "description": "Per-PR, defense-in-depth declaration that a change to one or more PROTECTED CI workflow paths (the pytest protected-path drift guard's _PROTECTED_WORKFLOW_PATHS set, e.g. .github/workflows/test.yml) is deliberate and cross-provider reviewed. This artifact is the input the pytest drift guard (tests/test_support_matrix_smoke_workflow.py) recognizes so an authorized, narrow, fresh protected-workflow change passes while accidental drift still fails closed. It is NOT the merge authority: the real high-risk merge authority remains ao-release-gate (HIGH_RISK_PATH_PATTERNS + supersession / non-author human review) plus the GitHub ruleset. The guard requires this file to be (re)written in the SAME PR that touches a protected workflow (freshness: a stale main-state authorization grants no standing) and to list EXACTLY the protected workflow paths changed (narrowness). It authorizes additions/modifications only; protected-workflow deletions and renames are unconditionally fail-closed and cannot be authorized here. It cannot authorize .github/rulesets or .github/branch-protection. No secret material may appear in any field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "reason",
+    "authorized_paths",
+    "review_evidence_refs"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "protected-workflow-authorization.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "protected_workflow_authorization"
+    },
+    "repo": {
+      "type": "string",
+      "const": "Halildeu/ao-kernel"
+    },
+    "work_package": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 80,
+      "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*$",
+      "description": "Work-package identifier for the PR that carries the protected-workflow change. Same canonical regex used across the repo's evidence artifacts."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500,
+      "description": "Short human-readable justification for the protected-workflow change. No secret material."
+    },
+    "authorized_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^\\.github/workflows/[A-Za-z0-9._-]+\\.ya?ml$",
+        "description": "A protected CI workflow path this PR is authorized to add or modify. Must be a member of the drift guard's _PROTECTED_WORKFLOW_PATHS set (enforced by the consuming test, single source of truth)."
+      },
+      "description": "Exactly the set of protected workflow paths added/modified in this PR. The drift guard rejects any protected-workflow change not listed here (missing) and any listed path not changed in this PR (over-broad)."
+    },
+    "review_evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Repo-relative path to a cross-provider review evidence artifact backing this authorization (e.g. local-ai-review-evidence.v1.json)."
+      },
+      "description": "Audit pointers to the cross-AI review evidence that backs this authorization. The pytest guard does not parse these (the real high-risk review authority is ao-release-gate); they exist for human/audit traceability."
+    }
+  }
+}

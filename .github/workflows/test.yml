@@ -31,7 +31,10 @@ concurrency:
   # runs the full required-check surface (not an event-gate skip): title/body
   # edits and retargets must never create skipped required-check contexts that
   # can block autonomous merge.
-  group: test-${{ github.workflow }}-${{ github.ref }}
+  # Event-scoped so a lightweight pull_request_review run (which skips the heavy
+  # matrix and only re-evaluates ao-release-gate) does NOT cancel an in-progress
+  # full pull_request CI run on the same ref.
+  group: test-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
@@ -85,7 +88,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -107,7 +110,7 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     strategy:
       fail-fast: false
       matrix:
@@ -169,7 +172,7 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
     needs: [event-gate, test]
-    if: always() && needs.event-gate.outputs.should_run == 'true'
+    if: always() && needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     steps:
       - uses: actions/checkout@v6
       - name: Fail closed if the test matrix did not succeed
@@ -208,7 +211,7 @@ jobs:
     name: packaging-smoke
     runs-on: ubuntu-latest
     needs: [event-gate, test, coverage, lint, typecheck]
-    if: needs.event-gate.outputs.should_run == 'true'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -227,7 +230,7 @@ jobs:
     name: policy-container-smoke
     runs-on: ubuntu-latest
     needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -246,7 +249,7 @@ jobs:
     name: release-gate-container-smoke
     runs-on: ubuntu-latest
     needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -265,7 +268,7 @@ jobs:
     name: typecheck
     runs-on: ubuntu-latest
     needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     # CNS-006 Q4: after the 131-error cleanup (PR #56), typecheck is a real
     # gate. _internal/* is still under per-module ignore (D13).
     #
@@ -291,7 +294,7 @@ jobs:
     name: benchmark-fast
     runs-on: ubuntu-latest
     needs: [event-gate, test]
-    if: needs.event-gate.outputs.should_run == 'true'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -327,7 +330,7 @@ jobs:
     name: scorecard
     runs-on: ubuntu-latest
     needs: [event-gate, benchmark-fast]
-    if: needs.event-gate.outputs.should_run == 'true' && github.event_name == 'pull_request'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review' && github.event_name == 'pull_request'
     continue-on-error: true  # Advisory surface — never red-check PRs.
     permissions:
       pull-requests: write
@@ -379,7 +382,7 @@ jobs:
     name: extras-install
     runs-on: ubuntu-latest
     needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name != 'pull_request_review'
     continue-on-error: true  # Optional extras smoke — non-blocking
     steps:
       - uses: actions/checkout@v6
@@ -492,15 +495,26 @@ jobs:
           fetch-depth: 1
 
       - name: Fail closed if any required CI job did not succeed
+        # event-gate failure is fail-closed on ALL events. The heavy-job
+        # needs.*.result checks only apply on `pull_request` (same-run) events:
+        # on `pull_request_review` the heavy jobs are intentionally skipped, and
+        # required-check freshness is enforced from the persisted check-runs API
+        # (ao_release_gate_build_payload --check-runs-json + --required-check ...)
+        # via the decision core's _required_checks_are_green, which rejects any
+        # missing/skipped/non-success required check.
         if: |
           needs.event-gate.result != 'success' ||
-          needs.lint.result != 'success' ||
-          needs.typecheck.result != 'success' ||
-          needs.test.result != 'success' ||
-          needs.coverage.result != 'success' ||
-          needs.packaging-smoke.result != 'success' ||
-          needs.policy-container-smoke.result != 'success' ||
-          needs.release-gate-container-smoke.result != 'success'
+          (
+            github.event_name == 'pull_request' && (
+              needs.lint.result != 'success' ||
+              needs.typecheck.result != 'success' ||
+              needs.test.result != 'success' ||
+              needs.coverage.result != 'success' ||
+              needs.packaging-smoke.result != 'success' ||
+              needs.policy-container-smoke.result != 'success' ||
+              needs.release-gate-container-smoke.result != 'success'
+            )
+          )
         working-directory: base
         run: |
           python scripts/ao_release_gate_synthesize_error_decision.py decision.json \
@@ -859,22 +873,66 @@ jobs:
             echo "anthropic_path=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # AO-MA-CI-REVIEW-SKIP stale-supersession fix (Codex thread 019ea61b /
+          # issue #983). Treat the raw high-risk reviewer files as supersession
+          # inputs ONLY when BOTH are part of THIS PR's diff (changeType
+          # ADDED/MODIFIED in the API-derived pr-files.json). Their mere
+          # existence on main (state-at-landing from an earlier PR) must NOT
+          # silently authorize an unrelated high-risk PR: a binding_mode=unchanged
+          # raw pair skips scope checks, so stale AGREEs could otherwise wrap a
+          # fresh root review into a false-green supersession. Diff-membership is
+          # read from pr-files.json (the same source the AO-MA-10l smoke detector
+          # uses), not from filesystem existence.
+          DECISION="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("pr-files.json").read_text(encoding="utf-8"))
+          files = payload.get("files", []) if isinstance(payload, dict) else []
+          changed = set()
+          for entry in files:
+              if not isinstance(entry, dict):
+                  continue
+              path = entry.get("path")
+              change_type = entry.get("changeType")
+              if isinstance(path, str) and change_type in ("ADDED", "MODIFIED"):
+                  changed.add(path)
+          openai_rel = "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json"
+          anthropic_rel = "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json"
+          openai_in = openai_rel in changed
+          anthropic_in = anthropic_rel in changed
+          if openai_in and anthropic_in:
+              print("both")
+          elif openai_in or anthropic_in:
+              print("partial")
+          else:
+              print("neither")
+          PY
+          )"
           OPENAI_PATH="head/ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json"
           ANTHROPIC_PATH="head/ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json"
-          if [ -f "../$OPENAI_PATH" ] && [ -f "../$ANTHROPIC_PATH" ]; then
-            if [ ! -f ../head/local-ai-review-evidence.v1.json ]; then
-              echo "::error::high-risk supersession raw reviews require root local-ai-review-evidence.v1.json for reviewed work-package binding"
+          case "$DECISION" in
+            both)
+              if [ ! -f "../$OPENAI_PATH" ] || [ ! -f "../$ANTHROPIC_PATH" ]; then
+                echo "::error::high-risk supersession raw files are in this PR's diff but missing on head"
+                exit 1
+              fi
+              if [ ! -f ../head/local-ai-review-evidence.v1.json ]; then
+                echo "::error::high-risk supersession raw reviews require root local-ai-review-evidence.v1.json for reviewed work-package binding"
+                exit 1
+              fi
+              echo "openai_path=$OPENAI_PATH" >> "$GITHUB_OUTPUT"
+              echo "anthropic_path=$ANTHROPIC_PATH" >> "$GITHUB_OUTPUT"
+              ;;
+            partial)
+              echo "::error::high-risk supersession evidence requires both OpenAI and Anthropic raw reviewer files to be changed in this PR"
               exit 1
-            fi
-            echo "openai_path=$OPENAI_PATH" >> "$GITHUB_OUTPUT"
-            echo "anthropic_path=$ANTHROPIC_PATH" >> "$GITHUB_OUTPUT"
-          elif [ -f "../$OPENAI_PATH" ] || [ -f "../$ANTHROPIC_PATH" ]; then
-            echo "::error::high-risk supersession evidence requires both OpenAI and Anthropic raw reviewer files"
-            exit 1
-          else
-            echo "openai_path=" >> "$GITHUB_OUTPUT"
-            echo "anthropic_path=" >> "$GITHUB_OUTPUT"
-          fi
+              ;;
+            *)
+              echo "openai_path=" >> "$GITHUB_OUTPUT"
+              echo "anthropic_path=" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
 
       - name: Generate high-risk supersession evidence at runtime from raw reviewer evidence
         # AO-MA-10j: raw PR-head review files carry no head_sha. The

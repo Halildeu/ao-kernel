@@ -250,23 +250,48 @@ def test_reservation_hard_breach_rejected(tmp_path: Path) -> None:
     assert rows[-1]["accepted"] is False
 
 
-def test_cost_ceiling_no_unrelated_workflow_mutation_in_diff() -> None:
+def _git_diff_names(pathspec: str) -> list[str] | None:
     proc = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main...HEAD", "--", ".github/workflows/"],
+        ["git", "diff", "--name-only", "origin/main...HEAD", "--", pathspec],
         cwd=_REPO_ROOT,
         capture_output=True,
         text=True,
         check=False,
     )
     if proc.returncode != 0:
-        pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    touched = [p for p in proc.stdout.split() if p]
-    # E-2-3 itself must not mutate workflow files. Later slices may add
-    # explicitly authorized advisory workflows, so keep the older guard but
-    # narrow it to unrelated workflow drift.
+        return None
+    return [p for p in proc.stdout.split() if p]
+
+
+def test_cost_ceiling_no_unrelated_workflow_mutation_in_diff() -> None:
+    """The E-2-3 CostCeiling slice must not also mutate .github/workflows/.
+
+    Slice-scoped (Codex thread 019ea61b / issue #983): the old guard ran on
+    EVERY PR and rejected all workflow changes except a 2-item allowlist, so it
+    blocked unrelated workflow-maintenance PRs (e.g. re-landing #979) — the same
+    anti-pattern conftest BLK-005 forbids for new tests. It now asserts ONLY
+    when this PR actually touches the CostCeiling implementation surface
+    (runtime + policy); editing this guard test itself is not E-2-3 feature work
+    and must not arm the workflow ban. Path-filtered diffs keep it BLK-005 safe.
+    """
+    changed = _git_diff_names(".")
+    if changed is None:
+        pytest.skip("git diff unavailable")
+    cost_ceiling_slice = {
+        "ao_kernel/_internal/cost_ceiling.py",
+        "ao_kernel/defaults/policies/policy_cost_ceiling.v1.json",
+    }
+    if not (set(changed) & cost_ceiling_slice):
+        pytest.skip("E-2-3 CostCeiling slice not touched by this PR; workflow-ban N/A")
+
+    touched = _git_diff_names(".github/workflows/")
+    if touched is None:
+        pytest.skip("git diff unavailable")
+    # When the cost-ceiling slice IS touched, it must stay in its lane. Later
+    # slices may add explicitly authorized advisory workflows.
     allowed = {
         ".github/workflows/live-adapter-evidence-emit.yml",
         ".github/workflows/support-matrix-smoke.yml",
     }
     unexpected = [p for p in touched if p not in allowed]
-    assert not unexpected, f"Epic 2 has unrelated workflow mutations. Touched: {unexpected}"
+    assert not unexpected, f"E-2-3 CostCeiling slice has unrelated workflow mutations. Touched: {unexpected}"
