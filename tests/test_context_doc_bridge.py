@@ -343,6 +343,23 @@ def test_cli_ingest_reports_collisions_and_secrets(tmp_path: Path, capsys: pytes
     err = capsys.readouterr().err
     assert "collision" in err
     assert "secret-like" in err
+    # Regression lock (CodeQL py/clear-text-logging): the secret-bearing source
+    # path/key must NEVER be echoed — only a count.
+    assert "AGENTS.md" not in err
+    assert "rule.agents-md" not in err
+
+
+def test_cli_ingest_json_never_leaks_secret_source(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    (tmp_path / ".ao").mkdir()
+    _write(tmp_path / "AGENTS.md", f"# token {_FAKE_SK}\n")
+    rc = _run_cli(["context", "ingest", "--root", str(tmp_path), "--output", "json"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    data = json.loads(out)
+    assert data["secrets_skipped_count"] == 1
+    assert "secrets_skipped" not in data  # the list of source refs is never emitted
+    assert "AGENTS.md" not in out
+    assert "rule.agents-md" not in out
 
 
 def test_cli_packet_failure_returns_1(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
