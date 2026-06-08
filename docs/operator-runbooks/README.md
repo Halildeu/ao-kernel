@@ -19,7 +19,7 @@
 | File | Role |
 |---|---|
 | [`operator-action-checklist.v1.json`](operator-action-checklist.v1.json) | Schema-backed checklist (4 actions, pending state) |
-| [`01-pypi-publish.md`](01-pypi-publish.md) | P0-1: PyPI v4.2.1 publish dispatch |
+| [`01-pypi-publish.md`](01-pypi-publish.md) | P0-1: PyPI v4.3.0 publish dispatch |
 | [`02-plan-approval-environment.md`](02-plan-approval-environment.md) | AO-MA-11A-2: `ao-ma-plan-approval` environment configure |
 | [`03-mirror-pat-secret.md`](03-mirror-pat-secret.md) | AO-MA-11E-2b: `REPO_GH_PAT_PROJECTS_RW` secret seed |
 | [`04-mirror-sync-environment.md`](04-mirror-sync-environment.md) | AO-MA-11E-2b: `ao-ma-mirror-sync` environment configure |
@@ -29,7 +29,7 @@
 
 | # | Action | Workflow | Environment | Secret | ETA |
 |---|---|---|---|---|---|
-| 1 | PyPI v4.2.1 publish | `publish.yml` | `pypi` | — | 5 min |
+| 1 | PyPI v4.3.0 publish | `publish.yml` | `pypi` | — | 5 min |
 | 2 | Plan-approval env configure | `ao-ma-11a-plan-approval.yml` | `ao-ma-plan-approval` | — | 4 min |
 | 3 | Mirror PAT secret seed | `ao-ma-11e-2b-mirror-sync.yml` | — (secret-only) | `REPO_GH_PAT_PROJECTS_RW` | 6 min |
 | 4 | Mirror-sync env configure | `ao-ma-11e-2b-mirror-sync.yml` | `ao-ma-mirror-sync` | — | 4 min |
@@ -69,7 +69,7 @@
 - The runbooks NEVER instruct the operator to take an irreversible action
   without an explicit verification step.
 
-## 3. Action 1 — PyPI v4.2.1 Publish (P0-1)
+## 3. Action 1 — PyPI v4.3.0 Publish (P0-1)
 
 See [`01-pypi-publish.md`](01-pypi-publish.md).
 

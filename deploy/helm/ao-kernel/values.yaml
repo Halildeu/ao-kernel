@@ -16,7 +16,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/halildeu/ao-kernel
   # Operator should pin a digest in production; tag default is for skeleton testing.
-  tag: "4.2.1"
+  tag: "4.3.0"
   pullPolicy: IfNotPresent
 
 # Optional image pull secrets (operator-managed Kubernetes Secrets).

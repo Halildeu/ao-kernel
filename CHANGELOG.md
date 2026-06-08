@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-06-08
+
 ### Added
 
 - **Context doc-bridge** (`ao_kernel.context.doc_bridge`): ingest a repo's
