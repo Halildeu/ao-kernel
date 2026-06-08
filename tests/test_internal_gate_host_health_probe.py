@@ -192,3 +192,46 @@ def test_health_probe_cli_writes_json_artifact(tmp_path: Path, capsys: Any, monk
     assert payload["status"] == "hosted_health_ready"
     assert payload["public_https_hosting_evidence"] is True
     assert "public_https_hosting_evidence: true" in captured.out
+
+
+def test_health_probe_strips_url_secrets_from_all_outputs() -> None:
+    """A caller-supplied URL whose userinfo, query, OR fragment carries a
+    secret must never leak it as clear text into the evidence payload (incl.
+    per-service service_results[].url), the rendered text, the JSON output, or
+    the persisted artifact (CodeQL py/clear-text-logging #11, cross-AI verified
+    Claude + Codex). Secrets are flagged AND scrubbed, not just flagged."""
+
+    mod = _module()
+    secret = "sup3rs3cret"
+
+    def transport(_url: str, _timeout_seconds: float) -> tuple[int, bytes]:
+        return 200, _json_response("GPP-2af")
+
+    payload = mod.build_evidence(
+        policy_url=f"https://user:{secret}@gate.example.test/policy/healthz?token={secret}#{secret}",
+        release_gate_url=f"https://user:{secret}@gate.example.test/release-gate/healthz?token={secret}",
+        transport=transport,
+    )
+
+    # Userinfo + query + fragment scrubbed from the stored URLs (host/path kept).
+    assert payload["policy_url"] == "https://gate.example.test/policy/healthz"
+    assert payload["release_gate_url"] == "https://gate.example.test/release-gate/healthz"
+    # The leaks are still flagged, not silently accepted.
+    codes = {f["code"] for f in payload["findings"]}
+    assert "internal_gate_host_health_url_credentials_forbidden" in codes
+    assert "internal_gate_host_health_url_not_canonical" in codes
+    # The secret must not survive in ANY emitted surface, including the
+    # per-service result URLs nested under service_results.
+    assert secret not in json.dumps(payload)
+    assert secret not in mod._render_text(payload)
+    for result in payload["service_results"].values():
+        assert secret not in result["url"]
+
+
+def test_sanitize_url_strips_userinfo_query_fragment_but_noops_canonical() -> None:
+    mod = _module()
+    clean = "https://gate.example.test:8443/policy/healthz"
+    assert mod._sanitize_url(clean) == clean
+    assert mod._sanitize_url("https://user:pw@gate.example.test:8443/x") == "https://gate.example.test:8443/x"
+    assert mod._sanitize_url("https://gate.example.test/x?token=secret") == "https://gate.example.test/x"
+    assert mod._sanitize_url("https://gate.example.test/x#secret") == "https://gate.example.test/x"

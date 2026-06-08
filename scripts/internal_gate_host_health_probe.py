@@ -99,6 +99,37 @@ def _url_findings(url: str, *, allow_http_localhost: bool) -> list[dict[str, str
     return findings
 
 
+def _sanitize_url(url: str) -> str:
+    """Return ``url`` stripped of every secret-bearing component.
+
+    Health URLs must be canonical and credential-free (``_url_findings``
+    flags ``..._credentials_forbidden`` for userinfo and
+    ``..._not_canonical`` for query/fragment), but the URL is still echoed
+    into the evidence payload, the per-service ``service_results[].url``,
+    the rendered text, the JSON output, and the persisted artifact. Any of
+    userinfo (``user:password@``), the query string (``?token=...``), and
+    the fragment (``#...``) can carry a secret, so all three are removed
+    before the URL reaches any stored/emitted surface — a caller-supplied
+    ``https://user:pw@host/p?token=SECRET#SECRET`` can never leak in clear
+    text. Findings are computed from the raw URL upstream, so the
+    forbidden-userinfo / not-canonical flags are preserved. A
+    credential-free canonical URL is returned unchanged; non-parseable
+    input is defensively stripped of userinfo, query, and fragment.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return url.split("@", 1)[-1].split("?", 1)[0].split("#", 1)[0]
+    if not parsed.netloc:
+        return url
+    if not (parsed.username or parsed.password or parsed.query or parsed.fragment):
+        return url
+    host = parsed.hostname or ""
+    if parsed.port is not None:
+        host = f"{host}:{parsed.port}"
+    return urllib.parse.urlunparse(parsed._replace(netloc=host, query="", fragment=""))
+
+
 def _is_public_https_url(url: str) -> bool:
     parsed = urllib.parse.urlparse(url)
     return parsed.scheme == "https" and parsed.hostname not in LOCAL_HTTP_HOSTS
@@ -144,7 +175,7 @@ def _probe_service(
     if findings:
         return {
             "service": service,
-            "url": url,
+            "url": _sanitize_url(url),
             "status": "blocked",
             "http_status": None,
             "health_status": None,
@@ -158,7 +189,7 @@ def _probe_service(
     except (OSError, TimeoutError, urllib.error.URLError) as exc:
         return {
             "service": service,
-            "url": url,
+            "url": _sanitize_url(url),
             "status": "blocked",
             "http_status": None,
             "health_status": None,
@@ -274,8 +305,8 @@ def build_evidence(
         "status": status,
         "operator_owned_platform_infrastructure": True,
         "end_user_self_host_required": False,
-        "policy_url": policy_url,
-        "release_gate_url": release_gate_url,
+        "policy_url": _sanitize_url(policy_url),
+        "release_gate_url": _sanitize_url(release_gate_url),
         "policy_health_evidence": policy_health_evidence,
         "release_gate_health_evidence": release_gate_health_evidence,
         "public_https_hosting_evidence": public_https_hosting_evidence,
