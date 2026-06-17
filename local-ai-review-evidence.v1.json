@@ -1,62 +1,78 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "CODEQL-11-URL-USERINFO-LEAK",
-  "implementer": {
-    "agent": "claude-opus-4-8",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/fix/health-probe-url-userinfo-leak",
-    "changed_files": [
-      "CHANGELOG.md",
-      "local-ai-review-evidence.v1.json",
-      "scripts/internal_gate_host_health_probe.py",
-      "tests/test_internal_gate_host_health_probe.py"
-    ]
-  },
   "checks_considered": [
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
     {
       "name": "tests",
       "status": "pass"
     },
     {
-      "name": "ruff",
+      "name": "secret_scan",
       "status": "pass"
     },
     {
-      "name": "guard_flags_false",
+      "name": "version_pin_consistency",
       "status": "pass"
     },
     {
-      "name": "no_workflow_ruleset_branch_protection_change",
+      "name": "guard_flags",
       "status": "pass"
     },
     {
-      "name": "changelog_entry_added",
+      "name": "operator_boundary",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_discipline",
+      "status": "pass"
+    },
+    {
+      "name": "packaging_smoke",
       "status": "pass"
     }
   ],
   "findings": [
-    "Codex (OpenAI) cross-AI review on thread 019ea8bd. Verdict REVISE -> REVISE -> AGREE. This PR fixes the one REAL leak Codex flagged during the 18-alert CodeQL triage (#11), then closed a second leak vector Codex found in iter-1 (query/fragment in addition to userinfo).",
-    "Bug: scripts/internal_gate_host_health_probe.py flagged userinfo-bearing health URLs (..._credentials_forbidden) and query/fragment (..._not_canonical) but still echoed the raw URL into the evidence payload (top-level policy_url/release_gate_url AND per-service service_results[].url), the rendered text, the JSON output, and the persisted artifact — leaking the secret in clear text. CodeQL py/clear-text-logging-sensitive-data, HIGH.",
-    "Fix: new _sanitize_url() strips userinfo + query + fragment before the URL reaches any stored/emitted surface; findings are still computed from the raw URL (so credentials_forbidden + not_canonical are preserved). No behavior change for credential-free canonical URLs.",
-    "Verification: ruff clean; tests/test_internal_gate_host_health_probe.py 9 passed including the new regression (userinfo+query+fragment secret absent from payload, render text, JSON, and nested service_results[].url) + _sanitize_url unit. Codex independently confirmed via no-write probe that the secret leaks in none of these surfaces.",
-    "Boundary: low-risk change (scripts/ + tests/ + CHANGELOG only); no .github workflows, rulesets, branch protection, deploy/, or guard-flag changes. The 17 other triaged alerts were verified false-positive (cross-AI) and dismissed.",
-    "No secrets or credential material committed in the diff (the test uses a synthetic placeholder 'sup3rs3cret')."
+    "Anthropic CLI review verdict AGREE for REL-4-3-1: version pins are internally consistent across pyproject.toml, ao_kernel.__version__, Helm appVersion/image tag, install docs, deployment docs, operator runbook/checklist, and release version-pin tests.",
+    "The change is release metadata only for ao-kernel 4.3.1; it does not promote V5, widen support, claim production-platform readiness, or execute live adapters.",
+    "Operator publish boundary is preserved: runbooks require operator dispatch for publish.yml against refs/tags/v4.3.1, and the agent did not push a release tag or dispatch the publish workflow.",
+    "No credential material, API keys, tokens, or secrets were found in the reviewed diff; checklist fields keep credential_material_committed=false and agent_executed_external_action=false.",
+    "Changelog discipline is acceptable: [Unreleased] remains above [4.3.1], [4.3.0] history is preserved, and the v4.3.1 release entry documents the URL secret-scrubbing fix.",
+    "Local verification and PR checks passed for changelog, CodeQL, Trivy, lint, typecheck, Python 3.11/3.12/3.13 tests, coverage, benchmark-fast, packaging-smoke, scorecard, twine check, and targeted release/runbook tests."
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "anthropic-release-reviewer",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      "CHANGELOG.md",
+      "README.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/__init__.py",
+      "deploy/helm/ao-kernel/Chart.yaml",
+      "deploy/helm/ao-kernel/values.yaml",
+      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
+      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
+      "docs/operator-runbooks/01-pypi-publish.md",
+      "docs/operator-runbooks/README.md",
+      "docs/operator-runbooks/operator-action-checklist.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "pyproject.toml",
+      "tests/test_pr_a6_features.py",
+      "tests/test_v431_version_pin.py"
+    ],
+    "head_ref": "refs/heads/codex/release-4.3.1"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "REL-4-3-1"
 }

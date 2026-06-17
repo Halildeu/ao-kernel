@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- **v4.3.1 release metadata prep**: aligned package version, CLI version
+  reporting, Helm tags, install/deploy docs, PyPI publish runbook/checklist,
+  and release version-pin tests for the v4.3.1 patch release. This is release
+  metadata only; no V5 promotion, support widening, production platform claim,
+  or live adapter execution.
+
+## [4.3.1] - 2026-06-17
+
 ### Fixed
 
 - **`internal_gate_host_health_probe` URL secret scrubbing**: a
