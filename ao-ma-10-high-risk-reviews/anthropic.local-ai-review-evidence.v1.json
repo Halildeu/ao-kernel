@@ -9,21 +9,43 @@
       "status": "pass"
     },
     {
-      "name": "guard_invariants",
+      "name": "version_pin_consistency",
       "status": "pass"
     },
     {
-      "name": "scope_alignment",
+      "name": "guard_flags",
+      "status": "pass"
+    },
+    {
+      "name": "v5_overclaim",
+      "status": "pass"
+    },
+    {
+      "name": "operator_boundary",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_discipline",
+      "status": "pass"
+    },
+    {
+      "name": "helm_metadata",
+      "status": "pass"
+    },
+    {
+      "name": "pypi_publish_dispatch_boundary",
       "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic reviewer verdict AGREE: no blocking issue in the V5 E-9-1 observability production tunables preflight bundle.",
-    "Schema strictness is adequate: root and nested object nodes close additionalProperties and unevaluatedProperties.",
-    "Fixture validates and preserves preflight_current_state semantics; residual PR-Xfinal observability evidence remains missing.",
-    "Tests cover guard flips, schema strictness, fixture validation, Grafana, SLI/SLO, performance policy, matrix linkage, and positive-claim token discipline.",
-    "The V5 matrix keeps observability_production_tunables partial and preserves matrix_complete=false.",
-    "No support widening, production platform claim, live adapter execution, v5 tag, publish, workflow, ruleset, runtime, or release authority change is introduced."
+    "Anthropic Claude CLI review verdict AGREE for REL-4-3-1: all version pins are internally consistent for 4.3.1 across package metadata, CLI version reporting, Helm metadata, install/deploy docs, operator runbooks, checklist, and tests.",
+    "Guard flags remain closed: no support widening, no production platform claim, no live adapter execution, and no V5 promotion language is introduced.",
+    "No credential material, API keys, tokens, or secrets were detected in the reviewed diff.",
+    "Operator publish boundary is maintained: the runbook directs operator dispatch of publish.yml, and the PR does not push a tag or dispatch publishing.",
+    "CHANGELOG order is acceptable with [Unreleased] above [4.3.1] above [4.3.0]; the release entry documents the URL secret-scrubbing fix and preserves prior history.",
+    "Helm chart semver remains unchanged while appVersion and image tag are bumped to 4.3.1, matching manual pin discipline.",
+    "The v4.3.1 version-pin test file verifies pyproject, __version__, changelog order, guard flags, install docs, Helm tag, and operator publish checklist against the release version.",
+    "Rollback guidance uses the next corrective patch pattern v4.3.2 and avoids destructive package deletion."
   ],
   "implementer": {
     "agent": "codex",
@@ -33,7 +55,7 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "claude-sonnet-4-6-anthropic-reviewer",
+    "agent": "anthropic-release-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
@@ -41,20 +63,26 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/V5-OBSERVABILITY-PRODUCTION-TUNABLES-PREFLIGHT-BUNDLE.md",
-      ".claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md",
       "CHANGELOG.md",
+      "README.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/v5-observability-production-tunables-preflight-bundle.schema.v1.json",
+      "ao_kernel/__init__.py",
+      "deploy/helm/ao-kernel/Chart.yaml",
+      "deploy/helm/ao-kernel/values.yaml",
+      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
+      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
+      "docs/operator-runbooks/01-pypi-publish.md",
+      "docs/operator-runbooks/README.md",
+      "docs/operator-runbooks/operator-action-checklist.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/fixtures/epic9/v5-observability-production-tunables-preflight.current.json",
-      "tests/fixtures/epic9/v5-production-readiness-matrix.current.json",
-      "tests/test_v5_observability_production_tunables_preflight_bundle.py"
+      "pyproject.toml",
+      "tests/test_pr_a6_features.py",
+      "tests/test_v431_version_pin.py"
     ],
-    "head_ref": "refs/heads/codex/v5-observability-preflight-bundle"
+    "head_ref": "refs/heads/codex/release-4.3.1"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "E-9-1"
+  "work_package": "REL-4-3-1"
 }

@@ -1,15 +1,11 @@
-"""v4.3.0 release version + dependency pin tests.
+"""v4.3.1 release version + dependency pin tests.
 
 Single source-of-truth pin: pyproject.toml::project.version,
-ao_kernel.__version__, and the Keep-a-Changelog [4.3.0] entry MUST all
-agree. PyYAML runtime dependency MUST stay declared. This minor release
-ships the post-4.2.1 governed control-plane feature onto PyPI: the
-context doc-bridge (`ao_kernel.context.doc_bridge` + `ao-kernel context
-{ingest,packet}`) that ingests a repo's `.md`-governed context into the
-governed canonical store and renders a fail-closed, provenance-tagged
-markdown context packet for any AI. It is a governed control-plane
-release, NOT a production-platform promotion: the three guard flags
-remain const false.
+ao_kernel.__version__, and the Keep-a-Changelog [4.3.1] entry MUST all
+agree. PyYAML runtime dependency MUST stay declared. This patch release
+ships the post-4.3.0 internal-gate host health probe URL secret-scrubbing
+fix onto PyPI. It is a narrow stable runtime bugfix, NOT a
+production-platform promotion: the three guard flags remain const false.
 
 Semantic discipline (carried from the v4.2.x lane): a release PR may only
 change project.version + project.dependencies + (optional)
@@ -34,15 +30,15 @@ def _load_pyproject() -> dict:
         return tomllib.load(handle)
 
 
-def test_pyproject_version_is_4_3_0() -> None:
+def test_pyproject_version_is_4_3_1() -> None:
     data = _load_pyproject()
-    assert data["project"]["version"] == "4.3.0"
+    assert data["project"]["version"] == "4.3.1"
 
 
-def test_ao_kernel_dunder_version_is_4_3_0() -> None:
+def test_ao_kernel_dunder_version_is_4_3_1() -> None:
     import ao_kernel
 
-    assert ao_kernel.__version__ == "4.3.0"
+    assert ao_kernel.__version__ == "4.3.1"
 
 
 def test_version_consistency_pyproject_matches_dunder() -> None:
@@ -68,33 +64,33 @@ def test_pyyaml_runtime_dependency_declared() -> None:
     )
 
 
-def test_changelog_has_4_3_0_entry() -> None:
-    """Keep-a-Changelog [4.3.0] - YYYY-MM-DD entry MUST exist; release
+def test_changelog_has_4_3_1_entry() -> None:
+    """Keep-a-Changelog [4.3.1] - YYYY-MM-DD entry MUST exist; release
     discipline (ADR-0005) enforced at release time."""
 
     text = _CHANGELOG.read_text(encoding="utf-8")
-    assert "## [4.3.0]" in text, "CHANGELOG.md missing [4.3.0] release entry"
+    assert "## [4.3.1]" in text, "CHANGELOG.md missing [4.3.1] release entry"
 
 
-def test_changelog_preserves_prior_4_2_1_entry() -> None:
-    """The prior [4.2.1] entry MUST remain (history is append-only)."""
+def test_changelog_preserves_prior_4_3_0_entry() -> None:
+    """The prior [4.3.0] entry MUST remain (history is append-only)."""
 
     text = _CHANGELOG.read_text(encoding="utf-8")
-    assert "## [4.2.1]" in text, "CHANGELOG.md must preserve the [4.2.1] history entry"
+    assert "## [4.3.0]" in text, "CHANGELOG.md must preserve the [4.3.0] history entry"
 
 
-def test_changelog_section_order_unreleased_then_4_3_0_then_4_2_1() -> None:
-    """Heading order MUST be [Unreleased] above [4.3.0] above [4.2.1] so
+def test_changelog_section_order_unreleased_then_4_3_1_then_4_3_0() -> None:
+    """Heading order MUST be [Unreleased] above [4.3.1] above [4.3.0] so
     future PRs keep dogfooding the per-PR Keep-a-Changelog discipline and
     release history stays newest-first."""
 
     text = _CHANGELOG.read_text(encoding="utf-8")
     unreleased_idx = text.find("## [Unreleased]")
+    v431_idx = text.find("## [4.3.1]")
     v430_idx = text.find("## [4.3.0]")
-    v421_idx = text.find("## [4.2.1]")
     assert unreleased_idx >= 0
-    assert v430_idx > unreleased_idx, "[Unreleased] heading MUST appear above [4.3.0]"
-    assert v421_idx > v430_idx, "[4.3.0] heading MUST appear above [4.2.1]"
+    assert v431_idx > unreleased_idx, "[Unreleased] heading MUST appear above [4.3.1]"
+    assert v430_idx > v431_idx, "[4.3.1] heading MUST appear above [4.3.0]"
 
 
 def test_release_keeps_guard_flags_false() -> None:

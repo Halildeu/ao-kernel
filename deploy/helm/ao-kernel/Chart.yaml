@@ -6,7 +6,7 @@ type: application
 version: 0.1.2
 # appVersion bound to ao_kernel.__version__ at slice author time.
 # This is a manual pin per Epic 4 plan (NO auto-bump); operator confirms match on upgrade.
-appVersion: "4.3.0"
+appVersion: "4.3.1"
 kubeVersion: ">=1.25.0-0"
 home: https://github.com/Halildeu/ao-kernel
 sources:
