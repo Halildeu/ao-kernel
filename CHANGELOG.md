@@ -9,6 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **Product release manifest SSOT**: added a bundled
+  `ao_kernel/defaults/release/product-release-manifest.v1.json` that makes the
+  user/operator-facing product version explicit for `ao-kernel` 4.3.1 while
+  keeping Helm chart, schema/policy contract, and V5 roadmap lifecycle versions
+  separate by design. Tests now bind the manifest to package/import/CLI version,
+  install docs, Helm `appVersion`/image tag, and operator publish ref. Publish
+  remains operator-pending; no guard flag flip, support widening, production
+  platform claim, or live adapter execution.
 - **v4.3.1 release metadata prep**: aligned package version, CLI version
   reporting, Helm tags, install/deploy docs, PyPI publish runbook/checklist,
   and release version-pin tests for the v4.3.1 patch release. This is release
