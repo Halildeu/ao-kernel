@@ -1,0 +1,37 @@
+{
+  "schema_version": "product-release-manifest.v1",
+  "artifact_kind": "product_release_manifest",
+  "product": "ao-kernel",
+  "product_version": "4.3.1",
+  "release_line": "v4",
+  "published_package": {
+    "name": "ao-kernel",
+    "version": "4.3.1",
+    "pypi_project_url": "https://pypi.org/project/ao-kernel/4.3.1/",
+    "publish_status": "operator_publish_pending",
+    "operator_publish_ref": "refs/tags/v4.3.1"
+  },
+  "components": {
+    "python_package": "4.3.1",
+    "cli": "4.3.1",
+    "helm_app_version": "4.3.1",
+    "docs_install_pin": "4.3.1",
+    "operator_publish_ref": "refs/tags/v4.3.1"
+  },
+  "not_equalized_by_design": {
+    "helm_chart_version": "chart package lifecycle; keep deploy/helm/ao-kernel/Chart.yaml::version independent from appVersion",
+    "json_schema_versions": "contract lifecycle; do not rewrite *.schema.v1.json just to match product_version",
+    "policy_versions": "contract lifecycle; do not rewrite policy_*.v1.json just to match product_version",
+    "v5": "roadmap/promotion line; not a published package version until a future operator-bound promotion release"
+  },
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "release_authority": {
+    "source_ready_authority": "ao-release-gate+github-ruleset",
+    "publish_authority": "operator-runbook",
+    "ai_output_release_authority": false
+  }
+}
