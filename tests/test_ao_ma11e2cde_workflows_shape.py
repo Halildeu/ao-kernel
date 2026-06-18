@@ -318,6 +318,9 @@ def test_14_no_existing_workflow_mutation() -> None:
         ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
         ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
         ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+        # Strict source-pinned rulesets evaluate the PR status SHA; this
+        # release-gate publish target is guarded by test_ao_release_gate_enforce_job.
+        ".github/workflows/test.yml",
     }
     unexpected = sorted(set(workflow_changes) - allowed)
     assert not unexpected, f"branch mutates existing workflows beyond write-set: {unexpected}"
