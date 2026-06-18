@@ -49,7 +49,8 @@
       "local-ai-review-evidence.v1.json",
       "tests/test_ao_ma11e2cde_workflows_shape.py",
       "tests/test_ao_release_gate_enforce_job.py",
-      "tests/test_cost_ceiling.py"
+      "tests/test_cost_ceiling.py",
+      "tests/test_support_matrix_smoke_workflow.py"
     ],
     "head_ref": "refs/heads/codex/ao-ma-11e-2c-token-fallback"
   },
