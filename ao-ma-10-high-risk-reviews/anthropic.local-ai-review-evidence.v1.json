@@ -7,45 +7,25 @@
     {
       "name": "secret_scan",
       "status": "pass"
-    },
-    {
-      "name": "version_pin_consistency",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags",
-      "status": "pass"
-    },
-    {
-      "name": "v5_overclaim",
-      "status": "pass"
-    },
-    {
-      "name": "operator_boundary",
-      "status": "pass"
-    },
-    {
-      "name": "changelog_discipline",
-      "status": "pass"
-    },
-    {
-      "name": "helm_metadata",
-      "status": "pass"
-    },
-    {
-      "name": "pypi_publish_dispatch_boundary",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic Claude CLI review verdict AGREE for REL-4-3-1: all version pins are internally consistent for 4.3.1 across package metadata, CLI version reporting, Helm metadata, install/deploy docs, operator runbooks, checklist, and tests.",
-    "Guard flags remain closed: no support widening, no production platform claim, no live adapter execution, and no V5 promotion language is introduced.",
-    "No credential material, API keys, tokens, or secrets were detected in the reviewed diff.",
-    "Operator publish boundary is maintained: the runbook directs operator dispatch of publish.yml, and the PR does not push a tag or dispatch publishing.",
-    "CHANGELOG order is acceptable with [Unreleased] above [4.3.1] above [4.3.0]; the release entry documents the URL secret-scrubbing fix and preserves prior history.",
-    "Helm chart semver remains unchanged while appVersion and image tag are bumped to 4.3.1, matching manual pin discipline.",
-    "The v4.3.1 version-pin test file verifies pyproject, __version__, changelog order, guard flags, install docs, Helm tag, and operator publish checklist against the release version.",
-    "Rollback guidance uses the next corrective patch pattern v4.3.2 and avoids destructive package deletion."
+    "Work package RI-SECRET-AWARE-SCANNER matches diff scope: new secret_scan.py module, scanner.py integration, schema extension, CLI summary hardening, and tests",
+    "New secret_scan.py records only metadata (pattern_ids, scan_status, reason) \u2014 never matched values, line content, or snippets",
+    "Schema repo-map.schema.v1.json adds secret_redaction with const guards: metadata_only=true, secrets_recorded=false, action=excluded_from_context",
+    "CLI stdout summary changed to artifact-pointer-only (details_path instead of inline summary counts), preventing accidental secret leakage through CLI output",
+    "Content patterns cover private keys (RSA/EC/OPENSSH/DSA/PGP), OpenAI API keys, GitHub PATs (classic+fine-grained), AWS access key IDs \u2014 reasonable high-confidence set",
+    "Path patterns cover .env, *.pem, *.key, *.p12, *.pfx, SSH key files, secrets.*, credentials.* \u2014 standard secret-like paths",
+    "Two-phase scan: path-match first (no read needed), then content-match with 5MB cap and graceful OSError handling",
+    "Tests verify secret values do not appear in serialized repo_map or CLI stdout output",
+    "RI-7.5 plan artifact change is SHA256 update for no_root_authority_file_write invariant plus trailing newline fix \u2014 consistent with new write surface in scanner",
+    "No vector writes introduced \u2014 scan path remains read-only",
+    "No root export, no MCP tool exposure, no live GitHub/ProjectV2 mutation",
+    "No support_widening, production_platform_claim, or live_adapter_execution flip",
+    "Guard flags in plan artifact remain false",
+    "No __init__.py or public facade export added for secret_scan \u2014 stays in _internal",
+    "Chunker test updated: .env now excluded at scanner level (secret_redaction) rather than chunker level (chunk_secret_like_skipped) \u2014 correct layering shift",
+    "context_pack_builder.py adds secret_redacted_files row to summary table \u2014 metadata only, no values"
   ],
   "implementer": {
     "agent": "codex",
@@ -55,7 +35,7 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "anthropic-release-reviewer",
+    "agent": "anthropic-claude-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
@@ -63,26 +43,23 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
+      ".claude/plans/RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS.v1.json",
       "CHANGELOG.md",
-      "README.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/__init__.py",
-      "deploy/helm/ao-kernel/Chart.yaml",
-      "deploy/helm/ao-kernel/values.yaml",
-      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
-      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
-      "docs/operator-runbooks/01-pypi-publish.md",
-      "docs/operator-runbooks/README.md",
-      "docs/operator-runbooks/operator-action-checklist.v1.json",
+      "ao_kernel/_internal/repo_intelligence/context_pack_builder.py",
+      "ao_kernel/_internal/repo_intelligence/scanner.py",
+      "ao_kernel/_internal/repo_intelligence/secret_scan.py",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/schemas/repo-map.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "pyproject.toml",
-      "tests/test_pr_a6_features.py",
-      "tests/test_v431_version_pin.py"
+      "tests/test_cli_repo_scan.py",
+      "tests/test_repo_intelligence_chunker.py",
+      "tests/test_repo_intelligence_scanner.py"
     ],
-    "head_ref": "refs/heads/codex/release-4.3.1"
+    "head_ref": "refs/heads/codex/ri-secret-aware-scanner"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "REL-4-3-1"
+  "work_package": "RI-SECRET-AWARE-SCANNER"
 }

@@ -9,7 +9,7 @@
       "status": "pass"
     },
     {
-      "name": "version_pin_consistency",
+      "name": "codeql",
       "status": "pass"
     },
     {
@@ -17,21 +17,17 @@
       "status": "pass"
     },
     {
-      "name": "operator_boundary",
-      "status": "pass"
-    },
-    {
-      "name": "packaging_smoke",
+      "name": "release_boundary",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI Codex review verdict AGREE for REL-4-3-1: pyproject.toml and ao_kernel.__version__ both report 4.3.1, and release-facing docs/tests pin the same version.",
-    "The release prep is a narrow patch metadata update carrying the already-merged URL secret-scrubbing fix; it does not add runtime behavior beyond version/reporting/install/deploy pins.",
-    "README and operator runbooks correctly say the package is prepared for PyPI and keep publish as an operator-controlled workflow dispatch after tag/ref verification.",
-    "Helm changes are limited to appVersion and image tag 4.3.1; chart semver and guard boundaries remain unchanged.",
-    "No V5 promotion, support widening, production platform claim, live adapter execution, workflow dispatch, release tag push, or credential commit is introduced.",
-    "Local and GitHub verification passed for changelog enforcement, targeted release tests, runbook tests, packaging smoke, twine check, CodeQL, Trivy, lint, typecheck, Python test matrix, coverage, benchmark-fast, and scorecard."
+    "OpenAI Codex review verdict AGREE: repo-intelligence secret-aware scanner excludes secret-like paths and high-confidence token/private-key content from generated context artifacts.",
+    "OpenAI Codex review: CLI stdout is artifact-pointer-only for scan details; redaction counts and records remain in .ao/context/repo_map.json metadata.",
+    "OpenAI Codex review: local gates passed for ruff, focused pytest, changelog discipline, and whitespace; GitHub CI passed CodeQL, tests, coverage, packaging, Trivy, lint, and typecheck before release-gate metadata binding.",
+    "OpenAI Codex review: no vector write, root export, live GitHub/ProjectV2 mutation, support widening, production platform claim, or live adapter execution is introduced.",
+    "OpenAI Codex review: reviewed 10 changed file(s).",
+    "OpenAI Codex review: high-risk path classifier flagged 1 path(s); release authority remains ao-release-gate plus GitHub ruleset."
   ],
   "implementer": {
     "agent": "codex",
@@ -41,7 +37,7 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "codex-release-reviewer",
+    "agent": "codex-reviewer",
     "provider": "openai",
     "verdict": "AGREE"
   },
@@ -49,26 +45,23 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
+      ".claude/plans/RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS.v1.json",
       "CHANGELOG.md",
-      "README.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/__init__.py",
-      "deploy/helm/ao-kernel/Chart.yaml",
-      "deploy/helm/ao-kernel/values.yaml",
-      "docs/PRODUCTION-DEPLOYMENT-GUIDE.md",
-      "docs/USING-AO-KERNEL-IN-YOUR-PROJECT.md",
-      "docs/operator-runbooks/01-pypi-publish.md",
-      "docs/operator-runbooks/README.md",
-      "docs/operator-runbooks/operator-action-checklist.v1.json",
+      "ao_kernel/_internal/repo_intelligence/context_pack_builder.py",
+      "ao_kernel/_internal/repo_intelligence/scanner.py",
+      "ao_kernel/_internal/repo_intelligence/secret_scan.py",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/schemas/repo-map.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "pyproject.toml",
-      "tests/test_pr_a6_features.py",
-      "tests/test_v431_version_pin.py"
+      "tests/test_cli_repo_scan.py",
+      "tests/test_repo_intelligence_chunker.py",
+      "tests/test_repo_intelligence_scanner.py"
     ],
-    "head_ref": "refs/heads/codex/release-4.3.1"
+    "head_ref": "refs/heads/codex/ri-secret-aware-scanner"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "REL-4-3-1"
+  "work_package": "RI-SECRET-AWARE-SCANNER"
 }
