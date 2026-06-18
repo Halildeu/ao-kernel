@@ -130,15 +130,19 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
         "artifacts": cli_artifacts,
     }
     if args.output == "json":
-        print(_json.dumps(summary, indent=2, sort_keys=True))
+        _write_stdout_line(_json.dumps(summary, indent=2, sort_keys=True))
     else:
         print("repo scan complete")
         print("project_root: .")
-        print(f"included_files: {cli_summary['included_files']}")
+        _write_stdout_line(f"included_files: {cli_summary['included_files']}")
         print("artifacts:")
         for artifact in cli_artifacts:
             print(f"- {artifact['path']}")
     return 0
+
+
+def _write_stdout_line(text: str) -> None:
+    sys.stdout.write(f"{text}\n")
 
 
 def _repo_scan_cli_artifacts() -> list[dict[str, str]]:
