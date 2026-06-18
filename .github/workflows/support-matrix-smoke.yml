@@ -100,7 +100,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Post advisory PR review comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             await github.rest.pulls.createReview({
