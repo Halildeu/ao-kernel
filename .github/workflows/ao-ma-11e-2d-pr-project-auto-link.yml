@@ -109,7 +109,7 @@ jobs:
 
       - name: Upload link report artifact
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: project-link-report-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
           path: project-link-report.json

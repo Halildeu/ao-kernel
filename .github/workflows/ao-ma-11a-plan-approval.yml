@@ -75,7 +75,7 @@ jobs:
             --validate-only \
             --output validate_report.json
       - name: Upload validate report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: validate_report
           path: validate_report.json
@@ -144,7 +144,7 @@ jobs:
             --output gate_report.json
       - name: Upload gate report + bound inputs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: plan_approval_gate
           path: |

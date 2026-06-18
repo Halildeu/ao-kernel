@@ -159,7 +159,7 @@ jobs:
 
       - name: Upload redacted per-call markers artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ri78b-bc10-markers-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ri78b-bc10-markers/

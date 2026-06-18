@@ -69,7 +69,7 @@ jobs:
             --allow-network \
             --output sync_report.json
       - name: Upload dry-run report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sync_report
           path: sync_report.json
@@ -166,7 +166,7 @@ jobs:
             --accepted-dry-run-report-digest "${{ inputs.accepted_dry_run_report_digest }}" \
             --output apply_report.json
       - name: Upload apply report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: apply_report
           path: apply_report.json
@@ -181,7 +181,7 @@ jobs:
             --allow-network \
             --output post_drift_report.json
       - name: Upload post-drift report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: post_drift_report
           path: post_drift_report.json
