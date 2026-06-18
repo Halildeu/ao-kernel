@@ -31,23 +31,35 @@
     {
       "name": "permissions_unchanged",
       "status": "pass"
+    },
+    {
+      "name": "status_sha_publish",
+      "status": "pass"
+    },
+    {
+      "name": "changelog_discipline",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Heal sync step gated by steps.projects_rw_token.outputs.available == 'true'; mutation path uses secrets.REPO_GH_PAT_PROJECTS_RW \u2014 correct token boundary separating read-scope GITHUB_TOKEN from operator-managed Projects v2 PAT.",
-    "Absent-PAT path emits static report-only JSON with decision=report_only, mutations_performed=false, github_write_authorized=false \u2014 push/schedule runs no longer fail when REPO_GH_PAT_PROJECTS_RW is unconfigured.",
-    "All three guard flags (support_widening, production_platform_claim, live_adapter_execution) remain false in the report-only artifact and are not flipped anywhere in the diff.",
-    "No --admin flag anywhere in the workflow executable surface.",
+    "Work package AO-MA-11E-2C-TOKEN-FALLBACK matches all changed files: 2 workflow YMLs, CHANGELOG, 3 evidence JSONs, 3 test files \u2014 no out-of-scope drift.",
+    "ao-ma-11e-2c workflow adds 'Resolve Projects v2 mutation token' step (id: projects_rw_token) that checks secrets.REPO_GH_PAT_PROJECTS_RW availability before heal sync runs.",
+    "Heal sync step condition now requires both heal==true AND projects_rw_token.available==true; mutation GH_TOKEN changed from secrets.GITHUB_TOKEN to secrets.REPO_GH_PAT_PROJECTS_RW \u2014 correct token boundary separation.",
+    "New 'Record report-only skip' step emits static JSON with decision=report_only, mutations_performed=false, github_write_authorized=false when PAT is absent \u2014 push/schedule runs degrade gracefully instead of failing on GraphQL mutation.",
+    "Report-only fallback artifact explicitly sets all three guard flags false: support_widening=false, production_platform_claim=false, live_adapter_execution=false.",
+    "Drift preflight step retains GH_TOKEN: secrets.GITHUB_TOKEN \u2014 read/report scope unchanged and appropriate.",
+    "Permissions block unchanged: contents:write, issues:write, repository-projects:write, pull-requests:write \u2014 no actions:write added, minimal sufficient set preserved.",
+    "No --admin flag anywhere in the diff.",
     "No git push origin main or refs/heads/main push pattern in the diff.",
     "No secret values present in evidence artifacts, test assertions, or diff content.",
-    "Permissions block unchanged: contents:write, issues:write, repository-projects:write, pull-requests:write \u2014 minimal sufficient set, no actions:write added.",
-    "Drift preflight step retains GH_TOKEN (read/report scope) \u2014 unchanged and appropriate for read-only drift detection.",
-    "New test_12b machine-enforces PAT gating, report-only fallback content, and mutation token usage \u2014 covers the token boundary invariant.",
-    "test_cost_ceiling.py allowlist update adds the 2c workflow path with explanatory comment \u2014 consistent with shape-test governance.",
-    "CHANGELOG entry accurately describes behavioral change without overclaim; no support widening or production platform claim language.",
-    "Work package scope AO-MA-11E-2C-TOKEN-FALLBACK matches all changed files; no out-of-scope drift detected.",
-    "OpenAI evidence artifact updated to reflect current work package and changed files; verdict AGREE with correct scope binding.",
-    "local-ai-review-evidence.v1.json and ao-ma-10-high-risk-reviews/anthropic copy are identical \u2014 no divergence between root and high-risk-reviews directory copies."
+    "test.yml change: dual check-run publisher now exposes STATUS_SHA=${{ github.sha }} and conditionally publishes to status SHA when it differs from HEAD_SHA \u2014 fixes strict required-status ruleset observability without admin bypass.",
+    "test_12b_2c_heal_sync_requires_projects_rw_pat_or_report_only machine-enforces PAT gating, report-only fallback content, and mutation token usage.",
+    "test_ao_release_gate_enforce_job.py adds 4 assertions binding STATUS_SHA env, conditional duplicate-avoidance guard, and --head-sha $STATUS_SHA publish \u2014 machine-enforced status-sha contract.",
+    "test_cost_ceiling.py allowlist update adds ao-ma-11e-2c and test.yml workflow paths with explanatory comments referencing their respective shape-test guardians.",
+    "test_14_no_existing_workflow_mutation allowlist extended to include .github/workflows/test.yml \u2014 justified by source-pinned ruleset guard and test_ao_release_gate_enforce_job coverage.",
+    "CHANGELOG entry accurately describes token boundary and status-SHA behavioral changes without overclaim; no support widening or production platform claim language.",
+    "OpenAI and Anthropic evidence artifacts updated to reflect current work package scope with correct changed_files and head_ref binding; both declare AGREE verdicts from distinct providers (openai, anthropic).",
+    "local-ai-review-evidence.v1.json and ao-ma-10-high-risk-reviews/anthropic copy are byte-identical \u2014 no divergence between root and high-risk-reviews directory copies."
   ],
   "implementer": {
     "agent": "codex",
@@ -66,11 +78,13 @@
     "base_ref": "refs/heads/main",
     "changed_files": [
       ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+      ".github/workflows/test.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
       "tests/test_ao_ma11e2cde_workflows_shape.py",
+      "tests/test_ao_release_gate_enforce_job.py",
       "tests/test_cost_ceiling.py"
     ],
     "head_ref": "refs/heads/codex/ao-ma-11e-2c-token-fallback"
