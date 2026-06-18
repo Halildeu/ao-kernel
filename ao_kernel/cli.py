@@ -111,7 +111,7 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
         symbol_index=symbol_index,
         repo_chunks=repo_chunks,
     )
-    write_result = write_repo_scan_artifacts(
+    write_repo_scan_artifacts(
         context_dir=context_dir,
         repo_map=repo_map,
         import_graph=import_graph,
@@ -120,13 +120,14 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
         agent_pack=agent_pack,
     )
     cli_summary = _repo_scan_cli_summary(repo_map.get("summary"))
+    cli_artifacts = _repo_scan_cli_artifacts()
     summary = {
         "status": "ok",
         "command": "repo scan",
         "project_root": ".",
         "project_root_name": project_root.name,
         "summary": cli_summary,
-        "artifacts": write_result["artifacts"],
+        "artifacts": cli_artifacts,
     }
     if args.output == "json":
         print(_json.dumps(summary, indent=2, sort_keys=True))
@@ -135,9 +136,24 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
         print("project_root: .")
         print(f"included_files: {cli_summary['included_files']}")
         print("artifacts:")
-        for artifact in write_result["artifacts"]:
+        for artifact in cli_artifacts:
             print(f"- {artifact['path']}")
     return 0
+
+
+def _repo_scan_cli_artifacts() -> list[dict[str, str]]:
+    return [
+        {"path": ".ao/context/repo_map.json", "schema_ref": "repo-map.schema.v1.json"},
+        {"path": ".ao/context/import_graph.json", "schema_ref": "python-import-graph.schema.v1.json"},
+        {"path": ".ao/context/symbol_index.json", "schema_ref": "python-symbol-index.schema.v1.json"},
+        {"path": ".ao/context/repo_chunks.json", "schema_ref": "repo-chunks.schema.v1.json"},
+        {
+            "path": ".ao/context/agent_pack.md",
+            "format_ref": "agent-pack-markdown.v1",
+            "media_type": "text/markdown",
+        },
+        {"path": ".ao/context/repo_index_manifest.json", "schema_ref": "repo-index-manifest.schema.v1.json"},
+    ]
 
 
 def _repo_scan_cli_summary(repo_summary: Any) -> dict[str, Any]:
