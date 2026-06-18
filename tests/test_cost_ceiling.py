@@ -265,6 +265,12 @@ def test_cost_ceiling_no_unrelated_workflow_mutation_in_diff() -> None:
     # explicitly authorized advisory workflows, so keep the older guard but
     # narrow it to unrelated workflow drift.
     allowed = {
+        # AO-MA-11E-2c is a governance ProjectV2 mirror workflow. Its mutation
+        # surface is guarded by tests/test_ao_ma11e2cde_workflows_shape.py.
+        ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+        # AO release-gate dual check-run publishing is source-pinned by ruleset
+        # and guarded by tests/test_ao_release_gate_enforce_job.py.
+        ".github/workflows/test.yml",
         ".github/workflows/live-adapter-evidence-emit.yml",
         ".github/workflows/support-matrix-smoke.yml",
     }
