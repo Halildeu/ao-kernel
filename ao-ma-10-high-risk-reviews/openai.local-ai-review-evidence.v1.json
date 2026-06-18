@@ -9,25 +9,21 @@
       "status": "pass"
     },
     {
-      "name": "codeql",
+      "name": "workflow_boundary",
       "status": "pass"
     },
     {
-      "name": "guard_flags",
-      "status": "pass"
-    },
-    {
-      "name": "release_boundary",
+      "name": "changelog_discipline",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI Codex review verdict AGREE: repo-intelligence secret-aware scanner excludes secret-like paths and high-confidence token/private-key content from generated context artifacts.",
-    "OpenAI Codex review: CLI stdout is artifact-pointer-only for scan details; redaction counts and records remain in .ao/context/repo_map.json metadata.",
-    "OpenAI Codex review: local gates passed for ruff, focused pytest, changelog discipline, and whitespace; GitHub CI passed CodeQL, tests, coverage, packaging, Trivy, lint, and typecheck before release-gate metadata binding.",
-    "OpenAI Codex review: no vector write, root export, live GitHub/ProjectV2 mutation, support widening, production platform claim, or live adapter execution is introduced.",
-    "OpenAI Codex review: reviewed 10 changed file(s).",
-    "OpenAI Codex review: high-risk path classifier flagged 1 path(s); release authority remains ao-release-gate plus GitHub ruleset."
+    "OpenAI Codex review verdict AGREE: AO-MA-11E-2c heal sync no longer attempts ProjectV2 mutation with the default repository token.",
+    "The workflow now resolves REPO_GH_PAT_PROJECTS_RW availability before mutation and uses that operator-managed token only for ao-kernel project sync.",
+    "When REPO_GH_PAT_PROJECTS_RW is absent, push and schedule runs produce a no-mutation project-sync-report.json with decision=report_only instead of failing the workflow.",
+    "Drift preflight remains read/report scoped and the mutation path remains limited to the existing Slice A ao-kernel project sync CLI surface.",
+    "Regression coverage in tests/test_ao_ma11e2cde_workflows_shape.py binds the PAT-only mutation boundary and report-only fallback behavior.",
+    "Reviewed 0 changed file(s); no support widening, production platform claim, live adapter execution, admin bypass, or direct main push was introduced."
   ],
   "implementer": {
     "agent": "codex",
@@ -45,23 +41,16 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS.v1.json",
+      ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/_internal/repo_intelligence/context_pack_builder.py",
-      "ao_kernel/_internal/repo_intelligence/scanner.py",
-      "ao_kernel/_internal/repo_intelligence/secret_scan.py",
-      "ao_kernel/cli.py",
-      "ao_kernel/defaults/schemas/repo-map.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_cli_repo_scan.py",
-      "tests/test_repo_intelligence_chunker.py",
-      "tests/test_repo_intelligence_scanner.py"
+      "tests/test_ao_ma11e2cde_workflows_shape.py"
     ],
-    "head_ref": "refs/heads/codex/ri-secret-aware-scanner"
+    "head_ref": "refs/heads/codex/ao-ma-11e-2c-token-fallback"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "RI-SECRET-AWARE-SCANNER"
+  "work_package": "AO-MA-11E-2C-TOKEN-FALLBACK"
 }

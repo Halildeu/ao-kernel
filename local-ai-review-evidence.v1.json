@@ -7,25 +7,39 @@
     {
       "name": "secret_scan",
       "status": "pass"
+    },
+    {
+      "name": "guard_flags",
+      "status": "pass"
+    },
+    {
+      "name": "admin_bypass",
+      "status": "pass"
+    },
+    {
+      "name": "direct_push_main",
+      "status": "pass"
+    },
+    {
+      "name": "token_boundary",
+      "status": "pass"
+    },
+    {
+      "name": "report_only_fallback",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Work package RI-SECRET-AWARE-SCANNER matches diff scope: new secret_scan.py module, scanner.py integration, schema extension, CLI summary hardening, and tests",
-    "New secret_scan.py records only metadata (pattern_ids, scan_status, reason) \u2014 never matched values, line content, or snippets",
-    "Schema repo-map.schema.v1.json adds secret_redaction with const guards: metadata_only=true, secrets_recorded=false, action=excluded_from_context",
-    "CLI stdout summary changed to artifact-pointer-only (details_path instead of inline summary counts), preventing accidental secret leakage through CLI output",
-    "Content patterns cover private keys (RSA/EC/OPENSSH/DSA/PGP), OpenAI API keys, GitHub PATs (classic+fine-grained), AWS access key IDs \u2014 reasonable high-confidence set",
-    "Path patterns cover .env, *.pem, *.key, *.p12, *.pfx, SSH key files, secrets.*, credentials.* \u2014 standard secret-like paths",
-    "Two-phase scan: path-match first (no read needed), then content-match with 5MB cap and graceful OSError handling",
-    "Tests verify secret values do not appear in serialized repo_map or CLI stdout output",
-    "RI-7.5 plan artifact change is SHA256 update for no_root_authority_file_write invariant plus trailing newline fix \u2014 consistent with new write surface in scanner",
-    "No vector writes introduced \u2014 scan path remains read-only",
-    "No root export, no MCP tool exposure, no live GitHub/ProjectV2 mutation",
-    "No support_widening, production_platform_claim, or live_adapter_execution flip",
-    "Guard flags in plan artifact remain false",
-    "No __init__.py or public facade export added for secret_scan \u2014 stays in _internal",
-    "Chunker test updated: .env now excluded at scanner level (secret_redaction) rather than chunker level (chunk_secret_like_skipped) \u2014 correct layering shift",
-    "context_pack_builder.py adds secret_redacted_files row to summary table \u2014 metadata only, no values"
+    "Heal sync step condition now requires steps.projects_rw_token.outputs.available == 'true'; mutation path uses secrets.REPO_GH_PAT_PROJECTS_RW instead of GITHUB_TOKEN \u2014 correct token boundary.",
+    "Absent-PAT path emits a static report-only JSON artifact with decision=report_only, mutations_performed=false \u2014 no failing GraphQL mutation on push/schedule when secret is unconfigured.",
+    "All three guard flags (support_widening, production_platform_claim, live_adapter_execution) remain false in the report-only artifact and are not flipped anywhere in the diff.",
+    "No --admin flag, no git push origin main, no actions: write permission introduced.",
+    "New test test_12b asserts PAT gating, report-only fallback content, and mutation token usage \u2014 machine-enforced invariants.",
+    "Drift preflight step retains GH_TOKEN (read/report scope) \u2014 unchanged and appropriate for read-only drift detection.",
+    "CHANGELOG entry accurately describes the behavioral change; no overclaim.",
+    "No secret values appear in the diff, evidence artifacts, or test assertions.",
+    "Permissions block unchanged: contents:write, issues:write, repository-projects:write, pull-requests:write \u2014 minimal sufficient set.",
+    "Work package scope AO-MA-11E-2C-TOKEN-FALLBACK matches the changed files (.github/workflows/ao-ma-11e-2c-*, CHANGELOG, shape test)."
   ],
   "implementer": {
     "agent": "codex",
@@ -43,23 +57,16 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS.v1.json",
+      ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/_internal/repo_intelligence/context_pack_builder.py",
-      "ao_kernel/_internal/repo_intelligence/scanner.py",
-      "ao_kernel/_internal/repo_intelligence/secret_scan.py",
-      "ao_kernel/cli.py",
-      "ao_kernel/defaults/schemas/repo-map.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_cli_repo_scan.py",
-      "tests/test_repo_intelligence_chunker.py",
-      "tests/test_repo_intelligence_scanner.py"
+      "tests/test_ao_ma11e2cde_workflows_shape.py"
     ],
-    "head_ref": "refs/heads/codex/ri-secret-aware-scanner"
+    "head_ref": "refs/heads/codex/ao-ma-11e-2c-token-fallback"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "RI-SECRET-AWARE-SCANNER"
+  "work_package": "AO-MA-11E-2C-TOKEN-FALLBACK"
 }
