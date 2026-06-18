@@ -9,6 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **Repo-intelligence secret-aware scanning**: `repo scan` now excludes
+  secret-like paths and high-confidence token/private-key content from generated
+  context artifacts, recording only metadata under `secret_redaction` in
+  `repo_map.json`. Agent packs report the redacted-file count, while secret
+  values remain absent from repo maps and handoff packs. No vector writes, root
+  export, live GitHub/ProjectV2 mutation, support widening, production platform
+  claim, or live adapter execution.
 - **Product release manifest SSOT**: added a bundled
   `ao_kernel/defaults/release/product-release-manifest.v1.json` that makes the
   user/operator-facing product version explicit for `ao-kernel` 4.3.1 while
