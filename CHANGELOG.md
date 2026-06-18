@@ -16,6 +16,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   graphql` mutation attempt with the default repository token. Drift preflight
   remains report/read scoped; support widening, production platform claim, and
   live adapter execution stay false.
+- **AO release-gate strict status publishing**: the dual source-pinned
+  `ao-release-gate-technical` and `ao-release-gate-review` check-runs now publish
+  to both the PR head SHA and the GitHub status SHA when those differ, so strict
+  required-status rules can observe the same gate decision on the merge-status
+  commit without using admin bypass.
 - **Repo-intelligence secret-aware scanning**: `repo scan` now excludes
   secret-like paths and high-confidence token/private-key content from generated
   context artifacts, recording only metadata under `secret_redaction` in

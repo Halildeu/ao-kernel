@@ -982,6 +982,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO_FULL: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          STATUS_SHA: ${{ github.sha }}
         run: |
           if [ ! -f scripts/ao_release_gate_publish_check_runs.py ]; then
             echo "::warning::base lacks scripts/ao_release_gate_publish_check_runs.py; dual check-run publish skipped (RG-1 bootstrap path)"
@@ -991,6 +992,12 @@ jobs:
             --dir check-runs \
             --repo "$REPO_FULL" \
             --head-sha "$HEAD_SHA"
+          if [ "$STATUS_SHA" != "$HEAD_SHA" ]; then
+            python scripts/ao_release_gate_publish_check_runs.py \
+              --dir check-runs \
+              --repo "$REPO_FULL" \
+              --head-sha "$STATUS_SHA"
+          fi
 
       - name: Synthesize error_fail_closed audit artifact if pre-decision step crashed
         if: always()

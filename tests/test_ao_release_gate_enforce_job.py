@@ -541,6 +541,17 @@ def test_enforce_job_passes_runtime_generated_evidence_to_decision_script() -> N
         "RG-CONCLUSION-SEMANTICS C-prime requires the dual check-run publish step"
     )
     assert "--dir check-runs" in collapsed, "publisher must read artifacts from check-runs/"
+    assert "STATUS_SHA: ${{ github.sha }}" in block, (
+        "source-pinned rulesets with strict status checks evaluate the pull request "
+        "status SHA, not only github.event.pull_request.head.sha"
+    )
+    assert '--head-sha "$HEAD_SHA"' in block, "publisher must keep the PR-head check-run for PR status"
+    assert 'if [ "$STATUS_SHA" != "$HEAD_SHA" ]; then' in block, (
+        "publisher must avoid duplicate writes when the status SHA already equals the PR head SHA"
+    )
+    assert '--head-sha "$STATUS_SHA"' in block, (
+        "publisher must also write the source-pinned required checks to the status SHA"
+    )
     assert "ao_release_gate_publish_check_runs.py" in block and "exit 0" in block and "warning" in block.lower(), (
         "publish step must tolerate missing script on RG-1 bootstrap base (warning + exit 0)"
     )
