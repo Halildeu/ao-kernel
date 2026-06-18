@@ -23,6 +23,13 @@
 #   - repository-projects: write  # for project item add + field set
 #   - pull-requests: write      # for auto-PR open + comment
 #
+# Token boundary:
+#   - Drift preflight may use the repository GITHUB_TOKEN for read/report scope.
+#   - Heal sync mutates GitHub Projects v2 and issues; it requires the
+#     operator-managed REPO_GH_PAT_PROJECTS_RW secret.
+#   - If REPO_GH_PAT_PROJECTS_RW is not configured, heal mode degrades to a
+#     no-mutation report instead of failing every push/schedule run.
+#
 # Guard flags (3 const false invariants, see governance):
 #   - support_widening: false
 #   - production_platform_claim: false
@@ -110,10 +117,21 @@ jobs:
             echo "heal=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run heal sync (Slice A CLI mutates project board + issues directly)
-        if: steps.resolve_mode.outputs.heal == 'true'
+      - name: Resolve Projects v2 mutation token
+        id: projects_rw_token
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECTS_RW_TOKEN: ${{ secrets.REPO_GH_PAT_PROJECTS_RW }}
+        run: |
+          if [ -n "$PROJECTS_RW_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run heal sync (Slice A CLI mutates project board + issues directly)
+        if: steps.resolve_mode.outputs.heal == 'true' && steps.projects_rw_token.outputs.available == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.REPO_GH_PAT_PROJECTS_RW }}
         run: |
           ao-kernel project sync \
             --repo "${{ github.repository }}" \
@@ -127,6 +145,23 @@ jobs:
         # - Manifest patches that require a code-side commit are out of scope
         #   for this slice; a follow-up runbook can pick them up via a
         #   dedicated PR-opening adapter.
+
+      - name: Record report-only skip when Projects v2 mutation token is unavailable
+        if: steps.resolve_mode.outputs.heal == 'true' && steps.projects_rw_token.outputs.available != 'true'
+        run: |
+          cat > project-sync-report.json <<'JSON'
+          {
+            "schema_version": "ao-ma-11e-2c-project-sync-report.v1",
+            "decision": "report_only",
+            "reason": "repo_gh_pat_projects_rw_missing",
+            "mutations_performed": false,
+            "required_secret": "REPO_GH_PAT_PROJECTS_RW",
+            "github_write_authorized": false,
+            "support_widening": false,
+            "production_platform_claim": false,
+            "live_adapter_execution": false
+          }
+          JSON
 
       - name: Render sync report summary into job summary
         if: always() && steps.resolve_mode.outputs.heal == 'true'

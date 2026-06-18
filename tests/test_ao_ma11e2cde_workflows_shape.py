@@ -257,6 +257,27 @@ def test_12_2c_2d_use_ao_kernel_cli() -> None:
         assert "ao-kernel --version" not in text, f"{path.name} uses unsupported `ao-kernel --version`"
 
 
+def test_12b_2c_heal_sync_requires_projects_rw_pat_or_report_only() -> None:
+    """11e-2c ProjectV2 mutation must not fall through to plain GITHUB_TOKEN.
+
+    GitHub's default repository token can run repository-scoped checks, but
+    Projects v2 mutation is operator-controlled and needs the
+    REPO_GH_PAT_PROJECTS_RW secret. Missing secret must produce a no-mutation
+    report instead of making every push/schedule run fail.
+    """
+    text = _read_text(WF_2C)
+    assert "REPO_GH_PAT_PROJECTS_RW" in text, "11e-2c must document/use the Projects v2 PAT secret"
+    assert "id: projects_rw_token" in text, "11e-2c must resolve Projects v2 mutation token availability"
+    assert "steps.projects_rw_token.outputs.available == 'true'" in text, (
+        "11e-2c heal sync must be gated by Projects v2 PAT availability"
+    )
+    assert "GH_TOKEN: ${{ secrets.REPO_GH_PAT_PROJECTS_RW }}" in text, (
+        "11e-2c heal sync must run with operator-managed Projects v2 PAT, not plain GITHUB_TOKEN"
+    )
+    assert "decision\": \"report_only\"" in text, "11e-2c must emit a report-only artifact when PAT is absent"
+    assert "mutations_performed\": false" in text, "11e-2c absent-PAT path must record no mutation"
+
+
 def test_13_2e_uses_label_cleanup_subcommand() -> None:
     """11e-2e body contains `ao-kernel project label-cleanup` invocation."""
     text = _read_text(WF_2E)

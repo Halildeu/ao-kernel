@@ -9,6 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **AO-MA-11E-2c Project mirror full sync**: heal-mode ProjectV2 mutations now
+  require the operator-managed `REPO_GH_PAT_PROJECTS_RW` secret. When that
+  secret is not configured, push/schedule runs emit a no-mutation
+  `project-sync-report.json` report-only record instead of failing on a `gh
+  graphql` mutation attempt with the default repository token. Drift preflight
+  remains report/read scoped; support widening, production platform claim, and
+  live adapter execution stay false.
 - **Repo-intelligence secret-aware scanning**: `repo scan` now excludes
   secret-like paths and high-confidence token/private-key content from generated
   context artifacts, recording only metadata under `secret_redaction` in
