@@ -1,27 +1,4 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "GPP-9",
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "reviewer": {
-    "agent": "claude-code",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/release-manifest-ssot",
-    "changed_files": [
-      "CHANGELOG.md",
-      "ao_kernel/defaults/release/__init__.py",
-      "ao_kernel/defaults/release/product-release-manifest.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_release_manifest_ssot.py"
-    ]
-  },
   "checks_considered": [
     {
       "name": "tests",
@@ -30,24 +7,59 @@
     {
       "name": "secret_scan",
       "status": "pass"
-    },
-    {
-      "name": "guard_flags",
-      "status": "pass"
-    },
-    {
-      "name": "release_boundary",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Claude review: product release manifest boundary and operator-pending publish status are correct.",
-    "Claude review: tests bind the manifest to package, import/CLI version, Helm appVersion/tag, install docs, and operator publish ref.",
-    "Claude review: no secrets, live adapter execution, support widening, or production platform claim were introduced.",
-    "Claude review: initial tautological v5 assertion was removed before final evidence."
+    "Work package RI-SECRET-AWARE-SCANNER matches diff scope: new secret_scan.py module, scanner.py integration, schema extension, CLI summary hardening, and tests",
+    "New secret_scan.py records only metadata (pattern_ids, scan_status, reason) \u2014 never matched values, line content, or snippets",
+    "Schema repo-map.schema.v1.json adds secret_redaction with const guards: metadata_only=true, secrets_recorded=false, action=excluded_from_context",
+    "CLI stdout summary changed to artifact-pointer-only (details_path instead of inline summary counts), preventing accidental secret leakage through CLI output",
+    "Content patterns cover private keys (RSA/EC/OPENSSH/DSA/PGP), OpenAI API keys, GitHub PATs (classic+fine-grained), AWS access key IDs \u2014 reasonable high-confidence set",
+    "Path patterns cover .env, *.pem, *.key, *.p12, *.pfx, SSH key files, secrets.*, credentials.* \u2014 standard secret-like paths",
+    "Two-phase scan: path-match first (no read needed), then content-match with 5MB cap and graceful OSError handling",
+    "Tests verify secret values do not appear in serialized repo_map or CLI stdout output",
+    "RI-7.5 plan artifact change is SHA256 update for no_root_authority_file_write invariant plus trailing newline fix \u2014 consistent with new write surface in scanner",
+    "No vector writes introduced \u2014 scan path remains read-only",
+    "No root export, no MCP tool exposure, no live GitHub/ProjectV2 mutation",
+    "No support_widening, production_platform_claim, or live_adapter_execution flip",
+    "Guard flags in plan artifact remain false",
+    "No __init__.py or public facade export added for secret_scan \u2014 stays in _internal",
+    "Chunker test updated: .env now excluded at scanner level (secret_redaction) rather than chunker level (chunk_secret_like_skipped) \u2014 correct layering shift",
+    "context_pack_builder.py adds secret_redacted_files row to summary table \u2014 metadata only, no values"
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "anthropic-claude-reviewer",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS.v1.json",
+      "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/_internal/repo_intelligence/context_pack_builder.py",
+      "ao_kernel/_internal/repo_intelligence/scanner.py",
+      "ao_kernel/_internal/repo_intelligence/secret_scan.py",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/schemas/repo-map.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_cli_repo_scan.py",
+      "tests/test_repo_intelligence_chunker.py",
+      "tests/test_repo_intelligence_scanner.py"
+    ],
+    "head_ref": "refs/heads/codex/ri-secret-aware-scanner"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "RI-SECRET-AWARE-SCANNER"
 }

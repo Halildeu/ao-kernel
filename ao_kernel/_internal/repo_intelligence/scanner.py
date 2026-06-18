@@ -11,6 +11,11 @@ from typing import Any
 import ao_kernel
 from ao_kernel._internal.repo_intelligence.ignore_rules import should_ignore_path
 from ao_kernel._internal.repo_intelligence.language_detector import detect_language
+from ao_kernel._internal.repo_intelligence.secret_scan import (
+    SECRET_SCAN_MAX_BYTES,
+    active_secret_pattern_ids,
+    decide_secret_redaction,
+)
 from ao_kernel._internal.shared.utils import now_iso8601
 
 JsonDict = dict[str, Any]
@@ -25,6 +30,7 @@ def scan_repo(project_root: str | Path) -> JsonDict:
     included_files: list[JsonDict] = []
     ignored_paths: list[JsonDict] = []
     diagnostics: list[JsonDict] = []
+    secret_redactions: list[JsonDict] = []
     directories: set[str] = set()
 
     stack = [root]
@@ -68,6 +74,42 @@ def scan_repo(project_root: str | Path) -> JsonDict:
             try:
                 if entry.is_file():
                     stat = entry.stat()
+                    secret_decision = decide_secret_redaction(
+                        rel_path,
+                        content=None,
+                        size_bytes=stat.st_size,
+                    )
+                    if not secret_decision.redacted:
+                        content = _read_secret_scan_bytes(
+                            entry,
+                            rel_path=rel_path,
+                            size_bytes=stat.st_size,
+                            diagnostics=diagnostics,
+                        )
+                        secret_decision = decide_secret_redaction(
+                            rel_path,
+                            content=content,
+                            size_bytes=stat.st_size,
+                        )
+                    if secret_decision.redacted:
+                        ignored_paths.append(
+                            {
+                                "path": rel_path,
+                                "kind": "file",
+                                "reason": secret_decision.reason or "secret_redaction:file",
+                            }
+                        )
+                        secret_redactions.append(
+                            {
+                                "path": rel_path,
+                                "kind": "file",
+                                "action": "excluded_from_context",
+                                "reason": secret_decision.reason or "secret_redaction:file",
+                                "pattern_ids": list(secret_decision.pattern_ids),
+                                "scan_status": secret_decision.scan_status,
+                            }
+                        )
+                        continue
                     included_files.append(
                         {
                             "path": rel_path,
@@ -83,6 +125,7 @@ def scan_repo(project_root: str | Path) -> JsonDict:
 
     included_files.sort(key=lambda item: str(item["path"]))
     ignored_paths.sort(key=lambda item: str(item["path"]))
+    secret_redactions.sort(key=lambda item: str(item["path"]))
     diagnostics.sort(key=lambda item: str(item["path"]))
     parsed_pyproject = _load_pyproject(root, included_files, diagnostics)
     diagnostics.sort(key=lambda item: str(item["path"]))
@@ -103,6 +146,7 @@ def scan_repo(project_root: str | Path) -> JsonDict:
             "included_files": len(included_files),
             "included_directories": len(directories),
             "ignored_paths": len(ignored_paths),
+            "secret_redacted_files": len(secret_redactions),
             "diagnostics": len(diagnostics),
             "languages": dict(sorted(language_counts.items())),
             "python_packages": sum(1 for item in python_candidates if item["kind"] == "package"),
@@ -123,6 +167,17 @@ def scan_repo(project_root: str | Path) -> JsonDict:
             ],
             "paths": ignored_paths,
         },
+        "secret_redaction": {
+            "mode": "exclude_file",
+            "max_scan_bytes": SECRET_SCAN_MAX_BYTES,
+            "patterns": list(active_secret_pattern_ids()),
+            "summary": {
+                "redacted_files": len(secret_redactions),
+                "metadata_only": True,
+                "secrets_recorded": False,
+            },
+            "records": secret_redactions,
+        },
         "languages": dict(sorted(language_counts.items())),
         "python": {
             "candidates": python_candidates,
@@ -140,6 +195,22 @@ def _repo_relative_posix(path: Path, root: Path) -> str:
 
 def _diagnostic(path: str, code: str, message: str) -> JsonDict:
     return {"path": path, "code": code, "message": message}
+
+
+def _read_secret_scan_bytes(
+    path: Path,
+    *,
+    rel_path: str,
+    size_bytes: int,
+    diagnostics: list[JsonDict],
+) -> bytes | None:
+    if size_bytes > SECRET_SCAN_MAX_BYTES:
+        return None
+    try:
+        return path.read_bytes()
+    except OSError as exc:
+        diagnostics.append(_diagnostic(rel_path, "secret_scan_unreadable", str(exc)))
+        return None
 
 
 def _load_pyproject(root: Path, included_files: list[JsonDict], diagnostics: list[JsonDict]) -> JsonDict:

@@ -84,10 +84,15 @@ def test_build_repo_chunks_is_deterministic_except_generator_timestamp(tmp_path:
 def test_build_repo_chunks_records_skip_diagnostics_without_embedding_secret_like_files(tmp_path: Path) -> None:
     project = _make_chunk_project(tmp_path)
 
+    repo_map = scan_repo(project)
     chunks = _build_chunks(project)
 
+    redacted_paths = {item["path"] for item in repo_map["secret_redaction"]["records"]}
+    assert ".env" in redacted_paths
+    assert all(item["path"] != ".env" for item in repo_map["files"])
+
     diagnostics = {(item["path"], item["code"]) for item in chunks["diagnostics"]}
-    assert (".env", "chunk_secret_like_skipped") in diagnostics
+    assert (".env", "chunk_secret_like_skipped") not in diagnostics
     assert ("image.png", "chunk_secret_like_skipped") in diagnostics
     assert all(item["source_path"] != ".env" for item in chunks["chunks"])
     assert all(item["source_path"] != "image.png" for item in chunks["chunks"])

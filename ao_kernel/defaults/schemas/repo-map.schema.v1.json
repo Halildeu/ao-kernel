@@ -12,6 +12,7 @@
     "summary",
     "files",
     "ignored",
+    "secret_redaction",
     "languages",
     "python",
     "diagnostics"
@@ -54,6 +55,7 @@
         "included_files",
         "included_directories",
         "ignored_paths",
+        "secret_redacted_files",
         "diagnostics",
         "languages",
         "python_packages",
@@ -70,6 +72,10 @@
           "minimum": 0
         },
         "ignored_paths": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "secret_redacted_files": {
           "type": "integer",
           "minimum": 0
         },
@@ -122,6 +128,50 @@
     },
     "languages": {
       "$ref": "#/$defs/language_counts"
+    },
+    "secret_redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "max_scan_bytes", "patterns", "summary", "records"],
+      "properties": {
+        "mode": {
+          "const": "exclude_file"
+        },
+        "max_scan_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["redacted_files", "metadata_only", "secrets_recorded"],
+          "properties": {
+            "redacted_files": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "metadata_only": {
+              "const": true
+            },
+            "secrets_recorded": {
+              "const": false
+            }
+          }
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/secret_redaction_record"
+          }
+        }
+      }
     },
     "python": {
       "type": "object",
@@ -210,6 +260,37 @@
         "reason": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "secret_redaction_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "action", "reason", "pattern_ids", "scan_status"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "kind": {
+          "const": "file"
+        },
+        "action": {
+          "const": "excluded_from_context"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pattern_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "scan_status": {
+          "enum": ["path_match", "content_match"]
         }
       }
     },

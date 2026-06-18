@@ -31,7 +31,7 @@
       "evidence_class": "operator_script_verified",
       "script_ref": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_root_authority_file_write",
       "result_summary": "repo_intelligence private modules confine writes to .ao/context (manifest) and RI-5b exporter (token-gated create-only)",
-      "sha256": "007a8cbb3d82248f459fae4e88b2475715e999c01a67c0994e5fd77939cd86b0"
+      "sha256": "f5dfec19d0f1179340a4a4fa59a5799f565358bc76c1c7149edb7f12d9bbdb46"
     },
     {
       "id": "no_mcp_repo_intelligence_tool_exposed",

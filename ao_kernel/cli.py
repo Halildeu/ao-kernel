@@ -111,7 +111,7 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
         symbol_index=symbol_index,
         repo_chunks=repo_chunks,
     )
-    write_result = write_repo_scan_artifacts(
+    write_repo_scan_artifacts(
         context_dir=context_dir,
         repo_map=repo_map,
         import_graph=import_graph,
@@ -119,24 +119,40 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
         repo_chunks=repo_chunks,
         agent_pack=agent_pack,
     )
+    cli_artifacts = _repo_scan_cli_artifacts()
     summary = {
         "status": "ok",
         "command": "repo scan",
         "project_root": ".",
         "project_root_name": project_root.name,
-        "summary": repo_map["summary"],
-        "artifacts": write_result["artifacts"],
+        "summary": {"details_path": ".ao/context/repo_map.json"},
+        "artifacts": cli_artifacts,
     }
     if args.output == "json":
         print(_json.dumps(summary, indent=2, sort_keys=True))
     else:
         print("repo scan complete")
         print("project_root: .")
-        print(f"included_files: {repo_map['summary']['included_files']}")
+        print("details: .ao/context/repo_map.json")
         print("artifacts:")
-        for artifact in write_result["artifacts"]:
+        for artifact in cli_artifacts:
             print(f"- {artifact['path']}")
     return 0
+
+
+def _repo_scan_cli_artifacts() -> list[dict[str, str]]:
+    return [
+        {"path": ".ao/context/repo_map.json", "schema_ref": "repo-map.schema.v1.json"},
+        {"path": ".ao/context/import_graph.json", "schema_ref": "python-import-graph.schema.v1.json"},
+        {"path": ".ao/context/symbol_index.json", "schema_ref": "python-symbol-index.schema.v1.json"},
+        {"path": ".ao/context/repo_chunks.json", "schema_ref": "repo-chunks.schema.v1.json"},
+        {
+            "path": ".ao/context/agent_pack.md",
+            "format_ref": "agent-pack-markdown.v1",
+            "media_type": "text/markdown",
+        },
+        {"path": ".ao/context/repo_index_manifest.json", "schema_ref": "repo-index-manifest.schema.v1.json"},
+    ]
 
 
 def _cmd_repo_index(args: argparse.Namespace) -> int:
