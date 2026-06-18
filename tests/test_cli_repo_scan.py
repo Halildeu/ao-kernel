@@ -29,8 +29,7 @@ def test_repo_scan_json_output_writes_only_context_artifacts(tmp_path: Path, cap
     assert rc == 0
     assert captured.err == ""
     assert payload["status"] == "ok"
-    assert payload["summary"]["included_files"] == 3
-    assert payload["summary"]["secret_redacted_files"] == 0
+    assert payload["summary"] == {"details_path": ".ao/context/repo_map.json"}
     assert [item["path"] for item in payload["artifacts"]] == [
         ".ao/context/repo_map.json",
         ".ao/context/import_graph.json",
@@ -60,6 +59,7 @@ def test_repo_scan_default_output_is_text(tmp_path: Path, capsys) -> None:
     assert rc == 0
     assert captured.err == ""
     assert "repo scan complete" in captured.out
+    assert "details: .ao/context/repo_map.json" in captured.out
     assert ".ao/context/repo_map.json" in captured.out
 
 
@@ -89,7 +89,7 @@ def test_repo_scan_json_output_reports_secret_redaction_without_values(tmp_path:
 
     assert rc == 0
     assert captured.err == ""
-    assert payload["summary"]["secret_redacted_files"] == 1
+    assert payload["summary"] == {"details_path": ".ao/context/repo_map.json"}
     assert repo_map["secret_redaction"]["summary"]["redacted_files"] == 1
     assert repo_map["secret_redaction"]["records"][0]["path"] == "pkg/leaky.py"
     assert repo_map["secret_redaction"]["records"][0]["pattern_ids"] == ["openai_api_key_like"]

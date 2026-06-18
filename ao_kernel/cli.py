@@ -119,30 +119,25 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
         repo_chunks=repo_chunks,
         agent_pack=agent_pack,
     )
-    cli_summary = _repo_scan_cli_summary(repo_map.get("summary"))
     cli_artifacts = _repo_scan_cli_artifacts()
     summary = {
         "status": "ok",
         "command": "repo scan",
         "project_root": ".",
         "project_root_name": project_root.name,
-        "summary": cli_summary,
+        "summary": {"details_path": ".ao/context/repo_map.json"},
         "artifacts": cli_artifacts,
     }
     if args.output == "json":
-        _write_stdout_line(_json.dumps(summary, indent=2, sort_keys=True))
+        print(_json.dumps(summary, indent=2, sort_keys=True))
     else:
         print("repo scan complete")
         print("project_root: .")
-        _write_stdout_line(f"included_files: {cli_summary['included_files']}")
+        print("details: .ao/context/repo_map.json")
         print("artifacts:")
         for artifact in cli_artifacts:
             print(f"- {artifact['path']}")
     return 0
-
-
-def _write_stdout_line(text: str) -> None:
-    sys.stdout.write(f"{text}\n")
 
 
 def _repo_scan_cli_artifacts() -> list[dict[str, str]]:
@@ -158,34 +153,6 @@ def _repo_scan_cli_artifacts() -> list[dict[str, str]]:
         },
         {"path": ".ao/context/repo_index_manifest.json", "schema_ref": "repo-index-manifest.schema.v1.json"},
     ]
-
-
-def _repo_scan_cli_summary(repo_summary: Any) -> dict[str, Any]:
-    if not isinstance(repo_summary, dict):
-        repo_summary = {}
-    raw_languages = repo_summary.get("languages")
-    languages: dict[str, int] = {}
-    if isinstance(raw_languages, dict):
-        languages = {str(name): _nonnegative_int(count) for name, count in raw_languages.items()}
-    return {
-        "included_files": _nonnegative_int(repo_summary.get("included_files")),
-        "included_directories": _nonnegative_int(repo_summary.get("included_directories")),
-        "ignored_paths": _nonnegative_int(repo_summary.get("ignored_paths")),
-        "secret_redacted_files": _nonnegative_int(repo_summary.get("secret_redacted_files")),
-        "diagnostics": _nonnegative_int(repo_summary.get("diagnostics")),
-        "languages": languages,
-        "python_packages": _nonnegative_int(repo_summary.get("python_packages")),
-        "python_modules": _nonnegative_int(repo_summary.get("python_modules")),
-        "python_entrypoints": _nonnegative_int(repo_summary.get("python_entrypoints")),
-    }
-
-
-def _nonnegative_int(value: Any) -> int:
-    try:
-        parsed = int(value)
-    except (TypeError, ValueError):
-        return 0
-    return max(parsed, 0)
 
 
 def _cmd_repo_index(args: argparse.Namespace) -> int:
