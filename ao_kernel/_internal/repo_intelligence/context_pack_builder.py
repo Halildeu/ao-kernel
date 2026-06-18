@@ -107,6 +107,7 @@ def _append_summary(
         ("Included files", _int(repo_summary.get("included_files"))),
         ("Included directories", _int(repo_summary.get("included_directories"))),
         ("Ignored paths", _int(repo_summary.get("ignored_paths"))),
+        ("Secret-redacted files", _int(repo_summary.get("secret_redacted_files"))),
         ("Repo diagnostics", _int(repo_summary.get("diagnostics"))),
         ("Python packages", _int(repo_summary.get("python_packages"))),
         ("Python modules", _int(repo_summary.get("python_modules"))),

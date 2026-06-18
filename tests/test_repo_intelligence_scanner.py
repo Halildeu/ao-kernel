@@ -51,6 +51,12 @@ def test_scan_repo_builds_schema_valid_deterministic_map(tmp_path: Path) -> None
     assert _stable_repo_map(first) == _stable_repo_map(second)
     assert first["project"]["name"] == "sample-project"
     assert first["summary"]["included_files"] >= 5
+    assert first["summary"]["secret_redacted_files"] == 0
+    assert first["secret_redaction"]["summary"] == {
+        "redacted_files": 0,
+        "metadata_only": True,
+        "secrets_recorded": False,
+    }
     assert first["languages"]["python"] == 4
     assert first["languages"]["markdown"] == 1
 
@@ -96,3 +102,39 @@ def test_scan_repo_does_not_follow_symlinks(tmp_path: Path) -> None:
 
     assert "linked.py" not in file_paths
     assert "symlink_skipped" in diagnostic_codes
+
+
+def test_scan_repo_excludes_secret_like_files_without_recording_values(tmp_path: Path) -> None:
+    project = _make_sample_repo(tmp_path)
+    token = "sk-" + ("a" * 24)
+    private_key_marker = "-----BEGIN " + "PRIVATE KEY-----"
+    (project / ".env").write_text("TOKEN=example\n", encoding="utf-8")
+    (project / "pkg" / "token.py").write_text(f"TOKEN = {token!r}\n", encoding="utf-8")
+    (project / "pkg" / "key.txt").write_text(f"{private_key_marker}\nredacted\n", encoding="utf-8")
+
+    repo_map = scan_repo(project)
+
+    validate_repo_map(repo_map)
+    paths = {item["path"] for item in repo_map["files"]}
+    ignored = {item["path"]: item["reason"] for item in repo_map["ignored"]["paths"]}
+    redaction = repo_map["secret_redaction"]
+
+    assert ".env" not in paths
+    assert "pkg/token.py" not in paths
+    assert "pkg/key.txt" not in paths
+    assert ignored[".env"].startswith("secret_redaction:path:.env")
+    assert ignored["pkg/token.py"] == "secret_redaction:content:file"
+    assert ignored["pkg/key.txt"] == "secret_redaction:content:file"
+    assert repo_map["summary"]["secret_redacted_files"] == 3
+    assert redaction["summary"] == {
+        "redacted_files": 3,
+        "metadata_only": True,
+        "secrets_recorded": False,
+    }
+    records = {item["path"]: item for item in redaction["records"]}
+    assert records[".env"]["pattern_ids"] == ["path:.env"]
+    assert records["pkg/token.py"]["pattern_ids"] == ["openai_api_key_like"]
+    assert records["pkg/key.txt"]["pattern_ids"] == ["private_key_block"]
+    serialized = str(repo_map)
+    assert token not in serialized
+    assert private_key_marker not in serialized
