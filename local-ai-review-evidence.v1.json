@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-GOVERNED-CONTROL-PLANE-READINESS-GAP",
+  "work_package": "V5-READINESS-MANIFEST-DOC-INVARIANT",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,10 +13,11 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v5-governed-control-plane-readiness-gap",
+    "head_ref": "refs/heads/codex/v5-readiness-manifest-doc-invariant",
     "changed_files": [
       "CHANGELOG.md",
       "docs/V5-GOVERNED-CONTROL-PLANE-READINESS-GAP.md",
+      "tests/test_v5_governed_control_plane_readiness_gap.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -28,14 +29,30 @@
     {
       "name": "secret_scan",
       "status": "pass"
+    },
+    {
+      "name": "readiness_cli_manifest",
+      "status": "pass"
+    },
+    {
+      "name": "json_validation",
+      "status": "pass"
+    },
+    {
+      "name": "diff_check",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Claude reviewed the final docs-only scope: changelog entry, governed-control-plane readiness gap note, and this no-secret review evidence record.",
-    "The change is a non-authority planning note only; it does not tag or publish v5.0.0.",
+    "Claude reviewed the staged implementation diff for the V5 readiness manifest doc invariant.",
+    "Claude REVISE round-1 found that the untracked test file was not included in the review diff and that the removed next-work rows needed manifest-backed justification.",
+    "The REVISE findings were absorbed by staging the test file, adding a manifest-backed coverage table, and strengthening the invariant test to execute the readiness CLI with the committed RI-7 evidence manifest.",
+    "Claude re-reviewed the staged diff and returned AGREE: the test file is included, manifest-backed coverage justifies the removed next-work rows, there is no overclaim, and the invariant is machine-enforced.",
+    "The canonical tests check is backed by pytest over the V5 readiness gap invariant and repo-intelligence readiness tests.",
+    "The canonical secret_scan check is backed by bash .githooks/pre-commit over the staged PR files.",
+    "The readiness_cli_manifest check is backed by the repo-intelligence readiness CLI executed with .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json.",
     "The change preserves support_widening=false, production_platform_claim=false, and live_adapter_execution=false.",
-    "The change does not claim production-platform readiness, widen support, execute live adapters, or replace ao-release-gate plus GitHub branch protection as release authority.",
-    "The MiniMax blocker for PR #997 is represented as fail-closed until real MiniMax AGREE evidence exists; no fake MiniMax evidence is introduced.",
+    "The change does not tag or publish v5.0.0, claim production-platform readiness, widen support, execute live adapters, or replace ao-release-gate plus GitHub branch protection as release authority.",
     "No blocking findings."
   ],
   "secrets_recorded": false,

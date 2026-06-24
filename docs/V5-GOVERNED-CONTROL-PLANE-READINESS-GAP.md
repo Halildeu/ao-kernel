@@ -8,6 +8,7 @@
 - `.claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md`
 - `.claude/plans/EPIC-9-PR-XFINAL-SUPERSESSION-CLOSEOUT.md`
 - `scripts/repo_intelligence_tier_promotion_readiness.py --output json`
+- `scripts/repo_intelligence_tier_promotion_readiness.py --output json --evidence-manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json`
 
 ## Non-Authority Boundary
 
@@ -47,7 +48,9 @@ The safe release framing is therefore:
 
 ## Current Readiness Tool Output
 
-`scripts/repo_intelligence_tier_promotion_readiness.py --output json` currently
+The readiness tool has two intentionally different modes.
+
+Without an evidence manifest, the tool remains fail-closed and currently
 returns:
 
 ```text
@@ -70,8 +73,44 @@ The blocking gates are:
 8. `gp59_reclassification_plan`
 9. `support_boundary_transition_plan`
 
-These blockers are expected under the current governed-control-plane decision.
-They must not be bypassed by documentation-only edits.
+These blockers are expected when no evidence manifest is supplied. They must
+not be bypassed by documentation-only edits.
+
+With the committed RI-7 evidence manifest, the same tool currently returns:
+
+```bash
+python3 scripts/repo_intelligence_tier_promotion_readiness.py \
+  --output json \
+  --evidence-manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json
+```
+
+```text
+decision: ready_for_operator_promotion_decision
+overall_status: ready_for_operator_decision
+promotion_blockers: []
+support_widening: false
+production_platform_claim: false
+live_adapter_execution: false
+```
+
+That manifest-backed ready state means the RI-7 evidence package is prepared
+for a later operator-bound promotion decision PR. It does not itself authorize
+support widening, a production-platform claim, live adapter execution, a
+`v5.0.0` tag, or publication.
+
+Manifest-backed coverage for the completed agent-preparable RI-7 rows:
+
+| Former next-work row | Manifest key | Current value |
+|---|---|---:|
+| Guardrail hardening matrix evidence | `guardrail_hardening_matrix` | `true` |
+| Vector backend E2E evidence | `vector_backend_e2e_evidence` | `true` |
+| Wheel-installed scan/index/query smoke | `scan_index_query_packaging_smoke` | `true` |
+| Cross-lane production matrix gap inventory | `cross_lane_production_matrix_evidence` | `true` |
+| GP-5.9 reclassification + support-boundary transition draft | `gp59_reclassification_plan` / `support_boundary_transition_plan` | `true` / `true` |
+
+No agent-only RI-7 evidence rows remain open in this document. Any boundary
+change after this point is a separate operator-bound decision, not an
+autonomous evidence-gathering slice.
 
 ## Related Open Blocker: High-Risk Provider Separation
 
@@ -100,12 +139,9 @@ The correct completion path for `#985` is:
 | Order | Work | Owner boundary | Exit condition |
 |---:|---|---|---|
 | 1 | MiniMax provider/tooling unblock for `#997` | Operator/environment + agent verification | Real MiniMax `AGREE` evidence replaces `BLOCK`; `ao-release-gate` passes. |
-| 2 | Guardrail hardening matrix evidence | Agent can prepare; operator verifies semantics | Matrix covers AST/chunk edges, namespace isolation, stale cleanup, no-root-write, no-auto-feed, and no-MCP exposure. |
-| 3 | Vector backend E2E evidence | Agent + configured backend | Explicit write, stale cleanup, namespace isolation, read-only query validation, and fail-closed missing-backend paths are proven. |
-| 4 | Wheel-installed scan/index/query smoke | Agent | Smoke runs outside the source checkout and records fail-closed missing-backend behavior. |
-| 5 | Cross-lane production matrix gap inventory | Agent planning only | Evidence gaps across real adapter, read-only E2E, controlled write-side, remote PR write, rollback, cost, and release governance are enumerated without claiming readiness. |
-| 6 | GP-5.9 reclassification + support-boundary transition draft | Agent planning only | Draft identifies blockers removed, retained, or replaced; it does not change live support tier. |
-| 7 | Release decision PR | Operator-bound | Chooses v4.x governed-control-plane minor or a separately authorized renamed major. No autonomous tag/publish. |
+| 2 | Governed-control-plane v4.x release checklist | Agent planning only | Checklist records packaging, docs, changelog, version, and publish preflight without tag/publish or guard flips. |
+| 3 | Repo-intelligence promotion decision PR | Operator-bound | Consumes the manifest-backed readiness report and explicitly chooses promotion or non-promotion. No autonomous guard flip. |
+| 4 | Separate major-release supersession, if ever desired | Operator-bound | Explicitly renames the release target as governed control-plane GA; no general-purpose production-platform claim unless separately authorized. |
 
 ## Explicit Stop Conditions
 
@@ -124,9 +160,10 @@ Recommended follow-up slices:
 
 1. `fix(#985): replace fail-closed MiniMax blocker with real MiniMax evidence`
    after the external MiniMax credential/tooling issue is resolved.
-2. `docs(readiness): record guardrail hardening matrix evidence plan`.
-3. `test(readiness): add wheel-installed scan/index/query smoke harness`.
-4. `docs(release): prepare governed-control-plane v4.x release checklist`.
+2. `docs(release): prepare governed-control-plane v4.x release checklist`.
+3. `decision(ri): operator-bound repo-intelligence promotion or non-promotion
+   decision`, if the operator chooses to consume the manifest-backed
+   `ready_for_operator_decision` report.
 
 None of these slices should tag, publish, widen support, claim production
 platform readiness, or execute live adapters.
