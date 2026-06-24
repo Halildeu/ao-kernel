@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **V5 governed-control-plane readiness gap plan**: added a current-state planning note that consolidates the E-9-1 / PR-Xfinal supersession decision, the repo-intelligence readiness blockers, the fail-closed #997 MiniMax evidence boundary, and the safe v4.x governed-control-plane release order. This is documentation only; it does not tag or publish v5.0.0, widen support, claim production-platform readiness, execute live adapters, or change guard flags.
 - **AO-MA-10 high-risk runtime provider bootstrap**: trusted-base high-risk supersession runtime, evidence builder, raw-review producer, schemas, fixtures, and fail-closed tests now support the dynamic OpenAI/Anthropic/MiniMax reviewer quorum while excluding the implementation provider from reviewer authority. This prepares the follow-up provider-separation PR without changing the workflow reviewer request policy, widening support, claiming production readiness, or executing live adapters.
 - **AO-MA-10 high-risk reviewer provider bootstrap**: `local-ai-review-evidence.v1` now recognizes `minimax` as an allowed AI provider so trusted-base `ao-release-gate` validation can consume real MiniMax reviewer evidence in follow-up high-risk provider-separation PRs. This is a schema compatibility bootstrap only; it does not widen support, claim production readiness, or execute live adapters.
 - **AO-MA-11E-2c Project mirror full sync**: heal-mode ProjectV2 mutations now
