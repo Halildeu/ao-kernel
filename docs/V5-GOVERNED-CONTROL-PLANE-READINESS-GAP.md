@@ -139,9 +139,28 @@ The correct completion path for `#985` is:
 | Order | Work | Owner boundary | Exit condition |
 |---:|---|---|---|
 | 1 | MiniMax provider/tooling unblock for `#997` | Operator/environment + agent verification | Real MiniMax `AGREE` evidence replaces `BLOCK`; `ao-release-gate` passes. |
-| 2 | Governed-control-plane v4.x release checklist | Agent planning only | Checklist records packaging, docs, changelog, version, and publish preflight without tag/publish or guard flips. |
+| 2 | Governed-control-plane v4.x release checklist | Agent planning only | `docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md` records packaging, docs, changelog, version, and publish preflight without tag/publish or guard flips. |
 | 3 | Repo-intelligence promotion decision PR | Operator-bound | Consumes the manifest-backed readiness report and explicitly chooses promotion or non-promotion. No autonomous guard flip. |
 | 4 | Separate major-release supersession, if ever desired | Operator-bound | Explicitly renames the release target as governed control-plane GA; no general-purpose production-platform claim unless separately authorized. |
+
+## v5.0.0 Release No-Go
+
+The active release plan is **not** a v5.0.0 release/tag/publish plan. A
+v5.0.0 tag or publish remains blocked unless a future operator-bound
+supersession explicitly reopens that path and passes `ao-release-gate`.
+
+The current safe release preparation surface is:
+
+1. keep all three guard flags false;
+2. prepare a conservative v4.x governed-control-plane release checklist;
+3. keep #997 fail-closed until real MiniMax `AGREE` evidence exists;
+4. treat the RI-7 manifest-backed ready state as input to a later
+   operator-bound decision, not as autonomous release authority;
+5. avoid public wording that can be read as a general-purpose production
+   platform claim.
+
+Any workflow, PR, or release note that attempts to tag or publish v5.0.0 from
+the current autonomous lane is out of scope for this plan.
 
 ## Explicit Stop Conditions
 
