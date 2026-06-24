@@ -90,7 +90,7 @@
         },
         "provider": {
           "type": "string",
-          "enum": ["anthropic", "openai", "google", "xai"],
+          "enum": ["anthropic", "openai", "google", "xai", "minimax"],
           "description": "AI provider. Cross-provider review is required: the implementer provider and reviewer provider must differ."
         }
       }
@@ -110,7 +110,7 @@
             },
             "provider": {
               "type": "string",
-              "enum": ["anthropic", "openai", "google", "xai"],
+              "enum": ["anthropic", "openai", "google", "xai", "minimax"],
               "description": "AI provider. Must differ from the reviewer provider (cross-provider review HARD RULE)."
             },
             "kind": {
@@ -151,7 +151,7 @@
         },
         "provider": {
           "type": "string",
-          "enum": ["anthropic", "openai", "google", "xai"],
+          "enum": ["anthropic", "openai", "google", "xai", "minimax"],
           "description": "Reviewer AI provider. Must differ from the implementer provider."
         },
         "verdict": {
