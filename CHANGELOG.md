@@ -9,6 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **v4.x governed-control-plane release checklist**: added an operator-bound
+  release checklist for the next safe v4.x governed-control-plane release,
+  plus a V5 no-go section and invariant tests that keep v5.0.0 tag/publish,
+  guard flips, support widening, production-platform claims, live adapter
+  execution, and fake MiniMax review evidence out of the autonomous lane.
+  This is documentation/test hardening only; it does not tag or publish a
+  release.
 - **V5 readiness manifest drift guard**: clarified the governed-control-plane
   readiness gap note so default no-manifest readiness output remains
   fail-closed while the committed RI-7 evidence manifest is recognized as

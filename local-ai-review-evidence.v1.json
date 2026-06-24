@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-READINESS-MANIFEST-DOC-INVARIANT",
+  "work_package": "V4-RELEASE-CHECKLIST-V5-NO-GO",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,12 +13,13 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v5-readiness-manifest-doc-invariant",
+    "head_ref": "refs/heads/codex/v4-release-checklist-v5-no-go",
     "changed_files": [
       "CHANGELOG.md",
+      "docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md",
       "docs/V5-GOVERNED-CONTROL-PLANE-READINESS-GAP.md",
-      "tests/test_v5_governed_control_plane_readiness_gap.py",
-      "local-ai-review-evidence.v1.json"
+      "local-ai-review-evidence.v1.json",
+      "tests/test_v4_release_checklist_v5_no_go.py"
     ]
   },
   "checks_considered": [
@@ -31,28 +32,26 @@
       "status": "pass"
     },
     {
-      "name": "readiness_cli_manifest",
-      "status": "pass"
-    },
-    {
-      "name": "json_validation",
-      "status": "pass"
-    },
-    {
       "name": "diff_check",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_status",
+      "status": "pass"
+    },
+    {
+      "name": "claude_review",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude reviewed the staged implementation diff for the V5 readiness manifest doc invariant.",
-    "Claude REVISE round-1 found that the untracked test file was not included in the review diff and that the removed next-work rows needed manifest-backed justification.",
-    "The REVISE findings were absorbed by staging the test file, adding a manifest-backed coverage table, and strengthening the invariant test to execute the readiness CLI with the committed RI-7 evidence manifest.",
-    "Claude re-reviewed the staged diff and returned AGREE: the test file is included, manifest-backed coverage justifies the removed next-work rows, there is no overclaim, and the invariant is machine-enforced.",
-    "The canonical tests check is backed by pytest over the V5 readiness gap invariant and repo-intelligence readiness tests.",
-    "The canonical secret_scan check is backed by bash .githooks/pre-commit over the staged PR files.",
-    "The readiness_cli_manifest check is backed by the repo-intelligence readiness CLI executed with .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json.",
-    "The change preserves support_widening=false, production_platform_claim=false, and live_adapter_execution=false.",
-    "The change does not tag or publish v5.0.0, claim production-platform readiness, widen support, execute live adapters, or replace ao-release-gate plus GitHub branch protection as release authority.",
+    "Claude reviewed the v4 governed-control-plane release checklist and v5 no-go guard diff.",
+    "Claude returned AGREE with no blocking issue for the docs/tests/changelog-only scope.",
+    "The review confirmed the change keeps guard flags false and does not tag or publish v5.0.0.",
+    "The review confirmed #997 remains fail-closed until real MiniMax AGREE evidence exists.",
+    "The review confirmed release authority remains ao-release-gate plus GitHub branch protection, not AI output.",
+    "The tests check is backed by pytest over the v4 release checklist no-go, V5 readiness gap, publish workflow, and migration docs tests.",
+    "The secret_scan check is backed by the repository pre-commit hook.",
     "No blocking findings."
   ],
   "secrets_recorded": false,
