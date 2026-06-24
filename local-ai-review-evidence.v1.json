@@ -9,25 +9,21 @@
       "status": "pass"
     },
     {
-      "name": "schema_design",
+      "name": "guard_flags",
       "status": "pass"
     },
     {
-      "name": "trust_boundary",
-      "status": "pass"
-    },
-    {
-      "name": "release_gate_integration",
+      "name": "provider_separation",
       "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic Claude returned AGREE after post-implementation review of the repo-intelligence productization closeout diff.",
-    "The V5 gap audit records repo-intelligence-promotion-decision as closed_non_promotion and no longer a V5 tag blocker.",
-    "The remaining V5 blockers are still MiniMax provider evidence for #997 and major-release supersession.",
-    "RI-7.8c remains the final operator non-promotion authority and keeps repo-intelligence as beta read-only onboarding.",
-    "The productized user path is GitHub App installation plus repository selection, with no end-user Cloud Run, Vault, webhook, private key, deployment protection callback, or hosted gate setup.",
-    "No gpp_status mutation, guard flag flip, support widening, production platform claim, live adapter execution, admin bypass, branch-protection mutation, or release-authority drift was found."
+    "Reviewed PR #997 after rebasing onto current main; the remaining scope is AO-MA-10 high-risk provider separation evidence closeout.",
+    "Current protected base already contains the provider-aware high-risk reviewer selector that excludes the OpenAI implementer from the required reviewer quorum.",
+    "For implementer provider openai, the required high-risk reviewer providers are anthropic plus minimax; OpenAI same-provider review is not release authority.",
+    "The final changed_files binding is limited to CHANGELOG.md, the raw Anthropic evidence file, the raw MiniMax evidence file, and the root local AI review evidence file.",
+    "The MiniMax evidence records a real Mavis/MiniMax AGREE review from session mvs_079b1e6ab14b4744ae6bd4c62180b562 for the original broader PR #997 provider-separation implementation; this rebased PR narrows that work to evidence closeout.",
+    "No support widening, production platform claim, live adapter execution, admin bypass, branch-protection weakening, or AI-as-release-authority is introduced."
   ],
   "implementer": {
     "agent": "codex",
@@ -46,16 +42,13 @@
     "base_ref": "refs/heads/main",
     "changed_files": [
       "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/v5-governed-control-plane-gap-audit.schema.v1.json",
-      "docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md",
-      "docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json",
-      "docs/V5-GOVERNED-CONTROL-PLANE-READINESS-GAP.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_v5_governed_control_plane_gap_audit.py"
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json"
     ],
-    "head_ref": "refs/heads/codex/repo-intelligence-promotion-productization"
+    "head_ref": "refs/heads/codex/issue-985-high-risk-provider-separation"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "RI-PROMOTION-PRODUCTIZATION"
+  "work_package": "AO-MA-985-HIGH-RISK-PROVIDER-SEPARATION"
 }
