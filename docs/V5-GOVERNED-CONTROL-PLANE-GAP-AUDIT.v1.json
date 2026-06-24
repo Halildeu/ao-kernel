@@ -1,0 +1,75 @@
+{
+  "schema_version": "v5-governed-control-plane-gap-audit.v1",
+  "artifact_kind": "v5_governed_control_plane_gap_audit",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "V5-GAP-FORBIDDEN-CHANGE-AUDIT",
+  "authority": "docs/V5-GOVERNED-CONTROL-PLANE-READINESS-GAP.md",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "release_boundary": {
+    "v5_tag_publish_allowed": false,
+    "release_target": "v4.x-governed-control-plane",
+    "release_authority": "ao-release-gate-plus-github-branch-protection",
+    "ai_output_release_authority": false,
+    "fake_minimax_evidence_allowed": false,
+    "operator_bound_supersession_required": true
+  },
+  "gap_items": [
+    {
+      "id": "minimax-provider-evidence-for-997",
+      "title": "Real MiniMax provider review evidence for high-risk provider separation",
+      "status": "blocked_external",
+      "owner_boundary": "operator_environment",
+      "evidence_required": "A real MiniMax AGREE review for the exact #997 PR scope, produced by working MiniMax tooling and accepted by ao-release-gate.",
+      "current_evidence": "#997 remains fail-closed because MiniMax evidence is BLOCK or unavailable; fake MiniMax AGREE evidence is forbidden.",
+      "blocking_for_v5_tag_publish": true
+    },
+    {
+      "id": "repo-intelligence-promotion-decision",
+      "title": "Operator-bound repo-intelligence promotion or non-promotion decision",
+      "status": "operator_bound",
+      "owner_boundary": "operator",
+      "evidence_required": "An explicit operator decision consuming the committed RI-7 evidence manifest and preserving or changing support boundaries through a separate authority path.",
+      "current_evidence": "The manifest-backed readiness report is ready_for_operator_decision, but it is evidence only and does not authorize autonomous support widening.",
+      "blocking_for_v5_tag_publish": true
+    },
+    {
+      "id": "v5-major-release-supersession",
+      "title": "Explicit major-release supersession before any v5 tag or publish",
+      "status": "operator_bound",
+      "owner_boundary": "operator",
+      "evidence_required": "A separate operator-bound supersession PR that explicitly reopens the major-release path and passes ao-release-gate without guard-flag drift.",
+      "current_evidence": "The active safe target is v4.x governed-control-plane; v5.0.0 tag or publish is not open in the autonomous lane.",
+      "blocking_for_v5_tag_publish": true
+    },
+    {
+      "id": "v4-governed-control-plane-release-checklist",
+      "title": "Governed-control-plane v4.x release checklist",
+      "status": "done",
+      "owner_boundary": "agent",
+      "evidence_required": "A conservative v4.x checklist that preserves guard flags false and does not tag or publish a release.",
+      "current_evidence": "PR #1002 added docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md and no-go tests.",
+      "blocking_for_v5_tag_publish": false
+    }
+  ],
+  "forbidden_change_audit": {
+    "source_path": ".claude/plans/gpp_status.v1.json",
+    "git_diff_base": "origin/main...HEAD",
+    "git_diff_guard_flags": [
+      "support_widening_allowed",
+      "production_platform_claim_allowed",
+      "live_adapter_execution_allowed"
+    ],
+    "false_to_true_flip_allowed": false,
+    "machine_enforced_by": "tests/test_v5_governed_control_plane_gap_audit.py"
+  },
+  "next_safe_actions": [
+    "Keep #997 fail-closed until real MiniMax AGREE evidence exists.",
+    "Use the v4.x governed-control-plane release checklist for any near-term release preparation.",
+    "Treat RI-7 readiness as input to a later operator-bound promotion or non-promotion decision.",
+    "Do not tag or publish v5.0.0 without an explicit operator-bound supersession PR."
+  ]
+}

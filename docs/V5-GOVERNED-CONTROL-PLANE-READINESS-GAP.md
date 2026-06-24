@@ -7,6 +7,7 @@
 - `.claude/plans/V5-FULL-PRODUCTION-PROMOTION-ROADMAP.md`
 - `.claude/plans/V5-PRODUCTION-READINESS-MATRIX-BLOCKER.md`
 - `.claude/plans/EPIC-9-PR-XFINAL-SUPERSESSION-CLOSEOUT.md`
+- `docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json`
 - `scripts/repo_intelligence_tier_promotion_readiness.py --output json`
 - `scripts/repo_intelligence_tier_promotion_readiness.py --output json --evidence-manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json`
 
@@ -45,6 +46,27 @@ The safe release framing is therefore:
 - **Only possible later:** a major release explicitly renamed as a governed
   control-plane GA, with changelog/PyPI/docs stating that all three guard flags
   remain false and that no production-platform promotion happened.
+
+## Machine-Enforced Gap Audit
+
+`docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json` is the machine-readable
+companion artifact for this note. It is validated by
+`tests/test_v5_governed_control_plane_gap_audit.py` against
+`ao_kernel/defaults/schemas/v5-governed-control-plane-gap-audit.schema.v1.json`.
+
+The audit artifact pins:
+
+- all three guard flags to `false`;
+- `v5_tag_publish_allowed=false`;
+- release authority to `ao-release-gate` plus GitHub branch protection;
+- AI review output as evidence only, not release authority;
+- fake MiniMax `AGREE` evidence as forbidden;
+- the remaining V5 blockers as MiniMax/environment and operator-bound items.
+
+The same test file also audits the PR diff for
+`.claude/plans/gpp_status.v1.json` using `origin/main...HEAD` and fails if any
+guard flag is changed to `true` in the PR, staged diff, or local working diff.
+This is a guardrail for autonomous slices only; it does not authorize a release.
 
 ## Current Readiness Tool Output
 
@@ -139,7 +161,7 @@ The correct completion path for `#985` is:
 | Order | Work | Owner boundary | Exit condition |
 |---:|---|---|---|
 | 1 | MiniMax provider/tooling unblock for `#997` | Operator/environment + agent verification | Real MiniMax `AGREE` evidence replaces `BLOCK`; `ao-release-gate` passes. |
-| 2 | Governed-control-plane v4.x release checklist | Agent planning only | `docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md` records packaging, docs, changelog, version, and publish preflight without tag/publish or guard flips. |
+| 2 | Governed-control-plane v4.x release checklist | Agent planning only | Done by PR #1002: `docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md` records packaging, docs, changelog, version, and publish preflight without tag/publish or guard flips. |
 | 3 | Repo-intelligence promotion decision PR | Operator-bound | Consumes the manifest-backed readiness report and explicitly chooses promotion or non-promotion. No autonomous guard flip. |
 | 4 | Separate major-release supersession, if ever desired | Operator-bound | Explicitly renames the release target as governed control-plane GA; no general-purpose production-platform claim unless separately authorized. |
 
