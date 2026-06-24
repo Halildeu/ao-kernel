@@ -18,6 +18,7 @@ from ao_kernel.ao_release_gate import (
     RELEASE_GATE_CHECK_NAME,
     build_ao_release_gate_decision,
     diff_digest,
+    expected_high_risk_supersession_reviewers,
     render_ao_release_gate_decision_text,
     write_ao_release_gate_decision,
 )
@@ -174,6 +175,7 @@ def _high_risk_supersession_evidence(
     provider_verdict: str = "AGREE",
     binding_mode: str = "added",
     work_package: str = "AO-MA-10h",
+    implementer_provider: str = "google",
 ) -> dict[str, object]:
     """Build accepting high-risk supersession evidence.
 
@@ -204,13 +206,19 @@ def _high_risk_supersession_evidence(
         "high_risk_changed_paths": high_risk_paths,
     }
     provider_verdicts = []
-    for provider, agent in zip(provider_ids, ("codex-reviewer", "claude-reviewer"), strict=False):
+    expected_reviewers = list(expected_high_risk_supersession_reviewers(implementer_provider))
+    agent_by_provider = {
+        "openai": "codex-reviewer",
+        "anthropic": "claude-reviewer",
+        "minimax": "minimax-reviewer",
+    }
+    for provider in provider_ids:
         provider_verdicts.append(
             {
                 "schema_version": "ao-ma-10-provider-consensus.v1",
                 "artifact_kind": "ao_ma_10_provider_consensus",
                 "provider_id": provider,
-                "agent_id": agent,
+                "agent_id": agent_by_provider.get(provider, f"{provider}-reviewer"),
                 "role": "reviewer",
                 "risk_classification": "high",
                 "verdict": provider_verdict,
@@ -241,8 +249,9 @@ def _high_risk_supersession_evidence(
             "live_adapter_execution": False,
         },
         "context_binding": context,
-        "reviewer_providers": ["openai", "anthropic"],
-        "required_reviewer_providers": ["openai", "anthropic"],
+        "implementer_provider": implementer_provider,
+        "reviewer_providers": expected_reviewers,
+        "required_reviewer_providers": expected_reviewers,
         "provider_verdicts": provider_verdicts,
         "consensus_status": consensus_status,
         "max_revise_rounds": 3,
@@ -563,6 +572,39 @@ def test_release_gate_denies_high_risk_supersession_same_provider_self_review() 
     assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
     assert "ao_release_gate_high_risk_supersession_same_provider_self_review" in decision["findings"]
     assert "ao_release_gate_high_risk_human_review_missing" in decision["findings"]
+
+
+def test_release_gate_denies_high_risk_supersession_implementer_provider_overlap() -> None:
+    evidence = _high_risk_supersession_evidence(
+        provider_ids=("openai", "anthropic"),
+        implementer_provider="openai",
+    )
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=evidence,
+    )
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert "ao_release_gate_high_risk_supersession_same_provider_self_review" in decision["findings"]
+
+
+def test_release_gate_allows_high_risk_supersession_with_implementer_excluded_quorum() -> None:
+    evidence = _high_risk_supersession_evidence(
+        provider_ids=("anthropic", "minimax"),
+        implementer_provider="openai",
+    )
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=evidence,
+    )
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert _find_check(decision, "high_risk_supersession_consensus")["status"] == "pass"
+    assert _find_check(decision, "path_sensitive_human_review")["status"] == "pass"
 
 
 def test_release_gate_denies_high_risk_supersession_context_mismatch_as_untrusted() -> None:

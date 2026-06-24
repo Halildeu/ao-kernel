@@ -40,11 +40,14 @@ from ao_kernel.ao_release_gate import _high_risk_paths  # noqa: E402
 from ao_kernel.config import load_default  # noqa: E402
 
 RAW_REVIEW_SCHEMA = "local-ai-review-evidence.schema.v1.json"
-REQUIRED_PROVIDERS = ("openai", "anthropic")
+PROVIDER_REVIEW_POOL = ("openai", "anthropic", "minimax")
+DEFAULT_REVIEWER_PROVIDERS = ("openai", "anthropic")
+REQUIRED_PROVIDERS = DEFAULT_REVIEWER_PROVIDERS
 DEFAULT_OUTPUT_DIR = Path("ao-ma-10-high-risk-reviews")
 PROVIDER_COMMAND_ENVS = {
     "openai": "AO_MA10_OPENAI_REVIEW_CMD",
     "anthropic": "AO_MA10_ANTHROPIC_REVIEW_CMD",
+    "minimax": "AO_MA10_MINIMAX_REVIEW_CMD",
 }
 SECRET_PATTERNS = (
     re.compile(r"gh[pousr]_[A-Za-z0-9_]{20,}"),
@@ -58,6 +61,15 @@ SECRET_PATTERNS = (
 class ProviderCommand:
     provider: str
     command: tuple[str, ...]
+
+
+def required_reviewer_providers(implementer_provider: str) -> tuple[str, str]:
+    if implementer_provider in PROVIDER_REVIEW_POOL:
+        providers = tuple(provider for provider in PROVIDER_REVIEW_POOL if provider != implementer_provider)
+        if len(providers) != 2:
+            raise ValueError("provider review pool must yield exactly two reviewers")
+        return providers
+    return DEFAULT_REVIEWER_PROVIDERS
 
 
 def _run_git(repo_root: Path, args: list[str]) -> str:
@@ -181,14 +193,18 @@ def _normalize_reviewer_payload(
     return raw
 
 
-def _parse_provider_specs(values: list[str]) -> dict[str, ProviderCommand]:
+def _parse_provider_specs(
+    values: list[str],
+    *,
+    required_providers: tuple[str, ...] = DEFAULT_REVIEWER_PROVIDERS,
+) -> dict[str, ProviderCommand]:
     commands: dict[str, ProviderCommand] = {}
     for value in values:
         if "=" not in value:
             raise ValueError("--provider must have form provider=command")
         provider, raw_command = value.split("=", 1)
         provider = provider.strip()
-        if provider not in REQUIRED_PROVIDERS:
+        if provider not in PROVIDER_REVIEW_POOL:
             raise ValueError(f"unsupported provider {provider!r}")
         command = tuple(shlex.split(raw_command))
         if not command:
@@ -205,7 +221,7 @@ def _parse_provider_specs(values: list[str]) -> dict[str, ProviderCommand]:
                 command=tuple(shlex.split(raw_command)),
             )
 
-    missing = sorted(set(REQUIRED_PROVIDERS) - set(commands))
+    missing = sorted(set(required_providers) - set(commands))
     if missing:
         raise ValueError(f"missing required provider command(s): {', '.join(missing)}")
     return commands
@@ -289,6 +305,10 @@ def produce_raw_reviews(
     high_risk_paths = _high_risk_paths(changed_files)
     if not high_risk_paths:
         raise ValueError("no high-risk changed paths found; raw review producer is not needed")
+    implementer_provider = implementer.get("provider")
+    if not isinstance(implementer_provider, str) or not implementer_provider:
+        raise ValueError("implementer provider is required")
+    required_providers = required_reviewer_providers(implementer_provider)
     diff = _diff_text(repo_root, base_ref, head_ref, max_diff_bytes)
     _assert_no_secret_like_text(diff, label="git diff")
     request = _review_request(
@@ -302,7 +322,7 @@ def produce_raw_reviews(
     )
 
     rendered: dict[str, dict[str, Any]] = {}
-    for provider in REQUIRED_PROVIDERS:
+    for provider in required_providers:
         output = _run_provider_command(provider_commands[provider], request, timeout_seconds)
         rendered[provider] = _normalize_reviewer_payload(
             provider=provider,
@@ -332,9 +352,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--head-ref", required=True)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--provider", action="append", default=[], help="provider=command; required for openai and anthropic unless env commands are set")
+    parser.add_argument(
+        "--provider",
+        action="append",
+        default=[],
+        help=(
+            "provider=command; required providers are selected from "
+            "openai/anthropic/minimax after excluding --implementer-provider"
+        ),
+    )
     parser.add_argument("--implementer-agent", default="autonomous-implementer")
-    parser.add_argument("--implementer-provider", choices=["anthropic", "openai", "google", "xai"], default="openai")
+    parser.add_argument("--implementer-provider", choices=["anthropic", "openai", "google", "xai", "minimax"], default="openai")
     parser.add_argument("--max-diff-bytes", type=int, default=200_000)
     parser.add_argument("--timeout-seconds", type=int, default=600)
     return parser
@@ -343,7 +371,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    provider_commands = _parse_provider_specs(args.provider)
+    required_providers = required_reviewer_providers(args.implementer_provider)
+    provider_commands = _parse_provider_specs(args.provider, required_providers=required_providers)
     paths = produce_raw_reviews(
         repository=args.repository,
         work_package=args.work_package,
@@ -356,7 +385,7 @@ def main(argv: list[str] | None = None) -> int:
         max_diff_bytes=args.max_diff_bytes,
         timeout_seconds=args.timeout_seconds,
     )
-    for provider in REQUIRED_PROVIDERS:
+    for provider in required_providers:
         print(f"{provider}: {paths[provider]}")
     return 0
 

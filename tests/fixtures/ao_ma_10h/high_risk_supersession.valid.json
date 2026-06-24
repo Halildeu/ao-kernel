@@ -24,6 +24,7 @@
     "production_platform_claim": false,
     "support_widening": false
   },
+  "implementer_provider": "google",
   "max_revise_rounds": 3,
   "mutations_performed": false,
   "planning_only": true,

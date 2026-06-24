@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **AO-MA-10 high-risk runtime provider bootstrap**: trusted-base high-risk supersession runtime, evidence builder, raw-review producer, schemas, fixtures, and fail-closed tests now support the dynamic OpenAI/Anthropic/MiniMax reviewer quorum while excluding the implementation provider from reviewer authority. This prepares the follow-up provider-separation PR without changing the workflow reviewer request policy, widening support, claiming production readiness, or executing live adapters.
 - **AO-MA-10 high-risk reviewer provider bootstrap**: `local-ai-review-evidence.v1` now recognizes `minimax` as an allowed AI provider so trusted-base `ao-release-gate` validation can consume real MiniMax reviewer evidence in follow-up high-risk provider-separation PRs. This is a schema compatibility bootstrap only; it does not widen support, claim production readiness, or execute live adapters.
 - **AO-MA-11E-2c Project mirror full sync**: heal-mode ProjectV2 mutations now
   require the operator-managed `REPO_GH_PAT_PROJECTS_RW` secret. When that

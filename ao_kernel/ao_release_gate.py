@@ -31,6 +31,8 @@ LOCAL_GATE_EVIDENCE_SCHEMA_NAME = "local-gpp-gate-evidence.schema.v1.json"
 REVIEW_EVIDENCE_ACCEPTANCE_SCHEMA_NAME = "ao-release-gate-review-evidence-input.schema.v1.json"
 AO_MA10_EVIDENCE_BUNDLE_SCHEMA_NAME = "ao-ma-10-evidence-bundle.schema.v1.json"
 AO_MA10_HIGH_RISK_SUPERSESSION_SCHEMA_NAME = "ao-ma-10-high-risk-supersession-evidence.schema.v1.json"
+HIGH_RISK_SUPERSESSION_REVIEW_PROVIDER_POOL = ("openai", "anthropic", "minimax")
+HIGH_RISK_SUPERSESSION_DEFAULT_REVIEWERS = ("openai", "anthropic")
 
 HIGH_RISK_PATH_PATTERNS = (
     ".github/**",
@@ -48,6 +50,27 @@ HIGH_RISK_PATH_PATTERNS = (
 AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX = "docs/evidence/ao-ma-10l-autonomous-smoke/"
 AO_MA10_DEDICATED_MERGE_ACTOR = "gladyatore-lab"
 AO_MA10_OPERATOR_PRODUCER_ACTOR = "halildeu"
+
+
+def expected_high_risk_supersession_reviewers(implementer_provider: str) -> tuple[str, str]:
+    """Return the required reviewer-provider quorum for a high-risk implementer.
+
+    The quorum is dynamic by design: when the implementer is one of the AI
+    providers in the review pool, that provider is excluded and the other two
+    providers must review. Human or out-of-pool implementers keep the historical
+    OpenAI + Anthropic quorum.
+    """
+
+    if implementer_provider in HIGH_RISK_SUPERSESSION_REVIEW_PROVIDER_POOL:
+        providers = tuple(
+            provider
+            for provider in HIGH_RISK_SUPERSESSION_REVIEW_PROVIDER_POOL
+            if provider != implementer_provider
+        )
+        if len(providers) != 2:
+            raise ValueError("high-risk review provider pool must yield exactly two reviewers")
+        return providers
+    return HIGH_RISK_SUPERSESSION_DEFAULT_REVIEWERS
 
 
 def diff_digest(changed_paths: list[str]) -> str:
@@ -1027,9 +1050,10 @@ def _evaluate_high_risk_supersession_checks(
 
     This evidence can satisfy the path-sensitive high-risk gate only when
     it is schema-valid, context-bound to the current PR, records unanimous
-    OpenAI + Anthropic AGREE verdicts, and keeps release-authority and
-    guard-flag boundaries closed. AI output remains evidence; the release
-    authority remains this deterministic gate plus GitHub enforcement.
+    the expected cross-provider AGREE verdicts after excluding the implementer
+    provider, and keeps release-authority and guard-flag boundaries closed. AI
+    output remains evidence; the release authority remains this deterministic
+    gate plus GitHub enforcement.
     """
 
     if high_risk_supersession_evidence is None:
@@ -1245,9 +1269,31 @@ def _evaluate_high_risk_supersession_checks(
     provider_verdicts = _as_list(high_risk_supersession_evidence.get("provider_verdicts"))
     provider_ids = [item.get("provider_id") for item in provider_verdicts if isinstance(item, dict)]
     provider_ids_are_distinct = len(set(provider_ids)) == len(provider_ids)
-    required_provider_ids = {"openai", "anthropic"}
-    required_providers_are_present = required_provider_ids.issubset(set(provider_ids))
-    if not provider_ids_are_distinct or not required_providers_are_present:
+    implementer_provider = high_risk_supersession_evidence.get("implementer_provider")
+    expected_provider_ids = (
+        expected_high_risk_supersession_reviewers(implementer_provider)
+        if isinstance(implementer_provider, str)
+        else ()
+    )
+    reviewer_providers = high_risk_supersession_evidence.get("reviewer_providers")
+    required_reviewer_providers = high_risk_supersession_evidence.get("required_reviewer_providers")
+    provider_ids_match_expected = set(provider_ids) == set(expected_provider_ids)
+    reviewer_providers_match_expected = (
+        isinstance(reviewer_providers, list)
+        and set(item for item in reviewer_providers if isinstance(item, str)) == set(expected_provider_ids)
+    )
+    required_providers_match_expected = (
+        isinstance(required_reviewer_providers, list)
+        and set(item for item in required_reviewer_providers if isinstance(item, str)) == set(expected_provider_ids)
+    )
+    implementer_provider_excluded = implementer_provider not in set(provider_ids)
+    if (
+        not provider_ids_are_distinct
+        or not provider_ids_match_expected
+        or not reviewer_providers_match_expected
+        or not required_providers_match_expected
+        or not implementer_provider_excluded
+    ):
         return (
             [
                 evidence_present,
@@ -1256,12 +1302,16 @@ def _evaluate_high_risk_supersession_checks(
                 _blocked(
                     "high_risk_supersession_consensus",
                     finding_code="ao_release_gate_high_risk_supersession_same_provider_self_review",
-                    detail="High-risk supersession evidence contains duplicate providers or omits OpenAI/Anthropic.",
+                    detail=(
+                        "High-risk supersession evidence contains duplicate providers, "
+                        "includes the implementer provider as a reviewer, or does not "
+                        "match the expected reviewer quorum for the implementer provider."
+                    ),
                 ),
                 _blocked(
                     "high_risk_supersession_context_bound",
                     finding_code="ao_release_gate_high_risk_supersession_context_unverifiable",
-                    detail="High-risk supersession context binding cannot be trusted; provider identity is not distinct.",
+                    detail="High-risk supersession context binding cannot be trusted; provider identity is not independent.",
                 ),
                 authority_check,
             ],
@@ -1270,7 +1320,7 @@ def _evaluate_high_risk_supersession_checks(
 
     consensus_check = _pass(
         "high_risk_supersession_consensus",
-        detail="High-risk supersession evidence records unanimous AGREE from OpenAI and Anthropic providers.",
+        detail="High-risk supersession evidence records unanimous AGREE from the expected independent reviewer providers.",
     )
     raw_binding = high_risk_supersession_evidence.get("context_binding")
     binding = raw_binding if isinstance(raw_binding, dict) else None

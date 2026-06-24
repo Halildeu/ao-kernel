@@ -58,7 +58,8 @@ from ao_kernel.config import load_default
 RAW_REVIEW_SCHEMA = "local-ai-review-evidence.schema.v1.json"
 HIGH_RISK_SUPERSESSION_SCHEMA = "ao-ma-10-high-risk-supersession-evidence.schema.v1.json"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
-REQUIRED_PROVIDER_IDS = ("openai", "anthropic")
+PROVIDER_REVIEW_POOL = ("openai", "anthropic", "minimax")
+DEFAULT_REVIEWER_PROVIDER_IDS = ("openai", "anthropic")
 
 # Canonical work_package regex shared with the trusted-base workflow's
 # reviewed_wp step (.github/workflows/test.yml line ~634) and the schema's
@@ -100,10 +101,26 @@ def _validate_work_package(value: str) -> None:
 # stem also pins the expected reviewer provider (anti audit-provenance drift).
 HIGH_RISK_REVIEW_REPO_RELATIVE_PATHS: dict[str, str] = {
     "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json": "anthropic",
+    "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json": "minimax",
     "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json": "openai",
 }
 
 VALID_BINDING_MODES = ("added", "modified", "unchanged")
+
+
+def _implementer_provider_id(implementer: dict[str, Any]) -> str:
+    if implementer.get("kind") == "human":
+        return "human"
+    provider = implementer.get("provider")
+    if not isinstance(provider, str) or not provider:
+        raise ValueError("raw review implementer provider missing")
+    return provider
+
+
+def required_reviewer_provider_ids(implementer_provider: str) -> tuple[str, str]:
+    if implementer_provider in PROVIDER_REVIEW_POOL:
+        return tuple(provider for provider in PROVIDER_REVIEW_POOL if provider != implementer_provider)  # type: ignore[return-value]
+    return DEFAULT_REVIEWER_PROVIDER_IDS
 
 
 def _run_git(repo_root: Path, args: list[str]) -> str:
@@ -220,6 +237,8 @@ def _provider_verdict_from_raw_review(
     raw_review: dict[str, Any],
     raw_path: Path,
     *,
+    implementer_provider: str,
+    required_provider_ids: tuple[str, str],
     repository: str,
     review_work_package: str,
     review_base_ref: str,
@@ -275,7 +294,9 @@ def _provider_verdict_from_raw_review(
         raise ValueError("raw review contains a forbidden finding")
 
     provider_id = reviewer.get("provider")
-    if provider_id not in REQUIRED_PROVIDER_IDS:
+    if provider_id == implementer_provider:
+        raise ValueError("raw review reviewer provider must differ from implementer provider")
+    if provider_id not in required_provider_ids:
         raise ValueError("raw review provider is not required for high-risk supersession")
 
     # Path-to-provider binding (audit provenance): the openai.* file must
@@ -377,10 +398,21 @@ def build_high_risk_supersession_evidence(
     raw_reviews = [(path, _load_json(path)) for path in raw_review_paths]
     if len(raw_reviews) < 2:
         raise ValueError("at least two raw high-risk review evidence files are required")
+    implementer_providers = {
+        _implementer_provider_id(raw_review["implementer"])
+        for _path, raw_review in raw_reviews
+        if isinstance(raw_review.get("implementer"), dict)
+    }
+    if len(implementer_providers) != 1:
+        raise ValueError("raw reviews must agree on exactly one implementer provider")
+    implementer_provider = next(iter(implementer_providers))
+    required_provider_ids = required_reviewer_provider_ids(implementer_provider)
     provider_verdicts = [
         _provider_verdict_from_raw_review(
             raw_review,
             raw_path,
+            implementer_provider=implementer_provider,
+            required_provider_ids=required_provider_ids,
             repository=repository,
             review_work_package=review_work_package,
             review_base_ref=review_base_ref,
@@ -395,8 +427,11 @@ def build_high_risk_supersession_evidence(
         for raw_path, raw_review in raw_reviews
     ]
     provider_ids = [verdict["provider_id"] for verdict in provider_verdicts]
-    if sorted(provider_ids) != sorted(REQUIRED_PROVIDER_IDS):
-        raise ValueError("high-risk supersession requires exactly OpenAI and Anthropic reviewer providers")
+    if sorted(provider_ids) != sorted(required_provider_ids):
+        raise ValueError(
+            "high-risk supersession requires exactly the expected reviewer "
+            "providers after excluding the implementer provider"
+        )
 
     evidence = {
         "schema_version": "ao-ma-10-high-risk-supersession-evidence.v1",
@@ -425,8 +460,9 @@ def build_high_risk_supersession_evidence(
             "live_adapter_execution": False,
         },
         "context_binding": context_binding,
+        "implementer_provider": implementer_provider,
         "reviewer_providers": sorted(provider_ids),
-        "required_reviewer_providers": list(REQUIRED_PROVIDER_IDS),
+        "required_reviewer_providers": list(required_provider_ids),
         "provider_verdicts": provider_verdicts,
         "consensus_status": "AGREE",
         "max_revise_rounds": 3,
