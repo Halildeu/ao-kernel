@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "V4-RELEASE-CHECKLIST-V5-NO-GO",
+  "work_package": "V5-GAP-FORBIDDEN-CHANGE-AUDIT",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,13 +13,14 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v4-release-checklist-v5-no-go",
+    "head_ref": "refs/heads/codex/v5-gap-forbidden-change-audit",
     "changed_files": [
       "CHANGELOG.md",
-      "docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md",
+      "ao_kernel/defaults/schemas/v5-governed-control-plane-gap-audit.schema.v1.json",
+      "docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json",
       "docs/V5-GOVERNED-CONTROL-PLANE-READINESS-GAP.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_v4_release_checklist_v5_no_go.py"
+      "tests/test_v5_governed_control_plane_gap_audit.py"
     ]
   },
   "checks_considered": [
@@ -45,13 +46,14 @@
     }
   ],
   "findings": [
-    "Claude reviewed the v4 governed-control-plane release checklist and v5 no-go guard diff.",
-    "Claude returned AGREE with no blocking issue for the docs/tests/changelog-only scope.",
-    "The review confirmed the change keeps guard flags false and does not tag or publish v5.0.0.",
-    "The review confirmed #997 remains fail-closed until real MiniMax AGREE evidence exists.",
-    "The review confirmed release authority remains ao-release-gate plus GitHub branch protection, not AI output.",
-    "The tests check is backed by pytest over the v4 release checklist no-go, V5 readiness gap, publish workflow, and migration docs tests.",
-    "The secret_scan check is backed by the repository pre-commit hook.",
+    "Claude reviewed the V5 governed-control-plane gap audit plan and returned AGREE with mandatory hardening.",
+    "The implementation applies Claude hardening H1: git diff audit uses origin/main...HEAD and also checks staged and working-tree diffs.",
+    "The implementation applies Claude hardening H2: the schema closes all object layers with additionalProperties false.",
+    "The implementation applies Claude hardening H3: critical guard and release-boundary booleans are schema-pinned with const false.",
+    "The schema and artifact keep support_widening_allowed, production_platform_claim_allowed, and live_adapter_execution_allowed false.",
+    "The artifact keeps v5 tag/publish disallowed and release authority bound to ao-release-gate plus GitHub branch protection.",
+    "The artifact records fake MiniMax AGREE evidence as forbidden and keeps #997 blocked until real MiniMax evidence exists.",
+    "No runtime, workflow, webhook, tag, publish, support-widening, production-claim, or live-adapter surface is changed.",
     "No blocking findings."
   ],
   "secrets_recorded": false,

@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:v5-governed-control-plane-gap-audit:v1",
+  "title": "V5 governed control-plane gap audit v1",
+  "description": "Machine-readable audit artifact for the current V5 no-go boundary. It pins guard flags false, records the repo-owned release authority, rejects fake MiniMax evidence, and describes the remaining operator-bound blockers before any future V5 tag or publish can be reconsidered.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repo",
+    "work_package",
+    "authority",
+    "guard_flags",
+    "release_boundary",
+    "gap_items",
+    "forbidden_change_audit",
+    "next_safe_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "v5-governed-control-plane-gap-audit.v1" },
+    "artifact_kind": { "const": "v5_governed_control_plane_gap_audit" },
+    "repo": { "const": "Halildeu/ao-kernel" },
+    "work_package": { "const": "V5-GAP-FORBIDDEN-CHANGE-AUDIT" },
+    "authority": { "const": "docs/V5-GOVERNED-CONTROL-PLANE-READINESS-GAP.md" },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "type": "boolean", "const": false },
+        "production_platform_claim_allowed": { "type": "boolean", "const": false },
+        "live_adapter_execution_allowed": { "type": "boolean", "const": false }
+      }
+    },
+    "release_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "v5_tag_publish_allowed",
+        "release_target",
+        "release_authority",
+        "ai_output_release_authority",
+        "fake_minimax_evidence_allowed",
+        "operator_bound_supersession_required"
+      ],
+      "properties": {
+        "v5_tag_publish_allowed": { "type": "boolean", "const": false },
+        "release_target": { "const": "v4.x-governed-control-plane" },
+        "release_authority": {
+          "const": "ao-release-gate-plus-github-branch-protection"
+        },
+        "ai_output_release_authority": { "type": "boolean", "const": false },
+        "fake_minimax_evidence_allowed": { "type": "boolean", "const": false },
+        "operator_bound_supersession_required": { "type": "boolean", "const": true }
+      }
+    },
+    "gap_items": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/gap_item" },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "id": { "const": "minimax-provider-evidence-for-997" }
+            },
+            "required": ["id"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "id": { "const": "repo-intelligence-promotion-decision" }
+            },
+            "required": ["id"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "id": { "const": "v5-major-release-supersession" }
+            },
+            "required": ["id"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "id": { "const": "v4-governed-control-plane-release-checklist" }
+            },
+            "required": ["id"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "source_path",
+        "git_diff_base",
+        "git_diff_guard_flags",
+        "false_to_true_flip_allowed",
+        "machine_enforced_by"
+      ],
+      "properties": {
+        "source_path": { "const": ".claude/plans/gpp_status.v1.json" },
+        "git_diff_base": { "const": "origin/main...HEAD" },
+        "git_diff_guard_flags": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "prefixItems": [
+            { "const": "support_widening_allowed" },
+            { "const": "production_platform_claim_allowed" },
+            { "const": "live_adapter_execution_allowed" }
+          ],
+          "items": false
+        },
+        "false_to_true_flip_allowed": { "type": "boolean", "const": false },
+        "machine_enforced_by": {
+          "const": "tests/test_v5_governed_control_plane_gap_audit.py"
+        }
+      }
+    },
+    "next_safe_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "gap_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "id",
+        "title",
+        "status",
+        "owner_boundary",
+        "evidence_required",
+        "current_evidence",
+        "blocking_for_v5_tag_publish"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "minimax-provider-evidence-for-997",
+            "repo-intelligence-promotion-decision",
+            "v5-major-release-supersession",
+            "v4-governed-control-plane-release-checklist"
+          ]
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["open", "blocked_external", "operator_bound", "done"]
+        },
+        "owner_boundary": {
+          "type": "string",
+          "enum": ["agent", "operator", "operator_environment", "repo_owned_gate"]
+        },
+        "evidence_required": { "type": "string", "minLength": 1 },
+        "current_evidence": { "type": "string", "minLength": 1 },
+        "blocking_for_v5_tag_publish": { "type": "boolean" }
+      }
+    }
+  }
+}

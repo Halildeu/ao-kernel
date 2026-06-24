@@ -9,6 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **V5 governed-control-plane gap audit**: added a machine-readable gap audit
+  artifact, strict JSON Schema, and invariant tests that pin all guard flags to
+  `false`, keep v5 tag/publish disallowed, bind release authority to
+  `ao-release-gate` plus GitHub branch protection, reject fake MiniMax review
+  evidence, and fail PR diffs that flip `.claude/plans/gpp_status.v1.json`
+  guard flags to `true`. This is docs/test/schema hardening only; it does not
+  tag or publish a release, widen support, claim production-platform readiness,
+  or execute live adapters.
 - **v4.x governed-control-plane release checklist**: added an operator-bound
   release checklist for the next safe v4.x governed-control-plane release,
   plus a V5 no-go section and invariant tests that keep v5.0.0 tag/publish,
