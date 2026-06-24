@@ -48,6 +48,7 @@ def _raw_review(
     provider: str,
     agent: str,
     changed_files: list[str],
+    implementer_provider: str = "google",
     verdict: str = "AGREE",
     head_ref: str = "refs/heads/feature",
     work_package: str = "AO-MA-10j",
@@ -57,7 +58,7 @@ def _raw_review(
         "schema_version": "local-ai-review-evidence.v1",
         "repo": "Halildeu/ao-kernel",
         "work_package": work_package,
-        "implementer": {"agent": "implementer-agent", "provider": "google"},
+        "implementer": {"agent": "implementer-agent", "provider": implementer_provider},
         "reviewer": {"agent": agent, "provider": provider, "verdict": verdict},
         "scope_reviewed": {
             "base_ref": base_ref,
@@ -259,6 +260,7 @@ def test_build_high_risk_supersession_evidence_from_raw_runtime_reviews(
     schema = load_default("schemas", "ao-ma-10-high-risk-supersession-evidence.schema.v1.json")
     assert list(Draft202012Validator(schema).iter_errors(evidence)) == []
     assert evidence["schema_version"] == "ao-ma-10-high-risk-supersession-evidence.v1"
+    assert evidence["implementer_provider"] == "google"
     assert evidence["reviewer_providers"] == ["anthropic", "openai"]
     assert evidence["context_binding"]["head_sha"] == _git(repo, "rev-parse", "feature")
     assert evidence["context_binding"]["changed_files_count"] == len(changed_files)
@@ -283,8 +285,121 @@ def test_build_high_risk_supersession_rejects_missing_required_provider(
     # fails first (before provider-set check). Match either reason.
     with pytest.raises(
         ValueError,
-        match="(does not match path-bound expected provider|exactly OpenAI and Anthropic)",
+        match="(does not match path-bound expected provider|expected reviewer providers)",
     ):
+        build_high_risk_supersession_evidence(
+            repository="Halildeu/ao-kernel",
+            review_work_package="AO-MA-10j",
+            review_base_ref="refs/heads/main",
+            review_head_ref="refs/heads/feature",
+            diff_base_ref="main",
+            diff_head_ref="feature",
+            repo_root=repo,
+            raw_review_paths=review_paths,
+            max_age_seconds=3600,
+            round_index=1,
+            generated_at="2026-05-28T00:00:00Z",
+        )
+
+
+def test_build_high_risk_supersession_rejects_reviewer_provider_overlap_with_implementer(
+    high_risk_repo: tuple[Path, list[Path], list[str]],
+) -> None:
+    repo, review_paths, _changed_files = high_risk_repo
+    for path in review_paths:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        raw["implementer"]["provider"] = "openai"
+        path.write_text(json.dumps(raw, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _git(repo, "add", "ao-ma-10-high-risk-reviews/")
+    _git(repo, "commit", "--amend", "--no-edit")
+
+    with pytest.raises(ValueError, match="reviewer provider must differ from implementer provider"):
+        build_high_risk_supersession_evidence(
+            repository="Halildeu/ao-kernel",
+            review_work_package="AO-MA-10j",
+            review_base_ref="refs/heads/main",
+            review_head_ref="refs/heads/feature",
+            diff_base_ref="main",
+            diff_head_ref="feature",
+            repo_root=repo,
+            raw_review_paths=review_paths,
+            max_age_seconds=3600,
+            round_index=1,
+            generated_at="2026-05-28T00:00:00Z",
+        )
+
+
+def test_build_high_risk_supersession_accepts_quorum_after_excluding_implementer_provider(
+    high_risk_repo: tuple[Path, list[Path], list[str]],
+) -> None:
+    repo, review_paths, changed_files = high_risk_repo
+    changed_files = sorted(
+        [
+            *changed_files,
+            "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
+        ]
+    )
+    anthropic_path = next(path for path in review_paths if path.name.startswith("anthropic."))
+    anthropic = _raw_review(
+        provider="anthropic",
+        agent="claude-reviewer",
+        changed_files=changed_files,
+        implementer_provider="openai",
+    )
+    anthropic_path.write_text(json.dumps(anthropic, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    minimax_path = repo / "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json"
+    minimax_path.write_text(
+        json.dumps(
+            _raw_review(
+                provider="minimax",
+                agent="minimax-reviewer",
+                changed_files=changed_files,
+                implementer_provider="openai",
+            ),
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _git(repo, "add", "ao-ma-10-high-risk-reviews/")
+    _git(repo, "commit", "--amend", "--no-edit")
+
+    evidence = build_high_risk_supersession_evidence(
+        repository="Halildeu/ao-kernel",
+        review_work_package="AO-MA-10j",
+        review_base_ref="refs/heads/main",
+        review_head_ref="refs/heads/feature",
+        diff_base_ref="main",
+        diff_head_ref="feature",
+        repo_root=repo,
+        raw_review_paths=[anthropic_path, minimax_path],
+        max_age_seconds=3600,
+        round_index=1,
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert evidence["implementer_provider"] == "openai"
+    assert evidence["reviewer_providers"] == ["anthropic", "minimax"]
+    assert evidence["required_reviewer_providers"] == ["anthropic", "minimax"]
+    assert {item["provider_id"] for item in evidence["provider_verdicts"]} == {"anthropic", "minimax"}
+
+
+def test_build_high_risk_supersession_rejects_implementer_provider_disagreement(
+    high_risk_repo: tuple[Path, list[Path], list[str]],
+) -> None:
+    repo, review_paths, _changed_files = high_risk_repo
+    first = json.loads(review_paths[0].read_text(encoding="utf-8"))
+    first["implementer"]["provider"] = "openai"
+    review_paths[0].write_text(json.dumps(first, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    second = json.loads(review_paths[1].read_text(encoding="utf-8"))
+    second["implementer"]["provider"] = "anthropic"
+    review_paths[1].write_text(json.dumps(second, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _git(repo, "add", "ao-ma-10-high-risk-reviews/")
+    _git(repo, "commit", "--amend", "--no-edit")
+
+    with pytest.raises(ValueError, match="must agree on exactly one implementer provider"):
         build_high_risk_supersession_evidence(
             repository="Halildeu/ao-kernel",
             review_work_package="AO-MA-10j",
@@ -488,7 +603,7 @@ def test_schema_pins_binding_mode_enum_on_provider_verdict() -> None:
 def test_high_risk_review_repo_relative_paths_pin_provider() -> None:
     """The path-to-provider audit binding map must include both required
     providers exactly once and point to the matching filename."""
-    assert sorted(HIGH_RISK_REVIEW_REPO_RELATIVE_PATHS.values()) == ["anthropic", "openai"]
+    assert sorted(HIGH_RISK_REVIEW_REPO_RELATIVE_PATHS.values()) == ["anthropic", "minimax", "openai"]
     for path, provider in HIGH_RISK_REVIEW_REPO_RELATIVE_PATHS.items():
         assert provider in path  # filename contains the provider name
 

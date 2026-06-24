@@ -83,16 +83,18 @@ def test_ao_ma10h_valid_fixture_validates() -> None:
     assert _errors(_fixture()) == []
 
 
-def test_ao_ma10h_rejects_same_or_missing_required_provider() -> None:
+def test_ao_ma10h_rejects_duplicate_provider_but_allows_dynamic_provider_pairs() -> None:
     duplicate = _fixture()
     duplicate["reviewer_providers"] = ["openai", "openai"]
     duplicate["provider_verdicts"][1]["provider_id"] = "openai"
     assert _errors(duplicate)
 
-    missing = _fixture()
-    missing["reviewer_providers"] = ["openai", "minimax"]
-    missing["provider_verdicts"][1]["provider_id"] = "minimax"
-    assert _errors(missing)
+    dynamic_pair = _fixture()
+    dynamic_pair["implementer_provider"] = "anthropic"
+    dynamic_pair["reviewer_providers"] = ["openai", "minimax"]
+    dynamic_pair["required_reviewer_providers"] = ["openai", "minimax"]
+    dynamic_pair["provider_verdicts"][1]["provider_id"] = "minimax"
+    assert _errors(dynamic_pair) == []
 
 
 def test_ao_ma10h_rejects_non_agree_or_stale_evidence() -> None:

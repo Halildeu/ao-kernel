@@ -16,6 +16,7 @@
     "ai_output_release_authority",
     "guard_flags",
     "context_binding",
+    "implementer_provider",
     "reviewer_providers",
     "required_reviewer_providers",
     "provider_verdicts",
@@ -88,41 +89,32 @@
     "context_binding": {
       "$ref": "#/$defs/context_binding"
     },
+    "implementer_provider": {
+      "$ref": "#/$defs/implementer_provider_id",
+      "description": "Provider that authored the implementation under review. Human implementers use the sentinel 'human'. Release-gate recomputes required_reviewer_providers from this field and rejects any reviewer provider overlap."
+    },
     "reviewer_providers": {
       "type": "array",
       "minItems": 2,
+      "maxItems": 2,
       "uniqueItems": true,
       "items": {
         "$ref": "#/$defs/provider_id"
-      },
-      "contains": {
-        "const": "openai"
-      },
-      "allOf": [
-        {
-          "contains": {
-            "const": "anthropic"
-          }
-        }
-      ]
+      }
     },
     "required_reviewer_providers": {
       "type": "array",
-      "prefixItems": [
-        {
-          "const": "openai"
-        },
-        {
-          "const": "anthropic"
-        }
-      ],
-      "items": false,
       "minItems": 2,
-      "maxItems": 2
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/provider_id"
+      }
     },
     "provider_verdicts": {
       "type": "array",
       "minItems": 2,
+      "maxItems": 2,
       "items": {
         "$ref": "#/$defs/provider_verdict"
       }
@@ -174,6 +166,17 @@
         "openai",
         "anthropic",
         "minimax"
+      ]
+    },
+    "implementer_provider_id": {
+      "type": "string",
+      "enum": [
+        "openai",
+        "anthropic",
+        "minimax",
+        "google",
+        "xai",
+        "human"
       ]
     },
     "context_binding": {

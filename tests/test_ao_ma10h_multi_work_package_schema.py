@@ -201,26 +201,35 @@ def test_migration_does_not_relax_authority_or_guard_const_pins() -> None:
         assert guard_flags[flag]["const"] is False, f"{flag} must stay const false"
 
 
-def test_migration_preserves_provider_distinctness_and_pair_requirement() -> None:
-    """OpenAI + Anthropic both required, distinct, no fallback widening."""
+def test_migration_preserves_provider_distinctness_and_dynamic_pair_shape() -> None:
+    """Two distinct reviewers are required; release-gate enforces the dynamic pair."""
 
     schema = _schema()
+    assert "implementer_provider" in schema["required"]
+    implementer_provider = schema["properties"]["implementer_provider"]
+    assert implementer_provider["$ref"] == "#/$defs/implementer_provider_id"
+    assert schema["$defs"]["implementer_provider_id"]["enum"] == [
+        "openai",
+        "anthropic",
+        "minimax",
+        "google",
+        "xai",
+        "human",
+    ]
+
     reviewer_providers = schema["properties"]["reviewer_providers"]
     assert reviewer_providers["minItems"] == 2
+    assert reviewer_providers["maxItems"] == 2
     assert reviewer_providers["uniqueItems"] is True
-    # The two required-contains clauses (one direct, one in allOf) must
-    # both still pin openai + anthropic.
-    assert reviewer_providers["contains"] == {"const": "openai"}
-    assert any(clause.get("contains") == {"const": "anthropic"} for clause in reviewer_providers["allOf"])
+    assert reviewer_providers["items"] == {"$ref": "#/$defs/provider_id"}
+    assert "contains" not in reviewer_providers
+    assert "allOf" not in reviewer_providers
 
     required_providers = schema["properties"]["required_reviewer_providers"]
-    assert required_providers["prefixItems"] == [
-        {"const": "openai"},
-        {"const": "anthropic"},
-    ]
-    assert required_providers["items"] is False
     assert required_providers["minItems"] == 2
     assert required_providers["maxItems"] == 2
+    assert required_providers["uniqueItems"] is True
+    assert required_providers["items"] == {"$ref": "#/$defs/provider_id"}
 
 
 # ---------------------------------------------------------------------------

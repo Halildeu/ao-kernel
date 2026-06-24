@@ -101,18 +101,18 @@ def _provider_commands(
             provider=provider_id,
             command=(sys.executable, str(fake), provider_id),
         )
-        for provider_id in producer.REQUIRED_PROVIDERS
+        for provider_id in producer.PROVIDER_REVIEW_POOL
     }
 
 
-def test_producer_writes_schema_valid_openai_and_anthropic_raw_reviews(tmp_path: Path) -> None:
+def test_producer_writes_schema_valid_default_openai_and_anthropic_raw_reviews(tmp_path: Path) -> None:
     repo = _repo_with_high_risk_change(tmp_path)
     output_dir = tmp_path / "reviews"
 
     paths = producer.produce_raw_reviews(
         repository="Halildeu/ao-kernel",
         work_package="AO-MA-10K",
-        implementer={"agent": "codex", "provider": "openai"},
+        implementer={"agent": "codex", "provider": "google"},
         base_ref="main",
         head_ref="feature",
         repo_root=repo,
@@ -134,6 +134,27 @@ def test_producer_writes_schema_valid_openai_and_anthropic_raw_reviews(tmp_path:
         assert payload["support_widening"] is False
         assert payload["production_platform_claim"] is False
         assert payload["live_adapter_execution"] is False
+
+
+def test_producer_excludes_implementer_provider_from_required_reviewers(tmp_path: Path) -> None:
+    repo = _repo_with_high_risk_change(tmp_path)
+    output_dir = tmp_path / "reviews"
+
+    paths = producer.produce_raw_reviews(
+        repository="Halildeu/ao-kernel",
+        work_package="AO-MA-10K",
+        implementer={"agent": "codex", "provider": "openai"},
+        base_ref="main",
+        head_ref="feature",
+        repo_root=repo,
+        output_dir=output_dir,
+        provider_commands=_provider_commands(tmp_path),
+        max_diff_bytes=200_000,
+        timeout_seconds=30,
+    )
+
+    assert set(paths) == {"anthropic", "minimax"}
+    assert "openai" not in paths
 
 
 def test_producer_requires_both_provider_commands() -> None:
@@ -230,6 +251,8 @@ def test_cli_outputs_paths_without_secret_values(tmp_path: Path) -> None:
             f"openai={sys.executable} {fake} openai",
             "--provider",
             f"anthropic={sys.executable} {fake} anthropic",
+            "--implementer-provider",
+            "google",
         ],
         cwd=Path(__file__).resolve().parents[1],
         capture_output=True,
