@@ -23,6 +23,7 @@
 | [`02-plan-approval-environment.md`](02-plan-approval-environment.md) | AO-MA-11A-2: `ao-ma-plan-approval` environment configure |
 | [`03-mirror-pat-secret.md`](03-mirror-pat-secret.md) | AO-MA-11E-2b: `REPO_GH_PAT_PROJECTS_RW` secret seed |
 | [`04-mirror-sync-environment.md`](04-mirror-sync-environment.md) | AO-MA-11E-2b: `ao-ma-mirror-sync` environment configure |
+| [`05-minimax-mavis-runtime.md`](05-minimax-mavis-runtime.md) | MiniMax/Mavis local runtime workaround + credential gate for high-risk review evidence |
 | [`../../ao_kernel/defaults/schemas/operator-action-checklist.schema.v1.json`](../../ao_kernel/defaults/schemas/operator-action-checklist.schema.v1.json) | JSON Schema (Draft 2020-12) |
 
 ## 1. Checklist Overview

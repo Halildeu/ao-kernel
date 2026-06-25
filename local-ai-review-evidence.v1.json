@@ -1,28 +1,4 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "V5-GAP-FORBIDDEN-CHANGE-AUDIT",
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "reviewer": {
-    "agent": "claude-cli",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/v5-gap-forbidden-change-audit",
-    "changed_files": [
-      "CHANGELOG.md",
-      "ao_kernel/defaults/schemas/v5-governed-control-plane-gap-audit.schema.v1.json",
-      "docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json",
-      "docs/V5-GOVERNED-CONTROL-PLANE-READINESS-GAP.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_v5_governed_control_plane_gap_audit.py"
-    ]
-  },
   "checks_considered": [
     {
       "name": "tests",
@@ -31,33 +7,37 @@
     {
       "name": "secret_scan",
       "status": "pass"
-    },
-    {
-      "name": "diff_check",
-      "status": "pass"
-    },
-    {
-      "name": "gpp_status",
-      "status": "pass"
-    },
-    {
-      "name": "claude_review",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Claude reviewed the V5 governed-control-plane gap audit plan and returned AGREE with mandatory hardening.",
-    "The implementation applies Claude hardening H1: git diff audit uses origin/main...HEAD and also checks staged and working-tree diffs.",
-    "The implementation applies Claude hardening H2: the schema closes all object layers with additionalProperties false.",
-    "The implementation applies Claude hardening H3: critical guard and release-boundary booleans are schema-pinned with const false.",
-    "The schema and artifact keep support_widening_allowed, production_platform_claim_allowed, and live_adapter_execution_allowed false.",
-    "The artifact keeps v5 tag/publish disallowed and release authority bound to ao-release-gate plus GitHub branch protection.",
-    "The artifact records fake MiniMax AGREE evidence as forbidden and keeps #997 blocked until real MiniMax evidence exists.",
-    "No runtime, workflow, webhook, tag, publish, support-widening, production-claim, or live-adapter surface is changed.",
-    "No blocking findings."
+    "runbook scope is documentation only and preserves release authority boundary",
+    "credential material is not included and MiniMax success remains credential-gated",
+    "cleanup and stop conditions are safe after prior REVISE findings were absorbed"
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "claude",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      "CHANGELOG.md",
+      "docs/operator-runbooks/05-minimax-mavis-runtime.md",
+      "docs/operator-runbooks/README.md",
+      "local-ai-review-evidence.v1.json"
+    ],
+    "head_ref": "refs/heads/codex/minimax-mavis-runtime-runbook"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "AO-MA-10-MINIMAX-MAVIS-RUNBOOK"
 }
