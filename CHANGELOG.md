@@ -9,6 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **MiniMax/Mavis high-risk review runbook**: added an operator runbook for
+  the local MiniMax/Mavis daemon workaround and credential-readiness gate used
+  while diagnosing PR #997 high-risk review evidence. The runbook records the
+  portable worktree/port setup, safe cleanup marker, stop conditions, and raw
+  review producer boundary; it does not provide credentials, fabricate review
+  evidence, close PR #997, widen support, claim production-platform readiness,
+  execute live adapters, or change guard flags.
 - **V5 governed-control-plane gap audit**: added a machine-readable gap audit
   artifact, strict JSON Schema, and invariant tests that pin all guard flags to
   `false`, keep v5 tag/publish disallowed, bind release authority to
