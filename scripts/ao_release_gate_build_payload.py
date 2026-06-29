@@ -82,6 +82,14 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     # not yet recognize `.github/ISSUE_TEMPLATE/` as an allowed GitHub
     # metadata surface.
     ".github/ISSUE_TEMPLATE/",
+    # The repository pull-request template is exact GitHub delivery
+    # metadata. It shapes PR intake and review evidence, but it is not a
+    # workflow, CODEOWNERS rule, ruleset, branch-protection setting,
+    # runtime adapter path, support-widening claim, or production-platform
+    # claim. Keep this exact path rather than widening to `.github/` so
+    # unrelated GitHub governance surfaces remain separately guarded by the
+    # high-risk and path-sensitive checks.
+    ".github/PULL_REQUEST_TEMPLATE.md",
     # Dependabot security baseline config is an exact GitHub metadata file,
     # not a workflow, CODEOWNERS rule, ruleset, branch-protection setting,
     # runtime adapter path, support-widening claim, or production-platform

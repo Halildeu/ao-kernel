@@ -9,6 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **PR delivery metadata release-gate bootstrap**: protected-base
+  `ao-release-gate` payload building now treats
+  `.github/PULL_REQUEST_TEMPLATE.md` as an exact repository delivery metadata
+  path while still denying a broad `.github/` allowlist. The high-risk raw
+  reviewer selector now excludes the implementation provider before selecting
+  the required cross-provider pair, keeping AI review output as evidence while
+  release authority remains the repo-owned `ao-release-gate` check plus
+  GitHub branch protection.
 - **MiniMax/Mavis high-risk review runbook**: added an operator runbook for
   the local MiniMax/Mavis daemon workaround and credential-readiness gate used
   while diagnosing PR #997 high-risk review evidence. The runbook records the

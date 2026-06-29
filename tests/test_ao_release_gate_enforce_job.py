@@ -267,8 +267,8 @@ def test_enforce_job_reads_only_head_sha_free_raw_reviewer_evidence_from_pr_head
     assert "if not path.exists()" in block
     assert '"local-ai-review-evidence.v1.json" in paths' in block
     assert '[ "$REVIEW_CHANGED" = "true" ]' in block
-    assert "head/ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json" in block
-    assert "head/ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json" in block
+    assert "provider_pool = (\"openai\", \"anthropic\", \"minimax\")" in block
+    assert "head/ao-ma-10-high-risk-reviews/{provider}.local-ai-review-evidence.v1.json" in block
     # Head-bound evidence files must NOT be read from PR head.
     assert "head/local-gpp-gate-evidence.v1.json" not in block
     assert "head/ao-ma-10-high-risk-supersession-evidence.v1.json" not in block
@@ -312,12 +312,16 @@ def test_enforce_job_generates_high_risk_supersession_evidence_at_runtime() -> N
     assert "payload.json" in block
     assert "_high_risk_paths(changed_paths)" in block
     assert '[ "$HIGH_RISK_CHANGED" != "true" ]' in block
-    assert "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json" in block
-    assert "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json" in block
-    assert "high-risk supersession evidence requires both OpenAI and Anthropic raw reviewer files" in block
+    assert "ao-ma-10-high-risk-reviews/{provider}.local-ai-review-evidence.v1.json" in block
+    assert "provider_pool = (\"openai\", \"anthropic\", \"minimax\")" in block
+    assert "provider for provider in provider_pool if provider != implementer_provider" in block
+    assert "high-risk supersession evidence requires raw reviewer files for" in block
+    assert "file=sys.stderr" in block
     assert "high-risk supersession raw reviews require root local-ai-review-evidence.v1.json" in block
     assert "Generate high-risk supersession evidence at runtime from raw reviewer evidence" in block
     assert "scripts/ao_ma10_high_risk_supersession_evidence.py" in block
+    assert "steps.high_risk_reviewers.outputs.first_path" in block
+    assert "steps.high_risk_reviewers.outputs.second_path" in block
     assert '--review-base-ref "refs/heads/$BASE_REF"' in block
     assert '--review-head-ref "refs/heads/$HEAD_REF"' in block
     assert '--diff-base-ref "$BASE_SHA"' in block
