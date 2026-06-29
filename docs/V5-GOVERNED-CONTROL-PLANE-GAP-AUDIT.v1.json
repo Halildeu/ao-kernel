@@ -29,12 +29,12 @@
     },
     {
       "id": "repo-intelligence-promotion-decision",
-      "title": "Operator-bound repo-intelligence promotion or non-promotion decision",
-      "status": "operator_bound",
+      "title": "Repo-intelligence non-promotion decision and beta read-only product onboarding",
+      "status": "closed_non_promotion",
       "owner_boundary": "operator",
-      "evidence_required": "An explicit operator decision consuming the committed RI-7 evidence manifest and preserving or changing support boundaries through a separate authority path.",
-      "current_evidence": "The manifest-backed readiness report is ready_for_operator_decision, but it is evidence only and does not authorize autonomous support widening.",
-      "blocking_for_v5_tag_publish": true
+      "evidence_required": "RI-7.8c final operator non-promotion decision consuming the committed RI-7 evidence manifest while preserving CLI-only, no support widening, no production claim, and no live adapter execution boundaries.",
+      "current_evidence": ".claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json records the final non-promotion outcome: repo-intelligence is productized only as beta read-only onboarding, not a general-purpose production promotion.",
+      "blocking_for_v5_tag_publish": false
     },
     {
       "id": "v5-major-release-supersession",
@@ -69,7 +69,7 @@
   "next_safe_actions": [
     "Keep #997 fail-closed until real MiniMax AGREE evidence exists.",
     "Use the v4.x governed-control-plane release checklist for any near-term release preparation.",
-    "Treat RI-7 readiness as input to a later operator-bound promotion or non-promotion decision.",
+    "Treat RI-7.8c as the closed repo-intelligence non-promotion decision; keep repo-intelligence productized only as beta read-only onboarding.",
     "Do not tag or publish v5.0.0 without an explicit operator-bound supersession PR."
   ]
 }

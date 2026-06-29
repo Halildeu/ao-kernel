@@ -9,6 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **Repo-intelligence productization closeout**: recorded the existing RI-7.8c
+  final non-promotion decision in the V5 gap audit and release-planning docs. The
+  productized surface is beta read-only onboarding only: GitHub App
+  installation plus repository selection. It does not widen support, claim
+  production-platform readiness, execute live adapters, change guard flags, or
+  reopen v5.0.0 tag/publish authority.
 - **PR delivery metadata productization**: added the packaged
   `ao-kernel pr-metadata` CLI (`schema`, `template`, and `validate`) so any
   installed `ao-kernel` runtime can generate and validate the canonical PR
