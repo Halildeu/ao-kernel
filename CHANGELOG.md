@@ -17,6 +17,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the required cross-provider pair, keeping AI review output as evidence while
   release authority remains the repo-owned `ao-release-gate` check plus
   GitHub branch protection.
+- **PR delivery metadata contract**: added a richer pull request template,
+  machine-readable delivery metadata schema, operator runbook, and drift tests
+  for risk class, release-authority impact, boundary declaration,
+  cross-provider review evidence, and follow-up issue tracking. This imports
+  the useful GitHub delivery discipline from `platform-k8s-gitops` while
+  preserving `ao-release-gate` plus GitHub branch protection as release
+  authority; it does not add a workflow gate, mutate branch protection, widen
+  support, claim production-platform readiness, or execute live adapters.
 - **MiniMax/Mavis high-risk review runbook**: added an operator runbook for
   the local MiniMax/Mavis daemon workaround and credential-readiness gate used
   while diagnosing PR #997 high-risk review evidence. The runbook records the
