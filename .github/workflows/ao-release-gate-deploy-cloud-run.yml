@@ -54,7 +54,7 @@ jobs:
         vars.CLOUD_RUN_AUTO_DEPLOY_ENABLED == 'true'
       )
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Validate trusted deploy configuration
         env:

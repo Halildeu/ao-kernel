@@ -61,7 +61,7 @@ jobs:
     if: github.event.pull_request.state != 'closed'
     steps:
       - name: Checkout (PR head, read-only)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
