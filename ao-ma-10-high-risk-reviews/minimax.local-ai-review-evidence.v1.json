@@ -14,10 +14,10 @@
     }
   ],
   "findings": [
-    "Bootstrap PR adds .github/PULL_REQUEST_TEMPLATE.md as an exact protected-base allowlist path for repository PR delivery metadata.",
-    "The change does not add a permissive .github/ glob; workflows, CODEOWNERS, ruleset, branch-protection, runtime, support-widening, and production-claim surfaces remain separately governed.",
-    "The workflow now selects high-risk raw reviewer files from the provider pool after excluding the implementer provider, so implementer=openai requires anthropic plus minimax evidence.",
-    "The paired regression test verifies the exact path is present and the broad .github/ prefix is absent.",
+    "Mavis/MiniMax returned VERDICT: AGREE for the delivery-metadata governance delta, including the provider-separation workflow fix and exact PR-template allowlist path.",
+    "Bootstrap PR keeps release authority with ao-release-gate plus GitHub branch protection; AI output remains evidence only.",
+    "The workflow excludes the implementer provider from high-risk reviewer selection, so implementer=openai requires anthropic plus minimax evidence.",
+    "The builder adds only .github/PULL_REQUEST_TEMPLATE.md as an exact path and does not add a permissive .github/ glob.",
     "No secret material, support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, CODEOWNERS mutation, or ruleset mutation was found."
   ],
   "implementer": {
@@ -28,8 +28,8 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
+    "agent": "mavis-verifier",
+    "provider": "minimax",
     "verdict": "AGREE"
   },
   "schema_version": "local-ai-review-evidence.v1",
@@ -41,8 +41,8 @@
       "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
       "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_enforce_job.py",
-      "tests/test_ao_release_gate_build_payload.py"
+      "tests/test_ao_release_gate_build_payload.py",
+      "tests/test_ao_release_gate_enforce_job.py"
     ],
     "head_ref": "refs/heads/codex/pr-template-allowlist-bootstrap"
   },

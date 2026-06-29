@@ -605,6 +605,7 @@ def test_build_payload_allowed_path_prefixes_repo_owned_not_pr_supplied(tmp_path
     assert ".claude/scripts/" in prefixes
     assert ".github/workflows/" in prefixes
     assert ".github/ISSUE_TEMPLATE/" in prefixes
+    assert ".github/PULL_REQUEST_TEMPLATE.md" in prefixes
     assert ".github/dependabot.yml" in prefixes
     # GPP-2D-3c bootstrap prerequisite: the ao-release-gate enforce
     # job reads the raw reviewer evidence file committed at the repo
@@ -693,6 +694,25 @@ def test_build_payload_allowed_path_prefixes_includes_issue_templates(
     mod.main(_build_argv(tmp_path, output=output))
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert ".github/ISSUE_TEMPLATE/" in payload["allowed_path_prefixes"]
+
+
+def test_build_payload_allowed_path_prefixes_includes_pr_template(
+    tmp_path: Path,
+) -> None:
+    """`.github/PULL_REQUEST_TEMPLATE.md` is pinned as an exact base-ref
+    allowlist path for repository delivery metadata.
+
+    The allowlist intentionally does not widen to `.github/`, so workflow,
+    CODEOWNERS, ruleset, branch-protection, runtime, support-widening, and
+    production-claim surfaces remain separately governed.
+    """
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    mod.main(_build_argv(tmp_path, output=output))
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    prefixes = payload["allowed_path_prefixes"]
+    assert ".github/PULL_REQUEST_TEMPLATE.md" in prefixes
+    assert ".github/" not in prefixes
 
 
 def test_build_payload_allowed_path_prefixes_includes_dependabot_config(
