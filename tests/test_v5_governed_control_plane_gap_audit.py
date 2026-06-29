@@ -86,7 +86,7 @@ def test_gap_audit_keeps_release_boundary_closed() -> None:
 
 
 def test_gap_audit_records_remaining_v5_tag_blockers() -> None:
-    """V5 publish remains blocked by real MiniMax and operator-bound decisions."""
+    """V5 publish remains blocked while RI productization stays non-promotional."""
     items = {item["id"]: item for item in _artifact()["gap_items"]}
 
     assert items["minimax-provider-evidence-for-997"]["status"] == "blocked_external"
@@ -97,7 +97,16 @@ def test_gap_audit_records_remaining_v5_tag_blockers() -> None:
     assert "fake MiniMax AGREE evidence is forbidden" in (
         items["minimax-provider-evidence-for-997"]["current_evidence"]
     )
-    assert items["repo-intelligence-promotion-decision"]["status"] == "operator_bound"
+    ri_item = items["repo-intelligence-promotion-decision"]
+    assert ri_item["status"] == "closed_non_promotion"
+    assert ri_item["owner_boundary"] == "operator"
+    assert ri_item["blocking_for_v5_tag_publish"] is False
+    assert "RI-7.8c" in ri_item["evidence_required"]
+    assert "RI-7.8c-FINAL-PROMOTE-DECISION.v1.json" in ri_item["current_evidence"]
+    assert "non-promotion" in ri_item["current_evidence"]
+    assert "beta read-only onboarding" in ri_item["current_evidence"]
+    assert "not a general-purpose production promotion" in ri_item["current_evidence"]
+
     assert items["v5-major-release-supersession"]["status"] == "operator_bound"
     assert items["v4-governed-control-plane-release-checklist"]["status"] == "done"
 
@@ -108,7 +117,6 @@ def test_gap_audit_records_remaining_v5_tag_blockers() -> None:
     ]
     assert blockers == [
         "minimax-provider-evidence-for-997",
-        "repo-intelligence-promotion-decision",
         "v5-major-release-supersession",
     ]
 

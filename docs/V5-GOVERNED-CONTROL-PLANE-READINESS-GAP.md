@@ -47,6 +47,13 @@ The safe release framing is therefore:
   control-plane GA, with changelog/PyPI/docs stating that all three guard flags
   remain false and that no production-platform promotion happened.
 
+Repo-intelligence has its own closed decision record. `RI-7.8c` consumed the
+manifest-backed readiness package and chose **non-promotion** under the current
+CLI-only/monthly-subscription operating mode. The resulting product surface is
+beta read-only onboarding: GitHub App installation plus repository selection,
+without end-user Cloud Run, Vault, webhook, private-key, live-adapter, support
+widening, or production-platform setup.
+
 ## Machine-Enforced Gap Audit
 
 `docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json` is the machine-readable
@@ -61,7 +68,10 @@ The audit artifact pins:
 - release authority to `ao-release-gate` plus GitHub branch protection;
 - AI review output as evidence only, not release authority;
 - fake MiniMax `AGREE` evidence as forbidden;
-- the remaining V5 blockers as MiniMax/environment and operator-bound items.
+- the remaining V5 blockers as MiniMax/environment and major-release
+  supersession items;
+- the repo-intelligence promotion decision as closed by `RI-7.8c` as
+  non-promotion, not as a support-tier promotion.
 
 The same test file also audits the PR diff for
 `.claude/plans/gpp_status.v1.json` using `origin/main...HEAD` and fails if any
@@ -116,9 +126,10 @@ live_adapter_execution: false
 ```
 
 That manifest-backed ready state means the RI-7 evidence package is prepared
-for a later operator-bound promotion decision PR. It does not itself authorize
-support widening, a production-platform claim, live adapter execution, a
-`v5.0.0` tag, or publication.
+for a promotion decision, and `RI-7.8c` has now recorded the decision outcome:
+**non-promotion**. It does not authorize support widening, a
+production-platform claim, live adapter execution, a `v5.0.0` tag, or
+publication. The productized outcome is beta read-only onboarding only.
 
 Manifest-backed coverage for the completed agent-preparable RI-7 rows:
 
@@ -162,7 +173,7 @@ The correct completion path for `#985` is:
 |---:|---|---|---|
 | 1 | MiniMax provider/tooling unblock for `#997` | Operator/environment + agent verification | Real MiniMax `AGREE` evidence replaces `BLOCK`; `ao-release-gate` passes. |
 | 2 | Governed-control-plane v4.x release checklist | Agent planning only | Done by PR #1002: `docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md` records packaging, docs, changelog, version, and publish preflight without tag/publish or guard flips. |
-| 3 | Repo-intelligence promotion decision PR | Operator-bound | Consumes the manifest-backed readiness report and explicitly chooses promotion or non-promotion. No autonomous guard flip. |
+| 3 | Repo-intelligence promotion decision | Closed non-promotion | Done by `RI-7.8c`: manifest-backed readiness was consumed and the outcome is beta read-only product onboarding, not promotion. No guard flip. |
 | 4 | Separate major-release supersession, if ever desired | Operator-bound | Explicitly renames the release target as governed control-plane GA; no general-purpose production-platform claim unless separately authorized. |
 
 ## v5.0.0 Release No-Go
@@ -176,8 +187,8 @@ The current safe release preparation surface is:
 1. keep all three guard flags false;
 2. prepare a conservative v4.x governed-control-plane release checklist;
 3. keep #997 fail-closed until real MiniMax `AGREE` evidence exists;
-4. treat the RI-7 manifest-backed ready state as input to a later
-   operator-bound decision, not as autonomous release authority;
+4. treat the RI-7.8c non-promotion decision as closed beta read-only
+   productization, not as autonomous release authority;
 5. avoid public wording that can be read as a general-purpose production
    platform claim.
 
@@ -202,9 +213,8 @@ Recommended follow-up slices:
 1. `fix(#985): replace fail-closed MiniMax blocker with real MiniMax evidence`
    after the external MiniMax credential/tooling issue is resolved.
 2. `docs(release): prepare governed-control-plane v4.x release checklist`.
-3. `decision(ri): operator-bound repo-intelligence promotion or non-promotion
-   decision`, if the operator chooses to consume the manifest-backed
-   `ready_for_operator_decision` report.
+3. `supersession(release): operator-bound major-release decision`, only if a
+   future operator explicitly reopens the major-release path.
 
 None of these slices should tag, publish, widen support, claim production
 platform readiness, or execute live adapters.

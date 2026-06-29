@@ -22,16 +22,12 @@
     }
   ],
   "findings": [
-    "Anthropic Claude returned AGREE after final post-hardening review of PR delivery metadata productization.",
-    "Anthropic Claude returned AGREE after post-CI Python 3.11 localized workspace-not-found test fix; runtime code and release authority were unchanged.",
-    "Anthropic Claude returned AGREE after protected-base workflow compatibility fix: --pr-body-file is feature-detected before being passed to the base checkout payload builder.",
-    "PR delivery metadata is untrusted PR-author input: payload key is untrusted_pr_delivery_metadata and the release-gate check is diagnostic-only with no finding_code or allow/deny influence.",
-    "Schema-invalid metadata diagnostics use generic path plus validator output and do not echo raw user-supplied invalid values; regression test covers secret-like invalid values.",
-    "Packaged ao-kernel pr-metadata CLI provides schema/template/validate outside repo-local docs, with stdin and text/json validation output.",
-    "PR template migrated to explicit fenced JSON pr-delivery-metadata block, preventing accidental extraction from unrelated JSON code fences.",
-    "Workflow integration fetches PR body via GitHub API and passes it to the trusted-base payload builder as sanitized diagnostics only.",
-    "Dry-run killswitch preload fix is narrow and preserves network blocking while avoiding optional-client import-time socket patch breakage.",
-    "No secret material, support widening, production platform claim, live adapter execution, admin bypass, branch-protection mutation, CODEOWNERS mutation, or release-authority drift was found."
+    "Anthropic Claude returned AGREE after post-implementation review of the repo-intelligence productization closeout diff.",
+    "The V5 gap audit records repo-intelligence-promotion-decision as closed_non_promotion and no longer a V5 tag blocker.",
+    "The remaining V5 blockers are still MiniMax provider evidence for #997 and major-release supersession.",
+    "RI-7.8c remains the final operator non-promotion authority and keeps repo-intelligence as beta read-only onboarding.",
+    "The productized user path is GitHub App installation plus repository selection, with no end-user Cloud Run, Vault, webhook, private key, deployment protection callback, or hosted gate setup.",
+    "No gpp_status mutation, guard flag flip, support widening, production platform claim, live adapter execution, admin bypass, branch-protection mutation, or release-authority drift was found."
   ],
   "implementer": {
     "agent": "codex",
@@ -49,28 +45,17 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md",
-      ".github/PULL_REQUEST_TEMPLATE.md",
-      ".github/workflows/test.yml",
       "CHANGELOG.md",
-      "ao_kernel/_internal/live_adapter_dryrun.py",
-      "ao_kernel/ao_release_gate.py",
-      "ao_kernel/cli.py",
-      "ao_kernel/pr_metadata.py",
-      "docs/operator-runbooks/06-pr-delivery-metadata.md",
+      "ao_kernel/defaults/schemas/v5-governed-control-plane-gap-audit.schema.v1.json",
+      "docs/V4-GOVERNED-CONTROL-PLANE-RELEASE-CHECKLIST.md",
+      "docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json",
+      "docs/V5-GOVERNED-CONTROL-PLANE-READINESS-GAP.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate.py",
-      "tests/test_ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_enforce_job.py",
-      "tests/test_gpp2b_mapping_drift_guard.py",
-      "tests/test_migrate_cmd.py",
-      "tests/test_pr_delivery_metadata_contract.py",
-      "tests/test_pr_metadata_product.py"
+      "tests/test_v5_governed_control_plane_gap_audit.py"
     ],
-    "head_ref": "refs/heads/codex/pr-metadata-productization"
+    "head_ref": "refs/heads/codex/repo-intelligence-promotion-productization"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-PR-METADATA-PRODUCTIZATION"
+  "work_package": "RI-PROMOTION-PRODUCTIZATION"
 }

@@ -63,7 +63,10 @@ Before an operator tags a v4.x release, collect and record:
    - `ao-release-gate-technical`.
 3. `python3 scripts/repo_intelligence_tier_promotion_readiness.py --output json
    --evidence-manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json` output
-   remains `ready_for_operator_promotion_decision` with guard flags false.
+   remains `ready_for_operator_promotion_decision` with guard flags false, and
+   `.claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json` remains the current
+   closed non-promotion outcome: repo-intelligence is beta read-only product
+   onboarding, not a support-tier or production-platform promotion.
 4. `CHANGELOG.md` has a release entry that frames the release as governed
    control-plane hardening, not production platform promotion.
 5. `pyproject.toml` version and any release notes agree on the same v4.x
