@@ -338,6 +338,55 @@ def _find_check(decision: dict[str, object], name: str) -> dict[str, object]:
     raise AssertionError(f"missing check: {name}")
 
 
+def test_release_gate_surfaces_pr_delivery_metadata_as_diagnostic_only() -> None:
+    payload = _allow_payload()
+    payload["untrusted_pr_delivery_metadata"] = {
+        "schema_id": "urn:ao:pr-delivery-metadata:v1",
+        "present": True,
+        "valid": False,
+        "finding_code": "pr_delivery_metadata_schema_invalid",
+        "message": "schema failed",
+        "risk_class": None,
+        "release_authority_impact": None,
+        "work_package": None,
+        "issue": None,
+    }
+
+    decision = build_ao_release_gate_decision(payload, _gpp_status(), review_evidence=_review_evidence())
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert "pr_delivery_metadata_schema_invalid" not in decision["findings"]
+    diagnostic = _find_check(decision, "pr_delivery_metadata_diagnostic")
+    assert diagnostic["status"] == "pass"
+    assert diagnostic["finding_code"] is None
+    assert "diagnostic only" in str(diagnostic["detail"])
+
+
+def test_release_gate_context_records_valid_pr_delivery_metadata_summary() -> None:
+    payload = _allow_payload()
+    payload["untrusted_pr_delivery_metadata"] = {
+        "schema_id": "urn:ao:pr-delivery-metadata:v1",
+        "present": True,
+        "valid": True,
+        "finding_code": "pr_delivery_metadata_ok",
+        "message": "ok",
+        "risk_class": "governance",
+        "release_authority_impact": "ao-release-gate-input-only",
+        "work_package": "AO-MA-delivery-metadata",
+        "issue": "#1008",
+    }
+
+    decision = build_ao_release_gate_decision(payload, _gpp_status(), review_evidence=_review_evidence())
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    context = decision["context"]
+    assert context["pr_delivery_metadata_present"] is True
+    assert context["pr_delivery_metadata_valid"] is True
+    assert context["pr_delivery_metadata_risk_class"] == "governance"
+    diagnostic = _find_check(decision, "pr_delivery_metadata_diagnostic")
+    assert diagnostic["status"] == "pass"
+
+
 def _stale_branch_payload() -> dict[str, object]:
     payload = _allow_payload()
     payload["branch_up_to_date"] = False

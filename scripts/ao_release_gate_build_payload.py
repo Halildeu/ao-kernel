@@ -35,6 +35,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from ao_kernel.pr_metadata import validate_pr_delivery_metadata_markdown
+
 # A repo-owned, base-ref-trusted path allowlist for the diff_scope check.
 # Hard-coded here rather than read from gpp_status.current_wp.allowed_scope
 # because that field carries narrative scope statements, not file-path
@@ -223,6 +225,21 @@ def _review_context(pr_reviews_json_path: Path | None) -> tuple[str | None, list
             }
         )
     return author if isinstance(author, str) else None, reviews
+
+
+def _pr_delivery_metadata_summary(pr_body_path: Path | None) -> dict[str, Any]:
+    """Return sanitized, untrusted PR delivery metadata diagnostics.
+
+    The PR body is authored by the PR submitter, so this summary is never
+    release authority and never feeds scope/risk decisions. It is carried for
+    product diagnostics only; release-gate policy remains derived from
+    trusted API/diff/GPP inputs.
+    """
+
+    if pr_body_path is None:
+        return validate_pr_delivery_metadata_markdown("").to_dict()
+    body = pr_body_path.read_text(encoding="utf-8")
+    return validate_pr_delivery_metadata_markdown(body).to_dict()
 
 
 def _check_run_sort_key(entry: dict[str, Any]) -> tuple[str, str, int]:
@@ -416,6 +433,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "codex_or_claude_release_authority": False,
         "live_adapter_execution_requested": False,
         "low_risk_autonomous_merge_requested": args.ao_ma10_autonomous_merge_requested,
+        "untrusted_pr_delivery_metadata": _pr_delivery_metadata_summary(args.pr_body_file),
     }
 
 
@@ -449,6 +467,15 @@ def build_parser() -> argparse.ArgumentParser:
             "Optional output of `gh pr view <N> --json reviews,author`. "
             "When supplied, the payload carries only normalized review metadata "
             "for the path-sensitive high-risk human gate."
+        ),
+    )
+    parser.add_argument(
+        "--pr-body-file",
+        type=Path,
+        default=None,
+        help=(
+            "Optional PR body markdown fetched from the GitHub API. The builder parses only a sanitized "
+            "untrusted PR delivery metadata diagnostic summary; PR body text is never release authority."
         ),
     )
     parser.add_argument(

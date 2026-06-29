@@ -532,6 +532,7 @@ jobs:
         run: |
           gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json files > pr-files.json
           gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json reviews,author > pr-reviews.json
+          gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json body --jq '.body // ""' > pr-body.md
           gh api "repos/$REPO_FULL/commits/$HEAD_SHA/check-runs?per_page=100" > check-runs.json
 
       - name: Compute branch_up_to_date from base
@@ -583,6 +584,11 @@ jobs:
       - name: Build API-derived release-gate payload
         working-directory: base
         run: |
+          PR_BODY_ARGS=()
+          if python scripts/ao_release_gate_build_payload.py --help | grep -q -- "--pr-body-file"; then
+            PR_BODY_ARGS=(--pr-body-file pr-body.md)
+          fi
+
           python scripts/ao_release_gate_build_payload.py \
             --repository "$REPO_FULL" \
             --pr-number "$PR_NUMBER" \
@@ -594,6 +600,7 @@ jobs:
             --gpp-status .claude/plans/gpp_status.v1.json \
             --pr-files-json pr-files.json \
             --check-runs-json check-runs.json \
+            "${PR_BODY_ARGS[@]}" \
             --required-check lint \
             --required-check typecheck \
             --required-check "test (3.11)" \

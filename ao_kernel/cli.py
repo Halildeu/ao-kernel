@@ -744,6 +744,59 @@ def _cmd_support_widening_evidence_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_pr_metadata_schema(args: argparse.Namespace) -> int:
+    """Print the bundled PR delivery metadata schema."""
+
+    import json as _json
+
+    from ao_kernel.pr_metadata import load_pr_delivery_metadata_schema
+
+    print(_json.dumps(load_pr_delivery_metadata_schema(), indent=2, sort_keys=True))
+    return 0
+
+
+def _cmd_pr_metadata_template(args: argparse.Namespace) -> int:
+    """Print the canonical portable PR delivery metadata JSON block."""
+
+    from ao_kernel.pr_metadata import pr_delivery_metadata_template_json
+
+    print("```json pr-delivery-metadata")
+    print(pr_delivery_metadata_template_json())
+    print("```")
+    return 0
+
+
+def _cmd_pr_metadata_validate(args: argparse.Namespace) -> int:
+    """Validate a PR body markdown file against the bundled metadata schema."""
+
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.pr_metadata import validate_pr_delivery_metadata_markdown
+
+    if args.body_file == "-":
+        body = sys.stdin.read()
+    else:
+        body_path = _Path(args.body_file)
+        if not body_path.is_file():
+            print(f"PR body file not found: {body_path}", file=sys.stderr)
+            return 2
+        body = body_path.read_text(encoding="utf-8")
+    result = validate_pr_delivery_metadata_markdown(body)
+    payload = result.to_dict()
+    if args.output == "json":
+        print(_json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        status = "VALID" if result.valid else "INVALID"
+        print(f"{status}: {result.finding_code}")
+        print(result.message)
+        if result.risk_class:
+            print(f"risk_class: {result.risk_class}")
+        if result.release_authority_impact:
+            print(f"release_authority_impact: {result.release_authority_impact}")
+    return 0 if result.valid else 1
+
+
 def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
     """v3.4.0 CLI: scan ledger for orphan spend entries and stamp
     missing markers. Idempotent + cursor-based."""
@@ -1409,6 +1462,25 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         dest="include_doc_claims",
         help="Include unverified doc-claim facts (labelled UNVERIFIED)",
+    )
+
+    pr_meta_p = sub.add_parser(
+        "pr-metadata",
+        help="PR delivery metadata schema, template, and validation commands",
+    )
+    pr_meta_sub = pr_meta_p.add_subparsers(dest="pr_metadata_command")
+    pr_meta_sub.add_parser("schema", help="Print the bundled PR delivery metadata JSON Schema")
+    pr_meta_sub.add_parser("template", help="Print the canonical pr-delivery-metadata JSON block")
+    pr_meta_validate = pr_meta_sub.add_parser(
+        "validate",
+        help="Validate a PR body markdown file against the bundled PR delivery metadata schema",
+    )
+    pr_meta_validate.add_argument("--body-file", required=True, help="Path to the PR body markdown file, or '-' for stdin")
+    pr_meta_validate.add_argument(
+        "--output",
+        choices=["text", "json"],
+        default="text",
+        help="Command output format (default: text)",
     )
 
     # Evidence subcommands (PR-A5)
@@ -2226,6 +2298,17 @@ def main(argv: list[str] | None = None) -> int:
         if ctx_cmd == "packet":
             return _cmd_context_packet(args)
         print("Usage: ao-kernel context {ingest,packet} [--root PATH] [--repo PATH]", file=sys.stderr)
+        return 1
+
+    if cmd == "pr-metadata":
+        pr_meta_cmd = getattr(args, "pr_metadata_command", None)
+        if pr_meta_cmd == "schema":
+            return _cmd_pr_metadata_schema(args)
+        if pr_meta_cmd == "template":
+            return _cmd_pr_metadata_template(args)
+        if pr_meta_cmd == "validate":
+            return _cmd_pr_metadata_validate(args)
+        print("Usage: ao-kernel pr-metadata {schema|template|validate}", file=sys.stderr)
         return 1
 
     # Executor subcommand (PR-C6)

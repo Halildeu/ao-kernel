@@ -5,17 +5,46 @@
 ## Delivery metadata
 
 <!--
-Machine-readable reviewer input. Keep this block current; a follow-up gate will
-parse it against `pr-delivery-metadata.schema.v1.json`.
+Machine-readable reviewer input. This single JSON block is validated by
+`ao-kernel pr-metadata validate --body-file ...` against
+`pr-delivery-metadata.schema.v1.json`.
+
+PR-authored metadata is evidence/diagnostic input only. Release authority
+remains the repo-owned `ao-release-gate` required check plus GitHub branch
+protection; the gate derives risk from trusted API/diff context, not from this
+PR body declaration.
 -->
 
-```yaml
-Issue: <#123 or N/A>
-Tracked by: <#123 or N/A>
-Work package: <AO-MA/GPP/Epic id or N/A>
-Risk class: <low|normal|high|governance|critical-fix>
-Release authority impact: <none|ao-release-gate-input-only|ao-release-gate-logic|github-ruleset|support-tier-or-claim>
-Critical-Fix: no
+```json pr-delivery-metadata
+{
+  "boundary_declaration": {
+    "boundary_cross": false,
+    "credential_read": false,
+    "credential_write": false,
+    "none_of_the_above": true,
+    "state_mutation_production": false,
+    "state_mutation_test": false,
+    "user_approval_evidence": "N/A",
+    "user_communication": false
+  },
+  "critical_fix": false,
+  "cross_ai_review": {
+    "implementer_provider": "openai",
+    "review_artifacts": [
+      "N/A"
+    ],
+    "reviewer_providers": [
+      "anthropic"
+    ],
+    "same_provider_exception": "N/A",
+    "verdict": "N/A"
+  },
+  "issue": "N/A",
+  "release_authority_impact": "none",
+  "risk_class": "normal",
+  "tracked_by": "N/A",
+  "work_package": "AO-MA-or-GPP-id"
+}
 ```
 
 ## Scope
@@ -25,12 +54,12 @@ Critical-Fix: no
 - Why now:
 - Files / surfaces changed:
 
-## Boundary declaration
+## Boundary declaration (human mirror)
 
 <!--
-At least one item must be selected. If `none of the above` is selected, every
-other item must remain unselected. Credential material must never be copied into
-the PR body, comments, logs, or evidence artifacts.
+Keep this section aligned with the JSON block above. The validator reads the
+JSON block; this mirror is for reviewer scanning only. Credential material must
+never be copied into the PR body, comments, logs, or evidence artifacts.
 -->
 
 This PR includes:
@@ -45,21 +74,14 @@ This PR includes:
 
 User/operator approval evidence: `<link or N/A>`
 
-## Cross-AI review evidence
+## Cross-AI review evidence (human mirror)
 
 <!--
-AI review is evidence only. Release authority remains `ao-release-gate` plus
-GitHub branch protection. For high-risk/governance-sensitive PRs, reviewers must
-be provider-separated from the implementer and the repo-owned gate must pass.
+Keep this section aligned with the JSON block above. AI review is evidence only.
+Release authority remains `ao-release-gate` plus GitHub branch protection. For
+high-risk/governance-sensitive PRs, reviewers must be provider-separated from the
+implementer and the repo-owned gate must pass.
 -->
-
-```yaml
-Implementer provider: <openai|anthropic|minimax|human|other>
-Reviewer provider(s): <openai|anthropic|minimax|human|other|N/A>
-Review artifact(s): <PR comment URL, evidence path, or N/A>
-Verdict: <AGREE|REVISE|BLOCK|N/A>
-Same-provider exception: N/A
-```
 
 ## Validation
 

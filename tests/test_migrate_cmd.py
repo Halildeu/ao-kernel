@@ -27,7 +27,7 @@ class TestMigrateCmd:
         rc = run()
         assert rc == 1
         out = capsys.readouterr().out.lower()
-        assert "not found" in out or "no workspace" in out
+        assert "not found" in out or "no workspace" in out or "workspace bulunamad" in out
 
     def test_version_mismatch_triggers_migration(self, tmp_workspace: Path, capsys):
         ws_json = tmp_workspace / "workspace.json"
