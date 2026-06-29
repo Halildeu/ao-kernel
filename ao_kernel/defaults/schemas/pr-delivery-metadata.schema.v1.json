@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:pr-delivery-metadata:v1",
+  "title": "Pull request delivery metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "issue",
+    "tracked_by",
+    "work_package",
+    "risk_class",
+    "release_authority_impact",
+    "critical_fix",
+    "boundary_declaration",
+    "cross_ai_review"
+  ],
+  "properties": {
+    "issue": {
+      "description": "Primary issue reference or N/A.",
+      "type": "string",
+      "pattern": "^(#[1-9][0-9]*|N/A)$"
+    },
+    "tracked_by": {
+      "description": "Issue that remains open for post-merge verification, or N/A.",
+      "type": "string",
+      "pattern": "^(#[1-9][0-9]*|N/A)$"
+    },
+    "work_package": {
+      "description": "GPP, AO-MA, epic, or other work package identifier.",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 128
+    },
+    "risk_class": {
+      "type": "string",
+      "enum": ["low", "normal", "high", "governance", "critical-fix"]
+    },
+    "release_authority_impact": {
+      "description": "Declares whether the PR only feeds release authority or changes it.",
+      "type": "string",
+      "enum": [
+        "none",
+        "ao-release-gate-input-only",
+        "ao-release-gate-logic",
+        "github-ruleset",
+        "support-tier-or-claim"
+      ]
+    },
+    "critical_fix": {
+      "type": "boolean"
+    },
+    "boundary_declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "credential_read",
+        "credential_write",
+        "state_mutation_test",
+        "state_mutation_production",
+        "boundary_cross",
+        "user_communication",
+        "none_of_the_above",
+        "user_approval_evidence"
+      ],
+      "properties": {
+        "credential_read": {"type": "boolean"},
+        "credential_write": {"type": "boolean"},
+        "state_mutation_test": {"type": "boolean"},
+        "state_mutation_production": {"type": "boolean"},
+        "boundary_cross": {"type": "boolean"},
+        "user_communication": {"type": "boolean"},
+        "none_of_the_above": {"type": "boolean"},
+        "user_approval_evidence": {
+          "description": "N/A only when none_of_the_above is true; otherwise a URL or issue/PR comment reference.",
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 512
+        }
+      },
+      "allOf": [
+        {
+          "anyOf": [
+            {"properties": {"credential_read": {"const": true}}, "required": ["credential_read"]},
+            {"properties": {"credential_write": {"const": true}}, "required": ["credential_write"]},
+            {"properties": {"state_mutation_test": {"const": true}}, "required": ["state_mutation_test"]},
+            {"properties": {"state_mutation_production": {"const": true}}, "required": ["state_mutation_production"]},
+            {"properties": {"boundary_cross": {"const": true}}, "required": ["boundary_cross"]},
+            {"properties": {"user_communication": {"const": true}}, "required": ["user_communication"]},
+            {"properties": {"none_of_the_above": {"const": true}}, "required": ["none_of_the_above"]}
+          ]
+        },
+        {
+          "if": {
+            "properties": {"none_of_the_above": {"const": true}},
+            "required": ["none_of_the_above"]
+          },
+          "then": {
+            "properties": {
+              "credential_read": {"const": false},
+              "credential_write": {"const": false},
+              "state_mutation_test": {"const": false},
+              "state_mutation_production": {"const": false},
+              "boundary_cross": {"const": false},
+              "user_communication": {"const": false},
+              "user_approval_evidence": {"const": "N/A"}
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {"properties": {"credential_read": {"const": true}}, "required": ["credential_read"]},
+              {"properties": {"credential_write": {"const": true}}, "required": ["credential_write"]},
+              {"properties": {"state_mutation_production": {"const": true}}, "required": ["state_mutation_production"]},
+              {"properties": {"boundary_cross": {"const": true}}, "required": ["boundary_cross"]},
+              {"properties": {"user_communication": {"const": true}}, "required": ["user_communication"]}
+            ]
+          },
+          "then": {
+            "not": {
+              "properties": {"user_approval_evidence": {"const": "N/A"}},
+              "required": ["user_approval_evidence"]
+            }
+          }
+        }
+      ]
+    },
+    "cross_ai_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "implementer_provider",
+        "reviewer_providers",
+        "review_artifacts",
+        "verdict",
+        "same_provider_exception"
+      ],
+      "properties": {
+        "implementer_provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "minimax", "human", "other"]
+        },
+        "reviewer_providers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["openai", "anthropic", "minimax", "human", "other"]
+          },
+          "uniqueItems": true
+        },
+        "review_artifacts": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 3, "maxLength": 512}
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["AGREE", "REVISE", "BLOCK", "N/A"]
+        },
+        "same_provider_exception": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 512
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"verdict": {"enum": ["AGREE", "REVISE", "BLOCK"]}},
+            "required": ["verdict"]
+          },
+          "then": {
+            "properties": {
+              "reviewer_providers": {"minItems": 1},
+              "review_artifacts": {"minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "implementer_provider": {"const": "openai"},
+              "same_provider_exception": {"const": "N/A"}
+            },
+            "required": ["implementer_provider", "same_provider_exception"]
+          },
+          "then": {"properties": {"reviewer_providers": {"not": {"contains": {"const": "openai"}}}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "implementer_provider": {"const": "anthropic"},
+              "same_provider_exception": {"const": "N/A"}
+            },
+            "required": ["implementer_provider", "same_provider_exception"]
+          },
+          "then": {"properties": {"reviewer_providers": {"not": {"contains": {"const": "anthropic"}}}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "implementer_provider": {"const": "minimax"},
+              "same_provider_exception": {"const": "N/A"}
+            },
+            "required": ["implementer_provider", "same_provider_exception"]
+          },
+          "then": {"properties": {"reviewer_providers": {"not": {"contains": {"const": "minimax"}}}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "implementer_provider": {"const": "human"},
+              "same_provider_exception": {"const": "N/A"}
+            },
+            "required": ["implementer_provider", "same_provider_exception"]
+          },
+          "then": {"properties": {"reviewer_providers": {"not": {"contains": {"const": "human"}}}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "implementer_provider": {"const": "other"},
+              "same_provider_exception": {"const": "N/A"}
+            },
+            "required": ["implementer_provider", "same_provider_exception"]
+          },
+          "then": {"properties": {"reviewer_providers": {"not": {"contains": {"const": "other"}}}}}
+        }
+      ]
+    }
+  }
+}

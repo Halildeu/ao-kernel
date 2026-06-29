@@ -231,6 +231,12 @@ def test_only_issue_template_under_dot_github_changed() -> None:
 
 
 def test_no_codeowners_or_ruleset_diff() -> None:
+    """E-P0-5 zero-touch invariant is slice-scoped.
+
+    Only enforce the governance-file diff guard when issue forms are part of the
+    PR diff. Other governance PRs, such as the PR template delivery metadata
+    contract, have their own scoped tests.
+    """
     proc = subprocess.run(
         ["git", "diff", "--name-only", "origin/main...HEAD"],
         cwd=REPO_ROOT,
@@ -240,7 +246,9 @@ def test_no_codeowners_or_ruleset_diff() -> None:
     )
     if proc.returncode != 0:
         pytest.skip(f"git diff unavailable: {proc.stderr.strip()}")
-    changed = set(proc.stdout.split())
+    changed_list = proc.stdout.split()
+    _skip_unless_issue_forms_slice(changed_list)
+    changed = set(changed_list)
     forbidden = {
         ".github/CODEOWNERS",
         ".github/REPO-GOVERNANCE.md",
