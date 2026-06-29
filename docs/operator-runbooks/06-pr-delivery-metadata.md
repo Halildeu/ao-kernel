@@ -16,11 +16,33 @@ changing release authority.
 - This contract does not authorize support widening, production-platform claim,
   live-adapter execution, ruleset bypass actors, or admin merge.
 
+## Portable product commands
+
+The metadata contract is now exposed through `ao-kernel`, not only through this
+repository's PR template:
+
+```bash
+ao-kernel pr-metadata schema
+ao-kernel pr-metadata template
+ao-kernel pr-metadata validate --body-file pr-body.md
+ao-kernel pr-metadata validate --body-file pr-body.md --output json
+```
+
+`validate` exits `0` only when the PR body contains a fenced
+`json pr-delivery-metadata` block that validates against the bundled schema. It
+exits non-zero for missing, malformed, or schema-invalid metadata.
+
+The release gate also carries a sanitized `untrusted_pr_delivery_metadata`
+summary in its payload when the GitHub Actions workflow supplies the PR body.
+Metadata-only PR body gate: this is the metadata-only PR body gate surface for
+this release. It is diagnostic only, not enforcement. PR-author text never
+becomes release authority and never weakens trusted diff/API/GPP checks.
+
 ## What the PR template must declare
 
 Every PR should expose the following fields in a predictable form:
 
-- primary issue and optional `Tracked by` issue;
+- primary issue and optional `tracked_by` issue;
 - work package identifier;
 - risk class;
 - release-authority impact;
@@ -30,8 +52,9 @@ Every PR should expose the following fields in a predictable form:
 - validation evidence;
 - merge and post-merge cleanup notes.
 
-The future metadata gate can parse this body and validate it against
-`ao_kernel/defaults/schemas/pr-delivery-metadata.schema.v1.json`.
+The canonical form is a single fenced `json pr-delivery-metadata` block. Human
+mirror sections may remain in the template for reviewer scanning, but the product
+validator and release-gate diagnostic read only the JSON block.
 
 ## `Tracked by` versus `Closes`
 
@@ -54,7 +77,8 @@ If the PR includes credential read/write, production state mutation,
 boundary-crossing behavior, or user communication, user/operator approval
 evidence must not be `N/A`.
 
-The template's `Critical-Fix: no` value is intended to be parsed with YAML boolean semantics, where `no` maps to `false`.
+The JSON block uses `"critical_fix": false`. YAML boolean parsing is no longer
+part of the machine-readable contract.
 
 ## Cross-AI evidence semantics
 
@@ -72,10 +96,11 @@ decides whether any exception is acceptable for the PR risk class.
 
 ## Adoption sequence
 
-1. PR template and schema contract.
-2. Metadata-only PR body gate.
-3. Merge-to-issue evidence workflow.
-4. Lightweight issue/board helper CLI.
-5. Critical-fix trailer and label automation.
+1. PR template and schema contract. Done.
+2. Portable `ao-kernel pr-metadata` schema/template/validate commands. Done.
+3. Metadata-only release-gate diagnostic from GitHub API PR body. Done.
+4. Merge-to-issue evidence workflow.
+5. Lightweight issue/board helper CLI.
+6. Critical-fix trailer and label automation.
 
 Each step should be a separate PR so the gate remains observable and reversible.

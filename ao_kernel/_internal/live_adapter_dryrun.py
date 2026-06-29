@@ -143,7 +143,16 @@ class DryRunKillSwitches:
         with contextlib.suppress(ImportError):
             patcher(importlib.import_module(module_name))
 
+    def _preload_optional(self, module_name: str) -> None:
+        with contextlib.suppress(ImportError):
+            importlib.import_module(module_name)
+
+    def _preload_optional_http_clients(self) -> None:
+        for module_name in ("httpx", "urllib3", "requests", "aiohttp"):
+            self._preload_optional(module_name)
+
     def _install(self) -> None:
+        self._preload_optional_http_clients()
         self._patch_socket()
         self._patch_subprocess()
         self._patch_os_exec()

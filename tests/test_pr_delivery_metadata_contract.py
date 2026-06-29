@@ -12,6 +12,11 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
+from ao_kernel.pr_metadata import (
+    extract_pr_delivery_metadata_block,
+    validate_pr_delivery_metadata_markdown,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md"
@@ -33,12 +38,13 @@ def test_pr_template_exposes_delivery_metadata_fields() -> None:
     text = TEMPLATE.read_text(encoding="utf-8")
     required = [
         "## Delivery metadata",
-        "Issue:",
-        "Tracked by:",
-        "Work package:",
-        "Risk class:",
-        "Release authority impact:",
-        "Critical-Fix:",
+        "```json pr-delivery-metadata",
+        '"issue"',
+        '"tracked_by"',
+        '"work_package"',
+        '"risk_class"',
+        '"release_authority_impact"',
+        '"critical_fix"',
         "## Boundary declaration",
         "credential-read",
         "credential-write",
@@ -48,11 +54,11 @@ def test_pr_template_exposes_delivery_metadata_fields() -> None:
         "user-communication",
         "none of the above",
         "## Cross-AI review evidence",
-        "Implementer provider:",
-        "Reviewer provider(s):",
-        "Review artifact(s):",
-        "Verdict:",
-        "Same-provider exception:",
+        '"implementer_provider"',
+        '"reviewer_providers"',
+        '"review_artifacts"',
+        '"verdict"',
+        '"same_provider_exception"',
     ]
     for item in required:
         assert item in text, f"missing PR template contract field: {item}"
@@ -64,6 +70,24 @@ def test_pr_template_preserves_release_authority_boundary() -> None:
     assert "Release authority remains `ao-release-gate` plus" in text
     assert "No support widening, production-platform claim, live-adapter execution" in text
     assert "admin merge" in text
+
+
+def test_pr_template_metadata_block_validates_against_bundled_schema() -> None:
+    text = TEMPLATE.read_text(encoding="utf-8")
+    block = extract_pr_delivery_metadata_block(text)
+    assert block is not None
+    payload = json.loads(block)
+    schema = _load_schema()
+    errors = list(Draft202012Validator(schema).iter_errors(payload))
+    assert errors == [], [error.message for error in errors]
+
+
+def test_pr_template_metadata_block_validates_with_product_helper() -> None:
+    text = TEMPLATE.read_text(encoding="utf-8")
+    result = validate_pr_delivery_metadata_markdown(text)
+    assert result.valid is True
+    assert result.finding_code == "pr_delivery_metadata_ok"
+    assert result.risk_class == "normal"
 
 
 def test_schema_validates_minimal_low_risk_metadata() -> None:
@@ -258,5 +282,5 @@ def test_runbook_documents_adoption_sequence_and_non_goals() -> None:
     assert "This contract does not authorize support widening" in text
     assert "Metadata-only PR body gate" in text
     assert "Merge-to-issue evidence workflow" in text
-    assert "YAML boolean semantics" in text
+    assert "YAML boolean parsing is no longer" in text
     assert "same-provider implementer/reviewer overlap" in text

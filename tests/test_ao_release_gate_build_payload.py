@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ao_kernel.pr_metadata import pr_delivery_metadata_template_json
+
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
@@ -55,6 +57,14 @@ def _write_pr_reviews(path: Path) -> None:
                 ],
             }
         ),
+        encoding="utf-8",
+    )
+
+
+def _write_pr_body(path: Path, *, valid: bool = True) -> None:
+    block = pr_delivery_metadata_template_json() if valid else '{"issue": "not-valid"}'
+    path.write_text(
+        "## Delivery metadata\n\n```json pr-delivery-metadata\n" + block + "\n```\n",
         encoding="utf-8",
     )
 
@@ -173,6 +183,44 @@ def test_build_payload_can_request_ao_ma10_autonomous_merge_from_trusted_cli(tmp
     assert rc == 0
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["low_risk_autonomous_merge_requested"] is True
+
+
+def test_build_payload_carries_sanitized_untrusted_pr_delivery_metadata(tmp_path: Path) -> None:
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    body = tmp_path / "pr-body.md"
+    _write_pr_body(body)
+    argv = _build_argv(tmp_path, output=output)
+    argv.extend(["--pr-body-file", str(body)])
+
+    rc = mod.main(argv)
+
+    assert rc == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    metadata = payload["untrusted_pr_delivery_metadata"]
+    assert metadata["present"] is True
+    assert metadata["valid"] is True
+    assert metadata["risk_class"] == "normal"
+    assert "body" not in metadata
+    assert "metadata" not in metadata
+
+
+def test_build_payload_carries_invalid_pr_delivery_metadata_as_diagnostic_only(tmp_path: Path) -> None:
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    body = tmp_path / "pr-body.md"
+    _write_pr_body(body, valid=False)
+    argv = _build_argv(tmp_path, output=output)
+    argv.extend(["--pr-body-file", str(body)])
+
+    rc = mod.main(argv)
+
+    assert rc == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    metadata = payload["untrusted_pr_delivery_metadata"]
+    assert metadata["present"] is True
+    assert metadata["valid"] is False
+    assert metadata["finding_code"] == "pr_delivery_metadata_schema_invalid"
 
 
 def test_build_payload_sorts_and_carries_changed_paths(tmp_path: Path) -> None:

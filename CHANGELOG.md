@@ -9,6 +9,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **PR delivery metadata productization**: added the packaged
+  `ao-kernel pr-metadata` CLI (`schema`, `template`, and `validate`) so any
+  installed `ao-kernel` runtime can generate and validate the canonical PR
+  delivery metadata block without copying repo-local docs. The pull request
+  template now uses a single fenced JSON block, and `ao-release-gate` carries a
+  sanitized `untrusted_pr_delivery_metadata` diagnostic summary from the PR
+  body. PR-author metadata remains diagnostic only: it never changes release
+  authority, weakens trusted diff/API/GPP checks, mutates branch protection,
+  widens support, claims production-platform readiness, or executes live
+  adapters.
 - **PR delivery metadata release-gate bootstrap**: protected-base
   `ao-release-gate` payload building now treats
   `.github/PULL_REQUEST_TEMPLATE.md` as an exact repository delivery metadata

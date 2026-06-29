@@ -218,6 +218,11 @@ def test_enforce_job_builds_payload_from_api_not_pr_committed_json() -> None:
     assert "gh api" in block and "/check-runs" in block
     assert "--pr-files-json pr-files.json" in block
     assert "--check-runs-json check-runs.json" in block
+    assert "gh pr view \"$PR_NUMBER\" --repo \"$REPO_FULL\" --json body" in block
+    assert "PR_BODY_ARGS=()" in block
+    assert 'grep -q -- "--pr-body-file"' in block
+    assert "--pr-body-file pr-body.md" in block
+    assert '"${PR_BODY_ARGS[@]}"' in block
     assert "--gpp-status .claude/plans/gpp_status.v1.json" in block
     assert "Detect AO-MA-10l low-risk autonomous smoke request" in block
     assert 'prefix = "docs/evidence/ao-ma-10l-autonomous-smoke/"' in block

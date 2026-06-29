@@ -342,6 +342,12 @@ class AoReleaseGateContext(TypedDict):
     live_adapter_execution_requested: bool | None
     low_risk_autonomous_merge_requested: bool | None
     low_risk_autonomous_merge_request_valid: bool | None
+    pr_delivery_metadata_present: bool | None
+    pr_delivery_metadata_valid: bool | None
+    pr_delivery_metadata_finding_code: str | None
+    pr_delivery_metadata_risk_class: str | None
+    pr_delivery_metadata_release_authority_impact: str | None
+    pr_delivery_metadata_work_package: str | None
     reviewed_slice: str | None
     gpp_current_wp_id: str | None
     gpp_current_wp_issue: str | None
@@ -513,6 +519,31 @@ def _autonomous_merge_request_context(
     if len(set(values)) > 1:
         return None, False
     return values[0], True
+
+
+def _pr_delivery_metadata_context(root: dict[str, Any], service: dict[str, Any]) -> dict[str, Any]:
+    """Return sanitized untrusted PR delivery metadata diagnostics."""
+
+    raw = _as_dict(root.get("untrusted_pr_delivery_metadata")) or _as_dict(
+        service.get("untrusted_pr_delivery_metadata")
+    )
+    if not raw:
+        return {
+            "present": None,
+            "valid": None,
+            "finding_code": None,
+            "risk_class": None,
+            "release_authority_impact": None,
+            "work_package": None,
+        }
+    return {
+        "present": _bool(raw.get("present")),
+        "valid": _bool(raw.get("valid")),
+        "finding_code": _string(raw.get("finding_code")),
+        "risk_class": _string(raw.get("risk_class")),
+        "release_authority_impact": _string(raw.get("release_authority_impact")),
+        "work_package": _string(raw.get("work_package")),
+    }
 
 
 def _service_context(payload: dict[str, Any]) -> dict[str, Any]:
@@ -728,6 +759,52 @@ def _check(
     return _blocked(name, finding_code=finding_code, detail=blocked_detail)
 
 
+def _pr_delivery_metadata_diagnostic_check(context: AoReleaseGateContext) -> AoReleaseGateCheck:
+    """Return a diagnostic-only PR delivery metadata check.
+
+    The PR body is PR-author controlled, so this check never emits a finding
+    code and never influences release-gate allow/deny. It makes the portable
+    product validator visible in the release-gate artifact without granting PR
+    body text release authority.
+    """
+
+    if context["pr_delivery_metadata_valid"] is True:
+        risk_class = context["pr_delivery_metadata_risk_class"] or "<missing>"
+        impact = context["pr_delivery_metadata_release_authority_impact"] or "<missing>"
+        return _pass(
+            "pr_delivery_metadata_diagnostic",
+            detail=(
+                "Untrusted PR delivery metadata is present and schema-valid "
+                f"(risk_class={risk_class}, release_authority_impact={impact}). "
+                "This is diagnostic only; trusted diff/API context remains release authority input."
+            ),
+        )
+    if context["pr_delivery_metadata_present"] is False:
+        return _pass(
+            "pr_delivery_metadata_diagnostic",
+            detail=(
+                "Untrusted PR delivery metadata is absent. This is diagnostic only in this release-gate "
+                "version and does not affect allow/deny."
+            ),
+        )
+    if context["pr_delivery_metadata_present"] is True:
+        code = context["pr_delivery_metadata_finding_code"] or "pr_delivery_metadata_invalid"
+        return _pass(
+            "pr_delivery_metadata_diagnostic",
+            detail=(
+                f"Untrusted PR delivery metadata is present but invalid ({code}). "
+                "This is diagnostic only in this release-gate version and does not affect allow/deny."
+            ),
+        )
+    return _pass(
+        "pr_delivery_metadata_diagnostic",
+        detail=(
+            "PR delivery metadata diagnostics were not supplied by the trusted-base payload builder. "
+            "This is diagnostic only and does not affect allow/deny."
+        ),
+    )
+
+
 def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoReleaseGateContext:
     """Extract normalized release-gate context from dry-run inputs."""
 
@@ -745,6 +822,7 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
         service.get("pr_author"),
         _as_dict(pull_request.get("author")).get("login"),
     )
+    pr_delivery_metadata = _pr_delivery_metadata_context(root, service)
     changed_paths = _strings(root.get("changed_paths")) or _strings(service.get("changed_paths"))
     allowed_path_prefixes = _strings(root.get("allowed_path_prefixes")) or _strings(
         service.get("allowed_path_prefixes")
@@ -793,6 +871,14 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
         ),
         "low_risk_autonomous_merge_requested": autonomous_requested,
         "low_risk_autonomous_merge_request_valid": autonomous_request_valid,
+        "pr_delivery_metadata_present": _bool(pr_delivery_metadata.get("present")),
+        "pr_delivery_metadata_valid": _bool(pr_delivery_metadata.get("valid")),
+        "pr_delivery_metadata_finding_code": _string(pr_delivery_metadata.get("finding_code")),
+        "pr_delivery_metadata_risk_class": _string(pr_delivery_metadata.get("risk_class")),
+        "pr_delivery_metadata_release_authority_impact": _string(
+            pr_delivery_metadata.get("release_authority_impact")
+        ),
+        "pr_delivery_metadata_work_package": _string(pr_delivery_metadata.get("work_package")),
         "reviewed_slice": _first_string(root.get("reviewed_slice"), service.get("reviewed_slice")),
         "gpp_current_wp_id": _first_string(current_wp.get("id")),
         "gpp_current_wp_issue": _first_string(current_wp.get("issue")),
@@ -2086,6 +2172,7 @@ def build_ao_release_gate_decision(
             pass_detail="Changed paths are inside the explicit work-package allowlist.",
             blocked_detail="Changed paths or allowlist are missing, or a changed path is out of scope.",
         ),
+        _pr_delivery_metadata_diagnostic_check(context),
         *high_risk_supersession_checks,
         _check(
             "path_sensitive_human_review",

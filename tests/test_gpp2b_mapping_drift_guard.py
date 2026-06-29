@@ -7,9 +7,10 @@ pin that table to both gates' *actual* check sets so the mapping cannot
 silently drift:
 
 - the 8 local-gate checks declared in ``local-gpp-gate-evidence.schema.v1.json``
-- the 33 ao-release-gate checks produced by ``build_ao_release_gate_decision``
+- the 34 ao-release-gate checks produced by ``build_ao_release_gate_decision``
   (GPP-2D-2b added ``review_evidence`` and ``review_evidence_context_bound``;
-  AO-MA-10b added six ``ao_ma10_*`` checks)
+  AO-MA-10b added six ``ao_ma10_*`` checks; the PR metadata productization
+  slice added ``pr_delivery_metadata_diagnostic``)
 
 If either gate gains, loses, or renames a check without the table being
 updated, these tests fail. This is a documentation-integrity test only: it
@@ -157,7 +158,7 @@ def test_section_3_1_table_anchor() -> None:
 
 
 def test_section_3_1_header_counts_match_actual_check_sets() -> None:
-    """The (8) and (20) counts in the table header match the live gates."""
+    """The table header counts match the live gates."""
     table = _parse_section_3_1()
     local_total = len(_schema_local_check_names())
     ao_total = len(_runtime_ao_release_gate_check_names())
