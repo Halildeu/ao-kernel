@@ -291,6 +291,176 @@ def cmd_orchestration_run_wrapper(args: argparse.Namespace) -> int:
     return 1 if failed_spawn or failed_invoke else 0
 
 
+def cmd_orchestration_run_wrapper_async(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration run-wrapper-async``.
+
+    Product-facing wrapper v2 for a bounded multi-worker local run. It emits a
+    single task graph for all declared specs, prepares workers, invokes the
+    pinned deterministic local worker fixture concurrently when requested, and
+    returns a fail-closed summary. It deliberately does not fabricate reviewer
+    or verifier AGREE artifacts; those phases are reported as external evidence
+    required unless a future command wires real review/verification inputs.
+    """
+
+    if bool(args.dry_run) == bool(args.execute_local_fixture):
+        print(
+            "orchestration run-wrapper-async requires exactly one of --dry-run or --execute-local-fixture",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        max_workers = int(args.max_workers)
+    except (TypeError, ValueError):
+        print("orchestration run-wrapper-async --max-workers must be a positive integer", file=sys.stderr)
+        return 2
+    if max_workers <= 0:
+        print("orchestration run-wrapper-async --max-workers must be a positive integer", file=sys.stderr)
+        return 2
+
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+    output_dir = Path(args.output_dir).resolve() if args.output_dir else repo_root / ".ao" / "orchestration"
+    worktree_base = _resolve_worktree_base(args.worktree_base)
+    try:
+        declared_specs = _parse_declared_specs(args.declared_spec)
+    except SystemExit as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if not declared_specs:
+        print(
+            "orchestration run-wrapper-async requires at least one --declared-spec so worker write scope is explicit",
+            file=sys.stderr,
+        )
+        return 2
+
+    orchestrator = Orchestrator(
+        repo_root=repo_root,
+        ssot=SSOTPaths.default(repo_root),
+        output_dir=output_dir,
+    )
+    try:
+        manifest = orchestrator.plan(
+            goal=args.goal,
+            declared_specs=declared_specs,
+            base_sha=args.base_sha,
+            base_ref=args.base_ref,
+            repo=args.repo,
+        )
+    except OrchestrationError as exc:
+        print(f"orchestration run-wrapper-async plan failed: {exc}", file=sys.stderr)
+        return 1
+
+    manifest_path = Path(str(manifest["base_dir"])) / "manifest.v1.json"
+    runner = WorkerRunner(repo_root=repo_root, worktree_base=worktree_base, dry_run=bool(args.dry_run))
+    try:
+        runner_report = runner.spawn(manifest_path=manifest_path)
+    except WorkerRunnerError as exc:
+        print(f"orchestration run-wrapper-async spawn failed: {exc}", file=sys.stderr)
+        return 1
+
+    invocation_report: dict[str, object] | None = None
+    if args.execute_local_fixture:
+        invoker = WorkerInvoker(repo_root=repo_root)
+        try:
+            invocation_report = invoker.invoke_concurrent(
+                manifest_path=manifest_path,
+                max_workers=max_workers,
+            )
+        except WorkerInvocationError as exc:
+            print(f"orchestration run-wrapper-async invoke failed: {exc}", file=sys.stderr)
+            return 2
+
+    raw_workers = runner_report.get("workers", [])
+    workers = [worker for worker in raw_workers if isinstance(worker, dict)]
+    worker_statuses = [
+        {"task_id": worker.get("task_id"), "status": worker.get("status")} for worker in workers
+    ]
+    invoked_by_task: dict[str, dict[str, object]] = {}
+    if invocation_report is not None:
+        raw_invoked = invocation_report.get("invoked", [])
+        if isinstance(raw_invoked, list):
+            for entry in raw_invoked:
+                if isinstance(entry, dict) and isinstance(entry.get("task_id"), str):
+                    invoked_by_task[str(entry["task_id"])] = entry
+
+    invocation_statuses = [
+        {
+            "task_id": worker.get("task_id"),
+            "status": invoked_by_task.get(str(worker.get("task_id")), {}).get(
+                "status",
+                "not_run_dry_run" if args.dry_run else "not_run",
+            ),
+            "worker_result_path": invoked_by_task.get(str(worker.get("task_id")), {}).get("worker_result_path"),
+            "integrated_worker_result_path": invoked_by_task.get(str(worker.get("task_id")), {}).get(
+                "integrated_worker_result_path"
+            ),
+        }
+        for worker in workers
+    ]
+    review_statuses = [
+        {
+            "task_id": worker.get("task_id"),
+            "status": "external_review_evidence_required",
+            "reason": "run-wrapper-async does not fabricate AI review verdicts",
+        }
+        for worker in workers
+    ]
+    verifier_statuses = [
+        {
+            "task_id": worker.get("task_id"),
+            "status": "external_verification_evidence_required",
+            "reason": "run-wrapper-async does not fabricate verification reports",
+        }
+        for worker in workers
+    ]
+
+    failed_spawn = any(str(worker.get("status", "")).startswith("failed_") for worker in workers)
+    failed_invoke = any(entry.get("status") == "failed" for entry in invocation_statuses)
+    payload: dict[str, object] = {
+        "status": "failed" if failed_spawn or failed_invoke else "ok",
+        "mode": "dry_run" if args.dry_run else "execute_local_fixture",
+        "async_wrapper_version": "v2",
+        "max_workers": max_workers,
+        "manifest_path": str(manifest_path),
+        "runner_report_path": str(manifest_path.parent / "runner_report.v1.json"),
+        "invocation_report_path": (
+            str(manifest_path.parent / "worker_invocation_report.v1.json") if invocation_report is not None else None
+        ),
+        "task_graph_id": manifest["task_graph_id"],
+        "worker_statuses": worker_statuses,
+        "invocation_statuses": invocation_statuses,
+        "review_statuses": review_statuses,
+        "verifier_statuses": verifier_statuses,
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+    }
+
+    if args.format == "json":
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(f"status: {payload['status']}")
+        print(f"mode: {payload['mode']}")
+        print(f"async_wrapper_version: {payload['async_wrapper_version']}")
+        print(f"max_workers: {payload['max_workers']}")
+        print(f"manifest_path: {payload['manifest_path']}")
+        print(f"runner_report_path: {payload['runner_report_path']}")
+        if payload["invocation_report_path"]:
+            print(f"invocation_report_path: {payload['invocation_report_path']}")
+        print("invocation_statuses:")
+        for entry in invocation_statuses:
+            print(f"- {entry['task_id']}: {entry['status']}")
+        print("review_statuses:")
+        for entry in review_statuses:
+            print(f"- {entry['task_id']}: {entry['status']}")
+        print("verifier_statuses:")
+        for entry in verifier_statuses:
+            print(f"- {entry['task_id']}: {entry['status']}")
+
+    return 1 if failed_spawn or failed_invoke else 0
+
+
 def _parse_declared_specs(raw: list[str] | None) -> list[TaskSpec] | None:
     """Parse ``--declared-spec`` CLI repeats into TaskSpec objects.
 
@@ -414,6 +584,51 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
     run_wrapper_p.add_argument("--base-ref", default="refs/heads/main", help="Base ref label")
     run_wrapper_p.add_argument("--repo", default=None, help="owner/repo (default: inferred from origin remote URL)")
     run_wrapper_p.add_argument("--format", choices=["text", "json"], default="text")
+
+    run_wrapper_async_p = orchestration_sub.add_parser(
+        "run-wrapper-async",
+        help=(
+            "Product wrapper v2: plan one bounded task graph, spawn workers, "
+            "invoke the pinned local fixture concurrently, and emit a fail-closed summary"
+        ),
+    )
+    run_wrapper_async_p.add_argument("--goal", required=True, help="Operator goal in free-form text")
+    run_wrapper_async_p.add_argument(
+        "--declared-spec",
+        action="append",
+        default=None,
+        help=(
+            "Required bounded slice in the form <task_id>:<comma-paths>[:<desc>]; "
+            "repeat for each concurrent worker"
+        ),
+    )
+    async_mode = run_wrapper_async_p.add_mutually_exclusive_group(required=True)
+    async_mode.add_argument("--dry-run", action="store_true", help="Plan + spawn dry-run only")
+    async_mode.add_argument(
+        "--execute-local-fixture",
+        action="store_true",
+        help="Plan + spawn real worktrees + invoke pinned deterministic local fixtures concurrently",
+    )
+    run_wrapper_async_p.add_argument(
+        "--max-workers",
+        default="4",
+        help="Maximum concurrent local fixture worker invocations (default: 4)",
+    )
+    run_wrapper_async_p.add_argument(
+        "--output-dir",
+        default=None,
+        help="Output dir (default: <repo_root>/.ao/orchestration)",
+    )
+    run_wrapper_async_p.add_argument("--repo-root", default=None, help="Repository root path (default: cwd)")
+    run_wrapper_async_p.add_argument(
+        "--worktree-base",
+        default=None,
+        help="Override base directory for worktrees (also honors AO_MA_WORKTREE_BASE)",
+    )
+    run_wrapper_async_p.add_argument("--base-sha", default=None, help="40-char base SHA (default: origin/main)")
+    run_wrapper_async_p.add_argument("--base-ref", default="refs/heads/main", help="Base ref label")
+    run_wrapper_async_p.add_argument("--repo", default=None, help="owner/repo (default: inferred from origin remote URL)")
+    run_wrapper_async_p.add_argument("--format", choices=["text", "json"], default="text")
 
     # AO-MA-4: spawn parallel worktrees from a manifest
     spawn_p = orchestration_sub.add_parser(

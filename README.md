@@ -222,6 +222,9 @@ workflows. They do not install GitHub Apps, call GitHub, configure Vault,
 configure webhooks, mutate branch protection, enable live adapter execution, or
 make any platform-readiness claim.
 
+Start from the end-to-end guide:
+[`docs/PRODUCT-QUICKSTART.md`](docs/PRODUCT-QUICKSTART.md).
+
 **Repo-intelligence onboarding (read-only):**
 
 ```bash
@@ -258,11 +261,21 @@ ao-kernel orchestration run-wrapper \
   --goal "bounded local slice" \
   --declared-spec task-001:src/a.py:"bounded write scope" \
   --execute-local-fixture
+
+ao-kernel orchestration run-wrapper-async \
+  --goal "bounded parallel local slice" \
+  --declared-spec task-001:src/a.py:"worker one" \
+  --declared-spec task-002:src/b.py:"worker two" \
+  --execute-local-fixture \
+  --max-workers 2
 ```
 
 The wrapper chains `plan -> spawn` in dry-run mode or
 `plan -> spawn -> invoke` with the pinned deterministic local worker fixture.
-It requires explicit declared write scopes and keeps `support_widening`,
+The async wrapper v2 emits one task graph, invokes pinned local fixtures through
+a bounded worker pool, collects artifacts, and reports review/verification as
+external evidence required rather than fabricating AI approval. Both wrappers
+require explicit declared write scopes and keep `support_widening`,
 `production_platform_claim`, and `live_adapter_execution` closed.
 
 ## Context Management

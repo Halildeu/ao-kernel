@@ -35,7 +35,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Callable, cast
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
@@ -155,6 +155,36 @@ class WorkerInvoker:
                 f"operator-bound GPP supersession with live_adapter_execution=true."
             )
 
+        return self._invoke_manifest(manifest_path=manifest_path, fixture_id=fixture_id, max_workers=1)
+
+    def invoke_concurrent(
+        self,
+        manifest_path: Path,
+        *,
+        fixture_id: str = PINNED_FIXTURE_ID,
+        max_workers: int = 4,
+    ) -> dict[str, Any]:
+        """Run the pinned worker fixture concurrently for prepared workers.
+
+        This is the product-facing AO-MA wrapper v2 execution primitive. It
+        keeps the same trust boundary as :meth:`invoke`: no arbitrary adapters,
+        no live adapter execution, no GitHub writes, and the same manifest /
+        runner_report / assignment / worktree verification before any fixture
+        write. The only semantic difference is that eligible worker fixture
+        subprocesses are scheduled through a bounded thread pool and the final
+        report is emitted in the runner_report worker order.
+        """
+
+        if max_workers <= 0:
+            raise WorkerInvocationError("max_workers must be a positive integer")
+        if fixture_id != PINNED_FIXTURE_ID:
+            raise WorkerInvocationError(
+                f"AO-MA wrapper v2 only invokes the pinned deterministic local worker fixture "
+                f"{PINNED_FIXTURE_ID!r}; arbitrary adapter {fixture_id!r} is rejected fail-closed."
+            )
+        return self._invoke_manifest(manifest_path=manifest_path, fixture_id=fixture_id, max_workers=max_workers)
+
+    def _invoke_manifest(self, *, manifest_path: Path, fixture_id: str, max_workers: int) -> dict[str, Any]:
         manifest_path = manifest_path.resolve()
         manifest = _load_json(manifest_path)
 
@@ -197,7 +227,7 @@ class WorkerInvoker:
                 f"runner_report manifest_sha256 {report_manifest_sha!r} != on-disk manifest sha256 "
                 f"{actual_manifest_sha!r}; re-run AO-MA-4 spawn before invoke"
             )
-        workers = runner_report.get("workers", [])
+        workers: list[dict[str, Any]] = runner_report.get("workers", [])
         if not workers:
             raise WorkerInvocationError("runner_report has no workers; nothing to invoke")
         base_sha = runner_report["base_sha"]
@@ -206,20 +236,42 @@ class WorkerInvoker:
         assignment_validator = Draft202012Validator(_load_schema(_ASSIGNMENT_SCHEMA))
         manifest_artifacts = {entry["path"]: entry for entry in manifest["artifacts"]}
 
-        # 6. Invoke the pinned fixture for each eligible worker entry.
+        # 6. Invoke the pinned fixture for each eligible worker entry. Preserve
+        # runner_report order in the emitted report even when execution is
+        # concurrent, so downstream artifact diffs remain deterministic.
         invoked: list[dict[str, Any]] = []
-        for worker in workers:
-            invoked.append(
-                self._invoke_one(
-                    worker=worker,
-                    manifest_dir=manifest_dir,
-                    manifest_artifacts=manifest_artifacts,
-                    task_graph_id=task_graph_id,
-                    base_sha=base_sha,
-                    worker_result_validator=worker_result_validator,
-                    assignment_validator=assignment_validator,
+        if max_workers == 1 or len(workers) <= 1:
+            for worker in workers:
+                invoked.append(
+                    self._invoke_one(
+                        worker=worker,
+                        manifest_dir=manifest_dir,
+                        manifest_artifacts=manifest_artifacts,
+                        task_graph_id=task_graph_id,
+                        base_sha=base_sha,
+                        worker_result_validator=worker_result_validator,
+                        assignment_validator=assignment_validator,
+                    )
                 )
-            )
+        else:
+            from ao_kernel.orchestration.async_runner import invoke_callables_concurrently
+
+            def make_invocation_call(worker: dict[str, Any]) -> Callable[[], dict[str, Any]]:
+                def call() -> dict[str, Any]:
+                    return self._invoke_one(
+                        worker=worker,
+                        manifest_dir=manifest_dir,
+                        manifest_artifacts=manifest_artifacts,
+                        task_graph_id=task_graph_id,
+                        base_sha=base_sha,
+                        worker_result_validator=worker_result_validator,
+                        assignment_validator=assignment_validator,
+                    )
+
+                return call
+
+            calls = [make_invocation_call(worker) for worker in workers]
+            invoked = invoke_callables_concurrently(calls, max_workers=max_workers)
 
         # 5. Emit the schema-valid invocation report.
         return self._emit_report(
