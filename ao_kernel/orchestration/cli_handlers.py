@@ -13,6 +13,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from ao_kernel.orchestration.integrator import (
     Integrator,
@@ -178,6 +179,118 @@ def cmd_orchestration_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_orchestration_run_wrapper(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration run-wrapper``.
+
+    Product-facing safe wrapper for the local AO-MA chain. It is intentionally
+    narrower than the full orchestration command set: it only chains
+    ``plan -> spawn`` for dry-run, or ``plan -> spawn -> invoke`` with the
+    pinned deterministic local worker fixture when explicitly requested.
+    """
+
+    if bool(args.dry_run) == bool(args.execute_local_fixture):
+        print(
+            "orchestration run-wrapper requires exactly one of --dry-run or --execute-local-fixture",
+            file=sys.stderr,
+        )
+        return 2
+
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+    output_dir = Path(args.output_dir).resolve() if args.output_dir else repo_root / ".ao" / "orchestration"
+    worktree_base = _resolve_worktree_base(args.worktree_base)
+    try:
+        declared_specs = _parse_declared_specs(args.declared_spec)
+    except SystemExit as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if not declared_specs:
+        print(
+            "orchestration run-wrapper requires at least one --declared-spec so worker write scope is explicit",
+            file=sys.stderr,
+        )
+        return 2
+
+    orchestrator = Orchestrator(
+        repo_root=repo_root,
+        ssot=SSOTPaths.default(repo_root),
+        output_dir=output_dir,
+    )
+    try:
+        manifest = orchestrator.plan(
+            goal=args.goal,
+            declared_specs=declared_specs,
+            base_sha=args.base_sha,
+            base_ref=args.base_ref,
+            repo=args.repo,
+        )
+    except OrchestrationError as exc:
+        print(f"orchestration run-wrapper plan failed: {exc}", file=sys.stderr)
+        return 1
+
+    manifest_path = Path(str(manifest["base_dir"])) / "manifest.v1.json"
+    runner = WorkerRunner(repo_root=repo_root, worktree_base=worktree_base, dry_run=bool(args.dry_run))
+    try:
+        runner_report = runner.spawn(manifest_path=manifest_path)
+    except WorkerRunnerError as exc:
+        print(f"orchestration run-wrapper spawn failed: {exc}", file=sys.stderr)
+        return 1
+
+    invocation_report: dict[str, object] | None = None
+    if args.execute_local_fixture:
+        invoker = WorkerInvoker(repo_root=repo_root)
+        try:
+            invocation_report = invoker.invoke(manifest_path=manifest_path)
+        except WorkerInvocationError as exc:
+            print(f"orchestration run-wrapper invoke failed: {exc}", file=sys.stderr)
+            return 2
+
+    raw_workers = runner_report.get("workers", [])
+    workers = [worker for worker in raw_workers if isinstance(worker, dict)]
+    worker_statuses = [
+        {"task_id": worker.get("task_id"), "status": worker.get("status")} for worker in workers
+    ]
+    failed_spawn = any(str(worker.get("status", "")).startswith("failed_") for worker in workers)
+    failed_invoke = False
+    if invocation_report is not None:
+        raw_invoked = invocation_report.get("invoked", [])
+        if not isinstance(raw_invoked, list):
+            raw_invoked = []
+        invoked = [entry for entry in raw_invoked if isinstance(entry, dict)]
+        failed_invoke = any(entry.get("status") == "failed" for entry in invoked)
+
+    payload: dict[str, Any] = {
+        "status": "failed" if failed_spawn or failed_invoke else "ok",
+        "mode": "dry_run" if args.dry_run else "execute_local_fixture",
+        "manifest_path": str(manifest_path),
+        "runner_report_path": str(manifest_path.parent / "runner_report.v1.json"),
+        "invocation_report_path": (
+            str(manifest_path.parent / "worker_invocation_report.v1.json") if invocation_report is not None else None
+        ),
+        "task_graph_id": manifest["task_graph_id"],
+        "worker_statuses": worker_statuses,
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+    }
+
+    if args.format == "json":
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(f"status: {payload['status']}")
+        print(f"mode: {payload['mode']}")
+        print(f"manifest_path: {payload['manifest_path']}")
+        print(f"runner_report_path: {payload['runner_report_path']}")
+        if payload["invocation_report_path"]:
+            print(f"invocation_report_path: {payload['invocation_report_path']}")
+        print("worker_statuses:")
+        for entry in payload["worker_statuses"]:
+            print(f"- {entry['task_id']}: {entry['status']}")
+
+    return 1 if failed_spawn or failed_invoke else 0
+
+
 def _parse_declared_specs(raw: list[str] | None) -> list[TaskSpec] | None:
     """Parse ``--declared-spec`` CLI repeats into TaskSpec objects.
 
@@ -265,6 +378,42 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
         default="text",
         help="Stdout summary format (default: text)",
     )
+
+    run_wrapper_p = orchestration_sub.add_parser(
+        "run-wrapper",
+        help=(
+            "Product safe wrapper for plan->spawn dry-run or plan->spawn->invoke "
+            "with the pinned deterministic local fixture"
+        ),
+    )
+    run_wrapper_p.add_argument("--goal", required=True, help="Operator goal in free-form text")
+    run_wrapper_p.add_argument(
+        "--declared-spec",
+        action="append",
+        default=None,
+        help=(
+            "Required bounded slice in the form <task_id>:<comma-paths>[:<desc>]; "
+            "repeat for each slice"
+        ),
+    )
+    mode = run_wrapper_p.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--dry-run", action="store_true", help="Plan + spawn dry-run only; no worktrees or invoke")
+    mode.add_argument(
+        "--execute-local-fixture",
+        action="store_true",
+        help="Plan + spawn real worktrees + invoke the pinned deterministic local fixture",
+    )
+    run_wrapper_p.add_argument("--output-dir", default=None, help="Output dir (default: <repo_root>/.ao/orchestration)")
+    run_wrapper_p.add_argument("--repo-root", default=None, help="Repository root path (default: cwd)")
+    run_wrapper_p.add_argument(
+        "--worktree-base",
+        default=None,
+        help="Override base directory for worktrees (also honors AO_MA_WORKTREE_BASE)",
+    )
+    run_wrapper_p.add_argument("--base-sha", default=None, help="40-char base SHA (default: origin/main)")
+    run_wrapper_p.add_argument("--base-ref", default="refs/heads/main", help="Base ref label")
+    run_wrapper_p.add_argument("--repo", default=None, help="owner/repo (default: inferred from origin remote URL)")
+    run_wrapper_p.add_argument("--format", choices=["text", "json"], default="text")
 
     # AO-MA-4: spawn parallel worktrees from a manifest
     spawn_p = orchestration_sub.add_parser(

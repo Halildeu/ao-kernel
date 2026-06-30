@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from typing import Any, Literal, cast
+from typing import Any, Literal, Mapping, cast
 
 from jsonschema import Draft202012Validator
 
@@ -68,7 +68,7 @@ def load_pr_delivery_metadata_schema() -> dict[str, Any]:
 
     schema = load_default("schemas", PR_DELIVERY_METADATA_SCHEMA_NAME)
     Draft202012Validator.check_schema(schema)
-    return schema
+    return cast(dict[str, Any], schema)
 
 
 def extract_pr_delivery_metadata_block(markdown: str) -> str | None:
@@ -160,7 +160,49 @@ def validate_pr_delivery_metadata_markdown(markdown: str) -> PrDeliveryMetadataV
 def pr_delivery_metadata_template_json() -> str:
     """Return the canonical JSON block used by the GitHub PR template."""
 
-    payload = {
+    return json.dumps(pr_delivery_metadata_template_object(), indent=2, sort_keys=True)
+
+
+def pr_delivery_metadata_template_object(
+    *,
+    issue: str = "N/A",
+    tracked_by: str = "N/A",
+    work_package: str = "AO-MA-or-GPP-id",
+    risk_class: str = "normal",
+    release_authority_impact: str = "none",
+    critical_fix: bool = False,
+    implementer_provider: str = "openai",
+    reviewer_providers: list[str] | None = None,
+    review_artifacts: list[str] | None = None,
+    verdict: str = "N/A",
+    same_provider_exception: str = "N/A",
+    boundary_credential_read: bool = False,
+    boundary_credential_write: bool = False,
+    boundary_state_mutation_test: bool = False,
+    boundary_state_mutation_production: bool = False,
+    boundary_cross: bool = False,
+    boundary_user_communication: bool = False,
+    user_approval_evidence: str = "N/A",
+) -> dict[str, Any]:
+    """Return a schema-shaped PR delivery metadata object.
+
+    The helper centralizes the product UX defaults used by the template and
+    generate/fix CLI commands. It deliberately does not read PR state or make
+    release-authority decisions; it only creates the PR-author declaration
+    block that the repo-owned gate can validate.
+    """
+
+    none_of_the_above = not any(
+        (
+            boundary_credential_read,
+            boundary_credential_write,
+            boundary_state_mutation_test,
+            boundary_state_mutation_production,
+            boundary_cross,
+            boundary_user_communication,
+        )
+    )
+    payload: dict[str, Any] = {
         "issue": "N/A",
         "tracked_by": "N/A",
         "work_package": "AO-MA-or-GPP-id",
@@ -168,14 +210,14 @@ def pr_delivery_metadata_template_json() -> str:
         "release_authority_impact": "none",
         "critical_fix": False,
         "boundary_declaration": {
-            "credential_read": False,
-            "credential_write": False,
-            "state_mutation_test": False,
-            "state_mutation_production": False,
-            "boundary_cross": False,
-            "user_communication": False,
-            "none_of_the_above": True,
-            "user_approval_evidence": "N/A",
+            "credential_read": boundary_credential_read,
+            "credential_write": boundary_credential_write,
+            "state_mutation_test": boundary_state_mutation_test,
+            "state_mutation_production": boundary_state_mutation_production,
+            "boundary_cross": boundary_cross,
+            "user_communication": boundary_user_communication,
+            "none_of_the_above": none_of_the_above,
+            "user_approval_evidence": user_approval_evidence,
         },
         "cross_ai_review": {
             "implementer_provider": "openai",
@@ -185,4 +227,46 @@ def pr_delivery_metadata_template_json() -> str:
             "same_provider_exception": "N/A",
         },
     }
-    return json.dumps(payload, indent=2, sort_keys=True)
+    payload["issue"] = issue
+    payload["tracked_by"] = tracked_by
+    payload["work_package"] = work_package
+    payload["risk_class"] = risk_class
+    payload["release_authority_impact"] = release_authority_impact
+    payload["critical_fix"] = critical_fix
+    payload["cross_ai_review"]["implementer_provider"] = implementer_provider
+    payload["cross_ai_review"]["reviewer_providers"] = (
+        list(reviewer_providers) if reviewer_providers is not None else ["anthropic"]
+    )
+    payload["cross_ai_review"]["review_artifacts"] = (
+        list(review_artifacts) if review_artifacts is not None else ["N/A"]
+    )
+    payload["cross_ai_review"]["verdict"] = verdict
+    payload["cross_ai_review"]["same_provider_exception"] = same_provider_exception
+    return payload
+
+
+def render_pr_delivery_metadata_block(metadata: Mapping[str, Any]) -> str:
+    """Render a fenced ``pr-delivery-metadata`` JSON block."""
+
+    body = json.dumps(dict(metadata), indent=2, sort_keys=True)
+    return f"```json pr-delivery-metadata\n{body}\n```"
+
+
+def upsert_pr_delivery_metadata_block(markdown: str, metadata: Mapping[str, Any]) -> str:
+    """Append or replace the first explicit PR delivery metadata block.
+
+    Replacement is intentionally limited to the explicit info strings that
+    :func:`extract_pr_delivery_metadata_block` accepts. Plain JSON examples in
+    PR bodies are left untouched.
+    """
+
+    block = render_pr_delivery_metadata_block(metadata)
+    for match in _FENCE_RE.finditer(markdown):
+        info = " ".join(match.group("info").strip().lower().split())
+        tokens = set(info.split())
+        if info == "pr-delivery-metadata" or {"json", "pr-delivery-metadata"}.issubset(tokens):
+            return markdown[: match.start()] + block + markdown[match.end() :]
+    trimmed = markdown.rstrip()
+    if not trimmed:
+        return block + "\n"
+    return trimmed + "\n\n## Delivery Metadata\n\n" + block + "\n"

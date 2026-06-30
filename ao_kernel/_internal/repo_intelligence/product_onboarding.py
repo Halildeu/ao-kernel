@@ -53,6 +53,53 @@ _SAFETY_FALSE_FIELDS = {
 }
 
 
+def repo_intelligence_product_onboarding_template(
+    *,
+    repo_config_path: str = ".ao/repo-intelligence.yml",
+) -> JsonDict:
+    """Return the canonical product onboarding contract.
+
+    The template is intentionally conservative: it enables only the
+    read-only repo-intelligence workflow and keeps every hosted-gate,
+    live-adapter, implicit-write, support-widening, and production-claim
+    switch closed. CLI callers may write this as an explicit local config,
+    but it is never a GitHub/Vault/webhook setup instruction.
+    """
+
+    if repo_config_path not in APPROVED_REPO_CONFIG_PATHS:
+        raise ValueError(
+            "repo_config_path must be one of: "
+            + ", ".join(sorted(APPROVED_REPO_CONFIG_PATHS))
+        )
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_kind": ARTIFACT_KIND,
+        "enabled": True,
+        "support_tier": SUPPORT_TIER,
+        "setup": {
+            "github_app": {
+                "installation": INSTALLATION,
+                "repository_selection": REPOSITORY_SELECTION,
+                "permission_boundary": PERMISSION_BOUNDARY,
+            },
+            "repo_local_config": {
+                "path": repo_config_path,
+                "required": False,
+            },
+            "end_user_infrastructure": {
+                field: False for field in _END_USER_INFRA_FALSE_FIELDS
+            },
+        },
+        "workflow": {
+            "mode": WORKFLOW_MODE,
+            "activation": WORKFLOW_ACTIVATION,
+            "default_enabled": False,
+            "default_auto_feed": False,
+        },
+        "safety": {field: False for field in _SAFETY_FALSE_FIELDS},
+    }
+
+
 def validate_repo_intelligence_product_onboarding(config: Mapping[str, Any] | None) -> JsonDict:
     """Validate the repo-intelligence product onboarding contract.
 

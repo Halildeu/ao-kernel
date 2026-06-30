@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import ao_kernel
 
@@ -562,6 +562,236 @@ def _cmd_repo_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def _repo_onboarding_yaml_module() -> Any:
+    import yaml  # type: ignore[import-untyped]
+
+    return yaml
+
+
+def _dump_repo_onboarding_payload(payload: dict[str, Any], output_format: str) -> str:
+    if output_format == "json":
+        import json as _json
+
+        return _json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    yaml = _repo_onboarding_yaml_module()
+    return str(yaml.safe_dump(payload, sort_keys=False))
+
+
+def _load_repo_onboarding_config(path: Path) -> dict[str, Any]:
+    import json as _json
+
+    yaml = _repo_onboarding_yaml_module()
+    if not path.is_file():
+        raise ValueError(f"config file not found: {path}")
+    raw = path.read_text(encoding="utf-8")
+    if path.suffix.lower() == ".json":
+        loaded = _json.loads(raw)
+    else:
+        loaded = yaml.safe_load(raw)
+    if not isinstance(loaded, dict):
+        raise ValueError("repo-intelligence onboarding config must be a JSON/YAML object")
+    return cast(dict[str, Any], loaded)
+
+
+def _resolve_repo_onboarding_config_path(project_root: Path, raw_path: str | None) -> Path | None:
+    if raw_path:
+        candidate = Path(raw_path)
+        return candidate.resolve() if candidate.is_absolute() else (project_root / candidate).resolve()
+    from ao_kernel._internal.repo_intelligence.product_onboarding import APPROVED_REPO_CONFIG_PATHS
+
+    for rel in sorted(APPROVED_REPO_CONFIG_PATHS):
+        candidate = project_root / rel
+        if candidate.is_file():
+            return candidate.resolve()
+    return None
+
+
+def _cmd_repo_onboarding_template(args: argparse.Namespace) -> int:
+    from ao_kernel.repo_intelligence import repo_intelligence_product_onboarding_template
+
+    try:
+        payload = repo_intelligence_product_onboarding_template(repo_config_path=args.repo_config_path)
+    except ValueError as exc:
+        print(f"repo onboarding template failed: {exc}", file=sys.stderr)
+        return 2
+    print(_dump_repo_onboarding_payload(payload, args.output), end="")
+    return 0
+
+
+def _cmd_repo_onboarding_validate(args: argparse.Namespace) -> int:
+    import json as _json
+
+    from ao_kernel.repo_intelligence import validate_repo_intelligence_product_onboarding
+
+    try:
+        if args.config == "-":
+            yaml = _repo_onboarding_yaml_module()
+            loaded = yaml.safe_load(sys.stdin.read())
+            if not isinstance(loaded, dict):
+                raise ValueError("repo-intelligence onboarding config must be a JSON/YAML object")
+            config = loaded
+            source = "<stdin>"
+        else:
+            source_path = Path(args.config).resolve()
+            config = _load_repo_onboarding_config(source_path)
+            source = str(source_path)
+        result = validate_repo_intelligence_product_onboarding(config)
+    except Exception as exc:  # noqa: BLE001 - CLI prints sanitized loader/validator failure
+        print(f"repo onboarding validate failed: {exc}", file=sys.stderr)
+        return 2
+
+    payload = {"source": source, **result}
+    if args.output == "json":
+        print(_json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(f"status: {result['status']}")
+        print(f"decision: {result['decision']}")
+        for finding in result.get("findings", []):
+            print(f"- {finding}")
+    return 0 if result.get("status") == "accepted" else 1
+
+
+def _cmd_repo_onboarding_doctor(args: argparse.Namespace) -> int:
+    import json as _json
+
+    from ao_kernel.repo_intelligence import validate_repo_intelligence_product_onboarding
+
+    project_root = Path(args.project_root or ".").resolve()
+    workspace_dir = _resolve_repo_workspace_dir(project_root, args.workspace_root)
+    config_path = _resolve_repo_onboarding_config_path(project_root, args.config)
+    result: dict[str, Any]
+    source: str | None = None
+    next_steps: list[str] = []
+
+    if not project_root.is_dir():
+        result = {
+            "status": "not_ready",
+            "decision": "project_root_missing",
+            "findings": ["project_root_missing"],
+        }
+        next_steps.append("choose_existing_project_root")
+    else:
+        if not workspace_dir.is_dir():
+            next_steps.append("run_ao_kernel_init")
+        if config_path is None:
+            result = {
+                "status": "not_ready",
+                "decision": "repo_intelligence_onboarding_config_missing",
+                "findings": ["repo_intelligence_onboarding_config_missing"],
+            }
+            next_steps.append("run_repo_onboarding_init_config")
+        else:
+            source = str(config_path)
+            try:
+                config = _load_repo_onboarding_config(config_path)
+                result = validate_repo_intelligence_product_onboarding(config)
+            except Exception as exc:  # noqa: BLE001 - sanitized loader failure
+                result = {
+                    "status": "blocked",
+                    "decision": "repo_intelligence_onboarding_config_unreadable",
+                    "findings": [type(exc).__name__],
+                }
+            if result.get("status") == "blocked":
+                next_steps.append("fix_repo_intelligence_onboarding_config")
+            if result.get("status") == "accepted":
+                next_steps.extend(
+                    [
+                        "install_github_app",
+                        "select_repositories",
+                        "run_repo_scan",
+                        "run_repo_index_dry_run_before_vector_writes",
+                    ]
+                )
+
+    ready = bool(project_root.is_dir() and workspace_dir.is_dir() and result.get("status") == "accepted")
+    payload = {
+        "status": "ready" if ready else "not_ready",
+        "project_root": str(project_root),
+        "workspace_root": str(workspace_dir),
+        "workspace_exists": workspace_dir.is_dir(),
+        "config_path": source,
+        "onboarding": result,
+        "next_steps": next_steps,
+        "support_widening": False,
+        "production_platform_claim": False,
+        "live_adapter_execution_allowed": False,
+    }
+    if args.output == "json":
+        print(_json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(f"repo onboarding doctor: {payload['status']}")
+        print(f"workspace_exists: {payload['workspace_exists']}")
+        print(f"config_path: {payload['config_path'] or 'missing'}")
+        print(f"decision: {result['decision']}")
+        if next_steps:
+            print("next_steps:")
+            for step in next_steps:
+                print(f"- {step}")
+    return 0 if ready else 1
+
+
+def _cmd_repo_onboarding_init_config(args: argparse.Namespace) -> int:
+    import json as _json
+
+    from ao_kernel._internal.repo_intelligence.product_onboarding import APPROVED_REPO_CONFIG_PATHS
+    from ao_kernel.repo_intelligence import repo_intelligence_product_onboarding_template
+
+    project_root = Path(args.project_root or ".").resolve()
+    rel_path = args.path
+    if rel_path not in APPROVED_REPO_CONFIG_PATHS:
+        print(
+            "repo onboarding init-config failed: --path must be one of "
+            + ", ".join(sorted(APPROVED_REPO_CONFIG_PATHS)),
+            file=sys.stderr,
+        )
+        return 2
+    target = (project_root / rel_path).resolve()
+    try:
+        target.relative_to(project_root)
+    except ValueError:
+        print("repo onboarding init-config failed: target escapes project root", file=sys.stderr)
+        return 2
+    payload = repo_intelligence_product_onboarding_template(repo_config_path=rel_path)
+    rendered = _dump_repo_onboarding_payload(payload, args.format)
+    if target.exists() and not args.force and not args.dry_run:
+        print(f"repo onboarding config already exists: {target}; pass --force to replace", file=sys.stderr)
+        return 1
+    result = {
+        "status": "dry_run" if args.dry_run else "written",
+        "path": str(target),
+        "format": args.format,
+        "would_write": args.dry_run,
+        "support_widening": False,
+        "production_platform_claim": False,
+        "live_adapter_execution_allowed": False,
+    }
+    if not args.dry_run:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(rendered, encoding="utf-8")
+    if args.output == "json":
+        print(_json.dumps(result, indent=2, sort_keys=True))
+    else:
+        print(f"repo onboarding config {result['status']}: {target}")
+    return 0
+
+
+def _cmd_repo_onboarding(args: argparse.Namespace) -> int:
+    subcommand = getattr(args, "repo_onboarding_command", None)
+    if subcommand == "template":
+        return _cmd_repo_onboarding_template(args)
+    if subcommand == "validate":
+        return _cmd_repo_onboarding_validate(args)
+    if subcommand == "doctor":
+        return _cmd_repo_onboarding_doctor(args)
+    if subcommand == "init-config":
+        return _cmd_repo_onboarding_init_config(args)
+    print(
+        "Usage: ao-kernel repo onboarding {template|validate|doctor|init-config}",
+        file=sys.stderr,
+    )
+    return 1
+
+
 def _resolve_repo_workspace_dir(project_root: Path, workspace_root: str | None) -> Path:
     raw = Path(workspace_root or ".ao")
     return raw.resolve() if raw.is_absolute() else (project_root / raw).resolve()
@@ -795,6 +1025,112 @@ def _cmd_pr_metadata_validate(args: argparse.Namespace) -> int:
         if result.release_authority_impact:
             print(f"release_authority_impact: {result.release_authority_impact}")
     return 0 if result.valid else 1
+
+
+def _build_pr_metadata_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    from ao_kernel.pr_metadata import pr_delivery_metadata_template_object
+
+    reviewer_providers = getattr(args, "reviewer_provider", None)
+    review_artifacts = getattr(args, "review_artifact", None)
+    metadata = pr_delivery_metadata_template_object(
+        issue=args.issue,
+        tracked_by=args.tracked_by,
+        work_package=args.work_package,
+        risk_class=args.risk_class,
+        release_authority_impact=args.release_authority_impact,
+        critical_fix=bool(args.critical_fix),
+        implementer_provider=args.implementer_provider,
+        reviewer_providers=list(reviewer_providers or ["anthropic"]),
+        review_artifacts=list(review_artifacts or ["N/A"]),
+        verdict=args.verdict,
+        same_provider_exception=args.same_provider_exception,
+        boundary_credential_read=bool(args.boundary_credential_read),
+        boundary_credential_write=bool(args.boundary_credential_write),
+        boundary_state_mutation_test=bool(args.boundary_state_mutation_test),
+        boundary_state_mutation_production=bool(args.boundary_state_mutation_production),
+        boundary_cross=bool(args.boundary_cross),
+        boundary_user_communication=bool(args.boundary_user_communication),
+        user_approval_evidence=args.user_approval_evidence,
+    )
+    return metadata
+
+
+def _cmd_pr_metadata_generate(args: argparse.Namespace) -> int:
+    import json as _json
+
+    from ao_kernel.pr_metadata import (
+        render_pr_delivery_metadata_block,
+        validate_pr_delivery_metadata_object,
+    )
+
+    metadata = _build_pr_metadata_from_args(args)
+    validation = validate_pr_delivery_metadata_object(metadata)
+    if not validation.valid:
+        print(f"pr-metadata generate failed: {validation.message}", file=sys.stderr)
+        return 1
+    if args.output == "json":
+        print(_json.dumps(metadata, indent=2, sort_keys=True))
+    else:
+        print(render_pr_delivery_metadata_block(metadata))
+    return 0
+
+
+def _cmd_pr_metadata_fix(args: argparse.Namespace) -> int:
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.pr_metadata import (
+        upsert_pr_delivery_metadata_block,
+        validate_pr_delivery_metadata_markdown,
+        validate_pr_delivery_metadata_object,
+    )
+
+    if args.write and args.body_file == "-":
+        print("pr-metadata fix --write requires a file path, not stdin", file=sys.stderr)
+        return 2
+    if args.body_file == "-":
+        original = sys.stdin.read()
+        body_path = None
+    else:
+        body_path = _Path(args.body_file)
+        if not body_path.is_file():
+            print(f"PR body file not found: {body_path}", file=sys.stderr)
+            return 2
+        original = body_path.read_text(encoding="utf-8")
+
+    metadata = _build_pr_metadata_from_args(args)
+    metadata_validation = validate_pr_delivery_metadata_object(metadata)
+    if not metadata_validation.valid:
+        print(f"pr-metadata fix failed: {metadata_validation.message}", file=sys.stderr)
+        return 1
+    fixed = upsert_pr_delivery_metadata_block(original, metadata)
+    fixed_validation = validate_pr_delivery_metadata_markdown(fixed)
+    if not fixed_validation.valid:
+        print(f"pr-metadata fix produced invalid metadata: {fixed_validation.message}", file=sys.stderr)
+        return 1
+    changed = fixed != original
+    if args.write and body_path is not None:
+        body_path.write_text(fixed, encoding="utf-8")
+
+    if args.output == "json":
+        print(
+            _json.dumps(
+                {
+                    "valid": fixed_validation.valid,
+                    "finding_code": fixed_validation.finding_code,
+                    "changed": changed,
+                    "written": bool(args.write),
+                    "path": str(body_path) if body_path is not None else None,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+    elif args.write:
+        print(f"pr-metadata fixed: {body_path} (changed={changed})")
+    else:
+        print(fixed, end="" if fixed.endswith("\n") else "\n")
+    return 0
 
 
 def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
@@ -1471,6 +1807,120 @@ def _build_parser() -> argparse.ArgumentParser:
     pr_meta_sub = pr_meta_p.add_subparsers(dest="pr_metadata_command")
     pr_meta_sub.add_parser("schema", help="Print the bundled PR delivery metadata JSON Schema")
     pr_meta_sub.add_parser("template", help="Print the canonical pr-delivery-metadata JSON block")
+    pr_meta_generate = pr_meta_sub.add_parser(
+        "generate",
+        help="Generate a schema-valid pr-delivery-metadata block from explicit flags",
+    )
+    pr_meta_generate.add_argument("--issue", default="N/A", help="Primary issue reference, e.g. #123 or N/A")
+    pr_meta_generate.add_argument("--tracked-by", default="N/A", help="Post-merge tracking issue, e.g. #123 or N/A")
+    pr_meta_generate.add_argument("--work-package", required=True, help="Work package identifier")
+    pr_meta_generate.add_argument(
+        "--risk-class",
+        choices=["low", "normal", "high", "governance", "critical-fix"],
+        default="normal",
+    )
+    pr_meta_generate.add_argument(
+        "--release-authority-impact",
+        choices=[
+            "none",
+            "ao-release-gate-input-only",
+            "ao-release-gate-logic",
+            "github-ruleset",
+            "support-tier-or-claim",
+        ],
+        default="none",
+    )
+    pr_meta_generate.add_argument("--critical-fix", action="store_true")
+    pr_meta_generate.add_argument("--boundary-credential-read", action="store_true")
+    pr_meta_generate.add_argument("--boundary-credential-write", action="store_true")
+    pr_meta_generate.add_argument("--boundary-state-mutation-test", action="store_true")
+    pr_meta_generate.add_argument("--boundary-state-mutation-production", action="store_true")
+    pr_meta_generate.add_argument("--boundary-cross", action="store_true")
+    pr_meta_generate.add_argument("--boundary-user-communication", action="store_true")
+    pr_meta_generate.add_argument(
+        "--user-approval-evidence",
+        default="N/A",
+        help="Required evidence reference when sensitive boundary flags are true",
+    )
+    pr_meta_generate.add_argument(
+        "--implementer-provider",
+        choices=["openai", "anthropic", "minimax", "human", "other"],
+        default="openai",
+    )
+    pr_meta_generate.add_argument(
+        "--reviewer-provider",
+        action="append",
+        choices=["openai", "anthropic", "minimax", "human", "other"],
+        default=None,
+        help="Reviewer provider; repeatable (default: anthropic)",
+    )
+    pr_meta_generate.add_argument(
+        "--review-artifact",
+        action="append",
+        default=None,
+        help="Review artifact reference; repeatable (default: N/A)",
+    )
+    pr_meta_generate.add_argument("--verdict", choices=["AGREE", "REVISE", "BLOCK", "N/A"], default="N/A")
+    pr_meta_generate.add_argument("--same-provider-exception", default="N/A")
+    pr_meta_generate.add_argument("--output", choices=["markdown", "json"], default="markdown")
+    pr_meta_fix = pr_meta_sub.add_parser(
+        "fix",
+        help="Append or replace a pr-delivery-metadata block in a PR body",
+    )
+    pr_meta_fix.add_argument("--body-file", required=True, help="Path to the PR body markdown file, or '-' for stdin")
+    pr_meta_fix.add_argument("--issue", default="N/A", help="Primary issue reference, e.g. #123 or N/A")
+    pr_meta_fix.add_argument("--tracked-by", default="N/A", help="Post-merge tracking issue, e.g. #123 or N/A")
+    pr_meta_fix.add_argument("--work-package", required=True, help="Work package identifier")
+    pr_meta_fix.add_argument(
+        "--risk-class",
+        choices=["low", "normal", "high", "governance", "critical-fix"],
+        default="normal",
+    )
+    pr_meta_fix.add_argument(
+        "--release-authority-impact",
+        choices=[
+            "none",
+            "ao-release-gate-input-only",
+            "ao-release-gate-logic",
+            "github-ruleset",
+            "support-tier-or-claim",
+        ],
+        default="none",
+    )
+    pr_meta_fix.add_argument("--critical-fix", action="store_true")
+    pr_meta_fix.add_argument("--boundary-credential-read", action="store_true")
+    pr_meta_fix.add_argument("--boundary-credential-write", action="store_true")
+    pr_meta_fix.add_argument("--boundary-state-mutation-test", action="store_true")
+    pr_meta_fix.add_argument("--boundary-state-mutation-production", action="store_true")
+    pr_meta_fix.add_argument("--boundary-cross", action="store_true")
+    pr_meta_fix.add_argument("--boundary-user-communication", action="store_true")
+    pr_meta_fix.add_argument(
+        "--user-approval-evidence",
+        default="N/A",
+        help="Required evidence reference when sensitive boundary flags are true",
+    )
+    pr_meta_fix.add_argument(
+        "--implementer-provider",
+        choices=["openai", "anthropic", "minimax", "human", "other"],
+        default="openai",
+    )
+    pr_meta_fix.add_argument(
+        "--reviewer-provider",
+        action="append",
+        choices=["openai", "anthropic", "minimax", "human", "other"],
+        default=None,
+        help="Reviewer provider; repeatable (default: anthropic)",
+    )
+    pr_meta_fix.add_argument(
+        "--review-artifact",
+        action="append",
+        default=None,
+        help="Review artifact reference; repeatable (default: N/A)",
+    )
+    pr_meta_fix.add_argument("--verdict", choices=["AGREE", "REVISE", "BLOCK", "N/A"], default="N/A")
+    pr_meta_fix.add_argument("--same-provider-exception", default="N/A")
+    pr_meta_fix.add_argument("--write", action="store_true", help="Write the fixed body back to --body-file")
+    pr_meta_fix.add_argument("--output", choices=["markdown", "json"], default="markdown")
     pr_meta_validate = pr_meta_sub.add_parser(
         "validate",
         help="Validate a PR body markdown file against the bundled PR delivery metadata schema",
@@ -1679,6 +2129,53 @@ def _build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Command output format (default: text)",
     )
+    onboarding_p = repo_sub.add_parser(
+        "onboarding",
+        help="Product onboarding for read-only repo-intelligence workflows",
+    )
+    onboarding_sub = onboarding_p.add_subparsers(dest="repo_onboarding_command")
+    onboarding_template_p = onboarding_sub.add_parser(
+        "template",
+        help="Print the canonical read-only repo-intelligence onboarding config",
+    )
+    onboarding_template_p.add_argument(
+        "--repo-config-path",
+        default=".ao/repo-intelligence.yml",
+        help="Approved repo-local config path to embed in the template",
+    )
+    onboarding_template_p.add_argument("--output", choices=["json", "yaml"], default="yaml")
+    onboarding_validate_p = onboarding_sub.add_parser(
+        "validate",
+        help="Validate a repo-intelligence onboarding config file",
+    )
+    onboarding_validate_p.add_argument("--config", required=True, help="Config path or '-' for stdin")
+    onboarding_validate_p.add_argument("--output", choices=["text", "json"], default="text")
+    onboarding_doctor_p = onboarding_sub.add_parser(
+        "doctor",
+        help="Check whether a repository is ready for read-only repo-intelligence onboarding",
+    )
+    onboarding_doctor_p.add_argument("--project-root", default=".", help="Repository root (default: cwd)")
+    onboarding_doctor_p.add_argument(
+        "--workspace-root",
+        default=".ao",
+        help="ao-kernel workspace root relative to project root (default: .ao)",
+    )
+    onboarding_doctor_p.add_argument("--config", default=None, help="Config path; omit to auto-detect approved paths")
+    onboarding_doctor_p.add_argument("--output", choices=["text", "json"], default="text")
+    onboarding_init_p = onboarding_sub.add_parser(
+        "init-config",
+        help="Write the canonical repo-intelligence onboarding config locally",
+    )
+    onboarding_init_p.add_argument("--project-root", default=".", help="Repository root (default: cwd)")
+    onboarding_init_p.add_argument(
+        "--path",
+        default=".ao/repo-intelligence.yml",
+        help="Approved repo-local config path (default: .ao/repo-intelligence.yml)",
+    )
+    onboarding_init_p.add_argument("--format", choices=["json", "yaml"], default="yaml")
+    onboarding_init_p.add_argument("--dry-run", action="store_true", help="Preview without writing")
+    onboarding_init_p.add_argument("--force", action="store_true", help="Replace an existing config file")
+    onboarding_init_p.add_argument("--output", choices=["text", "json"], default="text")
 
     # Metrics subcommands (PR-B5)
     metrics_p = sub.add_parser(
@@ -2284,8 +2781,11 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_repo_export_plan(args)
         if repo_cmd == "export":
             return _cmd_repo_export(args)
+        if repo_cmd == "onboarding":
+            return _cmd_repo_onboarding(args)
         print(
-            "Usage: ao-kernel repo {scan,index,query,export-plan,export} [--project-root PATH] [--output {text,json}]",
+            "Usage: ao-kernel repo {scan,index,query,export-plan,export,onboarding} "
+            "[--project-root PATH] [--output {text,json}]",
             file=sys.stderr,
         )
         return 1
@@ -2306,9 +2806,13 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_pr_metadata_schema(args)
         if pr_meta_cmd == "template":
             return _cmd_pr_metadata_template(args)
+        if pr_meta_cmd == "generate":
+            return _cmd_pr_metadata_generate(args)
+        if pr_meta_cmd == "fix":
+            return _cmd_pr_metadata_fix(args)
         if pr_meta_cmd == "validate":
             return _cmd_pr_metadata_validate(args)
-        print("Usage: ao-kernel pr-metadata {schema|template|validate}", file=sys.stderr)
+        print("Usage: ao-kernel pr-metadata {schema|template|generate|fix|validate}", file=sys.stderr)
         return 1
 
     # Executor subcommand (PR-C6)
@@ -2430,6 +2934,7 @@ def main(argv: list[str] | None = None) -> int:
             cmd_orchestration_native_import,
             cmd_orchestration_plan,
             cmd_orchestration_review,
+            cmd_orchestration_run_wrapper,
             cmd_orchestration_spawn,
             cmd_orchestration_verify,
         )
@@ -2437,6 +2942,8 @@ def main(argv: list[str] | None = None) -> int:
         orchestration_cmd = getattr(args, "orchestration_command", None)
         if orchestration_cmd == "plan":
             return cmd_orchestration_plan(args)
+        if orchestration_cmd == "run-wrapper":
+            return cmd_orchestration_run_wrapper(args)
         if orchestration_cmd == "spawn":
             return cmd_orchestration_spawn(args)
         if orchestration_cmd == "cleanup":
@@ -2452,7 +2959,8 @@ def main(argv: list[str] | None = None) -> int:
         if orchestration_cmd == "verify":
             return cmd_orchestration_verify(args)
         print(
-            "Usage: ao-kernel orchestration {plan|spawn|cleanup|invoke|native-import|integrate|review|verify}",
+            "Usage: ao-kernel orchestration "
+            "{plan|run-wrapper|spawn|cleanup|invoke|native-import|integrate|review|verify}",
             file=sys.stderr,
         )
         return 1

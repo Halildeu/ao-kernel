@@ -32,7 +32,10 @@ from ao_kernel._internal.repo_intelligence.root_exporter import (
     export_repo_roots,
 )
 from ao_kernel._internal.repo_intelligence.workflow_opt_in import validate_repo_intelligence_workflow_opt_in
-from ao_kernel._internal.repo_intelligence.product_onboarding import validate_repo_intelligence_product_onboarding
+from ao_kernel._internal.repo_intelligence.product_onboarding import (
+    repo_intelligence_product_onboarding_template,
+    validate_repo_intelligence_product_onboarding,
+)
 from ao_kernel._internal.repo_intelligence.workflow_context import resolve_repo_intelligence_workflow_context
 from ao_kernel._internal.repo_intelligence.workflow_surface import (
     build_repo_intelligence_read_only_workflow_surface,
@@ -60,6 +63,7 @@ __all__ = [
     "write_repo_vector_write_plan_artifact",
     "validate_repo_intelligence_workflow_opt_in",
     "validate_repo_intelligence_product_onboarding",
+    "repo_intelligence_product_onboarding_template",
     "resolve_repo_intelligence_workflow_context",
     "build_repo_intelligence_read_only_workflow_surface",
 ]

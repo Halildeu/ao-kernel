@@ -215,6 +215,56 @@ ao-kernel mcp serve --transport http --port 8080   # HTTP (needs ao-kernel[mcp-h
 
 Mixing is fine: an MCP client can call `ao_policy_check` and `ao_quality_gate` for governance decisions, run its own LLM, and call back for `ao_workspace_status`. The server stays thin on purpose.
 
+## Productized Local Workflows
+
+These CLI surfaces package the governed building blocks into repeatable local
+workflows. They do not install GitHub Apps, call GitHub, configure Vault,
+configure webhooks, mutate branch protection, enable live adapter execution, or
+make a production-platform claim.
+
+**Repo-intelligence onboarding (read-only):**
+
+```bash
+ao-kernel repo onboarding template --output yaml
+ao-kernel repo onboarding init-config --project-root . --path .ao/repo-intelligence.yml
+ao-kernel repo onboarding doctor --project-root . --output json
+```
+
+The generated contract requires only GitHub App installation, explicit
+repository selection, and optional repo-local config. End-user Cloud Run, Vault,
+webhook, private-key, release-gate, and deployment-protection service setup all
+remain false.
+
+**PR delivery metadata UX:**
+
+```bash
+ao-kernel pr-metadata generate --work-package AO-MA-10 --issue '#123'
+ao-kernel pr-metadata fix --body-file pr-body.md --write --work-package AO-MA-10
+ao-kernel pr-metadata validate --body-file pr-body.md --output json
+```
+
+The metadata block is a PR-author declaration only. Release authority remains
+the repo-owned `ao-release-gate` required check plus GitHub enforcement.
+
+**Multi-agent local run wrapper:**
+
+```bash
+ao-kernel orchestration run-wrapper \
+  --goal "bounded local slice" \
+  --declared-spec task-001:src/a.py:"bounded write scope" \
+  --dry-run
+
+ao-kernel orchestration run-wrapper \
+  --goal "bounded local slice" \
+  --declared-spec task-001:src/a.py:"bounded write scope" \
+  --execute-local-fixture
+```
+
+The wrapper chains `plan -> spawn` in dry-run mode or
+`plan -> spawn -> invoke` with the pinned deterministic local worker fixture.
+It requires explicit declared write scopes and keeps `support_widening`,
+`production_platform_claim`, and `live_adapter_execution` closed.
+
 ## Context Management
 
 Governed context loop — decisions extracted, scored, and injected automatically.
