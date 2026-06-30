@@ -48,7 +48,7 @@ jobs:
     # AGREE + environment exists preflight. Output is NOT trust source for approve.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -100,7 +100,7 @@ jobs:
     # Environment protection gate (operator-managed required reviewer = Halildeu).
     environment: ao-ma-plan-approval
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Environment preflight verify
         # Codex iter-2 Blocker 5 absorb: required_reviewers > 0 enforce; rule
         # count alone is insufficient — actual reviewer set must be non-empty.

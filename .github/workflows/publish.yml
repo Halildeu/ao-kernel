@@ -44,7 +44,7 @@ jobs:
           fi
           echo "ref validated: $REF"
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # P0-GATE-1 (V5-PR #783): for workflow_dispatch w/ ref input,
           # checkout the operator-specified ref (e.g. v4.1.0 tag) so we
