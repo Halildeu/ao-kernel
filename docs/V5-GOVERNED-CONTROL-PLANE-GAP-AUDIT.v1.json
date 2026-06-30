@@ -21,11 +21,11 @@
     {
       "id": "minimax-provider-evidence-for-997",
       "title": "Real MiniMax provider review evidence for high-risk provider separation",
-      "status": "blocked_external",
-      "owner_boundary": "operator_environment",
+      "status": "done",
+      "owner_boundary": "repo_owned_gate",
       "evidence_required": "A real MiniMax AGREE review for the exact #997 PR scope, produced by working MiniMax tooling and accepted by ao-release-gate.",
-      "current_evidence": "#997 remains fail-closed because MiniMax evidence is BLOCK or unavailable; fake MiniMax AGREE evidence is forbidden.",
-      "blocking_for_v5_tag_publish": true
+      "current_evidence": "PR #997 merged as 12e26204 after ao-release-gate, ao-release-gate-review, and ao-release-gate-technical accepted the committed Anthropic plus MiniMax review evidence for the narrowed evidence-closeout scope. Fake MiniMax AGREE evidence remains forbidden.",
+      "blocking_for_v5_tag_publish": false
     },
     {
       "id": "repo-intelligence-promotion-decision",
@@ -67,7 +67,7 @@
     "machine_enforced_by": "tests/test_v5_governed_control_plane_gap_audit.py"
   },
   "next_safe_actions": [
-    "Keep #997 fail-closed until real MiniMax AGREE evidence exists.",
+    "Treat the #997 MiniMax provider-evidence blocker as closed by repo-owned ao-release-gate acceptance; do not fabricate future MiniMax evidence.",
     "Use the v4.x governed-control-plane release checklist for any near-term release preparation.",
     "Treat RI-7.8c as the closed repo-intelligence non-promotion decision; keep repo-intelligence productized only as beta read-only onboarding.",
     "Do not tag or publish v5.0.0 without an explicit operator-bound supersession PR."

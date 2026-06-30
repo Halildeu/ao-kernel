@@ -9,6 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **V5 MiniMax provider-evidence closeout**: updated the governed-control-plane
+  gap audit after PR #997 merged through repo-owned `ao-release-gate`
+  acceptance. The MiniMax provider-evidence item is no longer a V5 tag/publish
+  blocker, while fake MiniMax evidence remains forbidden and the V5 major-release
+  supersession blocker, support-widening guard, production-platform-claim guard,
+  and live-adapter-execution guard all remain closed.
 - **Repo-intelligence productization closeout**: recorded the existing RI-7.8c
   final non-promotion decision in the V5 gap audit and release-planning docs. The
   productized surface is beta read-only onboarding only: GitHub App

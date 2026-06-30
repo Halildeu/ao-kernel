@@ -1,4 +1,26 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "GPP-9",
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
+  "reviewer": {
+    "agent": "claude",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/v5-minimax-evidence-closeout",
+    "changed_files": [
+      "CHANGELOG.md",
+      "docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_v5_governed_control_plane_gap_audit.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
@@ -13,42 +35,19 @@
       "status": "pass"
     },
     {
-      "name": "provider_separation",
+      "name": "release_authority_boundary",
       "status": "pass"
     }
   ],
   "findings": [
-    "Reviewed PR #997 after rebasing onto current main; the remaining scope is AO-MA-10 high-risk provider separation evidence closeout.",
-    "Current protected base already contains the provider-aware high-risk reviewer selector that excludes the OpenAI implementer from the required reviewer quorum.",
-    "For implementer provider openai, the required high-risk reviewer providers are anthropic plus minimax; OpenAI same-provider review is not release authority.",
-    "The final changed_files binding is limited to CHANGELOG.md, the raw Anthropic evidence file, the raw MiniMax evidence file, and the root local AI review evidence file.",
-    "The MiniMax evidence records a real Mavis/MiniMax AGREE review from session mvs_079b1e6ab14b4744ae6bd4c62180b562 for the original broader PR #997 provider-separation implementation; this rebased PR narrows that work to evidence closeout.",
-    "No support widening, production platform claim, live adapter execution, admin bypass, branch-protection weakening, or AI-as-release-authority is introduced."
+    "Reviewed PR #1012 after #997 merged as 12e26204; the change is a V5 gap-audit SSOT sync only.",
+    "The MiniMax provider-evidence gap item moves from blocked_external to done because repo-owned ao-release-gate accepted PR #997; fake MiniMax evidence remains explicitly forbidden.",
+    "The only remaining v5 tag/publish blocker is v5-major-release-supersession, so v5.0.0 tag or publish remains disallowed without an explicit operator-bound supersession PR.",
+    "The change does not flip support_widening_allowed, production_platform_claim_allowed, or live_adapter_execution_allowed; all three remain false.",
+    "The changed scope is limited to CHANGELOG.md, docs/V5-GOVERNED-CONTROL-PLANE-GAP-AUDIT.v1.json, local-ai-review-evidence.v1.json, and tests/test_v5_governed_control_plane_gap_audit.py."
   ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "anthropic-claude-reviewer",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-      "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json"
-    ],
-    "head_ref": "refs/heads/codex/issue-985-high-risk-provider-separation"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-985-HIGH-RISK-PROVIDER-SEPARATION"
+  "production_platform_claim": false
 }
