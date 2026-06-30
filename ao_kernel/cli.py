@@ -1933,6 +1933,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Command output format (default: text)",
     )
 
+    from ao_kernel.ai_review import add_ai_review_subparser
+
+    add_ai_review_subparser(sub)
+
     # Evidence subcommands (PR-A5)
     ev_p = sub.add_parser("evidence", help="Evidence timeline + replay + manifest")
     ev_sub = ev_p.add_subparsers(dest="evidence_command")
@@ -2814,6 +2818,11 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_pr_metadata_validate(args)
         print("Usage: ao-kernel pr-metadata {schema|template|generate|fix|validate}", file=sys.stderr)
         return 1
+
+    if cmd == "ai-review":
+        from ao_kernel.ai_review import dispatch_ai_review
+
+        return dispatch_ai_review(args)
 
     # Executor subcommand (PR-C6)
     if cmd == "executor":

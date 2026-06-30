@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "PRODUCTIZATION-CLOSEOUT-V4.3.1",
+  "work_package": "AI-REVIEW-ORCHESTRATOR",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,20 +13,21 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/productization-closeout",
+    "head_ref": "refs/heads/codex/cross-ai-review-orchestrator",
     "changed_files": [
       "CHANGELOG.md",
       "README.md",
+      "ao_kernel/ai_review.py",
       "ao_kernel/cli.py",
-      "ao_kernel/orchestration/async_runner.py",
-      "ao_kernel/orchestration/cli_handlers.py",
-      "ao_kernel/orchestration/worker_invoker.py",
+      "ao_kernel/defaults/schemas/ai-review-collection-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ai-review-consensus-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ai-review-high-risk-dry-run-evidence.schema.v1.json",
       "docs/PRODUCT-QUICKSTART.md",
       "local-ai-review-evidence.v1.json",
       "scripts/fresh_install_product_smoke.py",
       "scripts/packaging_smoke.py",
-      "tests/test_productization_closeout.py",
-      "tests/test_productized_p2_p3_p5_cli.py"
+      "tests/test_ai_review_cli.py",
+      "tests/test_productization_closeout.py"
     ]
   },
   "checks_considered": [
@@ -47,6 +48,18 @@
       "status": "pass"
     },
     {
+      "name": "provider_provenance",
+      "status": "pass"
+    },
+    {
+      "name": "consensus_fail_closed",
+      "status": "pass"
+    },
+    {
+      "name": "high_risk_dry_run_no_github_mutation",
+      "status": "pass"
+    },
+    {
       "name": "fresh_install_smoke",
       "status": "pass"
     },
@@ -56,13 +69,15 @@
     }
   ],
   "findings": [
-    "Claude reviewed the productization closeout diff for v4.3.1 release readiness, packaging smoke, fresh install smoke, product quickstart, and run-wrapper-async v2.",
-    "Verdict AGREE: no blocking issue found in release readiness, bounded concurrency, CLI wiring, smoke evidence, or documentation scope.",
-    "Guard flags remain false: no support widening, no production platform claim, and no live adapter execution.",
-    "run-wrapper-async reports external review and verifier evidence required; it does not fabricate AGREE, PASS, or release authority.",
-    "Fresh install smoke installs wheel and sdist into clean virtual environments and runs onboarding, PR metadata, run-wrapper, and run-wrapper-async from outside the source checkout.",
-    "Packaging smoke extends the installed-wheel check with productized local workflows while preserving release authority under the repo-owned ao-release-gate."
-  ],
+    "Claude reviewed the cross-provider AI review orchestration diff via local claude -p command and returned AGREE with no blocking findings.",
+    "The new ao-kernel ai-review CLI collects provider-backed review evidence, records command/prompt provenance, supports bounded consensus ping-pong, and emits fail-closed artifacts.",
+    "The high-risk dry-run path converts raw provider reviews into high-risk supersession evidence and runs the ao-release-gate decision core without GitHub mutation or merge attempt.",
+        "Schema-level guard constants keep ai_output_release_authority false and preserve no support widening, no production platform claim, and no live adapter execution.",
+        "Secret-like content is rejected from prompts, diffs, provider stdout/stderr, findings, and command argv before evidence is written.",
+        "Post-review CodeQL hardening keeps CLI stdout to safe status/provider summaries; full evidence, provenance, and file paths remain durable file-backed artifacts under the requested output directory.",
+        "Validation passed: targeted pytest 11/11, targeted ao_kernel.ai_review coverage 93.05%, broader ao-release-gate-related pytest 150/150, ruff, mypy, schema parse, packaging smoke, and fresh-install wheel smoke.",
+        "Non-blocking Claude notes: provider commands run sequentially; _high_risk_paths is an internal same-package helper; dry-run issue URL is dummy by design."
+    ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
   "support_widening": false,

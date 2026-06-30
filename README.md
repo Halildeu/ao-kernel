@@ -278,6 +278,43 @@ external evidence required rather than fabricating AI approval. Both wrappers
 require explicit declared write scopes and keep `support_widening`,
 `production_platform_claim`, and `live_adapter_execution` closed.
 
+**Cross-provider AI review collection:**
+
+```bash
+ao-kernel ai-review collect \
+  --work-package AO-MA-10X \
+  --base-ref origin/main \
+  --head-ref HEAD \
+  --implementer-provider openai \
+  --provider "anthropic=claude -p 'return JSON only ...'" \
+  --provider "minimax=/path/to/minimax-reviewer"
+
+ao-kernel ai-review consensus \
+  --work-package AO-MA-10X \
+  --base-ref origin/main \
+  --head-ref HEAD \
+  --implementer-provider openai \
+  --max-rounds 3 \
+  --provider "anthropic=claude -p 'return JSON only ...'" \
+  --provider "minimax=/path/to/minimax-reviewer"
+
+ao-kernel ai-review high-risk-dry-run \
+  --work-package AO-MA-10X \
+  --base-ref origin/main \
+  --head-ref HEAD \
+  --implementer-provider openai \
+  --review-evidence ai-review-artifacts/anthropic.local-ai-review-evidence.v1.json \
+  --review-evidence ai-review-artifacts/minimax.local-ai-review-evidence.v1.json
+```
+
+`ai-review` records provider command provenance (`command_argv_sha256`) and
+prompt provenance (`prompt_sha256`) without storing secrets. It can collect
+raw reviewer evidence, run bounded cross-provider ping-pong until unanimous
+`AGREE`, and locally dry-run the high-risk `ao-release-gate` path. The CLI
+prints only a safe status/provider summary; full artifact paths and provenance
+are written under `--output-dir`. It does not make AI output release authority,
+mutate GitHub, widen support, claim broad readiness, or execute live adapters.
+
 ## Context Management
 
 Governed context loop — decisions extracted, scored, and injected automatically.
