@@ -15,6 +15,11 @@ The smoke is intentionally wheel-first:
    documented fail-closed contract for missing backend / missing API
    key. Writes a schema-valid JSON evidence artifact next to the smoke
    output.
+7. Drive the productized local workflow commands added after v4.3.1
+   prep: ``repo onboarding``, ``pr-metadata``, ``orchestration
+   run-wrapper``, and ``orchestration run-wrapper-async``. Evidence is
+   written under ``build/packaging-smoke/`` so ``dist/`` remains
+   distribution-only.
 """
 
 from __future__ import annotations
@@ -76,8 +81,222 @@ def main() -> int:
             outside_cwd=smoke_cwd,
             evidence_out=repo_root / "build" / "packaging-smoke" / "ri7-packaging-smoke-evidence.v1.json",
         )
+        _smoke_productized_local_workflows(
+            venv_python=venv_python,
+            console_script=console_script,
+            outside_cwd=smoke_cwd,
+            evidence_out=repo_root / "build" / "packaging-smoke" / "productized-local-workflows-smoke.v1.json",
+        )
 
     return 0
+
+
+def _smoke_productized_local_workflows(
+    *,
+    venv_python: Path,
+    console_script: Path,
+    outside_cwd: Path,
+    evidence_out: Path,
+) -> None:
+    """Smoke productized local workflows from the wheel-installed CLI."""
+
+    project = outside_cwd / "productized-workflows-project"
+    base_sha = _init_productized_smoke_project(project)
+    commands: list[dict[str, object]] = []
+
+    def _scenario(scenario_id: str, args: list[str]) -> subprocess.CompletedProcess[str]:
+        result = subprocess.run(
+            args,
+            cwd=str(outside_cwd),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=180,
+        )
+        commands.append(
+            {
+                "id": scenario_id,
+                "returncode": result.returncode,
+                "stdout_excerpt": result.stdout.strip()[:500],
+                "stderr_excerpt": result.stderr.strip()[:300],
+            }
+        )
+        if result.returncode != 0:
+            raise SystemExit(
+                f"productized workflow smoke {scenario_id} failed with exit "
+                f"{result.returncode}: {result.stderr.strip() or result.stdout.strip()}"
+            )
+        return result
+
+    _scenario("repo_onboarding_template", [str(console_script), "repo", "onboarding", "template", "--output", "json"])
+    _scenario(
+        "repo_onboarding_init_config",
+        [
+            str(console_script),
+            "repo",
+            "onboarding",
+            "init-config",
+            "--project-root",
+            str(project),
+            "--output",
+            "json",
+        ],
+    )
+    doctor = _scenario(
+        "repo_onboarding_doctor",
+        [str(console_script), "repo", "onboarding", "doctor", "--project-root", str(project), "--output", "json"],
+    )
+    if json.loads(doctor.stdout).get("status") != "ready":
+        raise SystemExit("productized workflow smoke repo onboarding doctor did not report ready")
+
+    body_path = outside_cwd / "product-pr-body.md"
+    body_path.write_text("## Summary\n\nPackaging smoke.\n", encoding="utf-8")
+    generated = _scenario(
+        "pr_metadata_generate",
+        [
+            str(console_script),
+            "pr-metadata",
+            "generate",
+            "--work-package",
+            "PRODUCT-SMOKE",
+            "--issue",
+            "#123",
+        ],
+    )
+    body_path.write_text(body_path.read_text(encoding="utf-8") + "\n" + generated.stdout, encoding="utf-8")
+    _scenario(
+        "pr_metadata_fix",
+        [
+            str(console_script),
+            "pr-metadata",
+            "fix",
+            "--body-file",
+            str(body_path),
+            "--write",
+            "--output",
+            "json",
+            "--work-package",
+            "PRODUCT-SMOKE",
+            "--issue",
+            "#123",
+        ],
+    )
+    _scenario(
+        "pr_metadata_validate",
+        [str(console_script), "pr-metadata", "validate", "--body-file", str(body_path), "--output", "json"],
+    )
+
+    _scenario(
+        "orchestration_run_wrapper_dry_run",
+        [
+            str(console_script),
+            "orchestration",
+            "run-wrapper",
+            "--goal",
+            "packaging smoke run wrapper",
+            "--repo-root",
+            str(project),
+            "--base-sha",
+            base_sha,
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--declared-spec",
+            "task-001:src/a.py:packaging smoke dry run",
+            "--dry-run",
+            "--format",
+            "json",
+        ],
+    )
+    async_result = _scenario(
+        "orchestration_run_wrapper_async_execute",
+        [
+            str(console_script),
+            "orchestration",
+            "run-wrapper-async",
+            "--goal",
+            "packaging smoke async wrapper",
+            "--repo-root",
+            str(project),
+            "--worktree-base",
+            str(outside_cwd / "product-worktrees"),
+            "--base-sha",
+            base_sha,
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--declared-spec",
+            "task-001:src/a.py:packaging smoke async one",
+            "--declared-spec",
+            "task-002:src/b.py:packaging smoke async two",
+            "--execute-local-fixture",
+            "--max-workers",
+            "2",
+            "--format",
+            "json",
+        ],
+    )
+    async_payload = json.loads(async_result.stdout)
+    if async_payload.get("status") != "ok":
+        raise SystemExit("productized workflow smoke async wrapper did not report ok")
+
+    artifact = {
+        "schema_version": "productized-local-workflows-smoke.v1",
+        "artifact_kind": "productized_local_workflows_smoke",
+        "decision": "productized_local_workflows_packaging_smoke_ready",
+        "entrypoint": {
+            "console_script": str(console_script),
+            "module": str(venv_python),
+        },
+        "scenarios": [
+            {"id": item["id"], "status": "pass", "returncode": item["returncode"]} for item in commands
+        ],
+        "async_wrapper_version": async_payload.get("async_wrapper_version"),
+        "support_widening": False,
+        "production_platform_claim": False,
+        "live_adapter_execution": False,
+    }
+    evidence_out.parent.mkdir(parents=True, exist_ok=True)
+    evidence_out.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"+ wrote productized workflow smoke evidence -> {evidence_out}")
+
+
+def _init_productized_smoke_project(project: Path) -> str:
+    project.mkdir(parents=True)
+    _run(["git", "init", "--initial-branch=main", str(project)], cwd=project.parent)
+    _run(["git", "-C", str(project), "config", "user.email", "test@example.com"], cwd=project)
+    _run(["git", "-C", str(project), "config", "user.name", "test"], cwd=project)
+    (project / "AGENTS.md").write_text("# AGENTS\nProductized workflow packaging smoke.\n", encoding="utf-8")
+    plans = project / ".claude" / "plans"
+    plans.mkdir(parents=True)
+    (project / "src").mkdir()
+    (project / "src" / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+    (project / "src" / "b.py").write_text("def b():\n    return 2\n", encoding="utf-8")
+    (plans / "gpp_status.v1.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "gpp_status.v1",
+                "current_wp": {"id": "productized-workflow-packaging-smoke"},
+                "support_widening_allowed": False,
+                "production_platform_claim_allowed": False,
+                "live_adapter_execution_allowed": False,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _run(["git", "-C", str(project), "add", "."], cwd=project)
+    _run(["git", "-C", str(project), "commit", "-m", "initial"], cwd=project)
+    sha = subprocess.run(
+        ["git", "-C", str(project), "rev-parse", "HEAD"],
+        cwd=str(project),
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    ).stdout.strip()
+    _run(["git", "-C", str(project), "update-ref", "refs/remotes/origin/main", sha], cwd=project)
+    return sha
 
 
 def _smoke_repo_intelligence_cli(

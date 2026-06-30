@@ -2935,6 +2935,7 @@ def main(argv: list[str] | None = None) -> int:
             cmd_orchestration_plan,
             cmd_orchestration_review,
             cmd_orchestration_run_wrapper,
+            cmd_orchestration_run_wrapper_async,
             cmd_orchestration_spawn,
             cmd_orchestration_verify,
         )
@@ -2944,6 +2945,8 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_orchestration_plan(args)
         if orchestration_cmd == "run-wrapper":
             return cmd_orchestration_run_wrapper(args)
+        if orchestration_cmd == "run-wrapper-async":
+            return cmd_orchestration_run_wrapper_async(args)
         if orchestration_cmd == "spawn":
             return cmd_orchestration_spawn(args)
         if orchestration_cmd == "cleanup":
@@ -2960,7 +2963,7 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_orchestration_verify(args)
         print(
             "Usage: ao-kernel orchestration "
-            "{plan|run-wrapper|spawn|cleanup|invoke|native-import|integrate|review|verify}",
+            "{plan|run-wrapper|run-wrapper-async|spawn|cleanup|invoke|native-import|integrate|review|verify}",
             file=sys.stderr,
         )
         return 1

@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "P2-P3-P5-productization",
+  "work_package": "PRODUCTIZATION-CLOSEOUT-V4.3.1",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,18 +13,20 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/productize-p2-p3-p5",
+    "head_ref": "refs/heads/codex/productization-closeout",
     "changed_files": [
       "CHANGELOG.md",
       "README.md",
-      "ao_kernel/_internal/repo_intelligence/product_onboarding.py",
       "ao_kernel/cli.py",
+      "ao_kernel/orchestration/async_runner.py",
       "ao_kernel/orchestration/cli_handlers.py",
-      "ao_kernel/pr_metadata.py",
-      "ao_kernel/repo_intelligence/__init__.py",
+      "ao_kernel/orchestration/worker_invoker.py",
+      "docs/PRODUCT-QUICKSTART.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_productized_p2_p3_p5_cli.py",
-      "tests/test_repo_intelligence_no_mcp_root_export_guard.py"
+      "scripts/fresh_install_product_smoke.py",
+      "scripts/packaging_smoke.py",
+      "tests/test_productization_closeout.py",
+      "tests/test_productized_p2_p3_p5_cli.py"
     ]
   },
   "checks_considered": [
@@ -43,15 +45,23 @@
     {
       "name": "release_authority_boundary",
       "status": "pass"
+    },
+    {
+      "name": "fresh_install_smoke",
+      "status": "pass"
+    },
+    {
+      "name": "packaging_smoke",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Claude reviewed PR 1013 diff for P2 repo-intelligence onboarding CLI, P3 PR metadata UX, and P5 AO-MA run wrapper.",
-    "Verdict AGREE: no GitHub, Vault, webhook, branch-protection mutation, live adapter execution, support widening, or platform-readiness claim.",
-    "Release authority remains repo-owned ao-release-gate; PR metadata is declaration only.",
-    "Repo-intelligence onboarding template, validate, doctor, and init-config are local and guard fields stay false.",
-    "PR metadata generate and fix cover sensitive boundary declarations with test coverage.",
-    "Run wrapper requires explicit declared spec and exactly one of dry-run or deterministic local fixture execution."
+    "Claude reviewed the productization closeout diff for v4.3.1 release readiness, packaging smoke, fresh install smoke, product quickstart, and run-wrapper-async v2.",
+    "Verdict AGREE: no blocking issue found in release readiness, bounded concurrency, CLI wiring, smoke evidence, or documentation scope.",
+    "Guard flags remain false: no support widening, no production platform claim, and no live adapter execution.",
+    "run-wrapper-async reports external review and verifier evidence required; it does not fabricate AGREE, PASS, or release authority.",
+    "Fresh install smoke installs wheel and sdist into clean virtual environments and runs onboarding, PR metadata, run-wrapper, and run-wrapper-async from outside the source checkout.",
+    "Packaging smoke extends the installed-wheel check with productized local workflows while preserving release authority under the repo-owned ao-release-gate."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

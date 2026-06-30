@@ -21,7 +21,8 @@ def _git_init_repo(repo: Path) -> str:
     (repo / "README.md").write_text("initial\n", encoding="utf-8")
     (repo / "src").mkdir(parents=True, exist_ok=True)
     (repo / "src" / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
-    _run(["git", "-C", str(repo), "add", "README.md", "src/a.py"])
+    (repo / "src" / "b.py").write_text("def b():\n    return 2\n", encoding="utf-8")
+    _run(["git", "-C", str(repo), "add", "README.md", "src/a.py", "src/b.py"])
     _run(["git", "-C", str(repo), "commit", "-m", "initial"])
     sha = _run(["git", "-C", str(repo), "rev-parse", "HEAD"])
     _run(["git", "-C", str(repo), "update-ref", "refs/remotes/origin/main", sha])
@@ -261,3 +262,88 @@ def test_orchestration_run_wrapper_executes_pinned_local_fixture(tmp_path: Path,
     assert Path(payload["manifest_path"]).is_file()
     assert Path(payload["runner_report_path"]).is_file()
     assert Path(payload["invocation_report_path"]).is_file()
+
+
+def test_orchestration_run_wrapper_async_executes_two_local_fixtures(tmp_path: Path, capsys) -> None:
+    repo = tmp_path / "repo"
+    base_sha = _git_init_repo(repo)
+    _write_synthetic_ssot(repo)
+
+    rc = cli_main(
+        [
+            "orchestration",
+            "run-wrapper-async",
+            "--goal",
+            "P5 async wrapper smoke",
+            "--repo-root",
+            str(repo),
+            "--worktree-base",
+            str(tmp_path / "worktrees"),
+            "--base-sha",
+            base_sha,
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--declared-spec",
+            "task-001:src/a.py:P5 async one",
+            "--declared-spec",
+            "task-002:src/b.py:P5 async two",
+            "--execute-local-fixture",
+            "--max-workers",
+            "2",
+            "--format",
+            "json",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert rc == 0
+    payload = json.loads(captured.out)
+    assert payload["status"] == "ok"
+    assert payload["async_wrapper_version"] == "v2"
+    assert payload["max_workers"] == 2
+    assert {entry["task_id"] for entry in payload["invocation_statuses"]} == {"task-001", "task-002"}
+    assert {entry["status"] for entry in payload["invocation_statuses"]} == {"invoked"}
+    assert {entry["status"] for entry in payload["review_statuses"]} == {"external_review_evidence_required"}
+    assert {entry["status"] for entry in payload["verifier_statuses"]} == {"external_verification_evidence_required"}
+    assert Path(payload["manifest_path"]).is_file()
+    assert Path(payload["runner_report_path"]).is_file()
+    assert Path(payload["invocation_report_path"]).is_file()
+    assert payload["guard_flags"]["support_widening"] is False
+
+
+def test_orchestration_run_wrapper_async_dry_run_reports_not_run_invocations(tmp_path: Path, capsys) -> None:
+    repo = tmp_path / "repo"
+    base_sha = _git_init_repo(repo)
+    _write_synthetic_ssot(repo)
+
+    rc = cli_main(
+        [
+            "orchestration",
+            "run-wrapper-async",
+            "--goal",
+            "P5 async dry-run wrapper smoke",
+            "--repo-root",
+            str(repo),
+            "--base-sha",
+            base_sha,
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--declared-spec",
+            "task-001:src/a.py:P5 async dry one",
+            "--declared-spec",
+            "task-002:src/b.py:P5 async dry two",
+            "--dry-run",
+            "--max-workers",
+            "2",
+            "--format",
+            "json",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert rc == 0
+    payload = json.loads(captured.out)
+    assert payload["mode"] == "dry_run"
+    assert payload["invocation_report_path"] is None
+    assert {entry["status"] for entry in payload["worker_statuses"]} == {"skipped_dry_run"}
+    assert {entry["status"] for entry in payload["invocation_statuses"]} == {"not_run_dry_run"}

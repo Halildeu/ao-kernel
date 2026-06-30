@@ -9,6 +9,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **Productization closeout for local governed workflows**: extended the
+  wheel-installed `packaging-smoke` gate and added
+  `scripts/fresh_install_product_smoke.py` so the built wheel and sdist are
+  installed into clean virtualenvs and the productized `repo onboarding`,
+  `pr-metadata`, `orchestration run-wrapper`, and new
+  `orchestration run-wrapper-async` surfaces are exercised from outside the
+  source checkout. Added `docs/PRODUCT-QUICKSTART.md` as the install-to-first
+  artifact path. The async wrapper v2 invokes pinned deterministic local worker
+  fixtures through a bounded worker pool and reports reviewer/verifier phases
+  as external evidence required instead of fabricating approvals. No GitHub,
+  Vault, webhook, branch-protection, support-widening, production-platform
+  claim, or live-adapter execution boundary is opened.
 - **Productized local workflows for repo onboarding, PR metadata, and AO-MA
   wrapper execution**: added `ao-kernel repo onboarding
   {template,init-config,validate,doctor}` for beta read-only repo-intelligence
