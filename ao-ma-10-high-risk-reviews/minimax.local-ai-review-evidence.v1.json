@@ -9,17 +9,21 @@
       "status": "pass"
     },
     {
-      "name": "governance_boundary_review",
+      "name": "provider_separation",
+      "status": "pass"
+    },
+    {
+      "name": "release_authority_boundary",
       "status": "pass"
     }
   ],
   "findings": [
-    "Mavis/MiniMax returned VERDICT: AGREE for PR #1008 after reviewing the delivery metadata contract and final exact-allowlist delta.",
-    "Delivery metadata template, schema, runbook, and changelog adapt platform-k8s delivery discipline without changing release authority.",
-    "Release authority remains ao-release-gate required check plus GitHub branch protection; AI output remains evidence only.",
-    "PR #1009 already landed the protected-base exact .github/PULL_REQUEST_TEMPLATE.md allowlist and provider-aware high-risk reviewer selector; this PR only consumes that base.",
-    "No secret material, support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, CODEOWNERS mutation, or ruleset mutation was found.",
-    "Schema and tests cover boundary declaration, sensitive-boundary approval evidence, AGREE/REVISE/BLOCK review artifact requirements, same-provider handling, and slice-scoped zero-touch guards."
+    "Mavis/MiniMax session mvs_079b1e6ab14b4744ae6bd4c62180b562 returned JSON verdict AGREE for the original broader PR #997 provider-separation implementation.",
+    "That MiniMax review directly probed the dynamic reviewer quorum: openai implementer requires anthropic plus minimax, anthropic implementer requires openai plus minimax, minimax implementer requires openai plus anthropic, and out-of-pool or human implementers keep openai plus anthropic.",
+    "That MiniMax review verified same-provider overlap fail-closed behavior and the correct openai implementer plus anthropic/minimax reviewer quorum pass case.",
+    "The rebased PR #997 no longer carries the runtime implementation diff because current protected base already contains provider-aware enforcement; this PR now lands the bound raw MiniMax evidence closeout.",
+    "The final changed_files binding is limited to CHANGELOG.md, the raw Anthropic evidence file, the raw MiniMax evidence file, and the root local AI review evidence file.",
+    "No support widening, production platform claim, live adapter execution, admin bypass, branch-protection weakening, gate weakening, or AI-output-as-release-authority drift was found."
   ],
   "implementer": {
     "agent": "codex",
@@ -37,19 +41,14 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".github/PULL_REQUEST_TEMPLATE.md",
       "CHANGELOG.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/pr-delivery-metadata.schema.v1.json",
-      "docs/operator-runbooks/06-pr-delivery-metadata.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_changelog_enforcement_workflow_shape.py",
-      "tests/test_issue_forms_shape.py",
-      "tests/test_pr_delivery_metadata_contract.py"
+      "local-ai-review-evidence.v1.json"
     ],
-    "head_ref": "refs/heads/codex/delivery-metadata-pr-template"
+    "head_ref": "refs/heads/codex/issue-985-high-risk-provider-separation"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-delivery-ceremony-PR1"
+  "work_package": "AO-MA-985-HIGH-RISK-PROVIDER-SEPARATION"
 }

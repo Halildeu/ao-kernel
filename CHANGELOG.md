@@ -48,6 +48,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   review producer boundary; it does not provide credentials, fabricate review
   evidence, close PR #997, widen support, claim production-platform readiness,
   execute live adapters, or change guard flags.
+- **AO-MA-10 high-risk provider separation evidence closeout**: PR #997 now
+  records final Anthropic plus MiniMax raw review evidence for the OpenAI-authored
+  high-risk provider-separation lane after the provider-aware enforcement landed
+  in the protected base. This is evidence closeout only; support widening,
+  production platform claim, live adapter execution, admin bypass, branch
+  protection weakening, and AI-as-release-authority remain forbidden.
 - **V5 governed-control-plane gap audit**: added a machine-readable gap audit
   artifact, strict JSON Schema, and invariant tests that pin all guard flags to
   `false`, keep v5 tag/publish disallowed, bind release authority to
