@@ -9,6 +9,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **Cross-provider AI review orchestration productization**: added the
+  packaged `ao-kernel ai-review` CLI with `collect`, `consensus`, and
+  `high-risk-dry-run` commands. The commands collect Claude/Codex/MiniMax-style
+  provider review evidence through explicit provider commands or environment
+  bindings, record command argv hash + prompt hash provenance, run a bounded
+  fail-closed ping-pong consensus loop, emit raw `local-ai-review-evidence.v1`
+  files for the existing high-risk `ao-release-gate` lane, and prove a local
+  high-risk dry-run path without mutating GitHub or attempting a merge. AI
+  output remains evidence only; release authority remains `ao-release-gate`
+  plus GitHub ruleset enforcement. Guard flags remain closed: no support
+  widening, no production-platform claim, and no live-adapter execution.
 - **Productization closeout for local governed workflows**: extended the
   wheel-installed `packaging-smoke` gate and added
   `scripts/fresh_install_product_smoke.py` so the built wheel and sdist are

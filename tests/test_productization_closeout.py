@@ -17,6 +17,7 @@ def test_fresh_install_product_smoke_script_covers_wheel_sdist_and_product_comma
     assert "pr_metadata_validate" in text
     assert "orchestration_run_wrapper_dry_run" in text
     assert "orchestration_run_wrapper_async_execute" in text
+    assert "ai_review_help" in text
     assert "build/fresh-install-product-smoke" in text
     assert "support_widening" in text
     assert "production_platform_claim" in text
@@ -30,6 +31,7 @@ def test_packaging_smoke_now_gates_productized_local_workflows_without_dist_poll
     assert "productized-local-workflows-smoke.v1.json" in text
     assert "build\" / \"packaging-smoke\"" in text
     assert "orchestration_run_wrapper_async_execute" in text
+    assert "ai_review_help" in text
     assert "dist/`` remains" in text
 
 
@@ -44,6 +46,9 @@ def test_product_quickstart_is_end_to_end_and_keeps_guard_boundary() -> None:
         "ao-kernel pr-metadata fix",
         "ao-kernel orchestration run-wrapper",
         "ao-kernel orchestration run-wrapper-async",
+        "ao-kernel ai-review collect",
+        "ao-kernel ai-review consensus",
+        "ao-kernel ai-review high-risk-dry-run",
         "support widening",
         "production-platform readiness",
         "live adapter execution",

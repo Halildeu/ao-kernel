@@ -17,9 +17,9 @@ The smoke is intentionally wheel-first:
    output.
 7. Drive the productized local workflow commands added after v4.3.1
    prep: ``repo onboarding``, ``pr-metadata``, ``orchestration
-   run-wrapper``, and ``orchestration run-wrapper-async``. Evidence is
-   written under ``build/packaging-smoke/`` so ``dist/`` remains
-   distribution-only.
+   run-wrapper``, ``orchestration run-wrapper-async``, and the packaged
+   ``ai-review`` command surface. Evidence is written under
+   ``build/packaging-smoke/`` so ``dist/`` remains distribution-only.
 """
 
 from __future__ import annotations
@@ -238,6 +238,8 @@ def _smoke_productized_local_workflows(
     if async_payload.get("status") != "ok":
         raise SystemExit("productized workflow smoke async wrapper did not report ok")
 
+    _scenario("ai_review_help", [str(console_script), "ai-review", "--help"])
+
     artifact = {
         "schema_version": "productized-local-workflows-smoke.v1",
         "artifact_kind": "productized_local_workflows_smoke",
@@ -250,6 +252,7 @@ def _smoke_productized_local_workflows(
             {"id": item["id"], "status": "pass", "returncode": item["returncode"]} for item in commands
         ],
         "async_wrapper_version": async_payload.get("async_wrapper_version"),
+        "ai_review_cli_surface": "present",
         "support_widening": False,
         "production_platform_claim": False,
         "live_adapter_execution": False,

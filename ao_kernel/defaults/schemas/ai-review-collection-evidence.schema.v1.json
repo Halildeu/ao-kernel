@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ai-review-collection-evidence:v1",
+  "title": "AI Review Collection Evidence",
+  "description": "No-secret evidence that cross-provider reviewer commands were invoked for a context-bound high-risk change. Release authority remains ao-release-gate plus GitHub ruleset.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generated_at",
+    "repo",
+    "work_package",
+    "release_authority",
+    "ai_output_release_authority",
+    "implementer",
+    "required_reviewer_providers",
+    "reviewer_providers",
+    "context_binding",
+    "raw_review_paths",
+    "provider_provenance",
+    "collection_status",
+    "guard_flags",
+    "secrets_recorded",
+    "mutations_performed"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "ai-review-collection-evidence.v1" },
+    "artifact_kind": { "type": "string", "const": "ai_review_collection_evidence" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+    "work_package": { "type": "string", "minLength": 3, "maxLength": 80 },
+    "release_authority": { "type": "string", "const": "ao-release-gate+github-ruleset" },
+    "ai_output_release_authority": { "type": "boolean", "const": false },
+    "implementer": { "$ref": "#/$defs/implementer" },
+    "required_reviewer_providers": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/provider_id" }
+    },
+    "reviewer_providers": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/provider_id" }
+    },
+    "context_binding": { "$ref": "#/$defs/context_binding" },
+    "raw_review_paths": {
+      "type": "object",
+      "minProperties": 2,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "provider_provenance": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/provider_provenance" }
+    },
+    "collection_status": { "type": "string", "const": "collected" },
+    "guard_flags": { "$ref": "#/$defs/guard_flags" },
+    "secrets_recorded": { "type": "boolean", "const": false },
+    "mutations_performed": { "type": "boolean", "const": false }
+  },
+  "$defs": {
+    "provider_id": {
+      "type": "string",
+      "enum": ["openai", "anthropic", "minimax", "google", "xai"]
+    },
+    "implementer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent", "provider"],
+      "properties": {
+        "agent": { "type": "string", "minLength": 1 },
+        "provider": { "$ref": "#/$defs/provider_id" }
+      }
+    },
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository_full_name",
+        "base_ref",
+        "head_ref",
+        "head_sha",
+        "diff_digest",
+        "changed_files_count",
+        "high_risk_changed_paths"
+      ],
+      "properties": {
+        "repository_full_name": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+        "base_ref": { "type": "string", "minLength": 1 },
+        "head_ref": { "type": "string", "minLength": 1 },
+        "head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "diff_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "changed_files_count": { "type": "integer", "minimum": 1 },
+        "high_risk_changed_paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "provider_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "command_source",
+        "command_executable",
+        "command_argv_redacted",
+        "command_argv_sha256",
+        "prompt_sha256",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "provider_id": { "$ref": "#/$defs/provider_id" },
+        "command_source": { "type": "string", "minLength": 1 },
+        "command_executable": { "type": "string", "minLength": 1 },
+        "command_argv_redacted": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "command_argv_sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "prompt_sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 86400 }
+      }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    }
+  }
+}

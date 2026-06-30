@@ -9,6 +9,7 @@ outside the source checkout:
 - ``pr-metadata`` generate/fix/validate
 - ``orchestration run-wrapper`` dry-run
 - ``orchestration run-wrapper-async`` local fixture execution
+- ``ai-review`` packaged command surface help
 
 No GitHub, Vault, webhook, branch-protection, live adapter, support widening,
 or production-platform claim is touched. Evidence is written under
@@ -255,6 +256,8 @@ def _smoke_one_distribution(
     if async_payload.get("status") != "ok":
         raise SystemExit(f"{artifact_kind} async wrapper did not report ok")
 
+    run_step("ai_review_help", [str(console), "ai-review", "--help"])
+
     payload = {
         "schema_version": "productized-local-workflows-smoke.v1",
         "artifact_kind": "productized_local_workflows_smoke",
@@ -264,6 +267,7 @@ def _smoke_one_distribution(
         "commands": commands,
         "async_wrapper_status": async_payload.get("status"),
         "async_invocation_report_path": async_payload.get("invocation_report_path"),
+        "ai_review_cli_surface": "present",
         "support_widening": False,
         "production_platform_claim": False,
         "live_adapter_execution": False,
