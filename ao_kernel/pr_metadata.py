@@ -66,9 +66,9 @@ class PrDeliveryMetadataValidation:
 def load_pr_delivery_metadata_schema() -> dict[str, Any]:
     """Load the bundled PR delivery metadata JSON Schema."""
 
-    schema = load_default("schemas", PR_DELIVERY_METADATA_SCHEMA_NAME)
+    schema: dict[str, Any] = dict(load_default("schemas", PR_DELIVERY_METADATA_SCHEMA_NAME))
     Draft202012Validator.check_schema(schema)
-    return cast(dict[str, Any], schema)
+    return schema
 
 
 def extract_pr_delivery_metadata_block(markdown: str) -> str | None:

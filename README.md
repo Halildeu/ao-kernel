@@ -220,7 +220,7 @@ Mixing is fine: an MCP client can call `ao_policy_check` and `ao_quality_gate` f
 These CLI surfaces package the governed building blocks into repeatable local
 workflows. They do not install GitHub Apps, call GitHub, configure Vault,
 configure webhooks, mutate branch protection, enable live adapter execution, or
-make a production-platform claim.
+make any platform-readiness claim.
 
 **Repo-intelligence onboarding (read-only):**
 

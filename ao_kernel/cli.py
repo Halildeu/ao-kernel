@@ -563,9 +563,9 @@ def _cmd_repo_export(args: argparse.Namespace) -> int:
 
 
 def _repo_onboarding_yaml_module() -> Any:
-    import yaml  # type: ignore[import-untyped]
+    import importlib
 
-    return yaml
+    return importlib.import_module("yaml")
 
 
 def _dump_repo_onboarding_payload(payload: dict[str, Any], output_format: str) -> str:
