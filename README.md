@@ -285,8 +285,6 @@ export AO_MA10_OPENAI_REVIEW_CMD="python3 -m ao_kernel.ai_review_provider_wrappe
 export AO_MA10_ANTHROPIC_REVIEW_CMD="python3 -m ao_kernel.ai_review_provider_wrappers claude"
 export AO_MA10_MINIMAX_REVIEW_CMD="python3 -m ao_kernel.ai_review_provider_wrappers mavis"
 export AO_MA10_MAVIS_BIN="mavis"  # Optional; set to ~/.mavis/bin/mavis if not on PATH.
-export AO_MA10_MAVIS_FROM_SESSION_ID="<local-agent-session-id>"
-export AO_MA10_MAVIS_TO_SESSION_ID="<mavis-orchestrator-session-id>"
 
 ao-kernel ai-review collect \
   --work-package AO-MA-10X \
@@ -312,8 +310,11 @@ ao-kernel ai-review high-risk-dry-run \
 
 The provider wrappers read the ai-review JSON request from stdin, call the
 local Claude, Codex, or Mavis/MiniMax runtime, extract a single review JSON
-object, and emit only normalized JSON on stdout. `ai-review` records provider
-command provenance (`command_argv_sha256`) and prompt provenance
+object, and emit only normalized JSON on stdout. The Mavis wrapper opens a
+fresh one-shot Mavis session by default; operators can opt into persistent
+communication mode with `AO_MA10_MAVIS_MODE=communication` plus explicit
+`AO_MA10_MAVIS_FROM_SESSION_ID` / `AO_MA10_MAVIS_TO_SESSION_ID` bindings.
+`ai-review` records provider command provenance (`command_argv_sha256`) and prompt provenance
 (`prompt_sha256`) without storing secrets. It can collect raw reviewer
 evidence, run bounded cross-provider ping-pong until unanimous `AGREE`, and
 locally dry-run the high-risk `ao-release-gate` path. The CLI prints only a

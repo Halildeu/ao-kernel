@@ -152,8 +152,6 @@ export AO_MA10_OPENAI_REVIEW_CMD="python3 -m ao_kernel.ai_review_provider_wrappe
 export AO_MA10_ANTHROPIC_REVIEW_CMD="python3 -m ao_kernel.ai_review_provider_wrappers claude"
 export AO_MA10_MINIMAX_REVIEW_CMD="python3 -m ao_kernel.ai_review_provider_wrappers mavis"
 export AO_MA10_MAVIS_BIN="mavis"  # Optional; set to ~/.mavis/bin/mavis if not on PATH.
-export AO_MA10_MAVIS_FROM_SESSION_ID="<local-agent-session-id>"
-export AO_MA10_MAVIS_TO_SESSION_ID="<mavis-orchestrator-session-id>"
 
 ao-kernel ai-review collect \
   --work-package AO-MA-10X \
@@ -186,7 +184,7 @@ The bundled provider wrappers are the recommended command form:
 |---|---|---|
 | OpenAI/Codex | `python3 -m ao_kernel.ai_review_provider_wrappers codex` | Uses `codex exec --sandbox read-only --output-last-message`; stdout/stderr noise is not trusted as evidence. |
 | Anthropic/Claude | `python3 -m ao_kernel.ai_review_provider_wrappers claude` | Uses `claude -p` and extracts fenced or plain JSON. |
-| MiniMax/Mavis | `python3 -m ao_kernel.ai_review_provider_wrappers mavis` | Requires `AO_MA10_MAVIS_FROM_SESSION_ID` and `AO_MA10_MAVIS_TO_SESSION_ID`; fails closed on timeout or non-JSON response. |
+| MiniMax/Mavis | `python3 -m ao_kernel.ai_review_provider_wrappers mavis` | Opens a fresh one-shot `mavis` session by default; persistent communication mode is optional via `AO_MA10_MAVIS_MODE=communication` plus explicit session IDs. Fails closed on timeout, stale message, or non-JSON response. |
 
 Each collection/consensus artifact records:
 

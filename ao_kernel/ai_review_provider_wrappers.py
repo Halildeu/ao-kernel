@@ -262,7 +262,7 @@ def _message_session_value(message: dict[str, Any], *keys: str) -> str:
 
 
 def _message_content(message: dict[str, Any]) -> str:
-    for key in ("content", "message", "body", "text"):
+    for key in ("content", "msg_content", "message", "body", "text"):
         value = message.get(key)
         if isinstance(value, str):
             return value
@@ -294,14 +294,11 @@ def _messages_from_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return [cast(dict[str, Any], item) for item in raw if isinstance(item, dict)]
 
 
-def run_mavis_provider() -> int:
-    request = _load_request()
-    prompt = _prompt_for_provider(request, provider_name="Mavis/MiniMax")
+def _run_mavis_communication_provider(prompt: str, *, timeout: int) -> int:
     from_session = os.environ.get("AO_MA10_MAVIS_FROM_SESSION_ID", "").strip()
     to_session = os.environ.get("AO_MA10_MAVIS_TO_SESSION_ID", "").strip()
     if not from_session or not to_session:
         raise ValueError("AO_MA10_MAVIS_FROM_SESSION_ID and AO_MA10_MAVIS_TO_SESSION_ID are required")
-    timeout = _timeout_seconds()
     deadline = time.monotonic() + timeout
     sent_after_ms = int(time.time() * 1000)
     _run_mavis(
@@ -340,6 +337,63 @@ def run_mavis_provider() -> int:
             return _emit(normalize_provider_output(review, provider="minimax"))
         time.sleep(poll_interval)
     raise TimeoutError("mavis provider did not return valid review JSON before timeout")
+
+
+def _messages_for_session(session_id: str, *, timeout: int) -> list[dict[str, Any]]:
+    payload = _run_mavis(["session", "messages", session_id], timeout=min(timeout, 30))
+    return _messages_from_payload(payload)
+
+
+def _run_mavis_new_session_provider(prompt: str, *, timeout: int) -> int:
+    agent = os.environ.get("AO_MA10_MAVIS_AGENT", "mavis").strip() or "mavis"
+    title = os.environ.get("AO_MA10_MAVIS_TITLE", "ao-kernel-ai-review-provider").strip()
+    workspace = os.environ.get("AO_MA10_MAVIS_WORKSPACE", os.getcwd()).strip()
+    create_payload = _run_mavis(
+        [
+            "session",
+            "new",
+            agent,
+            "--from",
+            "root",
+            "--title",
+            title,
+            "--workspace",
+            workspace,
+            "--prompt",
+            prompt,
+        ],
+        timeout=min(timeout, 30),
+    )
+    session_id = create_payload.get("sessionId")
+    if not isinstance(session_id, str) or not session_id.startswith("mvs_"):
+        raise ValueError("mavis session new did not return a sessionId")
+    deadline = time.monotonic() + timeout
+    poll_interval = float(os.environ.get("AO_MA10_MAVIS_POLL_SECONDS", "5"))
+    while time.monotonic() < deadline:
+        for message in reversed(_messages_for_session(session_id, timeout=timeout)):
+            role = message.get("role")
+            if role not in {"assistant", "model"}:
+                continue
+            content = _message_content(message)
+            try:
+                review = extract_json_object(content, label="mavis session assistant content")
+            except ValueError:
+                continue
+            return _emit(normalize_provider_output(review, provider="minimax"))
+        time.sleep(poll_interval)
+    raise TimeoutError(f"mavis session {session_id} did not return valid review JSON before timeout")
+
+
+def run_mavis_provider() -> int:
+    request = _load_request()
+    prompt = _prompt_for_provider(request, provider_name="Mavis/MiniMax")
+    timeout = _timeout_seconds()
+    mode = os.environ.get("AO_MA10_MAVIS_MODE", "").strip().lower()
+    if mode == "communication" or (
+        os.environ.get("AO_MA10_MAVIS_FROM_SESSION_ID") and os.environ.get("AO_MA10_MAVIS_TO_SESSION_ID")
+    ):
+        return _run_mavis_communication_provider(prompt, timeout=timeout)
+    return _run_mavis_new_session_provider(prompt, timeout=timeout)
 
 
 def build_parser() -> argparse.ArgumentParser:

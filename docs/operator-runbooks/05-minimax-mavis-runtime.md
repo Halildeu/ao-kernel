@@ -135,8 +135,6 @@ Example invocation shape, with the provider command supplied by the operator:
 ```bash
 export AO_MA10_MINIMAX_REVIEW_CMD="python3 -m ao_kernel.ai_review_provider_wrappers mavis"
 export AO_MA10_MAVIS_BIN="mavis"  # Optional; use ~/.mavis/bin/mavis when Mavis is not on PATH.
-export AO_MA10_MAVIS_FROM_SESSION_ID="<local-agent-session-id>"
-export AO_MA10_MAVIS_TO_SESSION_ID="<mavis-orchestrator-session-id>"
 
 python3 scripts/ao_ma10_high_risk_raw_review_producer.py \
   --work-package "AO-MA-10 high-risk provider separation" \
@@ -149,6 +147,17 @@ The wrapper accepts only messages from the configured Mavis target session to
 the configured local session whose `time_created` is after the current send
 operation. Older MiniMax messages in the daemon queue are ignored; timeout is a
 fail-closed result, not an implicit approval.
+
+By default, the wrapper opens a fresh one-shot Mavis session with
+`mavis session new mavis --from root ...` and reads the assistant
+`msg_content` from that session. Persistent communication mode is available
+only when explicitly requested:
+
+```bash
+export AO_MA10_MAVIS_MODE=communication
+export AO_MA10_MAVIS_FROM_SESSION_ID="<local-agent-session-id>"
+export AO_MA10_MAVIS_TO_SESSION_ID="<mavis-orchestrator-session-id>"
+```
 
 ## Stop Conditions
 

@@ -196,6 +196,41 @@ def test_mavis_wrapper_sends_prompt_and_polls_response(tmp_path: Path) -> None:
     assert json.loads(proc.stdout)["agent"] == "mavis-fake"
 
 
+def test_mavis_wrapper_defaults_to_new_session_mode(tmp_path: Path) -> None:
+    fake = _write_executable(
+        tmp_path / "mavis",
+        "\n".join(
+            [
+                "#!/usr/bin/env python3",
+                "import json, sys",
+                "args = sys.argv[1:]",
+                "if args[:2] == ['session', 'new']:",
+                "    assert '--prompt' in args",
+                "    assert '--workspace' in args",
+                "    print(json.dumps({'sessionId': 'mvs_new_session_1234567890abcdef123456'}))",
+                "elif args[:2] == ['session', 'messages']:",
+                "    print(json.dumps({'messages': [{",
+                "      'role': 'assistant',",
+                "      'msg_content': " + json.dumps(_review_json("mavis-new-session-fake")),
+                "    }]}))",
+                "else:",
+                "    raise SystemExit(3)",
+            ]
+        )
+        + "\n",
+    )
+    proc = _run_wrapper(
+        "mavis",
+        env={
+            "AO_MA10_MAVIS_BIN": str(fake),
+            "AO_MA10_MAVIS_WORKSPACE": str(tmp_path),
+            "AO_MA10_MAVIS_POLL_SECONDS": "0.01",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(proc.stdout)["agent"] == "mavis-new-session-fake"
+
+
 def test_ai_review_collect_uses_productized_provider_wrapper_envs(tmp_path: Path) -> None:
     repo = _repo_with_high_risk_change(tmp_path)
     claude = _write_executable(
