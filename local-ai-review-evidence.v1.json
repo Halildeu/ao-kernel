@@ -9,34 +9,34 @@
       "status": "pass"
     },
     {
-      "name": "scope",
+      "name": "scope_match",
       "status": "pass"
     },
     {
-      "name": "provider_separation",
+      "name": "boundary_compliance",
       "status": "pass"
     },
     {
-      "name": "release_authority_boundary",
+      "name": "drift_check",
       "status": "pass"
     },
     {
-      "name": "changelog",
+      "name": "overclaim_check",
+      "status": "pass"
+    },
+    {
+      "name": "forbidden_action_check",
       "status": "pass"
     }
   ],
   "findings": [
-    "PR changed_files are 7: .claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md, CHANGELOG.md, ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json, ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json, ao_kernel/ai_review.py, local-ai-review-evidence.v1.json, tests/test_ai_review_cli.py; all match work package AO-MA-10-HIGH-RISK-DRY-RUN scope.",
-    "Code change in ao_kernel/ai_review.py is limited to build_dry_run_payload allowed_path_prefixes: adds local-ai-review-evidence.v1.json, local-gpp-gate-evidence.v1.json, and ao-ma-10-high-risk-reviews/ to the allowlist; this is a targeted bug fix scoped to the local dry-run validation tool, not the production ao-release-gate.",
-    "Test change in tests/test_ai_review_cli.py adds placeholder evidence files (local-ai-review-evidence.v1.json and ao-ma-10-high-risk-reviews/*.json) to _repo_with_high_risk_change fixture, exercising the allowlist fix end-to-end; 2 tests pass per local verification.",
-    "CHANGELOG.md entry added after CI changelog enforcement failed; entry accurately describes the high-risk dry-run evidence path parity alignment with no overclaim.",
-    ".claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md is inert documentation describing dry-run acceptance targets with no runtime, workflow, or branch-protection effect.",
-    "No secrets, credentials, API keys, tokens, or webhook URLs found in any changed file.",
-    "Guard flags consistently closed across context and all evidence files: support_widening=false, production_platform_claim=false, live_adapter_execution=false.",
-    "Provider separation satisfied: implementer is OpenAI/Codex, this review is Anthropic/Claude, MiniMax reviews independently in ao-ma-10-high-risk-reviews/minimax evidence; no same-provider self-review.",
-    "Staged evidence files carry prior 6-file scope; this AGREE output carries the correct 7-file scope (including CHANGELOG.md) and replaces the Anthropic/root evidence before push per documented replacement plan.",
-    "No admin bypass, branch-protection weakening, gate weakening, support widening, production platform claim, live adapter execution, or AI-as-release-authority drift introduced; release authority remains ao-release-gate plus GitHub ruleset.",
-    "Drift check: prior AO-MA-985 and AO-MA-10-PROVIDER-COMMAND-SMOKE scopes correctly narrowed to AO-MA-10-HIGH-RISK-DRY-RUN with coherent head_ref codex/high-risk-cli-dry-run, base_ref refs/heads/main, and 7-file change set."
+    "Claude independent review returned AGREE for the final staged scope: CHANGELOG.md and local-ai-review-evidence.v1.json.",
+    "The changed files match release-readiness work package V431-CHANGELOG-FINALIZE with no out-of-scope files.",
+    "CHANGELOG.md moves landed entries into the dated 4.3.1 section and adds an Unreleased bullet explicitly stating no tag push, no PyPI publish dispatch, no support widening, no production-platform claim, and no live-adapter execution.",
+    "local-ai-review-evidence.v1.json updates scope_reviewed.changed_files, head_ref, and work_package to match this PR while keeping secrets_recorded, support_widening, production_platform_claim, and live_adapter_execution false.",
+    "Local verification supplied to the reviewer: 8 targeted tests passed, packaging_smoke passed, fresh_install_product_smoke passed, and changelog enforcement passed.",
+    "No secret material, credentials, tokens, private keys, credential-bearing URLs, admin bypass, branch-protection weakening, gate weakening, tag push, PyPI publish dispatch, support widening, production-platform claim, live-adapter execution, or AI-as-release-authority drift was introduced.",
+    "Release authority remains ao-release-gate plus GitHub ruleset; this AI review is evidence only."
   ],
   "implementer": {
     "agent": "codex",
@@ -54,17 +54,12 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md",
       "CHANGELOG.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
-      "ao_kernel/ai_review.py",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_ai_review_cli.py"
+      "local-ai-review-evidence.v1.json"
     ],
-    "head_ref": "refs/heads/codex/high-risk-cli-dry-run"
+    "head_ref": "refs/heads/codex/release-4.3.1-readiness"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10-HIGH-RISK-DRY-RUN"
+  "work_package": "V431-CHANGELOG-FINALIZE"
 }
