@@ -13,11 +13,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Claude, Codex, and Mavis/MiniMax provider wrappers for
   `ao-kernel ai-review collect` and `ao-kernel ai-review consensus`. The
   wrappers read the no-secret review request JSON from stdin, call the local
-  provider runtime, normalize fenced or plain JSON responses, record only safe
-  command/prompt provenance through the existing ai-review artifacts, and fail
-  closed on stale Mavis messages, timeouts, non-JSON output, or secret-like
-  material. AI output remains evidence only; release authority remains the
-  repo-owned `ao-release-gate` check plus GitHub ruleset enforcement.
+  provider runtime, normalize fenced or plain JSON responses, open fresh
+  one-shot Mavis sessions by default, record only safe command/prompt
+  provenance through the existing ai-review artifacts, and fail closed on stale
+  Mavis messages, timeouts, non-JSON output, or secret-like material. AI output
+  remains evidence only; release authority remains the repo-owned
+  `ao-release-gate` check plus GitHub ruleset enforcement.
 - **Cross-provider AI review orchestration productization**: added the
   packaged `ao-kernel ai-review` CLI with `collect`, `consensus`, and
   `high-risk-dry-run` commands. The commands collect Claude/Codex/MiniMax-style
