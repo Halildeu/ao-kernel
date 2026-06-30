@@ -9,6 +9,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **Productized local workflows for repo onboarding, PR metadata, and AO-MA
+  wrapper execution**: added `ao-kernel repo onboarding
+  {template,init-config,validate,doctor}` for beta read-only repo-intelligence
+  onboarding, expanded `ao-kernel pr-metadata` with `generate` and `fix`
+  commands including sensitive boundary declarations, and added
+  `ao-kernel orchestration run-wrapper` for explicit-scope local
+  `plan -> spawn` dry-runs or pinned deterministic local fixture execution.
+  These workflows do not call GitHub, configure Vault/webhooks, mutate branch
+  protection, widen support, claim platform readiness, or execute
+  live adapters.
 - **V5 MiniMax provider-evidence closeout**: updated the governed-control-plane
   gap audit after PR #997 merged through repo-owned `ao-release-gate`
   acceptance. The MiniMax provider-evidence item is no longer a V5 tag/publish
