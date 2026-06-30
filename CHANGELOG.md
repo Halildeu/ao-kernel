@@ -9,6 +9,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **v4.3.1 changelog finalization**: consolidated landed productization and
+  AI-review entries under the v4.3.1 release section without tagging,
+  publishing, widening support, claiming production-platform readiness, or
+  executing live adapters.
+
+## [4.3.1] - 2026-07-01
+
+### Changed
+
 - **High-risk AI review dry-run evidence path parity**: aligned
   `ao-kernel ai-review high-risk-dry-run` with the GitHub
   `ao-release-gate` payload allowlist for root local review evidence and
@@ -170,8 +179,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and release version-pin tests for the v4.3.1 patch release. This is release
   metadata only; no V5 promotion, support widening, production platform claim,
   or live adapter execution.
-
-## [4.3.1] - 2026-06-17
 
 ### Fixed
 
