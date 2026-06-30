@@ -9,6 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **High-risk AI review dry-run evidence path parity**: aligned
+  `ao-kernel ai-review high-risk-dry-run` with the GitHub
+  `ao-release-gate` payload allowlist for root local review evidence and
+  `ao-ma-10-high-risk-reviews/` raw provider evidence. The dry-run fixture now
+  exercises those evidence paths, and a minimal `.claude/**` dry-run PR
+  records real Anthropic plus MiniMax review evidence without support widening,
+  production-platform claims, live-adapter execution, branch-protection
+  mutation, or admin bypass.
 - **Provider command wrappers for cross-provider AI review**: added bundled
   Claude, Codex, and Mavis/MiniMax provider wrappers for
   `ao-kernel ai-review collect` and `ao-kernel ai-review consensus`. The
