@@ -13,38 +13,30 @@
       "status": "pass"
     },
     {
-      "name": "guard_flags",
-      "status": "pass"
-    },
-    {
-      "name": "forbidden_actions",
-      "status": "pass"
-    },
-    {
-      "name": "drift",
-      "status": "pass"
-    },
-    {
-      "name": "fail_closed_behavior",
-      "status": "pass"
-    },
-    {
       "name": "provider_separation",
+      "status": "pass"
+    },
+    {
+      "name": "release_authority_boundary",
+      "status": "pass"
+    },
+    {
+      "name": "changelog",
       "status": "pass"
     }
   ],
   "findings": [
-    "All 10 changed files match work package AO-MA-10-PROVIDER-COMMAND-SMOKE scope: provider wrappers, tests, docs, changelog, runbook, convenience scripts, and local gate evidence.",
-    "assert_no_secret_like_text is called on stdin, rendered prompt, provider stderr, provider stdout, and normalized output; the reviewed boundary points have no secret-recording gap.",
-    "Guard flags remain closed: support_widening=false, production_platform_claim=false, live_adapter_execution=false; no support widening is introduced in code or docs.",
-    "Codex wrapper enforces --sandbox read-only; Claude wrapper defaults to an ephemeral tempdir CWD; Mavis new-session mode is one-shot by default; all three fail closed.",
-    "Mavis communication mode filters by from_session/to_session match and time_created greater than sent_after_ms, rejecting stale daemon queue messages; timeout is a fail-closed error, not implicit approval.",
-    "Mavis new-session mode validates sessionId starts with mvs_ prefix; non-assistant/non-model roles are skipped; unparseable content is skipped, preserving fail-closed filtering.",
-    "Timeout is bounded to 5-900 seconds with ValueError on out-of-range or non-integer values; there is no unbounded wait path.",
-    "Local verification passed: pytest for provider wrappers and ai-review CLI, ruff, and mypy. The suite covers fenced JSON extraction, stdin rejection, nonzero exit propagation, communication session filtering, new-session mode, and end-to-end ai-review collect integration.",
-    "No secret values, credentials, API keys, tokens, webhook URLs, support-widening claim, production-platform claim, or live-adapter execution request was found in the reviewed diff.",
-    "local-ai-review-evidence.v1.json is included in the reviewed changed-files scope and records this independent Anthropic review verdict.",
-    "AI output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset, as stated consistently in changelog, README, quickstart, and runbook."
+    "PR changed_files are 7: .claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md, CHANGELOG.md, ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json, ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json, ao_kernel/ai_review.py, local-ai-review-evidence.v1.json, tests/test_ai_review_cli.py; all match work package AO-MA-10-HIGH-RISK-DRY-RUN scope.",
+    "Code change in ao_kernel/ai_review.py is limited to build_dry_run_payload allowed_path_prefixes: adds local-ai-review-evidence.v1.json, local-gpp-gate-evidence.v1.json, and ao-ma-10-high-risk-reviews/ to the allowlist; this is a targeted bug fix scoped to the local dry-run validation tool, not the production ao-release-gate.",
+    "Test change in tests/test_ai_review_cli.py adds placeholder evidence files (local-ai-review-evidence.v1.json and ao-ma-10-high-risk-reviews/*.json) to _repo_with_high_risk_change fixture, exercising the allowlist fix end-to-end; 2 tests pass per local verification.",
+    "CHANGELOG.md entry added after CI changelog enforcement failed; entry accurately describes the high-risk dry-run evidence path parity alignment with no overclaim.",
+    ".claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md is inert documentation describing dry-run acceptance targets with no runtime, workflow, or branch-protection effect.",
+    "No secrets, credentials, API keys, tokens, or webhook URLs found in any changed file.",
+    "Guard flags consistently closed across context and all evidence files: support_widening=false, production_platform_claim=false, live_adapter_execution=false.",
+    "Provider separation satisfied: implementer is OpenAI/Codex, this review is Anthropic/Claude, MiniMax reviews independently in ao-ma-10-high-risk-reviews/minimax evidence; no same-provider self-review.",
+    "Staged evidence files carry prior 6-file scope; this AGREE output carries the correct 7-file scope (including CHANGELOG.md) and replaces the Anthropic/root evidence before push per documented replacement plan.",
+    "No admin bypass, branch-protection weakening, gate weakening, support widening, production platform claim, live adapter execution, or AI-as-release-authority drift introduced; release authority remains ao-release-gate plus GitHub ruleset.",
+    "Drift check: prior AO-MA-985 and AO-MA-10-PROVIDER-COMMAND-SMOKE scopes correctly narrowed to AO-MA-10-HIGH-RISK-DRY-RUN with coherent head_ref codex/high-risk-cli-dry-run, base_ref refs/heads/main, and 7-file change set."
   ],
   "implementer": {
     "agent": "codex",
@@ -62,20 +54,17 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
+      ".claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md",
       "CHANGELOG.md",
-      "README.md",
-      "ao_kernel/ai_review_provider_wrappers.py",
-      "docs/PRODUCT-QUICKSTART.md",
-      "docs/operator-runbooks/05-minimax-mavis-runtime.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
+      "ao_kernel/ai_review.py",
       "local-ai-review-evidence.v1.json",
-      "scripts/ai_review_provider_claude.py",
-      "scripts/ai_review_provider_codex.py",
-      "scripts/ai_review_provider_mavis.py",
-      "tests/test_ai_review_provider_wrappers.py"
+      "tests/test_ai_review_cli.py"
     ],
-    "head_ref": "refs/heads/codex/provider-command-smoke"
+    "head_ref": "refs/heads/codex/high-risk-cli-dry-run"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10-PROVIDER-COMMAND-SMOKE"
+  "work_package": "AO-MA-10-HIGH-RISK-DRY-RUN"
 }

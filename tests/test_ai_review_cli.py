@@ -39,6 +39,24 @@ def _repo_with_high_risk_change(tmp_path: Path) -> Path:
     _git(repo, "commit", "-m", "base")
     _git(repo, "switch", "-c", "feature")
     target.write_text("# base\n# high-risk change\n", encoding="utf-8")
+    (repo / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## [Unreleased]\n\n- Exercise dry-run release metadata allowlist.\n",
+        encoding="utf-8",
+    )
+    (repo / "local-ai-review-evidence.v1.json").write_text(
+        '{"placeholder":"review evidence path"}\n',
+        encoding="utf-8",
+    )
+    review_dir = repo / "ao-ma-10-high-risk-reviews"
+    review_dir.mkdir()
+    (review_dir / "openai.local-ai-review-evidence.v1.json").write_text(
+        '{"placeholder":"openai review evidence path"}\n',
+        encoding="utf-8",
+    )
+    (review_dir / "anthropic.local-ai-review-evidence.v1.json").write_text(
+        '{"placeholder":"anthropic review evidence path"}\n',
+        encoding="utf-8",
+    )
     _git(repo, "add", ".")
     _git(repo, "commit", "-m", "feature")
     return repo
