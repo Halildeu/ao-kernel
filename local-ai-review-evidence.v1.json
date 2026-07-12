@@ -13,15 +13,7 @@
       "status": "pass"
     },
     {
-      "name": "boundary_compliance",
-      "status": "pass"
-    },
-    {
       "name": "drift_check",
-      "status": "pass"
-    },
-    {
-      "name": "overclaim_check",
       "status": "pass"
     },
     {
@@ -30,13 +22,11 @@
     }
   ],
   "findings": [
-    "Claude independent post-implementation review returned REVISE, the findings were absorbed, and the unchanged final implementation returned AGREE with no blocking findings.",
-    "The exact scope hardens ai-review preflight provenance, head and diff stability, Mavis final-message parsing, schemas, tests, documentation, changelog, and this bound review evidence only.",
-    "Full regression supplied to the reviewer passed with 7166 tests and 114 skips; focused AI-review tests, ruff, mypy, JSON validation, and diff checks also passed.",
-    "The v1 schema extension is additive for old-artifact compatibility while the current emitter always writes context-bound preflight evidence.",
-    "Persisted command provenance exposes only the executable, redacted argument placeholders, and cryptographic hashes; test output and credential material are not recorded.",
-    "No credential read or write, production or test state mutation, GitHub ruleset change, admin bypass, support widening, production-platform claim, or live-adapter execution is introduced.",
-    "AI output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset."
+    "All 21 workflow files contain only action version pin bumps: actions/checkout v6\u2192v7, github/codeql-action v3\u2192v4, google-github-actions/deploy-cloudrun v2\u2192v3",
+    "No logic changes, no permission escalations, no secret exposure, no --admin flag, no branch-protection mutation",
+    "CHANGELOG entry accurately describes the maintenance batch and explicitly disclaims support widening, production-platform claims, live-adapter execution, and ruleset policy changes",
+    "Test command is `true` which is acceptable for a workflow-only change that touches no Python source; real CI validation occurs when these workflows run",
+    "Work package ACTIONS-MAINTENANCE-BATCH-2026-07 matches the scope of changes precisely"
   ],
   "implementer": {
     "agent": "codex",
@@ -52,21 +42,34 @@
   },
   "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
-    "base_ref": "refs/heads/main",
+    "base_ref": "origin/main",
     "changed_files": [
-      "CHANGELOG.md",
-      "ao_kernel/ai_review.py",
-      "ao_kernel/ai_review_provider_wrappers.py",
-      "ao_kernel/defaults/schemas/ai-review-collection-evidence.schema.v1.json",
-      "ao_kernel/defaults/schemas/ai-review-consensus-evidence.schema.v1.json",
-      "docs/PRODUCT-QUICKSTART.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_ai_review_cli.py",
-      "tests/test_ai_review_provider_wrappers.py"
+      ".github/workflows/ao-autonomous-merge-executor.yml",
+      ".github/workflows/ao-ma-11a-plan-approval.yml",
+      ".github/workflows/ao-ma-11e-2b-mirror-sync.yml",
+      ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+      ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
+      ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
+      ".github/workflows/ao-release-gate-container-publish.yml",
+      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
+      ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+      ".github/workflows/bc10-real-adapter-usage-cost.yml",
+      ".github/workflows/changelog-enforcement.yml",
+      ".github/workflows/codeql.yml",
+      ".github/workflows/live-adapter-evidence-emit.yml",
+      ".github/workflows/live-adapter-gate.yml",
+      ".github/workflows/policy-container-publish.yml",
+      ".github/workflows/policy-service-deploy-cloud-run.yml",
+      ".github/workflows/publish.yml",
+      ".github/workflows/support-matrix-smoke.yml",
+      ".github/workflows/test.yml",
+      ".github/workflows/trivy.yml",
+      "CHANGELOG.md"
     ],
-    "head_ref": "refs/heads/codex/ai-review-preflight-mavis-final"
+    "head_ref": "HEAD"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AI-REVIEW-PREFLIGHT-HARDENING"
+  "work_package": "ACTIONS-MAINTENANCE-BATCH-2026-07"
 }

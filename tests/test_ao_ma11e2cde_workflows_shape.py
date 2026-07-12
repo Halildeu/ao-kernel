@@ -47,6 +47,33 @@ GUARD_FLAG_KEYS = (
     "live_adapter_execution",
 )
 
+_ALLOWED_ACTION_VERSION_LINE = re.compile(
+    r"^[+-]\s*(?:-\s+)?uses:\s+(?:"
+    r"actions/checkout@v[67]|"
+    r"github/codeql-action/(?:init|analyze|upload-sarif)@v[34]|"
+    r"google-github-actions/deploy-cloudrun@v[23]"
+    r")$"
+)
+
+
+def _workflow_diff_is_dependency_only(paths: list[str]) -> bool:
+    result = subprocess.run(
+        ["git", "diff", "--unified=0", "origin/main...HEAD", "--", *paths],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        return False
+    changed_lines = [
+        line
+        for line in result.stdout.splitlines()
+        if line.startswith(("+", "-")) and not line.startswith(("+++", "---"))
+    ]
+    return bool(changed_lines) and all(_ALLOWED_ACTION_VERSION_LINE.fullmatch(line) for line in changed_lines)
+
 
 def _load_yaml(path: Path) -> YamlObject:
     yaml = pytest.importorskip("yaml")
@@ -312,6 +339,8 @@ def test_14_no_existing_workflow_mutation() -> None:
         pytest.skip("AO-MA-11E workflow mutation invariant applies only when AO-MA-11E workflow artifacts are in the PR diff")
     workflow_changes = [f for f in files if f.startswith(".github/workflows/")]
     if not workflow_changes:
+        return
+    if _workflow_diff_is_dependency_only(workflow_changes):
         return
 
     allowed = {

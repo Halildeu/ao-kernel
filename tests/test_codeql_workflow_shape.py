@@ -8,8 +8,8 @@ V5 Epic 6 E-6-5 (Codex 019e8350 absorb) — pins:
   fork PR token risk)
 - permissions: minimum + ``security-events: write`` + ``pull-requests:
   read``; ``contents: write`` MUST NOT appear (write-side bypass)
-- ``actions/checkout@v6`` + ``persist-credentials: false``
-- ``github/codeql-action/init@v3`` + ``analyze@v3``
+- ``actions/checkout@v7`` + ``persist-credentials: false``
+- ``github/codeql-action/init@v4`` + ``analyze@v4``
 - language ``python`` declared in the matrix
 - ``timeout-minutes`` <= 30 (Codex 019e8350 absorb — was 360 default)
 - ``config-file: ./.github/codeql/codeql-config.yml`` referenced
@@ -112,16 +112,16 @@ def test_codeql_workflow_rejects_id_token_write() -> None:
 # ── Action versions + checkout hardening ─────────────────────────────
 
 
-def test_codeql_workflow_uses_checkout_v6_no_persist_credentials() -> None:
+def test_codeql_workflow_uses_checkout_v7_no_persist_credentials() -> None:
     text = _workflow_text()
-    assert "uses: actions/checkout@v6" in text
+    assert "uses: actions/checkout@v7" in text
     assert "persist-credentials: false" in text
 
 
-def test_codeql_workflow_uses_codeql_action_v3() -> None:
+def test_codeql_workflow_uses_codeql_action_v4() -> None:
     text = _workflow_text()
-    assert "uses: github/codeql-action/init@v3" in text
-    assert "uses: github/codeql-action/analyze@v3" in text
+    assert "uses: github/codeql-action/init@v4" in text
+    assert "uses: github/codeql-action/analyze@v4" in text
 
 
 def test_codeql_workflow_does_not_install_python_setup() -> None:

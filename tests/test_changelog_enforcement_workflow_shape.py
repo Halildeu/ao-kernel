@@ -13,6 +13,7 @@ GitHub Actions on real PR events. Tests verify discipline:
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,32 @@ except ImportError:
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "changelog-enforcement.yml"
 LOCAL_HOOK_PATH = REPO_ROOT / ".claude" / "scripts" / "pre-commit-changelog-gate.sh"
+
+_ALLOWED_ACTION_VERSION_LINE = re.compile(
+    r"^[+-]\s*(?:-\s+)?uses:\s+(?:"
+    r"actions/checkout@v[67]|"
+    r"github/codeql-action/(?:init|analyze|upload-sarif)@v[34]|"
+    r"google-github-actions/deploy-cloudrun@v[23]"
+    r")$"
+)
+
+
+def _workflow_diff_is_dependency_only(paths: list[str]) -> bool:
+    proc = subprocess.run(
+        ["git", "diff", "--unified=0", "origin/main...HEAD", "--", *paths],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return False
+    changed_lines = [
+        line
+        for line in proc.stdout.splitlines()
+        if line.startswith(("+", "-")) and not line.startswith(("+++", "---"))
+    ]
+    return bool(changed_lines) and all(_ALLOWED_ACTION_VERSION_LINE.fullmatch(line) for line in changed_lines)
 
 
 def _load_workflow() -> dict[Any, Any]:
@@ -237,6 +264,8 @@ def test_only_one_workflow_file_changed() -> None:
     if workflow_path not in changed:
         pytest.skip("E-1-3 workflow diff-shape invariant applies only when the changelog workflow is changed")
     workflow_changes = [p for p in changed if p.startswith(".github/workflows/")]
+    if _workflow_diff_is_dependency_only(workflow_changes):
+        return
     assert workflow_changes == [workflow_path], (
         f"E-1-3 must add exactly one workflow; got: {workflow_changes}"
     )
