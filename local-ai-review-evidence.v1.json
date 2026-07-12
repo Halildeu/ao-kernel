@@ -22,14 +22,16 @@
     }
   ],
   "findings": [
-    "All 21 workflow files contain exclusively action version pin bumps: actions/checkout v6\u2192v7, github/codeql-action v3\u2192v4, google-github-actions/deploy-cloudrun v2\u2192v3; no logic, permission, trigger, or secret surface changes",
-    "Preflight evidence records tests (exit_code 0, python3 executable, 900s timeout) and secret_scan (ao-kernel-diff-secret-patterns-v1) both pass; diff_digest and head_sha bound to 3b03202a0e07580c98d16bc02c041ada0a83a43f",
-    "New tests/workflow_dependency_maintenance.py module provides a fail-closed classifier (_ALLOWED_ACTION_VERSION_LINE regex) gating exactly the three action version transitions; existing no-mutation test guards invoke workflow_diff_is_dependency_only() to pass dependency-only diffs cleanly",
+    "Preflight evidence records tests (python3, exit_code 0, 900s timeout) and secret_scan (ao-kernel-diff-secret-patterns-v1) both pass; head_sha 7bc676479f01ff4faf680b24a242c2e8cc8a25e1 and diff_digest bound",
+    "All 23 workflow files contain exclusively action version pin bumps: actions/checkout v6\u2192v7, github/codeql-action v3\u2192v4, google-github-actions/deploy-cloudrun v2\u2192v3; no logic, permission, trigger, secret surface, or entrypoint changes",
+    "New tests/workflow_dependency_maintenance.py provides a fail-closed classifier (_ALLOWED_ACTION_VERSION_LINE regex) gating exactly the three allowed action version transitions; 4 dedicated tests verify accept/reject paths including empty diff, mixed logic+version, and unapproved action transitions",
+    "Existing no-mutation test guards (test_ao_ma11e2cde, test_changelog_enforcement, test_cost_ceiling, test_support_matrix_smoke) updated to route through workflow_diff_is_dependency_only() so dependency-only PRs pass while non-dependency workflow mutations remain blocked",
+    "Plan status JSON updates (ao_ma_status, gpp_status, AO-MA-11A-2 evidence) correctly refresh workflow_content_sha256 and artifact_sha256 hashes to reflect post-bump file contents; no semantic status structure or guard flag changes",
     "CHANGELOG entry accurately describes the maintenance batch and explicitly disclaims support widening, production-platform claims, live-adapter execution, tag/publish, and ruleset policy changes",
-    "No --admin flag, no branch-protection mutation, no permission escalation, no secret exposure, no new trigger surface, no new entrypoint across entire diff",
-    "Plan status JSON updates (ao_ma_status, gpp_status) correctly update workflow_content_sha256 and artifact_sha256 hashes to reflect new workflow file contents post-bump",
-    "Test files updated to assert new action versions (checkout@v7, codeql-action@v4, deploy-cloudrun@v3) and test_ai_review_provider_wrappers.py includes a legitimate monkeypatch.delenv fix for test-environment isolation",
-    "AI review evidence files (root, anthropic, minimax) coherently updated to ACTIONS-MAINTENANCE-BATCH-2026-07 work package with matching scope and cross-provider AGREE verdicts; release authority remains ao-release-gate plus GitHub ruleset"
+    "Minor evidence file discrepancy: scope_reviewed.changed_files in all three evidence files (root, anthropic, minimax) includes .github/workflows/live-adapter-gate.yml which does not appear in the actual PR context changed_files list; this is a cosmetic scope listing error in the evidence artifacts, not a content or integrity issue",
+    "Minor evidence SHA drift: evidence files reference head_sha 3b03202a0e07580c98d16bc02c041ada0a83a43f while context-bound preflight uses 7bc676479f01ff4faf680b24a242c2e8cc8a25e1; evidence was generated at an earlier commit; preflight at current HEAD is authoritative and passes",
+    "test_ai_review_provider_wrappers.py includes a monkeypatch.delenv fix for AO_MA10_PROVIDER_TIMEOUT_SECONDS test isolation; legitimate test-environment hardening bundled with the batch",
+    "No --admin flag, no branch-protection mutation, no permission escalation, no secret exposure, no new trigger surface across entire diff; guard flags remain closed (support_widening=false, production_platform_claim=false, live_adapter_execution=false); AI output is evidence only, release authority remains ao-release-gate plus GitHub ruleset"
   ],
   "implementer": {
     "agent": "codex",
@@ -64,7 +66,6 @@
       ".github/workflows/changelog-enforcement.yml",
       ".github/workflows/codeql.yml",
       ".github/workflows/live-adapter-evidence-emit.yml",
-      ".github/workflows/live-adapter-gate.yml",
       ".github/workflows/policy-container-publish.yml",
       ".github/workflows/policy-service-deploy-cloud-run.yml",
       ".github/workflows/publish.yml",

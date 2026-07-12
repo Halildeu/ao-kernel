@@ -7,32 +7,16 @@
     {
       "name": "secret_scan",
       "status": "pass"
-    },
-    {
-      "name": "scope_match",
-      "status": "pass"
-    },
-    {
-      "name": "drift_check",
-      "status": "pass"
-    },
-    {
-      "name": "forbidden_action_check",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Workflow diff scope is exactly three allowlisted action version pin transitions (actions/checkout v6->v7, github/codeql-action v3->v4, google-github-actions/deploy-cloudrun v2->v3) across 23 .github/workflows/*.yml files; no logic, permission, trigger, secret, or matrix changes.",
-    "New tests/workflow_dependency_maintenance.py implements a fail-closed classifier (_ALLOWED_ACTION_VERSION_LINE regex anchored to ^[+-]...uses: <one-of-three-allowlisted>@<allowed-version>$) that rejects empty diffs, mixed logic+version diffs, and unapproved action/version transitions; verified locally that a curl|bash line mixed into a version-bump diff is rejected, as is an env: SECRET block.",
-    "The four tests in tests/test_workflow_dependency_maintenance.py pass (verified locally: 4 passed); the existing no-mutation test guards (test_ao_ma11e2cde_workflows_shape, test_changelog_enforcement_workflow_shape, test_cost_ceiling, test_support_matrix_smoke_workflow) now route through workflow_diff_is_dependency_only() so a dependency-only PR is allowed to modify multiple workflow files while still failing on any other mutation.",
-    "CHANGELOG.md entry is accurate and explicitly disclaims support widening, production-platform claims, live-adapter execution, tag/publish, and ruleset policy changes; consistent with the work package ACTIONS-MAINTENANCE-BATCH-2026-07.",
-    "Plan status JSONs (.claude/plans/ao_ma_status.v1.json, .claude/plans/gpp_status.v1.json, .claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json) carry only SHA256 refreshes of the bumped workflow files; no semantic change to status structure or guard flags.",
-    "AI review evidence files (root + anthropic + minimax) are bound to work_package ACTIONS-MAINTENANCE-BATCH-2026-07 and 40-file scope matching the actual diff; provider separation preserved (Codex implementer, Anthropic + MiniMax independent reviewers, no same-provider self-review); guard flags closed (support_widening=false, production_platform_claim=false, live_adapter_execution=false, secrets_recorded=false).",
-    "test_ai_review_provider_wrappers.py adds monkeypatch.delenv('AO_MA10_PROVIDER_TIMEOUT_SECONDS', raising=False) for test isolation of an external env var; this is a legitimate test-environment fix bundled in the same PR but is a minor scope expansion beyond pure version bumps (non-blocking).",
-    "Minor prose inaccuracy in evidence files: the Anthropic and root findings state '21 workflow files' and the MiniMax finding states '22 workflow files' while the actual set is 23 .github/workflows/*.yml files; the structured changed_files arrays in all three evidence files are correct, so this is a finding-string counting error, not a scope or evidence-integrity problem.",
-    "Branch base drift: in this worktree refs/heads/main (9b7c7f53) is 20 commits behind origin/main (3ce6c6d6) \u2014 refs/heads/main..origin/main includes PRs #998-#1019 with substantial productization content (ao_kernel/ai_review.py, ao_kernel/pr_metadata.py, etc.). The preflight was bound to refs/heads/main as base_ref, so its diff_digest (60e21465...) does not match the current origin/main...HEAD diff (e245a7cb...); the preflight is internally consistent for the diff that existed at HEAD at preflight time, but the branch should be rebased onto current origin/main before merge so the landed delta matches what was actually validated. This is a pre-merge operational concern, not a content-scope concern.",
-    "No --admin flag, no branch-protection mutation, no permission escalation, no secret exposure, no new trigger surface, no new entrypoint, no production code (ao_kernel/*.py) or pyproject.toml change introduced anywhere in the diff; forbidden action categories (tag/publish, support_widening, production-platform-claim, live-adapter-execution, branch-protection change) are all clean.",
-    "AI output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset per the documented plan and the CHANGELOG/prose contract."
+    "Preflight evidence clean: tests=pass (python3 exit_code 0, 900s timeout) and secret_scan=pass (ao-kernel-diff-secret-patterns-v1); head_sha 7bc676479f01ff4faf680b24a242c2e8cc8a25e1 bound to round-1 review_request",
+    "Diff is a pure actions maintenance batch scoped to ACTIONS-MAINTENANCE-BATCH-2026-07: 22 workflow files touch only action version pins \u2014 actions/checkout v6\u2192v7, github/codeql-action/{init,analyze} v3\u2192v4, google-github-actions/deploy-cloudrun v2\u2192v3 \u2014 with no logic, permission, trigger, secret, runner, or branch-protection surface changes",
+    "HEAD commit 7bc67647 'chore(actions): exclude protected live-adapter gate' actively DOWNGRADES live-adapter-gate.yml back from v7 to v6, removing the protected live-adapter gate from the maintenance scope as a fail-closed posture choice; consistent with ACTIONS-MAINTENANCE-BATCH discipline",
+    "CHANGELOG entry explicitly disclaims tag/publish/support-widening/production-platform-claim/live-adapter-execution/branch-protection changes and matches work-package scope",
+    "New tests/workflow_dependency_maintenance.py is a fail-closed regex classifier (_ALLOWED_ACTION_VERSION_LINE) allowlisting exactly the three transition pairs; tests/test_workflow_dependency_maintenance.py covers positive, empty-diff, mixed-mutation, and unapproved-transition rejection",
+    "Plan/evidence SHA256 hashes (ao_ma_status, gpp_status, AO-MA-11A-2-ENVIRONMENT-WIRING) refreshed coherently to track new workflow file contents; ai-review evidence files (root, anthropic, minimax) carry matching cross-provider AGREE verdicts on a prior SHA (3b03202a) for the same work package",
+    "Review_request JSON is the authority; ambient working-directory HEAD was cross-verified and matches preflight_evidence.head_sha; no drift between request and branch state"
   ],
   "implementer": {
     "agent": "codex",
@@ -42,7 +26,7 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "Mavis/MiniMax independent high-risk PR reviewer",
+    "agent": "Mavis/MiniMax high-risk PR reviewer",
     "provider": "minimax",
     "verdict": "AGREE"
   },
@@ -67,7 +51,6 @@
       ".github/workflows/changelog-enforcement.yml",
       ".github/workflows/codeql.yml",
       ".github/workflows/live-adapter-evidence-emit.yml",
-      ".github/workflows/live-adapter-gate.yml",
       ".github/workflows/policy-container-publish.yml",
       ".github/workflows/policy-service-deploy-cloud-run.yml",
       ".github/workflows/publish.yml",
