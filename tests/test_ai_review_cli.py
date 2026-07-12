@@ -154,6 +154,73 @@ def _round_result(
     )
 
 
+def test_preflight_checks_are_context_bound_and_fail_closed(tmp_path: Path) -> None:
+    context = {
+        "head_sha": "a" * 40,
+        "diff_digest": "sha256:" + "b" * 64,
+    }
+    preflight = ai_review.run_preflight_checks(
+        repo_root=tmp_path,
+        test_commands=[f"{sys.executable} -c pass short-sensitive-value"],
+        context_binding=context,
+        timeout_seconds=10,
+    )
+    assert preflight["head_sha"] == context["head_sha"]
+    assert preflight["diff_digest"] == context["diff_digest"]
+    assert preflight["tests"]["status"] == "pass"
+    assert preflight["tests"]["commands"][0]["command_argv_redacted"] == [
+        sys.executable,
+        "<redacted>",
+        "<redacted>",
+        "<redacted>",
+    ]
+    assert "short-sensitive-value" not in json.dumps(preflight)
+    assert preflight["secret_scan"] == {
+        "status": "pass",
+        "scanner": "ao-kernel-diff-secret-patterns-v1",
+    }
+    assert preflight["stdout_recorded"] is False
+    assert preflight["stderr_recorded"] is False
+
+    with pytest.raises(ValueError, match="at least one --test-command"):
+        ai_review.run_preflight_checks(
+            repo_root=tmp_path,
+            test_commands=[],
+            context_binding=context,
+            timeout_seconds=10,
+        )
+    for timeout_seconds in (0, 86401):
+        with pytest.raises(ValueError, match="--test-timeout-seconds"):
+            ai_review.run_preflight_checks(
+                repo_root=tmp_path,
+                test_commands=["true"],
+                context_binding=context,
+                timeout_seconds=timeout_seconds,
+            )
+    with pytest.raises(RuntimeError, match="test command failed"):
+        ai_review.run_preflight_checks(
+            repo_root=tmp_path,
+            test_commands=["false"],
+            context_binding=context,
+            timeout_seconds=10,
+        )
+    secret_like = "token=" + "gh" + "p_" + ("1" * 36)
+    with pytest.raises(ValueError, match="secret-like"):
+        ai_review.run_preflight_checks(
+            repo_root=tmp_path,
+            test_commands=[secret_like],
+            context_binding=context,
+            timeout_seconds=10,
+        )
+    with pytest.raises(ValueError, match="head_sha"):
+        ai_review.assert_preflight_binding({**preflight, "head_sha": "c" * 40}, context)
+    with pytest.raises(ValueError, match="diff_digest"):
+        ai_review.assert_preflight_binding(
+            {**preflight, "diff_digest": "sha256:" + "d" * 64},
+            context,
+        )
+
+
 def test_ai_review_collect_writes_raw_reviews_and_provenance(tmp_path: Path) -> None:
     repo = _repo_with_high_risk_change(tmp_path)
     fake = _fake_provider(tmp_path)
@@ -177,6 +244,8 @@ def test_ai_review_collect_writes_raw_reviews_and_provenance(tmp_path: Path) -> 
             str(output_dir),
             "--implementer-provider",
             "google",
+            "--test-command",
+            "true",
             "--provider",
             f"openai={_cmd('openai', fake)}",
             "--provider",
@@ -193,8 +262,14 @@ def test_ai_review_collect_writes_raw_reviews_and_provenance(tmp_path: Path) -> 
     }
     payload = json.loads((output_dir / "ai_review_collection.v1.json").read_text())
     _validate("ai-review-collection-evidence.schema.v1.json", payload)
+    legacy_payload = dict(payload)
+    legacy_payload.pop("preflight_evidence")
+    _validate("ai-review-collection-evidence.schema.v1.json", legacy_payload)
     assert payload["collection_status"] == "collected"
     assert payload["ai_output_release_authority"] is False
+    assert payload["preflight_evidence"]["tests"]["status"] == "pass"
+    assert payload["preflight_evidence"]["head_sha"] == payload["context_binding"]["head_sha"]
+    assert payload["preflight_evidence"]["diff_digest"] == payload["context_binding"]["diff_digest"]
     assert payload["guard_flags"] == {
         "live_adapter_execution": False,
         "production_platform_claim": False,
@@ -204,7 +279,58 @@ def test_ai_review_collect_writes_raw_reviews_and_provenance(tmp_path: Path) -> 
     assert len(payload["provider_provenance"]) == 2
     for provenance in payload["provider_provenance"]:
         assert provenance["command_argv_sha256"].startswith("sha256:")
+        assert provenance["command_argv_redacted"][0] == sys.executable
+        assert set(provenance["command_argv_redacted"][1:]) == {"<redacted>"}
         assert provenance["prompt_sha256"].startswith("sha256:")
+
+
+def test_command_provenance_redacts_every_non_executable_argument() -> None:
+    command = ai_review.ProviderCommand(
+        provider="anthropic",
+        argv=("review-provider", "--profile", "short-sensitive-value"),
+        source="test",
+    )
+    provenance = ai_review.command_provenance(
+        command,
+        prompt_sha256="sha256:" + "a" * 64,
+        timeout_seconds=30,
+    )
+    assert provenance["command_executable"] == "review-provider"
+    assert provenance["command_argv_redacted"] == ["review-provider", "<redacted>", "<redacted>"]
+    assert "short-sensitive-value" not in json.dumps(provenance)
+
+
+def test_review_context_stability_fails_closed_when_head_moves(tmp_path: Path) -> None:
+    repo = _repo_with_high_risk_change(tmp_path)
+    rendered_diff = ai_review.diff_text(repo, "main", "feature", 200_000)
+    expected_head = ai_review.head_sha(repo, "feature")
+    ai_review.assert_review_context_stable(
+        repo_root=repo,
+        base_ref="main",
+        head_ref="feature",
+        expected_head_sha=expected_head,
+        expected_diff_sha256=ai_review.sha256_text(rendered_diff),
+        max_diff_bytes=200_000,
+    )
+    (repo / "ao_kernel" / "ao_release_gate.py").write_text("# moved\n", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-m", "move reviewed head")
+    with pytest.raises(RuntimeError, match="review head changed"):
+        ai_review.assert_review_context_stable(
+            repo_root=repo,
+            base_ref="main",
+            head_ref="feature",
+            expected_head_sha=expected_head,
+            expected_diff_sha256=ai_review.sha256_text(rendered_diff),
+            max_diff_bytes=200_000,
+        )
+
+
+def test_collection_and_consensus_preflight_schema_defs_cannot_drift() -> None:
+    collection = load_default("schemas", "ai-review-collection-evidence.schema.v1.json")
+    consensus = load_default("schemas", "ai-review-consensus-evidence.schema.v1.json")
+    for definition in ("preflight_evidence", "preflight_command"):
+        assert collection["$defs"][definition] == consensus["$defs"][definition]
 
 
 def test_ai_review_python_api_covers_productized_main_paths(tmp_path: Path) -> None:
@@ -225,6 +351,8 @@ def test_ai_review_python_api_covers_productized_main_paths(tmp_path: Path) -> N
             f"openai={_cmd('openai', fake)}",
             f"anthropic={_cmd('anthropic', fake)}",
         ],
+        test_commands=["true"],
+        test_timeout_seconds=30,
         max_diff_bytes=200_000,
         timeout_seconds=30,
     )
@@ -246,6 +374,8 @@ def test_ai_review_python_api_covers_productized_main_paths(tmp_path: Path) -> N
             f"openai={_cmd('openai', fake)}",
             f"anthropic={_cmd('anthropic', fake)}",
         ],
+        test_commands=["true"],
+        test_timeout_seconds=30,
         max_diff_bytes=200_000,
         timeout_seconds=30,
         max_rounds=1,
@@ -471,6 +601,8 @@ def test_ai_review_consensus_runs_bounded_ping_pong_until_agree(tmp_path: Path) 
             "google",
             "--max-rounds",
             "2",
+            "--test-command",
+            "true",
             "--provider",
             f"openai={_cmd('openai', fake, openai_state)}",
             "--provider",
@@ -487,6 +619,9 @@ def test_ai_review_consensus_runs_bounded_ping_pong_until_agree(tmp_path: Path) 
     }
     payload = json.loads((output_dir / "ai_review_consensus.v1.json").read_text())
     _validate("ai-review-consensus-evidence.schema.v1.json", payload)
+    legacy_payload = dict(payload)
+    legacy_payload.pop("preflight_evidence")
+    _validate("ai-review-consensus-evidence.schema.v1.json", legacy_payload)
     assert payload["consensus_status"] == "AGREE"
     assert [round_payload["round_index"] for round_payload in payload["rounds"]] == [1, 2]
     assert {result["verdict"] for result in payload["rounds"][0]["provider_results"]} == {"REVISE"}
@@ -520,6 +655,8 @@ def test_ai_review_consensus_fails_closed_when_max_rounds_exhausted(tmp_path: Pa
             "google",
             "--max-rounds",
             "1",
+            "--test-command",
+            "true",
             "--provider",
             f"openai={_cmd('openai', fake)}",
             "--provider",
@@ -565,6 +702,8 @@ def test_ai_review_high_risk_dry_run_proves_gate_allow_without_github_mutation(t
             str(output_dir),
             "--implementer-provider",
             "google",
+            "--test-command",
+            "true",
             "--provider",
             f"openai={_cmd('openai', fake)}",
             "--provider",

@@ -93,7 +93,8 @@ def _prompt_for_provider(request: dict[str, Any], *, provider_name: str) -> str:
             "Review the request JSON as an independent reviewer.",
             "Treat review_request as the authority; do not rely on ambient working-directory state.",
             "Return exactly one JSON object and no prose.",
-            "Use AGREE only when tests, secret scan, scope, drift, and forbidden-action checks are clean.",
+            "Use AGREE only when the context-bound preflight evidence records tests and secret_scan as pass, and scope, drift, and forbidden-action checks are clean.",
+            "When preflight evidence passes, include checks named exactly tests and secret_scan with status pass.",
             "Use REVISE or BLOCK when any issue remains.",
             "Do not include secret values in findings.",
             "AI output is evidence only; release authority remains ao-release-gate plus GitHub ruleset.",
@@ -268,7 +269,18 @@ def _message_content(message: dict[str, Any]) -> str:
             return value
         if isinstance(value, dict):
             return json.dumps(value, sort_keys=True)
-    return json.dumps(message, sort_keys=True)
+    return ""
+
+
+def _normalized_review_from_message(message: dict[str, Any], *, label: str) -> dict[str, Any] | None:
+    content = _message_content(message)
+    if not content:
+        return None
+    try:
+        review = extract_json_object(content, label=label)
+        return normalize_provider_output(review, provider="minimax")
+    except ValueError:
+        return None
 
 
 def _message_created_ms(message: dict[str, Any]) -> int:
@@ -329,12 +341,10 @@ def _run_mavis_communication_provider(prompt: str, *, timeout: int) -> int:
             message_to = _message_session_value(message, "to_session", "toSession", "to")
             if message_from != to_session or message_to != from_session:
                 continue
-            content = _message_content(message)
-            try:
-                review = extract_json_object(content, label="mavis response content")
-            except ValueError:
+            review = _normalized_review_from_message(message, label="mavis response content")
+            if review is None:
                 continue
-            return _emit(normalize_provider_output(review, provider="minimax"))
+            return _emit(review)
         time.sleep(poll_interval)
     raise TimeoutError("mavis provider did not return valid review JSON before timeout")
 
@@ -374,12 +384,10 @@ def _run_mavis_new_session_provider(prompt: str, *, timeout: int) -> int:
             role = message.get("role")
             if role not in {"assistant", "model"}:
                 continue
-            content = _message_content(message)
-            try:
-                review = extract_json_object(content, label="mavis session assistant content")
-            except ValueError:
+            review = _normalized_review_from_message(message, label="mavis session assistant content")
+            if review is None:
                 continue
-            return _emit(normalize_provider_output(review, provider="minimax"))
+            return _emit(review)
         time.sleep(poll_interval)
     raise TimeoutError(f"mavis session {session_id} did not return valid review JSON before timeout")
 

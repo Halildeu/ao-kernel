@@ -30,13 +30,13 @@
     }
   ],
   "findings": [
-    "Claude independent review returned AGREE for the final staged scope: CHANGELOG.md and local-ai-review-evidence.v1.json.",
-    "The changed files match release-readiness work package V431-CHANGELOG-FINALIZE with no out-of-scope files.",
-    "CHANGELOG.md moves landed entries into the dated 4.3.1 section and adds an Unreleased bullet explicitly stating no tag push, no PyPI publish dispatch, no support widening, no production-platform claim, and no live-adapter execution.",
-    "local-ai-review-evidence.v1.json updates scope_reviewed.changed_files, head_ref, and work_package to match this PR while keeping secrets_recorded, support_widening, production_platform_claim, and live_adapter_execution false.",
-    "Local verification supplied to the reviewer: 8 targeted tests passed, packaging_smoke passed, fresh_install_product_smoke passed, and changelog enforcement passed.",
-    "No secret material, credentials, tokens, private keys, credential-bearing URLs, admin bypass, branch-protection weakening, gate weakening, tag push, PyPI publish dispatch, support widening, production-platform claim, live-adapter execution, or AI-as-release-authority drift was introduced.",
-    "Release authority remains ao-release-gate plus GitHub ruleset; this AI review is evidence only."
+    "Claude independent post-implementation review returned REVISE, the findings were absorbed, and the unchanged final implementation returned AGREE with no blocking findings.",
+    "The exact scope hardens ai-review preflight provenance, head and diff stability, Mavis final-message parsing, schemas, tests, documentation, changelog, and this bound review evidence only.",
+    "Full regression supplied to the reviewer passed with 7166 tests and 114 skips; focused AI-review tests, ruff, mypy, JSON validation, and diff checks also passed.",
+    "The v1 schema extension is additive for old-artifact compatibility while the current emitter always writes context-bound preflight evidence.",
+    "Persisted command provenance exposes only the executable, redacted argument placeholders, and cryptographic hashes; test output and credential material are not recorded.",
+    "No credential read or write, production or test state mutation, GitHub ruleset change, admin bypass, support widening, production-platform claim, or live-adapter execution is introduced.",
+    "AI output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset."
   ],
   "implementer": {
     "agent": "codex",
@@ -55,11 +55,18 @@
     "base_ref": "refs/heads/main",
     "changed_files": [
       "CHANGELOG.md",
-      "local-ai-review-evidence.v1.json"
+      "ao_kernel/ai_review.py",
+      "ao_kernel/ai_review_provider_wrappers.py",
+      "ao_kernel/defaults/schemas/ai-review-collection-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ai-review-consensus-evidence.schema.v1.json",
+      "docs/PRODUCT-QUICKSTART.md",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ai_review_cli.py",
+      "tests/test_ai_review_provider_wrappers.py"
     ],
-    "head_ref": "refs/heads/codex/release-4.3.1-readiness"
+    "head_ref": "refs/heads/codex/ai-review-preflight-mavis-final"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "V431-CHANGELOG-FINALIZE"
+  "work_package": "AI-REVIEW-PREFLIGHT-HARDENING"
 }
