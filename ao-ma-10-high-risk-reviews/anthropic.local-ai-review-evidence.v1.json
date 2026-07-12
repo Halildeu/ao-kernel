@@ -23,13 +23,13 @@
   ],
   "findings": [
     "All 21 workflow files contain exclusively action version pin bumps: actions/checkout v6\u2192v7, github/codeql-action v3\u2192v4, google-github-actions/deploy-cloudrun v2\u2192v3; no logic, permission, trigger, or secret surface changes",
-    "Preflight evidence records tests (exit_code 0, python3 executable, 900s timeout) and secret_scan (ao-kernel-diff-secret-patterns-v1) both pass; diff_digest and head_sha bound to 512a1e7ba2a785895befb97c21615e07e6ec443f",
-    "New tests/workflow_dependency_maintenance.py module provides a fail-closed classifier (_ALLOWED_ACTION_VERSION_LINE regex) that gates exactly the three action version transitions in this batch; existing no-mutation test guards invoke workflow_diff_is_dependency_only() to allow dependency-only diffs through cleanly",
+    "Preflight evidence records tests (exit_code 0, python3 executable, 900s timeout) and secret_scan (ao-kernel-diff-secret-patterns-v1) both pass; diff_digest and head_sha bound to 3b03202a0e07580c98d16bc02c041ada0a83a43f",
+    "New tests/workflow_dependency_maintenance.py module provides a fail-closed classifier (_ALLOWED_ACTION_VERSION_LINE regex) gating exactly the three action version transitions; existing no-mutation test guards invoke workflow_diff_is_dependency_only() to pass dependency-only diffs cleanly",
     "CHANGELOG entry accurately describes the maintenance batch and explicitly disclaims support widening, production-platform claims, live-adapter execution, tag/publish, and ruleset policy changes",
     "No --admin flag, no branch-protection mutation, no permission escalation, no secret exposure, no new trigger surface, no new entrypoint across entire diff",
-    "Plan status JSON updates (ao_ma_status, gpp_status) correctly update workflow_content_sha256 and artifact_sha256 hashes to reflect the new workflow file contents post-bump",
-    "AI review evidence files (root, anthropic, minimax) coherently updated to ACTIONS-MAINTENANCE-BATCH-2026-07 work package with matching scope and cross-provider AGREE verdicts",
-    "Minor non-blocking observation: _ALLOWED_ACTION_VERSION_LINE regex and workflow_diff_is_dependency_only helper are shared via tests/workflow_dependency_maintenance.py module (good); test_ai_review_provider_wrappers.py has an unrelated monkeypatch.delenv fix for AO_MA10_PROVIDER_TIMEOUT_SECONDS that is a legitimate test-environment isolation fix bundled in the same PR"
+    "Plan status JSON updates (ao_ma_status, gpp_status) correctly update workflow_content_sha256 and artifact_sha256 hashes to reflect new workflow file contents post-bump",
+    "Test files updated to assert new action versions (checkout@v7, codeql-action@v4, deploy-cloudrun@v3) and test_ai_review_provider_wrappers.py includes a legitimate monkeypatch.delenv fix for test-environment isolation",
+    "AI review evidence files (root, anthropic, minimax) coherently updated to ACTIONS-MAINTENANCE-BATCH-2026-07 work package with matching scope and cross-provider AGREE verdicts; release authority remains ao-release-gate plus GitHub ruleset"
   ],
   "implementer": {
     "agent": "codex",
@@ -45,7 +45,7 @@
   },
   "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
-    "base_ref": "origin/main",
+    "base_ref": "refs/heads/main",
     "changed_files": [
       ".claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json",
       ".claude/plans/ao_ma_status.v1.json",
@@ -88,7 +88,7 @@
       "tests/test_workflow_dependency_maintenance.py",
       "tests/workflow_dependency_maintenance.py"
     ],
-    "head_ref": "HEAD"
+    "head_ref": "refs/heads/codex/dependabot-actions-batch"
   },
   "secrets_recorded": false,
   "support_widening": false,
