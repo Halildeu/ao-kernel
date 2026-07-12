@@ -672,7 +672,7 @@
       },
       "future_workflow_contract": {
         "workflow_path": ".github/workflows/bc1-protected-live-adapter-attestation.yml",
-        "workflow_content_sha256": "f9bbf86b1981a34ea70daa77959ba34aa436c4ed9f00bfb070e981fa1ae0ece3",
+        "workflow_content_sha256": "393c8237cd78c299f5bc651a8c90b5e6d8c9f795aa52e7c6e736229b21c3f288",
         "allowed_ref": "refs/heads/main",
         "expected_dispatch_inputs_allowlist": [
           "scenario"
@@ -746,7 +746,7 @@
       },
       "future_workflow_contract": {
         "workflow_path": ".github/workflows/bc10-real-adapter-usage-cost.yml",
-        "workflow_content_sha256": "dd1b7621c2509904b7424f272d895b9ffbf96f02e59848fef4f2acd1a6d195ff",
+        "workflow_content_sha256": "547a2466fb2b9c0a2c2f483e30dc38ee765ebd5582fcedbdc6791cdf8fb8cc13",
         "allowed_ref": "refs/heads/main",
         "expected_dispatch_inputs_allowlist": [
           "scenario",

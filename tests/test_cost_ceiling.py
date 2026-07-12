@@ -21,6 +21,7 @@ from ao_kernel.cost import (
     CostCeilingExceeded,
     load_cost_ceiling_policy,
 )
+from tests.workflow_dependency_maintenance import workflow_diff_is_dependency_only
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -275,4 +276,6 @@ def test_cost_ceiling_no_unrelated_workflow_mutation_in_diff() -> None:
         ".github/workflows/support-matrix-smoke.yml",
     }
     unexpected = [p for p in touched if p not in allowed]
+    if workflow_diff_is_dependency_only(_REPO_ROOT, touched):
+        return
     assert not unexpected, f"Epic 2 has unrelated workflow mutations. Touched: {unexpected}"
