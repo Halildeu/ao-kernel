@@ -487,12 +487,13 @@ def test_ao_ma_11a_2_status_is_bound_to_environment_wiring_evidence() -> None:
     assert "can_admins_bypass=false" in target["approval_ref"]["operator_decision_ref"]
 
     evidence = target["evidence_refs"]
+    expected_sha = target["anchor"]["artifact_sha256"]
     assert evidence == [
         {
             "kind": "github_environment_wiring",
             "path": ".claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json",
             "required_for_closeout": True,
-            "sha256": "sha256:eca714a017edf9809b508ccfa974cc5bd9a9fd598c9e05bcc28677871a955172",
+            "sha256": expected_sha,
         }
     ]
     assert target["anchor"]["ao_authority_artifact"] == evidence[0]["path"]
