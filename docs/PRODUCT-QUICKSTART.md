@@ -159,6 +159,7 @@ ao-kernel ai-review collect \
   --head-ref HEAD \
   --repo-root . \
   --implementer-provider openai \
+  --test-command 'python3 -m pytest -q' \
   --output-dir .ao/ai-review \
   --format json
 ```
@@ -173,6 +174,7 @@ ao-kernel ai-review consensus \
   --head-ref HEAD \
   --repo-root . \
   --implementer-provider openai \
+  --test-command 'python3 -m pytest -q' \
   --max-rounds 3 \
   --output-dir .ao/ai-review \
   --format json
@@ -188,11 +190,20 @@ The bundled provider wrappers are the recommended command form:
 
 Each collection/consensus artifact records:
 
+- a head-SHA and diff-digest-bound test preflight whose command output is never recorded,
 - `command_argv_sha256`,
 - redacted command argv,
 - `prompt_sha256`,
 - context binding (`head_sha`, changed-files digest, changed-file count),
 - guard flags fixed to false.
+
+`--test-command` is trusted operator or repository configuration. ao-kernel
+parses it into argv and executes it directly without `shell=True`, but it does
+not sandbox or allowlist the selected executable. Do not put credentials in
+command arguments; persisted provenance keeps only the executable, fully
+redacted argument placeholders, and a SHA-256 command binding. The built-in
+secret scan is pattern-based and fail-closed for the recognized credential
+formats; it is not a general secret-discovery substitute.
 
 The CLI `--format json` output is deliberately a safe status/provider summary.
 Read the durable files under `--output-dir` for full path and provenance data.

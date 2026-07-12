@@ -86,6 +86,17 @@ def sha256_text(value: str) -> str:
     return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def redacted_command_argv(argv: tuple[str, ...]) -> list[str]:
+    """Preserve only the executable name in persisted command provenance."""
+
+    return [argv[0], *("<redacted>" for _ in argv[1:])]
+
+
+def validate_timeout_seconds(value: int, *, label: str) -> None:
+    if value < 1 or value > 86400:
+        raise ValueError(f"{label} must be between 1 and 86400")
+
+
 def assert_no_secret_like_text(value: str, *, label: str) -> None:
     for pattern in SECRET_PATTERNS:
         if pattern.search(value):
@@ -167,8 +178,8 @@ def parse_provider_commands(
 
 
 def command_provenance(command: ProviderCommand, *, prompt_sha256: str, timeout_seconds: int) -> dict[str, Any]:
-    redacted_argv = list(command.argv)
-    rendered = shlex.join(redacted_argv)
+    redacted_argv = redacted_command_argv(command.argv)
+    rendered = shlex.join(list(command.argv))
     assert_no_secret_like_text(rendered, label=f"{command.provider} command argv")
     return {
         "provider_id": command.provider,
@@ -206,6 +217,89 @@ def build_context_binding(
     }
 
 
+def run_preflight_checks(
+    *,
+    repo_root: Path,
+    test_commands: list[str],
+    context_binding: dict[str, Any],
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    """Run trusted operator-configured argv and bind the result to the diff.
+
+    Commands execute directly without ``shell=True``. This is not a sandbox or
+    executable allowlist: whoever configures the gate is trusted to choose safe
+    test executables and must not place credentials in command arguments.
+    """
+
+    if not test_commands:
+        raise ValueError("at least one --test-command is required")
+    validate_timeout_seconds(timeout_seconds, label="--test-timeout-seconds")
+
+    command_results: list[dict[str, Any]] = []
+    for raw_command in test_commands:
+        assert_no_secret_like_text(raw_command, label="test command")
+        argv = tuple(shlex.split(raw_command))
+        if not argv:
+            raise ValueError("test command cannot be empty")
+        rendered = shlex.join(list(argv))
+        proc = subprocess.run(
+            list(argv),
+            cwd=repo_root,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=timeout_seconds,
+            check=False,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(f"test command failed with exit {proc.returncode}: {argv[0]}")
+        command_results.append(
+            {
+                "command_executable": argv[0],
+                "command_argv_redacted": redacted_command_argv(argv),
+                "command_argv_sha256": sha256_text(rendered),
+                "timeout_seconds": timeout_seconds,
+                "exit_code": 0,
+            }
+        )
+
+    return {
+        "head_sha": context_binding["head_sha"],
+        "diff_digest": context_binding["diff_digest"],
+        "tests": {"status": "pass", "commands": command_results},
+        "secret_scan": {
+            "status": "pass",
+            "scanner": "ao-kernel-diff-secret-patterns-v1",
+        },
+        "stdout_recorded": False,
+        "stderr_recorded": False,
+    }
+
+
+def assert_preflight_binding(preflight_evidence: dict[str, Any], context_binding: dict[str, Any]) -> None:
+    if preflight_evidence.get("head_sha") != context_binding.get("head_sha"):
+        raise ValueError("preflight head_sha does not match review context")
+    if preflight_evidence.get("diff_digest") != context_binding.get("diff_digest"):
+        raise ValueError("preflight diff_digest does not match review context")
+
+
+def assert_review_context_stable(
+    *,
+    repo_root: Path,
+    base_ref: str,
+    head_ref: str,
+    expected_head_sha: str,
+    expected_diff_sha256: str,
+    max_diff_bytes: int,
+) -> None:
+    """Fail closed if refs or reviewed diff move during a bounded review run."""
+
+    if head_sha(repo_root, head_ref) != expected_head_sha:
+        raise RuntimeError("review head changed while provider review was running")
+    current_diff = diff_text(repo_root, base_ref, head_ref, max_diff_bytes)
+    if sha256_text(current_diff) != expected_diff_sha256:
+        raise RuntimeError("review diff changed while provider review was running")
+
+
 def build_review_request(
     *,
     repository: str,
@@ -215,6 +309,7 @@ def build_review_request(
     changed: list[str],
     high_risk_changed_paths: list[str],
     rendered_diff: str,
+    preflight_evidence: dict[str, Any],
     round_index: int,
     previous_findings: list[dict[str, Any]],
 ) -> str:
@@ -245,6 +340,7 @@ def build_review_request(
             "high_risk_changed_paths": high_risk_changed_paths,
             "round_index": round_index,
             "previous_findings": previous_findings,
+            "preflight_evidence": preflight_evidence,
         },
         "diff": rendered_diff,
     }
@@ -426,11 +522,13 @@ def build_collection_artifact(
     implementer: dict[str, str],
     required_providers: tuple[str, ...],
     context_binding: dict[str, Any],
+    preflight_evidence: dict[str, Any],
     high_risk_changed_paths: list[str],
     raw_review_paths: dict[str, Path],
     round_results: list[ProviderRoundResult],
     timeout_seconds: int,
 ) -> dict[str, Any]:
+    assert_preflight_binding(preflight_evidence, context_binding)
     raw_paths = {provider: str(path) for provider, path in sorted(raw_review_paths.items())}
     provenance = [
         command_provenance(result.command, prompt_sha256=result.prompt_sha256, timeout_seconds=timeout_seconds)
@@ -451,6 +549,7 @@ def build_collection_artifact(
             **context_binding,
             "high_risk_changed_paths": high_risk_changed_paths,
         },
+        "preflight_evidence": preflight_evidence,
         "raw_review_paths": raw_paths,
         "provider_provenance": provenance,
         "collection_status": "collected",
@@ -477,9 +576,12 @@ def run_collect(
     repo_root: Path,
     output_dir: Path,
     provider_values: list[str] | None,
+    test_commands: list[str],
+    test_timeout_seconds: int,
     max_diff_bytes: int,
     timeout_seconds: int,
 ) -> dict[str, Any]:
+    validate_timeout_seconds(timeout_seconds, label="--timeout-seconds")
     required_providers = required_reviewer_providers(implementer_provider)
     provider_commands = parse_provider_commands(provider_values, required_providers=required_providers)
     changed = changed_files(repo_root, base_ref, head_ref)
@@ -489,6 +591,28 @@ def run_collect(
     if not high_risk_changed_paths:
         raise ValueError("no high-risk changed paths found; ai-review collect is not needed")
     rendered_diff = diff_text(repo_root, base_ref, head_ref, max_diff_bytes)
+    context = build_context_binding(
+        repository=repository,
+        repo_root=repo_root,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        changed=changed,
+    )
+    rendered_diff_sha256 = sha256_text(rendered_diff)
+    preflight = run_preflight_checks(
+        repo_root=repo_root,
+        test_commands=test_commands,
+        context_binding=context,
+        timeout_seconds=test_timeout_seconds,
+    )
+    assert_review_context_stable(
+        repo_root=repo_root,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        expected_head_sha=str(context["head_sha"]),
+        expected_diff_sha256=rendered_diff_sha256,
+        max_diff_bytes=max_diff_bytes,
+    )
     request = build_review_request(
         repository=repository,
         work_package=work_package,
@@ -497,6 +621,7 @@ def run_collect(
         changed=changed,
         high_risk_changed_paths=high_risk_changed_paths,
         rendered_diff=rendered_diff,
+        preflight_evidence=preflight,
         round_index=1,
         previous_findings=[],
     )
@@ -504,6 +629,14 @@ def run_collect(
         run_provider_command(provider_commands[provider], review_request=request, timeout_seconds=timeout_seconds)
         for provider in required_providers
     ]
+    assert_review_context_stable(
+        repo_root=repo_root,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        expected_head_sha=str(context["head_sha"]),
+        expected_diff_sha256=rendered_diff_sha256,
+        max_diff_bytes=max_diff_bytes,
+    )
     implementer = {"agent": implementer_agent, "provider": implementer_provider}
     raw_paths = write_raw_reviews(
         output_dir=output_dir,
@@ -515,19 +648,13 @@ def run_collect(
         head_ref=head_ref,
         changed=changed,
     )
-    context = build_context_binding(
-        repository=repository,
-        repo_root=repo_root,
-        base_ref=base_ref,
-        head_ref=head_ref,
-        changed=changed,
-    )
     artifact = build_collection_artifact(
         repository=repository,
         work_package=work_package,
         implementer=implementer,
         required_providers=required_providers,
         context_binding=context,
+        preflight_evidence=preflight,
         high_risk_changed_paths=high_risk_changed_paths,
         raw_review_paths=raw_paths,
         round_results=results,
@@ -544,6 +671,7 @@ def build_consensus_artifact(
     work_package: str,
     implementer: dict[str, str],
     context_binding: dict[str, Any],
+    preflight_evidence: dict[str, Any],
     high_risk_changed_paths: list[str],
     required_providers: tuple[str, ...],
     rounds: list[dict[str, Any]],
@@ -552,6 +680,7 @@ def build_consensus_artifact(
     collection_path: Path | None,
     max_rounds: int,
 ) -> dict[str, Any]:
+    assert_preflight_binding(preflight_evidence, context_binding)
     artifact = {
         "schema_version": "ai-review-consensus-evidence.v1",
         "artifact_kind": "ai_review_consensus_evidence",
@@ -566,6 +695,7 @@ def build_consensus_artifact(
             **context_binding,
             "high_risk_changed_paths": high_risk_changed_paths,
         },
+        "preflight_evidence": preflight_evidence,
         "rounds": rounds,
         "consensus_status": consensus_status,
         "max_rounds": max_rounds,
@@ -595,12 +725,15 @@ def run_consensus(
     repo_root: Path,
     output_dir: Path,
     provider_values: list[str] | None,
+    test_commands: list[str],
+    test_timeout_seconds: int,
     max_diff_bytes: int,
     timeout_seconds: int,
     max_rounds: int,
 ) -> dict[str, Any]:
     if max_rounds <= 0 or max_rounds > 3:
         raise ValueError("--max-rounds must be between 1 and 3")
+    validate_timeout_seconds(timeout_seconds, label="--timeout-seconds")
     required_providers = required_reviewer_providers(implementer_provider)
     provider_commands = parse_provider_commands(provider_values, required_providers=required_providers)
     changed = changed_files(repo_root, base_ref, head_ref)
@@ -617,6 +750,13 @@ def run_consensus(
         head_ref=head_ref,
         changed=changed,
     )
+    rendered_diff_sha256 = sha256_text(rendered_diff)
+    preflight = run_preflight_checks(
+        repo_root=repo_root,
+        test_commands=test_commands,
+        context_binding=context,
+        timeout_seconds=test_timeout_seconds,
+    )
     previous_findings: list[dict[str, Any]] = []
     rounds: list[dict[str, Any]] = []
     agreeing_results: list[ProviderRoundResult] = []
@@ -624,6 +764,14 @@ def run_consensus(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for round_index in range(1, max_rounds + 1):
+        assert_review_context_stable(
+            repo_root=repo_root,
+            base_ref=base_ref,
+            head_ref=head_ref,
+            expected_head_sha=str(context["head_sha"]),
+            expected_diff_sha256=rendered_diff_sha256,
+            max_diff_bytes=max_diff_bytes,
+        )
         request = build_review_request(
             repository=repository,
             work_package=work_package,
@@ -632,6 +780,7 @@ def run_consensus(
             changed=changed,
             high_risk_changed_paths=high_risk_changed_paths,
             rendered_diff=rendered_diff,
+            preflight_evidence=preflight,
             round_index=round_index,
             previous_findings=previous_findings,
         )
@@ -639,6 +788,14 @@ def run_consensus(
             run_provider_command(provider_commands[provider], review_request=request, timeout_seconds=timeout_seconds)
             for provider in required_providers
         ]
+        assert_review_context_stable(
+            repo_root=repo_root,
+            base_ref=base_ref,
+            head_ref=head_ref,
+            expected_head_sha=str(context["head_sha"]),
+            expected_diff_sha256=rendered_diff_sha256,
+            max_diff_bytes=max_diff_bytes,
+        )
         round_record = {
             "round_index": round_index,
             "provider_results": [
@@ -669,6 +826,14 @@ def run_consensus(
             if result.verdict != "AGREE"
         ]
 
+    assert_review_context_stable(
+        repo_root=repo_root,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        expected_head_sha=str(context["head_sha"]),
+        expected_diff_sha256=rendered_diff_sha256,
+        max_diff_bytes=max_diff_bytes,
+    )
     implementer = {"agent": implementer_agent, "provider": implementer_provider}
     raw_paths: dict[str, Path] = {}
     collection_path: Path | None = None
@@ -689,6 +854,7 @@ def run_consensus(
             implementer=implementer,
             required_providers=required_providers,
             context_binding=context,
+            preflight_evidence=preflight,
             high_risk_changed_paths=high_risk_changed_paths,
             raw_review_paths=raw_paths,
             round_results=agreeing_results,
@@ -702,6 +868,7 @@ def run_consensus(
         work_package=work_package,
         implementer=implementer,
         context_binding=context,
+        preflight_evidence=preflight,
         high_risk_changed_paths=high_risk_changed_paths,
         required_providers=required_providers,
         rounds=rounds,
@@ -1093,6 +1260,16 @@ def add_ai_review_subparser(sub: argparse._SubParsersAction[argparse.ArgumentPar
             default=[],
             help="provider=command; missing commands can be supplied via AO_MA10_*_REVIEW_CMD env vars",
         )
+        p.add_argument(
+            "--test-command",
+            action="append",
+            required=True,
+            help=(
+                "Trusted operator-configured test argv, executed without shell=True; repeat for multiple suites. "
+                "Output is never recorded."
+            ),
+        )
+        p.add_argument("--test-timeout-seconds", type=int, default=600)
         p.add_argument("--max-diff-bytes", type=int, default=200_000)
         p.add_argument("--timeout-seconds", type=int, default=600)
         p.add_argument("--format", choices=["text", "json"], default="json")
@@ -1144,6 +1321,8 @@ def dispatch_ai_review(args: argparse.Namespace) -> int:
                 repo_root=args.repo_root.resolve(),
                 output_dir=args.output_dir.resolve(),
                 provider_values=args.provider,
+                test_commands=args.test_command,
+                test_timeout_seconds=args.test_timeout_seconds,
                 max_diff_bytes=args.max_diff_bytes,
                 timeout_seconds=args.timeout_seconds,
             )
@@ -1160,6 +1339,8 @@ def dispatch_ai_review(args: argparse.Namespace) -> int:
                 repo_root=args.repo_root.resolve(),
                 output_dir=args.output_dir.resolve(),
                 provider_values=args.provider,
+                test_commands=args.test_command,
+                test_timeout_seconds=args.test_timeout_seconds,
                 max_diff_bytes=args.max_diff_bytes,
                 timeout_seconds=args.timeout_seconds,
                 max_rounds=args.max_rounds,

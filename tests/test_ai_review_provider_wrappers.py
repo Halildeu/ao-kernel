@@ -364,7 +364,7 @@ def test_mavis_payload_helpers_accept_supported_shapes() -> None:
     ]
     assert wrappers._messages_from_payload({"messages": "not-list"}) == []
     assert wrappers._message_content({"content": {"nested": True}}) == '{"nested": true}'
-    assert wrappers._message_content({"unknown": "value"}) == '{"unknown": "value"}'
+    assert wrappers._message_content({"unknown": "value"}) == ""
     assert wrappers._message_created_ms({"timeCreated": "123"}) == 123
     assert wrappers._message_created_ms({"createdAtMs": "not-digits"}) == 0
     assert wrappers._message_session_value({"fromSession": "mvs_from"}, "from_session", "fromSession") == "mvs_from"
@@ -471,6 +471,53 @@ def test_run_mavis_provider_direct_communication_mode(
     assert wrappers.run_mavis_provider() == 0
     assert calls[0][:2] == ["communication", "send"]
     assert json.loads(capsys.readouterr().out)["agent"] == "mavis-direct-communication"
+
+
+def test_mavis_communication_ignores_tool_call_envelopes_before_final_review(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _set_stdin(monkeypatch)
+    monkeypatch.setenv("AO_MA10_MAVIS_MODE", "communication")
+    monkeypatch.setenv("AO_MA10_MAVIS_FROM_SESSION_ID", "agent-session")
+    monkeypatch.setenv("AO_MA10_MAVIS_TO_SESSION_ID", "mavis-session")
+    monkeypatch.setenv("AO_MA10_MAVIS_POLL_SECONDS", "0.01")
+    poll_count = 0
+
+    def fake_run_mavis(args: list[str], *, timeout: int) -> dict[str, object]:
+        nonlocal poll_count
+        if args[:2] == ["communication", "send"]:
+            return {"messageId": 1, "status": "delivered"}
+        poll_count += 1
+        now = int(wrappers.time.time() * 1000) + 1
+        messages: list[dict[str, object]] = [
+            {
+                "from_session": "mavis-session",
+                "to_session": "agent-session",
+                "time_created": now,
+                "tool_calls": [{"tool_name": "bash", "arguments": {"verdict": "AGREE"}}],
+            },
+            {
+                "from_session": "mavis-session",
+                "to_session": "agent-session",
+                "time_created": now,
+                "content": '{"event":"tool-call-complete"}',
+            },
+        ]
+        if poll_count > 1:
+            messages.append(
+                {
+                    "from_session": "mavis-session",
+                    "to_session": "agent-session",
+                    "time_created": now,
+                    "content": _review_json("mavis-communication-final-review"),
+                }
+            )
+        return {"messages": messages}
+
+    monkeypatch.setattr(wrappers, "_run_mavis", fake_run_mavis)
+    assert wrappers.run_mavis_provider() == 0
+    assert poll_count == 2
+    assert json.loads(capsys.readouterr().out)["agent"] == "mavis-communication-final-review"
 
 
 def test_mavis_wrapper_sends_prompt_and_polls_response(tmp_path: Path) -> None:
@@ -688,6 +735,37 @@ def test_run_mavis_provider_direct_new_session_mode(
     assert json.loads(capsys.readouterr().out)["agent"] == "mavis-direct-new-session"
 
 
+def test_mavis_new_session_ignores_tool_call_envelopes_before_final_review(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    _set_stdin(monkeypatch)
+    monkeypatch.setenv("AO_MA10_MAVIS_WORKSPACE", str(tmp_path))
+    monkeypatch.setenv("AO_MA10_MAVIS_POLL_SECONDS", "0.01")
+    poll_count = 0
+
+    def fake_run_mavis(args: list[str], *, timeout: int) -> dict[str, object]:
+        nonlocal poll_count
+        if args[:2] == ["session", "new"]:
+            return {"sessionId": "mvs_tool_call_then_final_abcdef1234567890"}
+        assert args[:2] == ["session", "messages"]
+        poll_count += 1
+        messages: list[dict[str, object]] = [
+            {
+                "role": "assistant",
+                "tool_calls": [{"tool_name": "bash", "arguments": {"verdict": "AGREE"}}],
+            },
+            {"role": "assistant", "msg_content": '{"event":"tool-call-complete"}'},
+        ]
+        if poll_count > 1:
+            messages.append({"role": "assistant", "msg_content": _review_json("mavis-final-review")})
+        return {"messages": messages}
+
+    monkeypatch.setattr(wrappers, "_run_mavis", fake_run_mavis)
+    assert wrappers.run_mavis_provider() == 0
+    assert poll_count == 2
+    assert json.loads(capsys.readouterr().out)["agent"] == "mavis-final-review"
+
+
 def test_run_mavis_provider_direct_rejects_missing_session_id(monkeypatch: pytest.MonkeyPatch) -> None:
     _set_stdin(monkeypatch)
 
@@ -762,6 +840,8 @@ def test_ai_review_collect_uses_productized_provider_wrapper_envs(tmp_path: Path
             str(tmp_path / "reviews"),
             "--implementer-provider",
             "minimax",
+            "--test-command",
+            "true",
             "--format",
             "json",
         ],

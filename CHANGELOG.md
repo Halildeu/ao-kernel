@@ -9,6 +9,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **AI-review preflight binding and Mavis final-message hardening**: require
+  explicit trusted test argv for `ai-review collect` and `consensus` (executed
+  directly without `shell=True`; the operator/config remains the trust boundary),
+  bind their no-output pass result plus the built-in diff secret scan to the
+  reviewed head SHA and diff digest, and ignore Mavis intermediate tool-call
+  envelopes until a schema-valid final review arrives. The v1 schemas accept
+  the new field additively for old-artifact compatibility while the current
+  emitter requires it. Release authority and all support/live-execution guard
+  flags remain unchanged.
 - **v4.3.1 changelog finalization**: consolidated landed productization and
   AI-review entries under the v4.3.1 release section without tagging,
   publishing, widening support, claiming production-platform readiness, or
