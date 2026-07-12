@@ -307,6 +307,7 @@ def test_run_codex_provider_direct_writes_last_message(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
     _set_stdin(monkeypatch)
+    monkeypatch.delenv("AO_MA10_PROVIDER_TIMEOUT_SECONDS", raising=False)
     monkeypatch.setenv("AO_MA10_CODEX_BIN", "fake-codex")
     monkeypatch.setenv("AO_MA10_CODEX_REPO_ROOT", str(tmp_path))
 

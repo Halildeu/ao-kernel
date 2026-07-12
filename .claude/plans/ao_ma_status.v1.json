@@ -209,7 +209,7 @@
     {
       "anchor": {
         "ao_authority_artifact": ".claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json",
-        "artifact_sha256": "sha256:eca714a017edf9809b508ccfa974cc5bd9a9fd598c9e05bcc28677871a955172",
+        "artifact_sha256": "sha256:a17830a429d85886c68c8d624624266d7c90c4530e921e1f392516d780daebf4",
         "last_sync_run_id": null,
         "mirror_projection_sha256": null,
         "phase_id": "AO-MA-11A",
@@ -243,7 +243,7 @@
           "kind": "github_environment_wiring",
           "path": ".claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json",
           "required_for_closeout": true,
-          "sha256": "sha256:eca714a017edf9809b508ccfa974cc5bd9a9fd598c9e05bcc28677871a955172"
+          "sha256": "sha256:a17830a429d85886c68c8d624624266d7c90c4530e921e1f392516d780daebf4"
         }
       ],
       "issue_ref": null,

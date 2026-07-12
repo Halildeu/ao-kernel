@@ -19,6 +19,8 @@ from typing import Any
 
 import pytest
 
+from tests.workflow_dependency_maintenance import workflow_diff_is_dependency_only
+
 try:
     import yaml
 except ImportError:
@@ -27,7 +29,6 @@ except ImportError:
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "changelog-enforcement.yml"
 LOCAL_HOOK_PATH = REPO_ROOT / ".claude" / "scripts" / "pre-commit-changelog-gate.sh"
-
 
 def _load_workflow() -> dict[Any, Any]:
     if yaml is None:
@@ -237,6 +238,8 @@ def test_only_one_workflow_file_changed() -> None:
     if workflow_path not in changed:
         pytest.skip("E-1-3 workflow diff-shape invariant applies only when the changelog workflow is changed")
     workflow_changes = [p for p in changed if p.startswith(".github/workflows/")]
+    if workflow_diff_is_dependency_only(REPO_ROOT, workflow_changes):
+        return
     assert workflow_changes == [workflow_path], (
         f"E-1-3 must add exactly one workflow; got: {workflow_changes}"
     )

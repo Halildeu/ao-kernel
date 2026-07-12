@@ -9,34 +9,29 @@
       "status": "pass"
     },
     {
-      "name": "scope",
+      "name": "scope_match",
       "status": "pass"
     },
     {
-      "name": "provider_separation",
+      "name": "drift_check",
       "status": "pass"
     },
     {
-      "name": "release_authority_boundary",
-      "status": "pass"
-    },
-    {
-      "name": "changelog",
+      "name": "forbidden_action_check",
       "status": "pass"
     }
   ],
   "findings": [
-    "PR changed_files are 7: .claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md, CHANGELOG.md, ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json, ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json, ao_kernel/ai_review.py, local-ai-review-evidence.v1.json, tests/test_ai_review_cli.py; all match work package AO-MA-10-HIGH-RISK-DRY-RUN scope.",
-    "Code change in ao_kernel/ai_review.py is limited to build_dry_run_payload allowed_path_prefixes: adds local-ai-review-evidence.v1.json, local-gpp-gate-evidence.v1.json, and ao-ma-10-high-risk-reviews/ to the allowlist; this is a targeted bug fix scoped to the local dry-run validation tool, not the production ao-release-gate.",
-    "Test change in tests/test_ai_review_cli.py adds placeholder evidence files (local-ai-review-evidence.v1.json and ao-ma-10-high-risk-reviews/*.json) to _repo_with_high_risk_change fixture, exercising the allowlist fix end-to-end; 2 tests pass per local verification.",
-    "CHANGELOG.md entry added after CI changelog enforcement failed; entry accurately describes the high-risk dry-run evidence path parity alignment with no overclaim.",
-    ".claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md is inert documentation describing dry-run acceptance targets with no runtime, workflow, or branch-protection effect.",
-    "No secrets, credentials, API keys, tokens, or webhook URLs found in any changed file.",
-    "Guard flags consistently closed across context and all evidence files: support_widening=false, production_platform_claim=false, live_adapter_execution=false.",
-    "Provider separation satisfied: implementer is OpenAI/Codex, this review is Anthropic/Claude, MiniMax reviews independently in ao-ma-10-high-risk-reviews/minimax evidence; no same-provider self-review.",
-    "Staged evidence files carry prior 6-file scope; this AGREE output carries the correct 7-file scope (including CHANGELOG.md) and replaces the Anthropic/root evidence before push per documented replacement plan.",
-    "No admin bypass, branch-protection weakening, gate weakening, support widening, production platform claim, live adapter execution, or AI-as-release-authority drift introduced; release authority remains ao-release-gate plus GitHub ruleset.",
-    "Drift check: prior AO-MA-985 and AO-MA-10-PROVIDER-COMMAND-SMOKE scopes correctly narrowed to AO-MA-10-HIGH-RISK-DRY-RUN with coherent head_ref codex/high-risk-cli-dry-run, base_ref refs/heads/main, and 7-file change set."
+    "Preflight evidence records tests (python3, exit_code 0, 900s timeout) and secret_scan (ao-kernel-diff-secret-patterns-v1) both pass; head_sha 7bc676479f01ff4faf680b24a242c2e8cc8a25e1 and diff_digest bound",
+    "All 23 workflow files contain exclusively action version pin bumps: actions/checkout v6\u2192v7, github/codeql-action v3\u2192v4, google-github-actions/deploy-cloudrun v2\u2192v3; no logic, permission, trigger, secret surface, or entrypoint changes",
+    "New tests/workflow_dependency_maintenance.py provides a fail-closed classifier (_ALLOWED_ACTION_VERSION_LINE regex) gating exactly the three allowed action version transitions; 4 dedicated tests verify accept/reject paths including empty diff, mixed logic+version, and unapproved action transitions",
+    "Existing no-mutation test guards (test_ao_ma11e2cde, test_changelog_enforcement, test_cost_ceiling, test_support_matrix_smoke) updated to route through workflow_diff_is_dependency_only() so dependency-only PRs pass while non-dependency workflow mutations remain blocked",
+    "Plan status JSON updates (ao_ma_status, gpp_status, AO-MA-11A-2 evidence) correctly refresh workflow_content_sha256 and artifact_sha256 hashes to reflect post-bump file contents; no semantic status structure or guard flag changes",
+    "CHANGELOG entry accurately describes the maintenance batch and explicitly disclaims support widening, production-platform claims, live-adapter execution, tag/publish, and ruleset policy changes",
+    "Minor evidence file discrepancy: scope_reviewed.changed_files in all three evidence files (root, anthropic, minimax) includes .github/workflows/live-adapter-gate.yml which does not appear in the actual PR context changed_files list; this is a cosmetic scope listing error in the evidence artifacts, not a content or integrity issue",
+    "Minor evidence SHA drift: evidence files reference head_sha 3b03202a0e07580c98d16bc02c041ada0a83a43f while context-bound preflight uses 7bc676479f01ff4faf680b24a242c2e8cc8a25e1; evidence was generated at an earlier commit; preflight at current HEAD is authoritative and passes",
+    "test_ai_review_provider_wrappers.py includes a monkeypatch.delenv fix for AO_MA10_PROVIDER_TIMEOUT_SECONDS test isolation; legitimate test-environment hardening bundled with the batch",
+    "No --admin flag, no branch-protection mutation, no permission escalation, no secret exposure, no new trigger surface across entire diff; guard flags remain closed (support_widening=false, production_platform_claim=false, live_adapter_execution=false); AI output is evidence only, release authority remains ao-release-gate plus GitHub ruleset"
   ],
   "implementer": {
     "agent": "codex",
@@ -54,17 +49,49 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/AO-MA-10-HIGH-RISK-DRY-RUN-EVIDENCE.md",
+      ".claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json",
+      ".claude/plans/ao_ma_status.v1.json",
+      ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/ao-autonomous-merge-executor.yml",
+      ".github/workflows/ao-ma-11a-plan-approval.yml",
+      ".github/workflows/ao-ma-11e-2b-mirror-sync.yml",
+      ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+      ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
+      ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
+      ".github/workflows/ao-release-gate-container-publish.yml",
+      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
+      ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+      ".github/workflows/bc10-real-adapter-usage-cost.yml",
+      ".github/workflows/changelog-enforcement.yml",
+      ".github/workflows/codeql.yml",
+      ".github/workflows/live-adapter-evidence-emit.yml",
+      ".github/workflows/policy-container-publish.yml",
+      ".github/workflows/policy-service-deploy-cloud-run.yml",
+      ".github/workflows/publish.yml",
+      ".github/workflows/support-matrix-smoke.yml",
+      ".github/workflows/test.yml",
+      ".github/workflows/trivy.yml",
       "CHANGELOG.md",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
-      "ao_kernel/ai_review.py",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ai_review_cli.py"
+      "tests/test_ai_review_provider_wrappers.py",
+      "tests/test_ao_ma11e2cde_workflows_shape.py",
+      "tests/test_ao_ma_11e_status_tracking.py",
+      "tests/test_ao_release_gate_deploy_workflow.py",
+      "tests/test_changelog_enforcement_workflow_shape.py",
+      "tests/test_codeql_workflow_shape.py",
+      "tests/test_cost_ceiling.py",
+      "tests/test_policy_service_deploy_workflow.py",
+      "tests/test_support_matrix_smoke_workflow.py",
+      "tests/test_vuln_scanning_invariants.py",
+      "tests/test_workflow_dependency_maintenance.py",
+      "tests/workflow_dependency_maintenance.py"
     ],
-    "head_ref": "refs/heads/codex/high-risk-cli-dry-run"
+    "head_ref": "refs/heads/codex/dependabot-actions-batch"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10-HIGH-RISK-DRY-RUN"
+  "work_package": "ACTIONS-MAINTENANCE-BATCH-2026-07"
 }

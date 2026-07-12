@@ -17,7 +17,7 @@ Pins:
 - ``scan-type: fs`` + ``severity: CRITICAL,HIGH`` (baseline)
 - ``scanners: vuln`` (no config/secret scanning in this slice)
 - ``exit-code: "0"`` (advisory; do not block CI yet)
-- ``format: sarif`` + SARIF upload via ``codeql-action/upload-sarif@v3``
+- ``format: sarif`` + SARIF upload via ``codeql-action/upload-sarif@v4``
 - ``category: trivy-fs`` (distinct from CodeQL category)
 - ``timeout-minutes: 20``
 - Snyk: NO workflow file (deferred per Codex 019e8385 absorb);
@@ -183,9 +183,9 @@ def test_trivy_workflow_rejects_all_extra_write_permissions() -> None:
     assert not leaked, f"workflow declares forbidden *: write permissions: {leaked}"
 
 
-def test_trivy_workflow_uses_checkout_v6_no_persist_credentials() -> None:
+def test_trivy_workflow_uses_checkout_v7_no_persist_credentials() -> None:
     text = _trivy_text()
-    assert "uses: actions/checkout@v6" in text
+    assert "uses: actions/checkout@v7" in text
     assert "persist-credentials: false" in text
 
 
@@ -244,7 +244,7 @@ def test_trivy_ignore_unfixed_true() -> None:
 def test_trivy_sarif_format_and_upload() -> None:
     text = _trivy_text()
     assert "format: sarif" in text
-    assert "uses: github/codeql-action/upload-sarif@v3" in text
+    assert "uses: github/codeql-action/upload-sarif@v4" in text
 
 
 def test_trivy_sarif_category_distinct_from_codeql() -> None:

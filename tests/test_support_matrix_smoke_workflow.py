@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 
 from ao_kernel._internal.support_widening.harnesses.runner import SURFACE_CLASSES
+from tests.workflow_dependency_maintenance import workflow_diff_is_dependency_only
 
 try:
     import yaml
@@ -267,6 +268,8 @@ def test_protected_workflows_and_ruleset_files_are_not_modified_by_slice() -> No
         ".github/workflows/test.yml",
     }
     unexpected = [path for path in _git_diff_names(protected_paths) if path not in allowed]
+    if workflow_diff_is_dependency_only(_REPO_ROOT, unexpected):
+        return
     assert unexpected == []
 
 
@@ -297,6 +300,9 @@ def test_slice_diff_only_adds_expected_workflow_supporting_artifacts() -> None:
     changed = set(_git_diff_names(["."]))
     if ".github/workflows/support-matrix-smoke.yml" not in changed:
         pytest.skip("support-matrix-smoke workflow not changed by this PR")
+    workflow_changes = sorted(path for path in changed if path.startswith(".github/workflows/"))
+    if workflow_diff_is_dependency_only(_REPO_ROOT, workflow_changes):
+        return
 
     expected = {
         ".github/workflows/support-matrix-smoke.yml",

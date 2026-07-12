@@ -24,7 +24,7 @@ def test_policy_service_deploy_workflow_is_trusted_oidc_cloud_run_path() -> None
     assert "packages: read" in text
     assert "google-github-actions/auth@v2" in text
     assert "workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}" in text
-    assert "google-github-actions/deploy-cloudrun@v2" in text
+    assert "google-github-actions/deploy-cloudrun@v3" in text
     assert "--allow-unauthenticated --ingress=all --port=8000" in text
 
 

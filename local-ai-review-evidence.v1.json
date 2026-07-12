@@ -13,15 +13,7 @@
       "status": "pass"
     },
     {
-      "name": "boundary_compliance",
-      "status": "pass"
-    },
-    {
       "name": "drift_check",
-      "status": "pass"
-    },
-    {
-      "name": "overclaim_check",
       "status": "pass"
     },
     {
@@ -30,13 +22,16 @@
     }
   ],
   "findings": [
-    "Claude independent post-implementation review returned REVISE, the findings were absorbed, and the unchanged final implementation returned AGREE with no blocking findings.",
-    "The exact scope hardens ai-review preflight provenance, head and diff stability, Mavis final-message parsing, schemas, tests, documentation, changelog, and this bound review evidence only.",
-    "Full regression supplied to the reviewer passed with 7166 tests and 114 skips; focused AI-review tests, ruff, mypy, JSON validation, and diff checks also passed.",
-    "The v1 schema extension is additive for old-artifact compatibility while the current emitter always writes context-bound preflight evidence.",
-    "Persisted command provenance exposes only the executable, redacted argument placeholders, and cryptographic hashes; test output and credential material are not recorded.",
-    "No credential read or write, production or test state mutation, GitHub ruleset change, admin bypass, support widening, production-platform claim, or live-adapter execution is introduced.",
-    "AI output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset."
+    "Preflight evidence records tests (python3, exit_code 0, 900s timeout) and secret_scan (ao-kernel-diff-secret-patterns-v1) both pass; head_sha 7bc676479f01ff4faf680b24a242c2e8cc8a25e1 and diff_digest bound",
+    "All 23 workflow files contain exclusively action version pin bumps: actions/checkout v6\u2192v7, github/codeql-action v3\u2192v4, google-github-actions/deploy-cloudrun v2\u2192v3; no logic, permission, trigger, secret surface, or entrypoint changes",
+    "New tests/workflow_dependency_maintenance.py provides a fail-closed classifier (_ALLOWED_ACTION_VERSION_LINE regex) gating exactly the three allowed action version transitions; 4 dedicated tests verify accept/reject paths including empty diff, mixed logic+version, and unapproved action transitions",
+    "Existing no-mutation test guards (test_ao_ma11e2cde, test_changelog_enforcement, test_cost_ceiling, test_support_matrix_smoke) updated to route through workflow_diff_is_dependency_only() so dependency-only PRs pass while non-dependency workflow mutations remain blocked",
+    "Plan status JSON updates (ao_ma_status, gpp_status, AO-MA-11A-2 evidence) correctly refresh workflow_content_sha256 and artifact_sha256 hashes to reflect post-bump file contents; no semantic status structure or guard flag changes",
+    "CHANGELOG entry accurately describes the maintenance batch and explicitly disclaims support widening, production-platform claims, live-adapter execution, tag/publish, and ruleset policy changes",
+    "Minor evidence file discrepancy: scope_reviewed.changed_files in all three evidence files (root, anthropic, minimax) includes .github/workflows/live-adapter-gate.yml which does not appear in the actual PR context changed_files list; this is a cosmetic scope listing error in the evidence artifacts, not a content or integrity issue",
+    "Minor evidence SHA drift: evidence files reference head_sha 3b03202a0e07580c98d16bc02c041ada0a83a43f while context-bound preflight uses 7bc676479f01ff4faf680b24a242c2e8cc8a25e1; evidence was generated at an earlier commit; preflight at current HEAD is authoritative and passes",
+    "test_ai_review_provider_wrappers.py includes a monkeypatch.delenv fix for AO_MA10_PROVIDER_TIMEOUT_SECONDS test isolation; legitimate test-environment hardening bundled with the batch",
+    "No --admin flag, no branch-protection mutation, no permission escalation, no secret exposure, no new trigger surface across entire diff; guard flags remain closed (support_widening=false, production_platform_claim=false, live_adapter_execution=false); AI output is evidence only, release authority remains ao-release-gate plus GitHub ruleset"
   ],
   "implementer": {
     "agent": "codex",
@@ -54,19 +49,49 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
+      ".claude/plans/AO-MA-11A-2-ENVIRONMENT-WIRING-EVIDENCE.v1.json",
+      ".claude/plans/ao_ma_status.v1.json",
+      ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/ao-autonomous-merge-executor.yml",
+      ".github/workflows/ao-ma-11a-plan-approval.yml",
+      ".github/workflows/ao-ma-11e-2b-mirror-sync.yml",
+      ".github/workflows/ao-ma-11e-2c-project-mirror-full-sync.yml",
+      ".github/workflows/ao-ma-11e-2d-pr-project-auto-link.yml",
+      ".github/workflows/ao-ma-11e-2e-label-cleanup-once.yml",
+      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
+      ".github/workflows/ao-release-gate-container-publish.yml",
+      ".github/workflows/ao-release-gate-deploy-cloud-run.yml",
+      ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+      ".github/workflows/bc10-real-adapter-usage-cost.yml",
+      ".github/workflows/changelog-enforcement.yml",
+      ".github/workflows/codeql.yml",
+      ".github/workflows/live-adapter-evidence-emit.yml",
+      ".github/workflows/policy-container-publish.yml",
+      ".github/workflows/policy-service-deploy-cloud-run.yml",
+      ".github/workflows/publish.yml",
+      ".github/workflows/support-matrix-smoke.yml",
+      ".github/workflows/test.yml",
+      ".github/workflows/trivy.yml",
       "CHANGELOG.md",
-      "ao_kernel/ai_review.py",
-      "ao_kernel/ai_review_provider_wrappers.py",
-      "ao_kernel/defaults/schemas/ai-review-collection-evidence.schema.v1.json",
-      "ao_kernel/defaults/schemas/ai-review-consensus-evidence.schema.v1.json",
-      "docs/PRODUCT-QUICKSTART.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/minimax.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ai_review_cli.py",
-      "tests/test_ai_review_provider_wrappers.py"
+      "tests/test_ai_review_provider_wrappers.py",
+      "tests/test_ao_ma11e2cde_workflows_shape.py",
+      "tests/test_ao_ma_11e_status_tracking.py",
+      "tests/test_ao_release_gate_deploy_workflow.py",
+      "tests/test_changelog_enforcement_workflow_shape.py",
+      "tests/test_codeql_workflow_shape.py",
+      "tests/test_cost_ceiling.py",
+      "tests/test_policy_service_deploy_workflow.py",
+      "tests/test_support_matrix_smoke_workflow.py",
+      "tests/test_vuln_scanning_invariants.py",
+      "tests/test_workflow_dependency_maintenance.py",
+      "tests/workflow_dependency_maintenance.py"
     ],
-    "head_ref": "refs/heads/codex/ai-review-preflight-mavis-final"
+    "head_ref": "refs/heads/codex/dependabot-actions-batch"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AI-REVIEW-PREFLIGHT-HARDENING"
+  "work_package": "ACTIONS-MAINTENANCE-BATCH-2026-07"
 }

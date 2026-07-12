@@ -22,6 +22,8 @@ from typing import Any, TypeAlias, cast
 import pytest
 from jsonschema import Draft202012Validator
 
+from tests.workflow_dependency_maintenance import workflow_diff_is_dependency_only
+
 JsonObject: TypeAlias = dict[str, Any]
 YamlObject: TypeAlias = dict[object, Any]
 
@@ -46,7 +48,6 @@ GUARD_FLAG_KEYS = (
     "production_platform_claim",
     "live_adapter_execution",
 )
-
 
 def _load_yaml(path: Path) -> YamlObject:
     yaml = pytest.importorskip("yaml")
@@ -312,6 +313,8 @@ def test_14_no_existing_workflow_mutation() -> None:
         pytest.skip("AO-MA-11E workflow mutation invariant applies only when AO-MA-11E workflow artifacts are in the PR diff")
     workflow_changes = [f for f in files if f.startswith(".github/workflows/")]
     if not workflow_changes:
+        return
+    if workflow_diff_is_dependency_only(REPO_ROOT, workflow_changes):
         return
 
     allowed = {

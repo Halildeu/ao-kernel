@@ -87,7 +87,7 @@ jobs:
     needs: [event-gate]
     if: needs.event-gate.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -113,7 +113,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # Full history needed so test_ao_ma10_pr_scope, test_epic_4_*,
           # test_pci_dss and other PR-diff-base tests can resolve
@@ -171,7 +171,7 @@ jobs:
     needs: [event-gate, test]
     if: always() && needs.event-gate.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Fail closed if the test matrix did not succeed
         if: needs.test.result != 'success'
         run: |
@@ -210,7 +210,7 @@ jobs:
     needs: [event-gate, test, coverage, lint, typecheck]
     if: needs.event-gate.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -229,7 +229,7 @@ jobs:
     needs: [event-gate]
     if: needs.event-gate.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -248,7 +248,7 @@ jobs:
     needs: [event-gate]
     if: needs.event-gate.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -273,7 +273,7 @@ jobs:
     # importable (untyped decorators on server.list_tools etc). Without mcp
     # those decorators resolve to Any and the ignores become "unused".
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -293,7 +293,7 @@ jobs:
     needs: [event-gate, test]
     if: needs.event-gate.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -334,7 +334,7 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -382,7 +382,7 @@ jobs:
     if: needs.event-gate.outputs.should_run == 'true'
     continue-on-error: true  # Optional extras smoke — non-blocking
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -485,7 +485,7 @@ jobs:
           fi
 
       - name: Checkout protected base ref
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: base
@@ -510,7 +510,7 @@ jobs:
           exit 1
 
       - name: Checkout PR head for raw reviewer evidence
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head

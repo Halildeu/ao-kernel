@@ -18,6 +18,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the new field additively for old-artifact compatibility while the current
   emitter requires it. Release authority and all support/live-execution guard
   flags remain unchanged.
+- **GitHub Actions maintenance batch**: refreshed the pending Dependabot action
+  major updates in one origin/main-based PR by bumping `actions/checkout` to
+  v7, `github/codeql-action` to v4, and `google-github-actions/deploy-cloudrun`
+  to v3. This is workflow dependency maintenance only; it does not tag,
+  publish, widen support, claim production-platform readiness, execute live
+  adapters, or change branch-protection/ruleset policy.
 - **v4.3.1 changelog finalization**: consolidated landed productization and
   AI-review entries under the v4.3.1 release section without tagging,
   publishing, widening support, claiming production-platform readiness, or

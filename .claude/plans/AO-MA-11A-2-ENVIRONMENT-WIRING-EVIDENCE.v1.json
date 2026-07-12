@@ -20,7 +20,7 @@
   "prevent_self_review": true,
   "can_admins_bypass": false,
   "workflow_path": ".github/workflows/ao-ma-11a-plan-approval.yml",
-  "workflow_sha256": "sha256:bbebc1e8b90093e05f03e8de99e3a7a923e8856f3bade8e4c35285d5708dad84",
+  "workflow_sha256": "sha256:673df795c61c0ef7cf939f9a2e472c05ed6cd4fef9ef0d8fe3509c8b8a9b0189",
   "plan_doc_path": ".claude/plans/AO-MA-11A-2-PLAN-APPROVAL-GATE.md",
   "plan_doc_sha256": "sha256:340d8d71b64c357e8d36c8f211faaa7741157d10b428524d818cb717bcbd28dc",
   "gate_cli_path": "scripts/ao_ma11a2_plan_approval_gate.py",
